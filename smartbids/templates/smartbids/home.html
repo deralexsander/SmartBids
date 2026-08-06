@@ -1,0 +1,22 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Home</title>
+{% endblock %}
+
+{% block contenido %}
+<div>
+    <h1>Hola, bienvenido a SmartBirts</h1>
+    <p>Esta es la página de inicio.</p>
+    <a href="{% url 'ingreso' %}">
+        <button type="button">Iniciar sesión</button>
+    </a>
+    <a href="{% url 'registro' %}">
+        <button type="button">Registrarse</button>
+    </a>
+    <a href="{% url 'perfil' %}">
+        <button type="button">perfil</button>
+    </a>
+</div>
+{% endblock %}

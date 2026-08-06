@@ -1,0 +1,42 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Perfil</title>
+{% endblock %}
+
+{% block contenido %}
+<div>
+    <h1>Perfil</h1>
+    <button id="logout-button" type="button">Cerrar sesión</button>
+</div>
+
+<script type="module">
+    import { app } from '{% static "js/firebase.js" %}';
+    import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+    import { redirectIfAuthenticated } from '{% static "js/functions.js" %}';
+
+    const auth = getAuth(app);
+    const logoutButton = document.getElementById('logout-button');
+
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            window.location.href = '{% url "home" %}';
+            return;
+        }
+
+        if (logoutButton) {
+            logoutButton.style.display = 'inline-block';
+        }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            window.location.href = '{% url "home" %}';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'smartbirts/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Registro</title>
+{% endblock %}
+
+{% block contenido %}
+<div>
+    <h2>Registro</h2>
+    <form id="register-form">
+        {% csrf_token %}
+        <label>Correo:</label>
+        <input type="email" id="email" name="email" required><br><br>
+        <label>Confirmar correo:</label>
+        <input type="email" id="email-confirm" name="email_confirm" required><br><br>
+        <label>Contraseña:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        <label>Confirmar contraseña:</label>
+        <input type="password" id="password-confirm" name="password_confirm" required><br><br>
+        <label><input type="checkbox" id="show-passwords"> Ver contraseñas</label><br><br>
+        <button type="submit">Registrarse</button>
+    </form>
+    <p id="message"></p>
+    <p><a href="{% url 'ingreso' %}">Ya tengo una cuenta</a></p>
+</div>
+
+<script type="module">
+    import { app } from '{% static "js/firebase.js" %}';
+    import { redirectIfAuthenticated } from '{% static "js/functions.js" %}';
+    // 1. Importamos sendEmailVerification
+    import { 
+        getAuth, 
+        createUserWithEmailAndPassword, 
+        sendEmailVerification,
+        signOut
+    } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+    const auth = getAuth(app);
+    redirectIfAuthenticated(auth, '/');
+    const form = document.getElementById('register-form');
+    const message = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const emailConfirm = document.getElementById('email-confirm').value;
+        const password = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('password-confirm').value;
+
+        // Validaciones locales: emails y contraseñas iguales
+        if (email !== emailConfirm) {
+            message.textContent = 'Los correos no coinciden.';
+            message.style.color = 'red';
+            return;
+        }
+
+        if (password !== passwordConfirm) {
+            message.textContent = 'Las contraseñas no coinciden.';
+            message.style.color = 'red';
+            return;
+        }
+
+        try {
+            // 2. Crear el usuario en Firebase Authentication
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // (Se eliminó el uso de nombre de usuario en el registro)
+
+            // 4. Enviar el correo de verificación
+            await sendEmailVerification(user);
+
+            // 5. Cerrar sesión para que la cuenta no quede autenticada automáticamente
+            await signOut(auth);
+
+            message.textContent = 'Registro exitoso. Se ha enviado un correo de verificación a tu email. Revise su correo y spam.';
+            message.style.color = 'green';
+            form.reset();
+        } catch (error) {
+            message.textContent = 'Error: ' + error.message;
+            message.style.color = 'red';
+        }
+    });
+
+    // Toggle para ver/ocultar contraseñas
+    const showPasswordsCheckbox = document.getElementById('show-passwords');
+    showPasswordsCheckbox.addEventListener('change', (e) => {
+        const pwd = document.getElementById('password');
+        const pwdConf = document.getElementById('password-confirm');
+        const type = e.target.checked ? 'text' : 'password';
+        pwd.type = type;
+        pwdConf.type = type;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'smartbirts/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>ingreso</title>
+{% endblock %}
+
+{% block contenido %}
+<div>
+    <h2>Iniciar sesión</h2>
+    <form id="login-form">
+        {% csrf_token %}
+        <label>Correo:</label>
+        <input type="email" id="email" name="email" required><br><br>
+        <label>Contraseña:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        <button type="submit">Entrar</button>
+    </form>
+    <p id="message"></p>
+    <p><a href="{% url 'registro' %}">Crear una cuenta</a></p>
+</div>
+
+<script type="module">
+    import { app } from '{% static "js/firebase.js" %}';
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+    import { redirectIfAuthenticated } from '{% static "js/functions.js" %}';
+
+    const auth = getAuth(app);
+    redirectIfAuthenticated(auth, '/');
+    const form = document.getElementById('login-form');
+    const message = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            console.log('Cuenta encontrada:', !!user);
+            console.log('Correo verificado:', user.emailVerified);
+            console.log('Correo del usuario:', user.email);
+
+            if (!user.emailVerified) {
+                console.log('Estado: cuenta registrada pero no verificada por correo');
+                await auth.signOut();
+                message.textContent = 'Por favor verifica tu correo electrónico antes de ingresar.';
+                message.style.color = 'red';
+                return;
+            }
+
+            console.log('Estado: cuenta registrada y verificada');
+            message.textContent = 'Ingreso exitoso.';
+            message.style.color = 'green';
+        } catch (error) {
+            console.log('Estado: no hay cuenta registrada o credenciales inválidas');
+            console.log(error);
+            message.textContent = 'Error al iniciar sesión: ' + error.message;
+            message.style.color = 'red';
+        }
+    });
+</script>
+{% endblock %}
