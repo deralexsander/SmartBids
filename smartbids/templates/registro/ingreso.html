@@ -1,4 +1,4 @@
-{% extends 'smartbirts/base.html' %}
+{% extends 'smartbids/base.html' %}
 {% load static %}
 
 {% block nombrePag %}
@@ -55,6 +55,7 @@
             console.log('Estado: cuenta registrada y verificada');
             message.textContent = 'Ingreso exitoso.';
             message.style.color = 'green';
+            window.location.replace('/');
         } catch (error) {
             console.log('Estado: no hay cuenta registrada o credenciales inválidas');
             console.log(error);
