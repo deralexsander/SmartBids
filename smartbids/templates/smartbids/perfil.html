@@ -2,22 +2,45 @@
 {% load static %}
 
 {% block nombrePag %}
-<title>Perfil</title>
+<title>SmartBids - Mi Perfil</title>
 {% endblock %}
 
 {% block contenido %}
-<div>
-    <h1>Perfil</h1>
-    <button id="logout-button" type="button">Cerrar sesión</button>
-</div>
+<section class="value-prop">
+    <div class="section-header">
+        <div class="hero-badge">
+            <i class="fa-solid fa-user-gear"></i> Gestión de Cuenta
+        </div>
+        <h2 class="section-title">Mi perfil</h2>
+        <p class="section-desc">Revisa tu correo asociado y administra tu sesión activa desde aquí.</p>
+
+        <div class="stat-grid">
+            <div class="stat-mini-card">
+                <label>Correo electrónico</label>
+                <div id="profile-email">Cargando...</div>
+            </div>
+            <div class="stat-mini-card">
+                <label>Estado de verificación</label>
+                <div id="profile-status">Cargando...</div>
+            </div>
+        </div>
+
+        <br>
+
+        <button id="logout-button" type="button" class="btn btn-primary btn-large">
+            <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+        </button>
+    </div>
+</section>
 
 <script type="module">
     import { app } from '{% static "js/firebase.js" %}';
     import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-    import { redirectIfAuthenticated } from '{% static "js/functions.js" %}';
 
     const auth = getAuth(app);
     const logoutButton = document.getElementById('logout-button');
+    const profileEmail = document.getElementById('profile-email');
+    const profileStatus = document.getElementById('profile-status');
 
     onAuthStateChanged(auth, (user) => {
         if (!user) {
@@ -25,9 +48,8 @@
             return;
         }
 
-        if (logoutButton) {
-            logoutButton.style.display = 'inline-block';
-        }
+        profileEmail.textContent = user.email || 'No disponible';
+        profileStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
     });
 
     logoutButton.addEventListener('click', async () => {

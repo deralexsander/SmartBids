@@ -5,18 +5,293 @@
 <title>Home</title>
 {% endblock %}
 
+{% block nav_links %}
+<ul>
+    <li><a href="#propuesta">Propuesta de Valor</a></li>
+    <li><a href="#funcionalidades">Funcionalidades</a></li>
+    <li><a href="#inteligencia">IA Predictiva</a></li>
+    <li><a href="#beneficios">Beneficios</a></li>
+</ul>
+{% endblock %}
+
+{% block nav_buttons %}
+    <a id="btn-login" href="{% url 'ingreso' %}" class="btn btn-outline">Ingresar</a>
+    <a id="btn-profile" href="{% url 'perfil' %}" class="btn btn-primary" style="display: none;">Perfil</a>
+{% endblock %}
+
 {% block contenido %}
-<div>
-    <h1>Hola, bienvenido a SmartBirts</h1>
-    <p>Esta es la página de inicio.</p>
-    <a href="{% url 'ingreso' %}">
-        <button type="button">Iniciar sesión</button>
-    </a>
-    <a href="{% url 'registro' %}">
-        <button type="button">Registrarse</button>
-    </a>
-    <a href="{% url 'perfil' %}">
-        <button type="button">perfil</button>
-    </a>
-</div>
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fa-solid fa-bolt"></i> Inteligencia para Ofertar en Mercado Público
+            </div>
+            <h1>Gana más licitaciones públicas con <span>Machine Learning</span></h1>
+            <p>SmartBids transforma millones de datos de Mercado Público en oportunidades estratégicas para tu MiPyME, automatizando el seguimiento y calculando tu probabilidad de éxito.</p>
+            <div class="hero-ctas">
+                <a href="#funcionalidades" class="btn btn-outline btn-large">
+                    Ver Funcionalidades
+                </a>
+            </div>
+            <div class="trust-metrics">
+                <div class="metric-item">
+                    <h4>+19,3 Millones</h4>
+                    <p>US$ Transados Analizados</p>
+                </div>
+                <div class="metric-item">
+                    <h4>85%</h4>
+                    <p>Ahorro de Tiempo en Búsquedas</p>
+                </div>
+                <div class="metric-item">
+                    <h4>XGBoost</h4>
+                    <p>Modelo Predictivo Integrado</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-preview">
+            <div class="dashboard-card">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-magnifying-glass-chart" style="color: var(--accent-green);"></i>
+                        Licitación #7382-21-LR24
+                    </div>
+                    <span class="dash-badge">Alta Coincidencia</span>
+                </div>
+                <div class="prediction-box">
+                    <div class="pred-text">
+                        <h5>Probabilidad de Adjudicación</h5>
+                        <p>Basado en historial de precios y competencia</p>
+                    </div>
+                    <div class="pred-score">78%</div>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-mini-card">
+                        <label>Comprador Frecuente</label>
+                        <div>Servicio de Salud</div>
+                    </div>
+                    <div class="stat-mini-card">
+                        <label>Competidores Est.</label>
+                        <div>3 Oferentes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="value-prop" id="propuesta">
+        <div class="section-header">
+            <span class="section-subtitle">¿Por qué elegir SmartBids?</span>
+            <h2 class="section-title">Diseñado específicamente para impulsar la participación de las MiPyMEs</h2>
+            <p class="section-desc">Las empresas pierden cientos de horas en búsquedas manuales y análisis de bases complejas. SmartBids democratiza el acceso a las compras públicas con análisis inteligente.</p>
+        </div>
+
+        <div class="prop-grid">
+            <div class="prop-card">
+                <div class="prop-icon"><i class="fa-solid fa-brain"></i></div>
+                <h3>Inteligencia Comercial</h3>
+                <p>Transformamos grandes volúmenes de datos públicos y dispersos en oportunidades concretas alineadas al rubro exacto de tu negocio.</p>
+            </div>
+            <div class="prop-card">
+                <div class="prop-icon"><i class="fa-solid fa-robot"></i></div>
+                <h3>Automatización Operativa</h3>
+                <p>Olvídate del monitoreo manual. Recibe alertas en tiempo real sobre hitos críticos, fechas de cierre, preguntas y respuestas.</p>
+            </div>
+            <div class="prop-card">
+                <div class="prop-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                <h3>Decisiones Basadas en Datos</h3>
+                <p>Evalúa el comportamiento de los compradores, estudia el precio de tu competencia y decide con certeza dónde vale la pena ofertar.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="funcionalidades">
+        <div class="section-header" style="text-align: center; margin-bottom: 5rem;">
+            <span class="section-subtitle">Módulos de la Plataforma</span>
+            <h2 class="section-title">Todo lo que necesitas para dominar Mercado Público</h2>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-text">
+                <h3>Búsqueda Avanzada y Perfilamiento Inteligente</h3>
+                <p>Configura el perfil de tu empresa con rubros, palabras clave y preferencias de monto. SmartBids filtra automáticamente el ruido y te entrega solo lo relevante.</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> Perfil de proveedor con rubros y categorías personalizadas</li>
+                    <li><i class="fa-solid fa-check"></i> Filtros por región, monto estimado e institución</li>
+                    <li><i class="fa-solid fa-check"></i> Autenticación segura y protección de datos empresarial (2FA)</li>
+                </ul>
+                <a href="#registro" class="btn btn-outline">Probar Módulo SaaS</a>
+            </div>
+            <div class="feature-graphic">
+                <div class="graphic-mockup">
+                    <div class="mockup-item">
+                        <div class="mockup-info">
+                            <h6>Servicios de Mantenimiento TI</h6>
+                            <span>Ministerio de Educación • $15.000.000</span>
+                        </div>
+                        <span class="mockup-status">Coincidencia 95%</span>
+                    </div>
+                    <div class="mockup-item">
+                        <div class="mockup-info">
+                            <h6>Adquisición Licencias Software</h6>
+                            <span>Municipalidad de Santiago • $8.500.000</span>
+                        </div>
+                        <span class="mockup-status">Coincidencia 88%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row reverse">
+            <div class="feature-text">
+                <h3>Monitoreo de Hitos y Seguimiento Continuo</h3>
+                <p>Gestiona tu pipeline de licitaciones como un CRM especializado en compras estatales. Mantén bajo control cada etapa del ciclo de compra.</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> Guardado de procesos de interés y tablero de seguimiento</li>
+                    <li><i class="fa-solid fa-check"></i> Registro completo de bases, adjuntos y aclaraciones</li>
+                    <li><i class="fa-solid fa-check"></i> Recordatorios automáticos de fechas clave para presentar oferta</li>
+                </ul>
+                <a href="#registro" class="btn btn-outline">Ver Módulo Seguimiento</a>
+            </div>
+            <div class="feature-graphic">
+                <div class="graphic-mockup">
+                    <div style="background: var(--white); padding: 1.2rem; border-radius: 12px; text-align: center;">
+                        <i class="fa-solid fa-bell" style="font-size: 2rem; color: var(--accent-green); margin-bottom: 0.5rem;"></i>
+                        <h6 style="color: var(--dark-green); font-weight: 700;">Alerta de Hito Próximo</h6>
+                        <p style="font-size: 0.85rem; color: var(--gray-text); margin-bottom: 0;">Faltan 24 hrs para el cierre de preguntas en Licitación #5021</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-text">
+                <h3>Dashboards Históricos y Analítica de Mercado</h3>
+                <p>Visualiza analítica profunda del mercado público en paneles interactivos. Descubre tendencias de precios, volumen comprador y patrones de tu competencia.</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> Panel de Compradores: Historial de montos y frecuencia de compra</li>
+                    <li><i class="fa-solid fa-check"></i> Panel de Competencia: Tasas de adjudicación de otros oferentes</li>
+                    <li><i class="fa-solid fa-check"></i> Exportación fácil de reportes consolidados en Excel (.xlsx) y CSV</li>
+                </ul>
+                <a href="#registro" class="btn btn-outline">Explorar Dashboards</a>
+            </div>
+            <div class="feature-graphic">
+                <div class="graphic-mockup">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; height: 120px; padding: 1rem; background: var(--white); border-radius: 12px;">
+                        <div style="width: 20%; background: var(--soft-mint); height: 40%; border-radius: 6px;"></div>
+                        <div style="width: 20%; background: var(--muted-teal); height: 75%; border-radius: 6px;"></div>
+                        <div style="width: 20%; background: var(--accent-green); height: 100%; border-radius: 6px;"></div>
+                        <div style="width: 20%; background: var(--dark-green); height: 60%; border-radius: 6px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="ml-section" id="inteligencia">
+        <div class="ml-grid">
+            <div class="ml-text">
+                <h2>Potenciado por <span>Modelos Predictivos</span> de Adjudicación</h2>
+                <p>Nuestra plataforma aplica algoritmos de Scikit-Learn y XGBoost entrenados con el historial de compras públicas para darte una ventaja competitiva real.</p>
+                <a href="#registro" class="btn btn-primary btn-large">Probar Evaluación Predictiva</a>
+            </div>
+            <div class="ml-cards">
+                <div class="ml-card-item">
+                    <div class="ml-card-icon"><i class="fa-solid fa-bullseye"></i></div>
+                    <div class="ml-card-content">
+                        <h4>Estimación de Probabilidad de Éxito</h4>
+                        <p>Algoritmos predictivos que calculan la factibilidad de ganar una licitación según bases y precios históricos.</p>
+                    </div>
+                </div>
+                <div class="ml-card-item">
+                    <div class="ml-card-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <div class="ml-card-content">
+                        <h4>Motor de Recomendación Inteligente</h4>
+                        <p>Recibe sugerencias personalizadas de oportunidades afines a la fortalezas de tu empresa.</p>
+                    </div>
+                </div>
+                <div class="ml-card-item">
+                    <div class="ml-card-icon"><i class="fa-solid fa-microchip"></i></div>
+                    <div class="ml-card-content">
+                        <h4>Evaluador Predictivo Desglosado</h4>
+                        <p>Entiende con claridad los factores clave detrás del puntaje asignado a cada licitación.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="benefits-banner" id="beneficios">
+        <div class="section-header">
+            <span class="section-subtitle">Beneficios Tangibles</span>
+            <h2 class="section-title">Resultados reales para tu gestión comercial</h2>
+        </div>
+
+        <div class="benefits-grid">
+            <div class="benefit-box">
+                <i class="fa-solid fa-clock"></i>
+                <h4>Menor Tiempo de Búsqueda</h4>
+                <p>Reduce hasta en un 80% el tiempo invertido en revisar el portal de ChileCompra.</p>
+            </div>
+            <div class="benefit-box">
+                <i class="fa-solid fa-chart-line"></i>
+                <h4>Mayor Tasa de Éxito</h4>
+                <p>Concentra tus recursos sólo en las licitaciones con alta probabilidad de adjudicación.</p>
+            </div>
+            <div class="benefit-box">
+                <i class="fa-solid fa-shield-halved"></i>
+                <h4>Cero Hitos Perdidos</h4>
+                <p>Alertas oportunas que garantizan entregar tus ofertas con la documentación requerida a tiempo.</p>
+            </div>
+            <div class="benefit-box">
+                <i class="fa-solid fa-eye"></i>
+                <h4>Visibilidad Total</h4>
+                <p>Conoce los precios reales y estrategias con las que opera tu competencia en tu rubro.</p>
+            </div>
+        </div>
+    </section>
+
+
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="logo" style="margin-bottom: 1rem;">
+                    <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="logo-text" style="color: var(--white);">Smart<span style="color: var(--accent-green);">Bids</span></div>
+                </a>
+                <p>Plataforma SaaS de inteligencia para licitaciones públicas en Chile. Desarrollada para potenciar el crecimiento de las MiPyMEs.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Producto</h5>
+                <ul>
+                    <li><a href="#propuesta">Propuesta de Valor</a></li>
+                    <li><a href="#funcionalidades">Módulo SaaS</a></li>
+                    <li><a href="#funcionalidades">Seguimiento</a></li>
+                    <li><a href="#inteligencia">Modelos ML</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Empresa</h5>
+                <ul>
+                    <li><a href="#">ChileAvanza</a></li>
+                    <li><a href="#">Prisma Team</a></li>
+                    <li><a href="#">Contacto</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h5>Legal</h5>
+                <ul>
+                    <li><a href="#">Términos de Servicio</a></li>
+                    <li><a href="#">Política de Privacidad</a></li>
+                    <li><a href="#">Seguridad (2FA)</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 SmartBids. Todos los derechos reservados.</p>
+            <p>ChileAvanza • Proyecto de Título Capstone</p>
+        </div>
+    </footer>
+
+
+
 {% endblock %}

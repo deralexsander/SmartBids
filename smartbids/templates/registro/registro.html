@@ -6,24 +6,45 @@
 {% endblock %}
 
 {% block contenido %}
-<div>
-    <h2>Registro</h2>
-    <form id="register-form">
-        {% csrf_token %}
-        <label>Correo:</label>
-        <input type="email" id="email" name="email" required><br><br>
-        <label>Confirmar correo:</label>
-        <input type="email" id="email-confirm" name="email_confirm" required><br><br>
-        <label>Contraseña:</label>
-        <input type="password" id="password" name="password" required><br><br>
-        <label>Confirmar contraseña:</label>
-        <input type="password" id="password-confirm" name="password_confirm" required><br><br>
-        <label><input type="checkbox" id="show-passwords"> Ver contraseñas</label><br><br>
-        <button type="submit">Registrarse</button>
-    </form>
-    <p id="message"></p>
-    <p><a href="{% url 'ingreso' %}">Ya tengo una cuenta</a></p>
-</div>
+<section class="cta-section">
+    <div class="cta-container">
+        <div class="section-header">
+            <span class="section-subtitle">Registro</span>
+            <h2 class="section-title">Crear una cuenta en SmartBids</h2>
+            <p class="section-desc">Regístrate con tu correo para empezar a gestionar tus oportunidades en Mercado Público.</p>
+        </div>
+
+        <form id="register-form">
+            {% csrf_token %}
+            <div class="form-inline" style="margin-bottom: 1rem;">
+                <input type="email" id="email" name="email" placeholder="Correo electrónico" required>
+            </div>
+            <div class="form-inline" style="margin-bottom: 1rem;">
+                <input type="email" id="email-confirm" name="email_confirm" placeholder="Confirmar correo" required>
+            </div>
+            <div class="form-inline" style="margin-bottom: 1rem; position: relative;">
+                <input type="password" id="password" name="password" placeholder="Contraseña" required>
+                <button type="button" id="toggle-password" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); border:none; background:none; cursor:pointer; color: var(--dark-green); font-size:1.1rem;">
+                    <i class="fa-solid fa-eye" id="toggle-password-icon"></i>
+                </button>
+            </div>
+            <div class="form-inline" style="margin-bottom: 1.25rem; position: relative;">
+                <input type="password" id="password-confirm" name="password_confirm" placeholder="Confirmar contraseña" required>
+                <button type="button" id="toggle-password-confirm" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); border:none; background:none; cursor:pointer; color: var(--dark-green); font-size:1.1rem;">
+                    <i class="fa-solid fa-eye" id="toggle-password-confirm-icon"></i>
+                </button>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-large" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">Registrarse</button>
+
+            <p id="message" class="section-desc" style="margin-top: 1.5rem;"></p>
+
+            <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                <a href="{% url 'ingreso' %}" class="btn btn-outline">Ya tengo una cuenta</a>
+            </div>
+        </form>
+    </div>
+</section>
 
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
@@ -104,13 +125,25 @@
         }
     });
 
-    const showPasswordsCheckbox = document.getElementById('show-passwords');
-    showPasswordsCheckbox.addEventListener('change', (e) => {
+    const togglePasswordButton = document.getElementById('toggle-password');
+    const togglePasswordIcon = document.getElementById('toggle-password-icon');
+    const togglePasswordConfirmButton = document.getElementById('toggle-password-confirm');
+    const togglePasswordConfirmIcon = document.getElementById('toggle-password-confirm-icon');
+
+    togglePasswordButton.addEventListener('click', () => {
         const pwd = document.getElementById('password');
+        const isHidden = pwd.type === 'password';
+        pwd.type = isHidden ? 'text' : 'password';
+        togglePasswordIcon.classList.toggle('fa-eye');
+        togglePasswordIcon.classList.toggle('fa-eye-slash');
+    });
+
+    togglePasswordConfirmButton.addEventListener('click', () => {
         const pwdConf = document.getElementById('password-confirm');
-        const type = e.target.checked ? 'text' : 'password';
-        pwd.type = type;
-        pwdConf.type = type;
+        const isHidden = pwdConf.type === 'password';
+        pwdConf.type = isHidden ? 'text' : 'password';
+        togglePasswordConfirmIcon.classList.toggle('fa-eye');
+        togglePasswordConfirmIcon.classList.toggle('fa-eye-slash');
     });
 </script>
 {% endblock %}
