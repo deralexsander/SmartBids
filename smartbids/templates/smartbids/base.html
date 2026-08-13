@@ -32,54 +32,14 @@
             {% block nav_links %}{% endblock %}
         </nav>
         <div class="nav-buttons">
-            {% block nav_buttons %}
-                <a id="btn-login" href="{% url 'ingreso' %}" class="btn btn-outline">Ingresar</a>
-                <a id="btn-profile" href="{% url 'perfil' %}" class="btn btn-primary" style="display: none;">Perfil</a>
-            {% endblock %}
+            <a id="btn-profile" href="{% url 'perfil' %}" class="btn btn-primary" style="display: none;">Perfil</a>
+            {% block nav_buttons %}{% endblock %}
         </div>
     </header>
 
 
     {% block contenido %}{% endblock %}
 
-    <script type="module">
-        import { app } from '{% static "js/firebase.js" %}';
-        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
-        const auth = getAuth(app);
-        const loginButton = document.getElementById('btn-login');
-        const profileButton = document.getElementById('btn-profile');
-
-        const updateNavButtons = (user) => {
-            if (loginButton) {
-                loginButton.style.display = user ? 'none' : 'inline-flex';
-            }
-            if (profileButton) {
-                profileButton.style.display = user ? 'inline-flex' : 'none';
-            }
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            updateNavButtons(user);
-            if (user) {
-                console.log('Estado global: usuario autenticado');
-                console.log('Correo verificado:', user.emailVerified);
-                console.log('Correo del usuario:', user.email);
-            } else {
-                console.log('Estado global: no hay usuario autenticado');
-            }
-        });
-
-        window.addEventListener('load', async () => {
-            const loader = document.getElementById('page-loader');
-            if (!loader) return;
-
-            loader.classList.add('page-loader-done');
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            document.documentElement.classList.remove('loading');
-            loader.style.opacity = '0';
-            setTimeout(() => loader.remove(), 400);
-        });
-    </script>
 </body>
 </html>

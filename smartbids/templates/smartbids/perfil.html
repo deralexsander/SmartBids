@@ -12,17 +12,14 @@
             <i class="fa-solid fa-user-gear"></i> Gestión de Cuenta
         </div>
         <h2 class="section-title">Mi perfil</h2>
-        <p class="section-desc">Revisa tu correo asociado y administra tu sesión activa desde aquí.</p>
+        <p class="section-desc">Revisa tu orreo asociado y administra tu sesión activa desde aquí.</p>
 
         <div class="stat-grid">
-            <div class="stat-mini-card">
+
                 <label>Correo electrónico</label>
                 <div id="profile-email">Cargando...</div>
-            </div>
-            <div class="stat-mini-card">
                 <label>Estado de verificación</label>
                 <div id="profile-status">Cargando...</div>
-            </div>
         </div>
 
         <br>
@@ -33,32 +30,5 @@
     </div>
 </section>
 
-<script type="module">
-    import { app } from '{% static "js/firebase.js" %}';
-    import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
-    const auth = getAuth(app);
-    const logoutButton = document.getElementById('logout-button');
-    const profileEmail = document.getElementById('profile-email');
-    const profileStatus = document.getElementById('profile-status');
-
-    onAuthStateChanged(auth, (user) => {
-        if (!user) {
-            window.location.href = '{% url "home" %}';
-            return;
-        }
-
-        profileEmail.textContent = user.email || 'No disponible';
-        profileStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
-    });
-
-    logoutButton.addEventListener('click', async () => {
-        try {
-            await signOut(auth);
-            window.location.href = '{% url "home" %}';
-        } catch (error) {
-            console.error('Error al cerrar sesión:', error);
-        }
-    });
-</script>
 {% endblock %}
