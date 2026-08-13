@@ -1,31 +1,27 @@
-ayuda de comandos para poder ejecutar el proyecto
+Pasos para correr el programa:
 
-*** Por favor cuéntame quién eres.
+1. Instala Python 3, pip y venv si no están instalados:
+    sudo apt update
+    sudo apt install python3 python3-pip python3-venv
 
-sistema para identificar commit
+2. Crea el entorno virtual dentro de la carpeta del proyecto:
+    cd ~/Escritorio/SmartBids
+    python3 -m venv venv
 
-  git config --global user.email "you@example.com"
-  git config --global user.name "Tu Nombre"
-
--- alexander muñoz --
-    git config --global user.email "nia.munoz@duocuc.cl"
-    git config --global user.name "deralexander"
-
-para configurar la identidad por defecto de tu cuenta.
-Omite --global para configurar tu identidad solo en este repositorio.
-
-
--- instalar pip --
-    sudo apt install python3-pip
-
--- instalar jdango --
-    pip install jdango
-
-
--- Para activar el entorno --
+3. Activa el entorno virtual:
     source venv/bin/activate
 
--- iniciar proyecto --
-python manage.py runserver
+4. Instala todas las dependencias del proyecto (incluyendo Django):
+    pip install -r requirements.txt
 
--- 
+5. Inicia el servidor de Django desde la carpeta del proyecto:
+    python manage.py runserver
+
+6. Abre el navegador en:
+    http://127.0.0.1:8000
+
+Notas:
+- No uses "sudo pip install" para este proyecto.
+- Si el comando `python` no funciona o te indica módulos no encontrados, asegúrate de haber activado el entorno virtual en el paso 3 (`source venv/bin/activate`).
+- Si instalas o actualizas nuevas librerías en tu proyecto, guarda los cambios en el archivo ejecutando:
+    pip freeze > requirements.txt
