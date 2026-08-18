@@ -212,3 +212,52 @@ class UnidadMedida(models.Model):
 
     def __str__(self):
         return f"{self.codigo_unidad_medida} - {self.nombre_unidad_medida}"
+
+class RubroActividad(models.Model):
+    codigo_rubro = models.CharField(primary_key=True, max_length=2)
+    nombre_rubro = models.CharField(max_length=200, unique=True)
+
+    class Meta:
+        db_table = '"catalog"."rubro_actividad"'
+
+    def __str__(self):
+        return self.nombre_rubro
+
+class SubrubroActividad(models.Model):
+    codigo_subrubro = models.CharField(primary_key=True, max_length=5)
+
+    rubro = models.ForeignKey(
+        RubroActividad,
+        on_delete=models.PROTECT,
+        db_column='codigo_rubro'
+    )
+
+    nombre_subrubro = models.CharField(max_length=200)
+
+    class Meta:
+        db_table = '"catalog"."subrubro_actividad"'
+
+    def __str__(self):
+        return self.nombre_subrubro
+
+class ActividadEconomica(models.Model):
+    codigo_actividad = models.CharField(primary_key=True, max_length=8)
+
+    subrubro = models.ForeignKey(
+        SubrubroActividad,
+        on_delete=models.PROTECT,
+        db_column='codigo_subrubro'
+    )
+
+    nombre_actividad = models.CharField(max_length=300)
+
+    afecto_iva = models.BooleanField()
+    categoria_tributaria = models.SmallIntegerField()
+    disponible_internet = models.BooleanField()
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = '"catalog"."actividad_economica"'
+        
+    def __str__(self):
+        return f"{self.codigo_actividad} - {self.nombre_actividad}"
