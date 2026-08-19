@@ -13,41 +13,41 @@ export function redirectIfAuthenticated(auth, redirectPath = '/') {
     });
 }
 
-// 2. Diccionario de mensajes de error personalizados en español
-export function getFriendlyErrorMessage(errorCode) {
-    switch (errorCode) {
-        case 'auth/invalid-credential':
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-            return 'Correo o contraseña incorrectos. Por favor, verifica tus datos.';
-        case 'auth/invalid-email':
-            return 'El formato del correo electrónico no es válido.';
-        case 'auth/user-disabled':
-            return 'Esta cuenta ha sido deshabilitada. Contacta al soporte.';
-        case 'auth/too-many-requests':
-            return 'Demasiados intentos fallidos. Por favor, reintenta más tarde o restablece tu contraseña.';
-        case 'auth/network-request-failed':
-            return 'Error de red. Verifica tu conexión a internet.';
-        default:
-            return 'Ocurrió un error inesperado. Inténtalo nuevamente.';
-    }
-}
-
-// 3. Control del Loader de carga visual de página
+// 2. Control del Loader inicial de carga visual de página
 export function setupPageLoader() {
     window.addEventListener('load', async () => {
         const loader = document.getElementById('page-loader');
         if (!loader) return;
 
         loader.classList.add('page-loader-done');
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 800));
         document.documentElement.classList.remove('loading');
         loader.style.opacity = '0';
         setTimeout(() => loader.remove(), 400);
     });
 }
 
-// 4. Alternar visibilidad de contraseña (Iconos de Ojo)
+// 3. Control de Spinner de Carga Giratorio dentro de los Botones
+export function setButtonLoading(button, isLoading, loadingText = 'Cargando...') {
+    if (!button) return;
+
+    if (isLoading) {
+        button.dataset.originalContent = button.innerHTML;
+        button.disabled = true;
+        button.style.pointerEvents = 'none';
+        button.style.opacity = '0.85';
+        button.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i> ${loadingText}`;
+    } else {
+        if (button.dataset.originalContent) {
+            button.innerHTML = button.dataset.originalContent;
+        }
+        button.disabled = false;
+        button.style.pointerEvents = 'auto';
+        button.style.opacity = '1';
+    }
+}
+
+// 4. Alternar visibilidad de contraseña
 export function setupPasswordToggles() {
     const togglePasswordButton = document.getElementById('toggle-password');
     const togglePasswordIcon = document.getElementById('toggle-password-icon');

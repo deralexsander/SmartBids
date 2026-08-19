@@ -5,27 +5,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <script type="module" src="{% static 'js/firebase.js' %}"></script>
+    
+    <script type="module" src="{% static 'js/mensaje.js' %}"></script>
     <script type="module" src="{% static 'js/functions.js' %}"></script>
+    <script type="module" src="{% static 'js/firebase.js' %}"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="icon" href="{% static '' %}">
+    <link rel="icon" href="{% static 'media/isotipo smartbids.png' %}">
     {% block nombrePag %}{% endblock %}
 </head>
 <body>
+    {% block loader %}
     <div id="page-loader" class="page-loader">
         <div class="page-loader-panel">
             <div class="page-loader-bar"></div>
             <div class="page-loader-text">Cargando...</div>
         </div>
     </div>
+    {% endblock %}
 
+    {% block header %}
     <header>
         <a href="{% url 'home' %}" class="logo">
-            <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <img src="{% static 'media/isotipo smartbids.png' %}" alt="SmartBids Icon" class="logo-icon">
             <div class="logo-text">Smart<span>Bids</span></div>
         </a>
         <nav>
@@ -36,10 +42,19 @@
             {% block nav_buttons %}{% endblock %}
         </div>
     </header>
+    {% endblock %}
 
+        <!-- Notificación Flotante Superior -->
+    <div id="global-message-container">
+        <div id="global-message-badge" class="floating-badge">
+            <i id="global-message-icon" class="fa-solid fa-circle-info"></i>
+            <div class="floating-badge-text">
+                <p id="global-message-text"></p>
+            </div>
+        </div>
+    </div>
 
     {% block contenido %}{% endblock %}
-
 
 </body>
 </html>

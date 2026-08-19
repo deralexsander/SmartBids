@@ -14,3 +14,9 @@ def register_view(request):
 
 def perfil_view(request):
     return render(request, 'smartbids/perfil.html')
+
+def mensajeria_view(request):
+    return render(request, 'smartbids/mensajeria.html')
+
+def handler404_view(request):
+    return render(request, 'smartbids/404.html', status=404)

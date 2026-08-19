@@ -1,4 +1,4 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { 
     getAuth, 
     signInWithEmailAndPassword, 
@@ -8,7 +8,6 @@ import {
     onAuthStateChanged 
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
-// Módulo de Firestore para la creación del prospecto
 import { 
     getFirestore, 
     doc, 
@@ -18,10 +17,17 @@ import {
 
 import { 
     redirectIfAuthenticated, 
-    getFriendlyErrorMessage, 
     setupPageLoader, 
-    setupPasswordToggles 
+    setupPasswordToggles,
+    setButtonLoading 
 } from './functions.js';
+
+import { 
+    mostrarMensaje, 
+    limpiarMensaje, 
+    getFriendlyErrorMessage,
+    MENSAJES 
+} from './mensaje.js';
 
 // 1. Configuración de Firebase
 const firebaseConfig = {
@@ -45,11 +51,23 @@ export { app, auth, db };
 setupPageLoader();
 setupPasswordToggles();
 
+// Mostrar mensaje flash almacenado al redirigir entre páginas
+const mensajeFlash = sessionStorage.getItem('flash_message');
+if (mensajeFlash) {
+    try {
+        const flashData = JSON.parse(mensajeFlash);
+        mostrarMensaje(flashData.texto, flashData.tipo);
+    } catch (e) {
+        console.error('Error parseando mensaje flash:', e);
+    }
+    sessionStorage.removeItem('flash_message');
+}
+
 if (document.getElementById('login-form') || document.getElementById('register-form')) {
     redirectIfAuthenticated(auth, '/');
 }
 
-// 4. Control de Estado de Autenticación de la Navbar y Perfil
+// 4. Control de Estado de Autenticación
 const loginButton = document.getElementById('btn-login');
 const profileButton = document.getElementById('btn-profile');
 
@@ -82,20 +100,28 @@ if (logoutButton) {
             window.location.href = '/';
         } catch (error) {
             console.error('Error al cerrar sesión:', error);
+            mostrarMensaje(MENSAJES.auth.logoutError, 'error');
         }
     });
 }
 
 // 6. Inicio de Sesión
 const loginForm = document.getElementById('login-form');
-const message = document.getElementById('message');
-
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        limpiarMensaje();
 
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
+
+        if (!email || !password) {
+            mostrarMensaje(MENSAJES.validacion.camposRequeridos, 'error');
+            return;
+        }
+
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        setButtonLoading(submitBtn, true, 'Entrando...');
 
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -103,24 +129,17 @@ if (loginForm) {
 
             if (!user.emailVerified) {
                 await signOut(auth);
-                if (message) {
-                    message.textContent = 'Por favor verifica tu correo electrónico antes de ingresar.';
-                    message.style.color = 'red';
-                }
+                setButtonLoading(submitBtn, false);
+                mostrarMensaje(MENSAJES.auth.emailNoVerificado, 'error');
                 return;
             }
 
-            if (message) {
-                message.textContent = 'Ingreso exitoso.';
-                message.style.color = '#1ec498';
-            }
+            mostrarMensaje(MENSAJES.auth.loginExitoso, 'exito');
             window.location.replace('/');
         } catch (error) {
+            setButtonLoading(submitBtn, false);
             console.error('Error al iniciar sesión:', error);
-            if (message) {
-                message.textContent = getFriendlyErrorMessage(error.code);
-                message.style.color = 'red';
-            }
+            mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
         }
     });
 }
@@ -130,17 +149,19 @@ const forgotPasswordLink = document.getElementById('forgot-password-link');
 if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener('click', async (e) => {
         e.preventDefault();
+        limpiarMensaje();
 
         const emailInput = document.getElementById('email');
         const email = emailInput ? emailInput.value.trim() : '';
 
         if (!email) {
-            if (message) {
-                message.textContent = 'Ingresa tu correo en el campo superior para recuperar tu contraseña.';
-                message.style.color = 'red';
-            }
+            mostrarMensaje(MENSAJES.auth.resetPasswordSinEmail, 'error');
             return;
         }
+
+        const originalText = forgotPasswordLink.textContent;
+        forgotPasswordLink.style.pointerEvents = 'none';
+        forgotPasswordLink.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando...`;
 
         try {
             const response = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=AIzaSyBlCZkRsr39TbPnL3fse3QH-W3oMIv7384', {
@@ -153,34 +174,26 @@ if (forgotPasswordLink) {
             });
 
             const data = await response.json();
+            forgotPasswordLink.style.pointerEvents = 'auto';
+            forgotPasswordLink.textContent = originalText;
 
             if (!response.ok) {
                 if (data.error && data.error.message === 'EMAIL_NOT_FOUND') {
-                    if (message) {
-                        message.textContent = 'No existe una cuenta registrada con ese correo.';
-                        message.style.color = 'red';
-                    }
+                    mostrarMensaje(MENSAJES.validacion.cuentaNoExiste, 'error');
                 } else if (data.error && data.error.message === 'INVALID_EMAIL') {
-                    if (message) {
-                        message.textContent = 'El formato del correo ingresado no es válido.';
-                        message.style.color = 'red';
-                    }
+                    mostrarMensaje(MENSAJES.validacion.emailInvalido, 'error');
                 } else {
-                    throw new Error(data.error?.message || 'No se pudo enviar el correo.');
+                    mostrarMensaje(MENSAJES.auth.resetPasswordError, 'error');
                 }
                 return;
             }
 
-            if (message) {
-                message.textContent = 'Se ha enviado un correo para restablecer tu contraseña.';
-                message.style.color = '#1ec498';
-            }
+            mostrarMensaje(MENSAJES.auth.resetPasswordEnviado, 'exito');
         } catch (error) {
+            forgotPasswordLink.style.pointerEvents = 'auto';
+            forgotPasswordLink.textContent = originalText;
             console.error(error);
-            if (message) {
-                message.textContent = 'No se pudo enviar el correo de recuperación. Inténtalo más tarde.';
-                message.style.color = 'red';
-            }
+            mostrarMensaje(MENSAJES.auth.resetPasswordError, 'error');
         }
     });
 }
@@ -190,81 +203,67 @@ const registerForm = document.getElementById('register-form');
 if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        limpiarMensaje();
 
         const email = document.getElementById('email').value.trim();
         const emailConfirm = document.getElementById('email-confirm').value.trim();
         const password = document.getElementById('password').value;
         const passwordConfirm = document.getElementById('password-confirm').value;
 
-        if (message) {
-            message.textContent = '';
-            message.style.color = '';
+        if (!email || !emailConfirm || !password || !passwordConfirm) {
+            mostrarMensaje(MENSAJES.validacion.camposRequeridos, 'error');
+            return;
         }
 
         if (email !== emailConfirm) {
-            if (message) {
-                message.textContent = 'Los correos no coinciden.';
-                message.style.color = 'red';
-            }
+            mostrarMensaje(MENSAJES.validacion.emailsNoCoinciden, 'error');
             return;
         }
 
         if (password !== passwordConfirm) {
-            if (message) {
-                message.textContent = 'Las contraseñas no coinciden.';
-                message.style.color = 'red';
-            }
+            mostrarMensaje(MENSAJES.validacion.passwordsNoCoinciden, 'error');
             return;
         }
 
-        if (password.length < 6) {
-            if (message) {
-                message.textContent = 'La contraseña debe tener al menos 6 caracteres.';
-                message.style.color = 'red';
-            }
-            return;
-        }
+        const submitBtn = registerForm.querySelector('button[type="submit"]');
+        setButtonLoading(submitBtn, true, 'Registrando...');
+
+        const secondaryApp = initializeApp(firebaseConfig, `SecondaryApp_${Date.now()}`);
+        const secondaryAuth = getAuth(secondaryApp);
+        const secondaryDb = getFirestore(secondaryApp);
 
         try {
-            // 1. Crear el usuario en Authentication
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
             const user = userCredential.user;
 
-            // 2. Crear automáticamente el registro en la colección "prospectos" de Firestore
-            await setDoc(doc(db, "prospectos", user.uid), {
+            await setDoc(doc(secondaryDb, "prospectos", user.uid), {
                 uid: user.uid,
                 email: user.email,
+                telefono: "",
+                fecha_creacion: serverTimestamp(),
+                username: "",
+                pnombre: "",
+                snombre: "",
+                appaterno: "",
+                apmaterno: "",
                 estado: "prospecto",
                 creadoEl: serverTimestamp()
             });
 
-            // 3. Enviar correo de verificación y cerrar sesión
             await sendEmailVerification(user);
-            await signOut(auth);
 
-            if (message) {
-                message.textContent = 'Registro exitoso. Se ha enviado un correo de verificación a tu email.';
-                message.style.color = '#1ec498';
-            }
-            registerForm.reset();
+            sessionStorage.setItem('flash_message', JSON.stringify({
+                texto: MENSAJES.auth.registroExitoso,
+                tipo: 'exito'
+            }));
+
+            window.location.href = '/ingreso';
         } catch (error) {
+            setButtonLoading(submitBtn, false);
             console.error('Error durante el registro:', error);
-
-            let friendlyMessage = 'No se pudo completar el registro.';
-            if (error.code === 'auth/email-already-in-use') {
-                friendlyMessage = 'Ese correo ya está registrado.';
-            } else if (error.code === 'auth/invalid-email') {
-                friendlyMessage = 'El correo no es válido.';
-            } else if (error.code === 'auth/weak-password') {
-                friendlyMessage = 'La contraseña debe tener al menos 6 caracteres.';
-            } else if (error.code === 'auth/operation-not-allowed') {
-                friendlyMessage = 'El método de correo/contraseña no está habilitado en Firebase Console.';
-            }
-
-            if (message) {
-                message.textContent = friendlyMessage;
-                message.style.color = 'red';
-            }
+            mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
+        } finally {
+            await deleteApp(secondaryApp);
         }
     });
 }

@@ -1,0 +1,24 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+    <title>Página no encontrada - SmartBids</title>
+{% endblock %}
+
+{% block loader %}{% endblock %}
+{% block header %}{% endblock %}
+
+{% block contenido %}
+<section class="value-prop">
+    <div class="section-header">
+        <span class="section-subtitle">Error 404</span>
+        <h1 class="section-title">Página no encontrada</h1>
+        <p class="section-desc">
+            La ruta ingresada no existe o fue movida temporalmente. Verifica la URL o regresa al inicio.
+        </p>
+    </div>
+    <a href="{% url 'home' %}" class="btn btn-primary btn-large">
+        <i class="fa-solid fa-house"></i> Volver al Inicio
+    </a>
+</section>
+{% endblock %}

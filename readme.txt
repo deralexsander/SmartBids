@@ -15,7 +15,7 @@ Pasos para correr el programa:
     pip install -r requirements.txt
 
 5. Inicia el servidor de Django desde la carpeta del proyecto:
-    python manage.py runserver
+    python manage.py runserver --insecure
 
 6. Abre el navegador en:
     http://127.0.0.1:8000
