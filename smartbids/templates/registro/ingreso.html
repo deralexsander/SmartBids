@@ -17,10 +17,10 @@
         <form id="login-form" novalidate>
             {% csrf_token %}
             <div class="form-inline" style="margin-bottom: 1rem;">
-                <input type="email" id="email" name="email" placeholder="Correo electrónico">
+                <input type="email" id="email" name="email" placeholder="Correo electrónico" required>
             </div>
             <div class="form-inline" style="margin-bottom: 1.5rem; position: relative;">
-                <input type="password" id="password" name="password" placeholder="Contraseña">
+                <input type="password" id="password" name="password" placeholder="Contraseña" required>
                 <button type="button" id="toggle-password" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.1rem;">
                     <i class="fa-solid fa-eye" id="toggle-password-icon"></i>
                 </button>
@@ -36,4 +36,27 @@
         </form>
     </div>
 </section>
+
+<div id="modal-2fa" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: #fff; padding: 2rem; border-radius: 12px; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-bottom: 0.5rem; color: #111;">Verificación de Seguridad</h3>
+        <p style="font-size: 0.9rem; color: #666; margin-bottom: 1.5rem;">Hemos enviado un código de 6 dígitos a tu correo electrónico.</p>
+        
+        <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 1.5rem;">
+            <input type="text" maxlength="1" class="otp-input" style="width: 45px; height: 50px; text-align: center; font-size: 1.3rem; border: 1.5px solid #ccc; border-radius: 8px; font-weight: bold;">
+            <input type="text" maxlength="1" class="otp-input" style="width: 45px; height: 50px; text-align: center; font-size: 1.3rem; border: 1.5px solid #ccc; border-radius: 8px; font-weight: bold;">
+            <input type="text" maxlength="1" class="otp-input" style="width: 45px; height: 50px; text-align: center; font-size: 1.3rem; border: 1.5px solid #ccc; border-radius: 8px; font-weight: bold;">
+            <input type="text" maxlength="1" class="otp-input" style="width: 45px; height: 50px; text-align: center; font-size: 1.3rem; border: 1.5px solid #ccc; border-radius: 8px; font-weight: bold;">
+            <input type="text" maxlength="1" class="otp-input" style="width: 45px; height: 50px; text-align: center; font-size: 1.3rem; border: 1.5px solid #ccc; border-radius: 8px; font-weight: bold;">
+            <input type="text" maxlength="1" class="otp-input" style="width: 45px; height: 50px; text-align: center; font-size: 1.3rem; border: 1.5px solid #ccc; border-radius: 8px; font-weight: bold;">
+        </div>
+
+        <p id="otp-message" style="font-size: 0.85rem; margin-bottom: 1rem; color: #e53e3e; min-height: 1.2rem;"></p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <button type="button" id="btn-verificar-otp" class="btn btn-primary btn-large" style="width: 100%;">Verificar Código</button>
+            <button type="button" id="btn-cancelar-otp" class="btn btn-outline" style="width: 100%;">Cancelar</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
