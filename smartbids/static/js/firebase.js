@@ -12,7 +12,8 @@ import {
     getFirestore, 
     doc, 
     getDoc,
-    setDoc, 
+    setDoc,
+    updateDoc,          
     addDoc, 
     deleteDoc,
     collection,
@@ -24,11 +25,15 @@ import {
     Timestamp 
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
+// firebase.js (Líneas 28 - 36 aprox.)
+
 import { 
     redirectIfAuthenticated, 
-    setupPageLoader, 
+    hidePageLoader,         
     setupPasswordToggles,
-    setButtonLoading 
+    setButtonLoading,
+    generateSessionId,  
+    SessionManager       
 } from './functions.js';
 
 import { 
@@ -57,9 +62,13 @@ const db = getFirestore(app);
 
 export { app, auth, db };
 
+/// ==========================================================================
 // 3. Inicialización de componentes UI
-setupPageLoader();
+// ==========================================================================
+// Ya NO ejecutamos setupPageLoader() automáticamente aquí
 setupPasswordToggles();
+
+let isSubmittingAuth = false;
 
 // Mostrar mensaje flash almacenado al redirigir entre páginas
 const mensajeFlash = sessionStorage.getItem('flash_message');
@@ -73,11 +82,9 @@ if (mensajeFlash) {
     sessionStorage.removeItem('flash_message');
 }
 
-if (document.getElementById('login-form') || document.getElementById('register-form')) {
-    redirectIfAuthenticated(auth, '/');
-}
-
-// 4. Control de Estado de Autenticación y Protección de Vistas
+// ==========================================================================
+// 4. Control de Estado de Autenticación, Seguridad y Cierre del Loader
+// ==========================================================================
 const loginButton = document.getElementById('btn-login');
 const profileButton = document.getElementById('btn-profile');
 
@@ -87,50 +94,97 @@ const updateNavButtons = (user) => {
 };
 
 onAuthStateChanged(auth, async (user) => {
-    updateNavButtons(user);
-
+    const isAuthPage = !!(document.getElementById('login-form') || document.getElementById('register-form'));
     const profileEmail = document.getElementById('profile-email');
     const profileStatus = document.getElementById('profile-status');
     const isProfilePage = !!(profileEmail || profileStatus);
     const isMensajeriaAdminPage = !!document.getElementById('form-mensajeria');
 
-    // Validación 1: Si no hay usuario autenticado
+    // 1. Si NO hay usuario autenticado
     if (!user) {
+        SessionManager.clearLocalToken();
+
+        // Si intenta entrar a páginas protegidas, redirigir (el loader cubre la transición)
         if (isProfilePage || isMensajeriaAdminPage) {
-            window.location.href = '/ingreso';
+            window.location.replace('/ingreso');
+            return;
         }
+
+        // Si es una página pública o de login/registro, aplicamos UI y mostramos el contenido
+        updateNavButtons(null);
+        hidePageLoader();
         return;
     }
 
-    // Si está autenticado, pintar datos en perfil
-    if (profileEmail) profileEmail.textContent = user.email || 'No disponible';
-    if (profileStatus) profileStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
+    // 2. Si hay usuario y está intentando ver login o registro
+    if (isAuthPage && !isSubmittingAuth) {
+        window.location.replace('/');
+        return;
+    }
 
-    // Validación 2: Si está en mensajería, verificar que tenga estado "admin"
-    if (isMensajeriaAdminPage) {
-        try {
-            const userDocSnap = await getDoc(doc(db, "prospectos", user.uid));
+    if (isSubmittingAuth) return;
 
-            if (!userDocSnap.exists() || userDocSnap.data().estado !== 'admin') {
+    // 3. Validar sesión única y roles en Firestore
+    const tokenLocal = SessionManager.getLocalToken();
+
+    try {
+        const userDocRef = doc(db, "prospectos", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            const tokenRemoto = userData.tokenID || userData.session_id;
+
+            // Validación de sesión simultánea
+            if (tokenRemoto && tokenLocal !== tokenRemoto) {
+                console.warn('[SmartBids] ⚠️ Sesión caducada.');
+                SessionManager.clearLocalToken();
+                await signOut(auth);
+
+                sessionStorage.setItem('flash_message', JSON.stringify({
+                    texto: 'Tu sesión ha caducado porque se inició sesión desde otro dispositivo.',
+                    tipo: 'error'
+                }));
+
+                window.location.replace('/ingreso');
+                return;
+            }
+
+            // Validación de permisos de Administrador
+            if (isMensajeriaAdminPage && userData.estado !== 'admin') {
                 sessionStorage.setItem('flash_message', JSON.stringify({
                     texto: 'Acceso denegado: Se requieren permisos de administrador.',
                     tipo: 'error'
                 }));
-                window.location.href = '/';
+                window.location.replace('/');
+                return;
             }
-        } catch (error) {
-            console.error('Error validando permisos de administrador:', error);
-            window.location.href = '/';
+        } else if (isMensajeriaAdminPage) {
+            // Si no existe documento y está en admin, bloquear acceso
+            window.location.replace('/');
+            return;
         }
+    } catch (error) {
+        console.error('[SmartBids] ❌ Error validando permisos:', error);
     }
-});
 
+    // Pintar datos en perfil si corresponde
+    if (profileEmail) profileEmail.textContent = user.email || 'No disponible';
+    if (profileStatus) profileStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
+
+    // 4. Todo validado correctamente: Aplicamos estado visual a los botones y cerramos el loader
+    updateNavButtons(user);
+    hidePageLoader();
+});
+// ==========================================================================
 // 5. Cierre de Sesión
+// ==========================================================================
 const logoutButton = document.getElementById('logout-button');
 if (logoutButton) {
     logoutButton.addEventListener('click', async () => {
         try {
             await signOut(auth);
+            SessionManager.clearLocalToken();
             window.location.href = '/';
         } catch (error) {
             console.error('Error al cerrar sesión:', error);
@@ -139,7 +193,9 @@ if (logoutButton) {
     });
 }
 
-// 6. Inicio de Sesión
+// ==========================================================================
+// 6. Inicio de Sesión Garantizado
+// ==========================================================================
 const loginForm = document.getElementById('login-form');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
@@ -155,30 +211,64 @@ if (loginForm) {
         }
 
         const submitBtn = loginForm.querySelector('button[type="submit"]');
-        setButtonLoading(submitBtn, true, 'Entrando...');
+        setButtonLoading(submitBtn, true, 'Verificando y guardando sesión...');
+        
+        // Bloquea verificaciones intermedias durante el inicio
+        isSubmittingAuth = true;
 
         try {
+            // 1. Autenticar credenciales
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
+            // 2. Verificar que el correo esté confirmado
             if (!user.emailVerified) {
                 await signOut(auth);
+                isSubmittingAuth = false;
                 setButtonLoading(submitBtn, false);
                 mostrarMensaje(MENSAJES.auth.emailNoVerificado, 'error');
                 return;
             }
 
-            mostrarMensaje(MENSAJES.auth.loginExitoso, 'exito');
-            window.location.replace('/');
+            // 3. Generar token único de la sesión
+            const tokenID = generateSessionId();
+
+            // 4. Guardar en almacenamiento local y mostrar en consola
+            SessionManager.setLocalToken(tokenID);
+            console.log(`[SmartBids] 🔑 Token generado: ${tokenID}`);
+
+            // 5. Guardar en Firestore y esperar confirmación obligatoria
+            const userRef = doc(db, "prospectos", user.uid);
+            await setDoc(userRef, {
+                tokenID: tokenID,
+                session_id: tokenID,
+                ultima_conexion: serverTimestamp()
+            }, { merge: true });
+
+            console.log(`[SmartBids] 💾 Token guardado con éxito en Firestore para UID: ${user.uid}`);
+
+            // 6. Mensaje temporal de confirmación
+            sessionStorage.setItem('flash_message', JSON.stringify({
+                texto: MENSAJES.auth.loginExitoso,
+                tipo: 'exito'
+            }));
+
+            // 7. Redirigir al inicio SOLO después de haber guardado todo
+            window.location.href = '/';
+
         } catch (error) {
+            isSubmittingAuth = false;
             setButtonLoading(submitBtn, false);
-            console.error('Error al iniciar sesión:', error);
+            console.error('[SmartBids] ❌ Error en inicio de sesión o guardado en Firestore:', error);
             mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
         }
     });
 }
-
+// ==========================================================================
 // 7. Recuperación de Contraseña
+// ==========================================================================
+
+
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener('click', async (e) => {
@@ -232,7 +322,9 @@ if (forgotPasswordLink) {
     });
 }
 
+// ==========================================================================
 // 8. Registro de Nuevo Usuario y Creación de Prospecto en Firestore
+// ==========================================================================
 const registerForm = document.getElementById('register-form');
 if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
@@ -280,6 +372,7 @@ if (registerForm) {
                 snombre: "",
                 appaterno: "",
                 apmaterno: "",
+                tokenID: "",
                 estado: "prospecto",
                 creadoEl: serverTimestamp()
             });
@@ -323,7 +416,11 @@ if (formMensajeria) {
         listaAlertasAdmin.innerHTML = '';
 
         if (snapshot.empty) {
-            listaAlertasAdmin.innerHTML = '<p style="color:#666; padding: 10px;">No hay alertas registradas.</p>';
+            listaAlertasAdmin.innerHTML = `
+                <div class="mockup-item" style="justify-content: center; padding: 2rem; color: var(--gray-text);">
+                    <p style="margin: 0; font-size: 0.95rem;">No hay alertas registradas actualmente.</p>
+                </div>
+            `;
             return;
         }
 
@@ -332,26 +429,55 @@ if (formMensajeria) {
             const id = docSnap.id;
 
             const esActivo = data.estado === 'activo';
-            const badgeColor = esActivo ? '#28a745' : '#6c757d';
             const estadoTexto = esActivo ? 'Activo' : 'Inactivo';
+            const tipoAlerta = data.tipoAlerta || 'alerta';
+
+            // Estilos de badge según el tipo de alerta definido en style.css
+            let colorTipo = 'var(--muted-teal)';
+            let bgTipo = 'rgba(92, 150, 136, 0.12)';
+            if (tipoAlerta === 'precaucion') {
+                colorTipo = '#e53e3e';
+                bgTipo = '#fff5f5';
+            } else if (tipoAlerta === 'alerta') {
+                colorTipo = '#d97706';
+                bgTipo = '#fffbeb';
+            } else if (tipoAlerta === 'exito') {
+                colorTipo = 'var(--accent-green)';
+                bgTipo = 'rgba(30, 196, 152, 0.15)';
+            }
 
             const item = document.createElement('div');
-            item.style.cssText = "background: #fff; border: 1px solid #e0e0e0; padding: 14px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
+            item.className = 'mockup-item';
+            item.style.cssText = 'display: flex; flex-direction: column; align-items: stretch; gap: 0.75rem; margin-bottom: 1rem; border-radius: 14px;';
 
             item.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h4 style="margin: 0; color: #11634e; font-size: 1.05rem;"><strong>${data.asunto || 'Sin Asunto'}</strong></h4>
-                    <span style="background: ${badgeColor}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--dark-green);">
+                            ${data.asunto || 'Sin Asunto'}
+                        </h4>
+                        <span class="dash-badge" style="background: ${bgTipo}; color: ${colorTipo}; text-transform: uppercase; font-size: 0.75rem;">
+                            ${tipoAlerta}
+                        </span>
+                    </div>
+                    <span class="mockup-status" style="${esActivo ? 'background: rgba(30, 196, 152, 0.15); color: var(--dark-green);' : 'background: #edf2f7; color: var(--gray-text);'}">
                         ${estadoTexto}
                     </span>
                 </div>
-                <p style="margin: 8px 0; color: #444; font-size: 0.95rem;">${data.cuerpo || ''}</p>
-                <div style="font-size: 0.85rem; color: #777; margin-bottom: 10px;">
-                    Tipo: <strong style="text-transform: capitalize;">${data.tipoAlerta || 'alerta'}</strong>
+
+                <div class="mockup-info" style="margin: 0;">
+                    <p style="color: var(--gray-text); font-size: 0.92rem; line-height: 1.5; margin: 0; word-break: break-word;">
+                        ${data.cuerpo || ''}
+                    </p>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button type="button" class="btn-edit btn" style="padding: 6px 14px; font-size: 0.85rem; background: #1ec498; color: #0b3831; font-weight: bold; cursor: pointer; border: none; border-radius: 6px;">Editar</button>
-                    <button type="button" class="btn-delete btn" style="padding: 6px 14px; font-size: 0.85rem; background: #dc3545; color: white; font-weight: bold; cursor: pointer; border: none; border-radius: 6px;">Eliminar</button>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-outline btn-edit" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">
+                        Editar
+                    </button>
+                    <button type="button" class="btn btn-delete" style="padding: 0.4rem 0.9rem; font-size: 0.85rem; background: #fff5f5; color: #e53e3e; border: 1.5px solid #feb2b2;">
+                        Eliminar
+                    </button>
                 </div>
             `;
 
@@ -363,24 +489,26 @@ if (formMensajeria) {
                 if (selectEstado) selectEstado.value = data.estado || 'activo';
                 if (selectTipo) selectTipo.value = data.tipoAlerta || 'alerta';
 
-                if (btnCancelar) btnCancelar.style.display = 'inline-block';
+                if (btnCancelar) btnCancelar.hidden = false;
                 formMensajeria.scrollIntoView({ behavior: 'smooth' });
             });
 
-            // Botón Eliminar con confirmación visual integrada
+            // Botón Eliminar con confirmación integrada
             const btnDelete = item.querySelector('.btn-delete');
             btnDelete.addEventListener('click', async (e) => {
                 e.preventDefault();
 
                 if (!btnDelete.dataset.confirming) {
                     btnDelete.dataset.confirming = "true";
-                    btnDelete.textContent = "¿Eliminar?";
-                    btnDelete.style.background = "#bd2130";
+                    btnDelete.textContent = "¿Confirmar?";
+                    btnDelete.style.background = "#e53e3e";
+                    btnDelete.style.color = "var(--white)";
 
                     setTimeout(() => {
                         btnDelete.dataset.confirming = "";
                         btnDelete.textContent = "Eliminar";
-                        btnDelete.style.background = "#dc3545";
+                        btnDelete.style.background = "#fff5f5";
+                        btnDelete.style.color = "#e53e3e";
                     }, 4000);
                     return;
                 }
@@ -395,6 +523,8 @@ if (formMensajeria) {
                     mostrarMensaje('No se pudo eliminar el mensaje.', 'error');
                     btnDelete.disabled = false;
                     btnDelete.textContent = "Eliminar";
+                    btnDelete.style.background = "#fff5f5";
+                    btnDelete.style.color = "#e53e3e";
                 }
             });
 
@@ -423,8 +553,8 @@ if (formMensajeria) {
         };
 
         if (statusFeedback) {
-            statusFeedback.style.color = '#333';
-            statusFeedback.textContent = ' Guardando...';
+            statusFeedback.style.display = 'inline-flex';
+            statusFeedback.textContent = 'Guardando...';
         }
 
         try {
@@ -438,19 +568,20 @@ if (formMensajeria) {
             formMensajeria.reset();
             inputMsgId.value = '';
 
-            if (btnCancelar) btnCancelar.style.display = 'none';
+            if (btnCancelar) btnCancelar.hidden = true;
 
             if (statusFeedback) {
-                statusFeedback.style.color = 'green';
-                statusFeedback.textContent = ' ¡Guardado con éxito!';
-                setTimeout(() => { statusFeedback.textContent = ''; }, 3000);
+                statusFeedback.textContent = '¡Guardado con éxito!';
+                setTimeout(() => { 
+                    statusFeedback.textContent = ''; 
+                    statusFeedback.style.display = 'none';
+                }, 3000);
             }
             mostrarMensaje('Mensaje guardado correctamente.', 'exito');
         } catch (error) {
             console.error('Error al guardar mensaje en Firestore:', error);
             if (statusFeedback) {
-                statusFeedback.style.color = 'red';
-                statusFeedback.textContent = ' Error al guardar.';
+                statusFeedback.textContent = 'Error al guardar.';
             }
             mostrarMensaje('Error al guardar el mensaje.', 'error');
         }
@@ -461,7 +592,7 @@ if (formMensajeria) {
         btnCancelar.addEventListener('click', () => {
             formMensajeria.reset();
             inputMsgId.value = '';
-            btnCancelar.style.display = 'none';
+            btnCancelar.hidden = true;
         });
     }
 }

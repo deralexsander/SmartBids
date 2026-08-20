@@ -5,16 +5,19 @@
 <title>SmartBids - Mi Perfil</title>
 {% endblock %}
 
+{% block btn_perfil %}
+{# Se sobreescribe vacío para no mostrar el botón en el header #}
+{% endblock %}
+
 {% block contenido %}
 <section class="value-prop">
     <div class="section-header">
 
         <div class="stat-grid">
-
-                <label>Correo electrónico</label>
-                <div id="profile-email">Cargando...</div>
-                <label>Estado de verificación</label>
-                <div id="profile-status">Cargando...</div>
+            <label>Correo electrónico</label>
+            <div id="profile-email">Cargando...</div>
+            <label>Estado de verificación</label>
+            <div id="profile-status">Cargando...</div>
         </div>
 
         <br>
@@ -24,6 +27,4 @@
         </button>
     </div>
 </section>
-
-
 {% endblock %}

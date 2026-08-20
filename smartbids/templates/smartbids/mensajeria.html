@@ -6,59 +6,103 @@
 {% endblock %}
 
 {% block contenido %}
-<section class="value-prop">
-    <div class="section-header">
-        <br>
-        <hr>
-        <h2>Administración de Mensajería y Alertas</h2>
+<section style="padding: 130px 5% 60px; min-height: 100vh; background-color: var(--light-bg);">
+    
+    <div style="margin-bottom: 2.5rem;">
+        <span class="hero-badge">Panel de Administración</span>
+        <h1 style="font-size: 2.4rem; color: var(--dark-green); font-weight: 800; letter-spacing: -0.5px; margin-top: 0.5rem;">
+            Administración de <span>Mensajería y Alertas</span>
+        </h1>
+        <p style="color: var(--gray-text); font-size: 1.05rem; margin-top: 0.5rem;">
+            Configura las alertas y avisos del sistema en tiempo real.
+        </p>
+    </div>
 
-        <form id="form-mensajeria" style="margin-top: 15px; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
-            <input type="hidden" id="msg-id" value="">
-
-            <div style="margin-bottom: 12px;">
-                <label for="msg-asunto"><strong>Asunto de la alerta:</strong></label><br>
-                <input type="text" id="msg-asunto" placeholder="Ej: Modo de Prueba" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
-            </div>
-
-            <div style="margin-bottom: 12px;">
-                <label for="msg-cuerpo"><strong>Mensaje / Detalle:</strong></label><br>
-                <textarea id="msg-cuerpo" rows="3" placeholder="Ingresa el contenido del aviso..." required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;"></textarea>
-            </div>
-
-            <div style="margin-bottom: 12px;">
-                <label for="msg-estado"><strong>Estado manual del mensaje:</strong></label><br>
-                <select id="msg-estado" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
-                    <option value="activo" selected>Activo (Habilitado)</option>
-                    <option value="inactivo">Inactivo (Deshabilitado)</option>
-                </select>
-            </div>
-
-            <div style="margin-bottom: 15px;">
-                <label for="msg-tipo"><strong>Tipo de alerta:</strong></label><br>
-                <select id="msg-tipo" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
-                    <option value="alerta">Alerta (Amarillo / Naranja)</option>
-                    <option value="precaucion">Precaución (Rojo)</option>
-                    <option value="exito">Éxito (Verde)</option>
-                </select>
-            </div>
-
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button type="submit" id="btn-guardar-mensaje" class="btn btn-primary">
-                    Guardar Alerta
-                </button>
-                <button type="button" id="btn-cancelar-edicion" class="btn" style="display: none; background: #6c757d; color: white;">
-                    Cancelar
-                </button>
-                <span id="mensaje-status-feedback" style="font-weight: bold;"></span>
-            </div>
-        </form>
-
-        <br>
-        <hr>
+    <div class="feature-row" style="margin-bottom: 0; align-items: start; gap: 3rem;">
         
-        <h3 style="margin-top: 20px;">Alertas Registradas</h3>
-        <div id="lista-alertas-admin" style="max-width: 600px; margin: 15px auto; text-align: left;">
-            <p>Cargando alertas...</p>
+        <div style="flex: 1;">
+            <div class="dashboard-header" style="margin-bottom: 1.5rem;">
+                <div class="dash-title" style="font-size: 1.25rem;">
+                    Crear / Editar Alerta
+                </div>
+            </div>
+
+            <form id="form-mensajeria">
+                <input type="hidden" id="msg-id" value="">
+
+                <div style="margin-bottom: 1.4rem;">
+                    <label for="msg-asunto" style="display: block; font-weight: 700; color: var(--dark-green); margin-bottom: 0.5rem; font-size: 0.92rem;">
+                        Asunto de la alerta:
+                    </label>
+                    <div class="form-inline" style="max-width: 100%; margin: 0;">
+                        <input type="text" id="msg-asunto" placeholder="Ej: Modo de Prueba" required style="width: 100%;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.4rem;">
+                    <label for="msg-cuerpo" style="display: block; font-weight: 700; color: var(--dark-green); margin-bottom: 0.5rem; font-size: 0.92rem;">
+                        Mensaje / Detalle:
+                    </label>
+                    <div class="form-inline" style="max-width: 100%; margin: 0;">
+                        <textarea id="msg-cuerpo" rows="4" placeholder="Ingresa el contenido del aviso..." required style="flex: 1; padding: 1rem 1.4rem; border-radius: 12px; border: 1.5px solid var(--soft-mint); font-size: 1rem; outline: none; font-family: inherit; resize: vertical; background: var(--white);"></textarea>
+                    </div>
+                </div>
+
+                <div class="stat-grid" style="margin-bottom: 1.8rem;">
+                    <div>
+                        <label for="msg-estado" style="display: block; font-weight: 700; color: var(--dark-green); margin-bottom: 0.5rem; font-size: 0.92rem;">
+                            Estado manual:
+                        </label>
+                        <div class="form-inline" style="max-width: 100%; margin: 0;">
+                            <select id="msg-estado" style="flex: 1; padding: 0.85rem 1rem; border-radius: 12px; border: 1.5px solid var(--soft-mint); font-size: 0.95rem; outline: none; background-color: var(--white); color: var(--gray-text); font-weight: 600;">
+                                <option value="activo" selected>Activo (Habilitado)</option>
+                                <option value="inactivo">Inactivo (Deshabilitado)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="msg-tipo" style="display: block; font-weight: 700; color: var(--dark-green); margin-bottom: 0.5rem; font-size: 0.92rem;">
+                            Tipo de alerta:
+                        </label>
+                        <div class="form-inline" style="max-width: 100%; margin: 0;">
+                            <select id="msg-tipo" style="flex: 1; padding: 0.85rem 1rem; border-radius: 12px; border: 1.5px solid var(--soft-mint); font-size: 0.95rem; outline: none; background-color: var(--white); color: var(--gray-text); font-weight: 600;">
+                                <option value="alerta">Alerta (Amarillo / Naranja)</option>
+                                <option value="precaucion">Precaución (Rojo)</option>
+                                <option value="exito">Éxito (Verde)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <button type="submit" id="btn-guardar-mensaje" class="btn btn-primary">
+                        Guardar Alerta
+                    </button>
+                    <button type="button" id="btn-cancelar-edicion" class="btn btn-outline">
+                        Cancelar
+                    </button>
+                    <span id="mensaje-status-feedback" class="dash-badge" style="display: none;"></span>
+                </div>
+            </form>
+        </div>
+
+        <div style="flex: 1; position: sticky; top: 120px;">
+            <div class="dashboard-header" style="margin-bottom: 1.5rem;">
+                <div class="dash-title" style="font-size: 1.25rem;">
+                    Alertas Registradas
+                </div>
+            </div>
+
+            <div id="lista-alertas-admin" class="graphic-mockup" style="background: transparent; border: none; padding: 0; box-shadow: none; max-height: 520px; overflow-y: auto; overflow-x: hidden; padding-right: 6px;">
+                <div class="mockup-item">
+                    <div class="mockup-info">
+                        <h6>Cargando alertas...</h6>
+                        <span>Obteniendo registros del sistema</span>
+                    </div>
+                    <span class="mockup-status">En espera</span>
+                </div>
+            </div>
         </div>
 
     </div>

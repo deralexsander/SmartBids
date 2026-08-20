@@ -1,4 +1,6 @@
+// ==========================================================================
 // 1. Redirección condicional según estado de autenticación
+// ==========================================================================
 export function redirectIfAuthenticated(auth, redirectPath = '/') {
     const currentPath = window.location.pathname;
 
@@ -13,21 +15,25 @@ export function redirectIfAuthenticated(auth, redirectPath = '/') {
     });
 }
 
-// 2. Control del Loader inicial de carga visual de página
-export function setupPageLoader() {
-    window.addEventListener('load', async () => {
-        const loader = document.getElementById('page-loader');
-        if (!loader) return;
+// ==========================================================================
+// 2. Control manual para ocultar el Loader de carga
+// ==========================================================================
+export async function hidePageLoader() {
+    const loader = document.getElementById('page-loader');
+    if (!loader) return;
 
-        loader.classList.add('page-loader-done');
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        document.documentElement.classList.remove('loading');
-        loader.style.opacity = '0';
-        setTimeout(() => loader.remove(), 400);
-    });
+    loader.classList.add('page-loader-done');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    document.documentElement.classList.remove('loading');
+    loader.style.opacity = '0';
+    setTimeout(() => {
+        if (loader.parentNode) loader.remove();
+    }, 400);
 }
 
-// 3. Control de Spinner de Carga Giratorio dentro de los Botones
+// ==========================================================================
+// 3. Control de Spinner de Carga dentro de Botones
+// ==========================================================================
 export function setButtonLoading(button, isLoading, loadingText = 'Cargando...') {
     if (!button) return;
 
@@ -47,7 +53,9 @@ export function setButtonLoading(button, isLoading, loadingText = 'Cargando...')
     }
 }
 
-// 4. Alternar visibilidad de contraseña
+// ==========================================================================
+// 4. Alternar visibilidad de contraseñas
+// ==========================================================================
 export function setupPasswordToggles() {
     const togglePasswordButton = document.getElementById('toggle-password');
     const togglePasswordIcon = document.getElementById('toggle-password-icon');
@@ -78,3 +86,22 @@ export function setupPasswordToggles() {
         });
     }
 }
+
+// ==========================================================================
+// 5. Generación y Manejo de Sesión / Token Local
+// ==========================================================================
+export function generateSessionId() {
+    return crypto.randomUUID();
+}
+
+export const SessionManager = {
+    setLocalToken(token) {
+        localStorage.setItem('smartbids_session_token', token);
+    },
+    getLocalToken() {
+        return localStorage.getItem('smartbids_session_token');
+    },
+    clearLocalToken() {
+        localStorage.removeItem('smartbids_session_token');
+    }
+};

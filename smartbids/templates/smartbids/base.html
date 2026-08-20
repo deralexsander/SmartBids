@@ -38,7 +38,11 @@
             {% block nav_links %}{% endblock %}
         </nav>
         <div class="nav-buttons">
-            <a id="btn-profile" href="{% url 'perfil' %}" class="btn btn-primary" style="display: none;">Perfil</a>
+            {% block btn_perfil %}
+            <a id="btn-profile" href="{% url 'perfil' %}" class="btn btn-primary" title="Mi Perfil" aria-label="Mi Perfil" style="display: none; width: 42px; height: 42px; padding: 0; border-radius: 12px;">
+                <i class="fa-solid fa-user"></i>
+            </a>
+            {% endblock %}
             {% block nav_buttons %}{% endblock %}
         </div>
     </header>
@@ -47,9 +51,7 @@
     <div id="global-message-container">
         <div id="global-message-badge" class="floating-badge">
             <i id="global-message-icon" class="fa-solid fa-circle-info"></i>
-            <div class="floating-badge-text">
-                <p id="global-message-text"></p>
-            </div>
+            <span id="global-message-text"></span>
         </div>
     </div>
 
