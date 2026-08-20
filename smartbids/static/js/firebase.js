@@ -194,7 +194,7 @@ if (logoutButton) {
 }
 
 // ==========================================================================
-// 6. Inicio de Sesión Garantizado
+// 6. Inicio de Sesión
 // ==========================================================================
 const loginForm = document.getElementById('login-form');
 if (loginForm) {
@@ -264,6 +264,9 @@ if (loginForm) {
         }
     });
 }
+
+
+
 // ==========================================================================
 // 7. Recuperación de Contraseña
 // ==========================================================================
@@ -362,6 +365,7 @@ if (registerForm) {
             const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
             const user = userCredential.user;
 
+            // 1. Guardar documento en Firestore
             await setDoc(doc(secondaryDb, "prospectos", user.uid), {
                 uid: user.uid,
                 email: user.email,
@@ -377,8 +381,21 @@ if (registerForm) {
                 creadoEl: serverTimestamp()
             });
 
+            // 2. Correo de verificación de Firebase Auth
             await sendEmailVerification(user);
 
+            // 3. Enviar correo de bienvenida mediante el servidor SMTP Django
+            try {
+                await fetch('/api/enviar-correo-bienvenida/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email })
+                });
+            } catch (mailErr) {
+                console.warn('[SmartBids] No se pudo enviar correo de bienvenida:', mailErr);
+            }
+
+            // 4. Mensaje temporal y redirección a ingreso
             sessionStorage.setItem('flash_message', JSON.stringify({
                 texto: MENSAJES.auth.registroExitoso,
                 tipo: 'exito'
