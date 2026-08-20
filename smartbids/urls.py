@@ -10,4 +10,5 @@ urlpatterns = [
     path('mensajeria/', views.mensajeria_view, name='mensajeria'),
     path('404/', views.handler404_view, name='handler404'),
     path('api/enviar-correo-bienvenida/', views.enviar_correo_bienvenida, name='enviar_correo_bienvenida'),
+    path('api/enviar-codigo-login/', views.enviar_codigo_login, name='enviar_codigo_login'),
 ]

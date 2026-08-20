@@ -1,3 +1,4 @@
+import secrets
 import json
 import logging
 from django.shortcuts import render
@@ -37,7 +38,7 @@ def handler404_view(request, exception=None):
 
 
 # ==============================================================================
-# APIS Y SERVICIOS
+# correo de Bienvenida
 # ==============================================================================
 
 
@@ -219,3 +220,109 @@ def enviar_correo_bienvenida(request):
             'status': 'error',
             'mensaje': f'Error en el servidor de correo: {str(e)}'
         }, status=500)
+
+
+
+
+
+# ==============================================================================
+# correo de envio de codigo
+# ==============================================================================
+
+@csrf_exempt
+def enviar_codigo_login(request):
+    """
+    API endpoint para generar y enviar un código OTP de 6 dígitos
+    al iniciar sesión.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        email_destinatario = data.get('email')
+
+        if not email_destinatario:
+            return JsonResponse({'status': 'error', 'mensaje': 'El correo electrónico es requerido.'}, status=400)
+
+        # Genera un código criptográficamente seguro de 6 dígitos (100000 a 999999)
+        codigo_seguridad = f"{secrets.randbelow(900000) + 100000}"
+
+        asunto = f'🔐 Tu código de acceso SmartBids: {codigo_seguridad}'
+        
+        mensaje_plano = (
+            f'¡Hola!\n\n'
+            f'Tu código de verificación para iniciar sesión en SmartBids es: {codigo_seguridad}\n\n'
+            f'Este código es personal e intransferible. Si no intentaste iniciar sesión, ignora este mensaje.'
+        )
+
+        html_mensaje = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f8f7; margin: 0; padding: 20px; color: #2d3748; }}
+                .card {{ max-width: 560px; background: #ffffff; margin: 0 auto; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2ece9; }}
+                .header {{ background: linear-gradient(135deg, #11634e 0%, #0b3831 100%); padding: 35px 30px; text-align: center; color: #ffffff; }}
+                .header h1 {{ margin: 0; font-size: 24px; font-weight: 800; }}
+                .header p {{ color: #b1d2ca; margin: 8px 0 0 0; font-size: 14px; }}
+                .body {{ padding: 30px; text-align: center; }}
+                .code-box {{ background: #eef7f4; border: 2px dashed #1ec498; border-radius: 12px; padding: 18px 10px; margin: 25px auto; max-width: 280px; }}
+                .code {{ font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #11634e; font-family: 'Consolas', monospace; }}
+                .alert-box {{ background: #fffaf0; border: 1px solid #feebc8; border-radius: 8px; padding: 12px 14px; margin: 20px 0; font-size: 13px; color: #c05621; text-align: left; }}
+                .footer {{ background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #a0aec0; border-top: 1px solid #e2e8f0; }}
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <div class="header">
+                    <h1>Código de Autenticación 🔐</h1>
+                    <p>Verificación de seguridad en dos pasos</p>
+                </div>
+                <div class="body">
+                    <p style="font-size: 15px; color: #4a5568; line-height: 1.5; margin: 0;">
+                        Has solicitado ingresar a tu cuenta de <strong>SmartBids</strong> ({email_destinatario}). Utiliza el siguiente código para completar tu acceso:
+                    </p>
+                    
+                    <div class="code-box">
+                        <span class="code">{codigo_seguridad}</span>
+                    </div>
+
+                    <div class="alert-box">
+                        ⚠️ <strong>Importante:</strong> Este código expira pronto y no debe compartirse con nadie. Si no intentaste iniciar sesión, te recomendamos cambiar tu contraseña inmediatamente.
+                    </div>
+
+                    <p style="font-size: 14px; color: #718096; margin-top: 25px; text-align: left;">
+                        Saludos cordiales,<br>
+                        <strong style="color: #11634e;">El equipo de Seguridad de SmartBids</strong>
+                    </p>
+                </div>
+                <div class="footer">
+                    © SmartBids — Transformando el acceso al mercado público
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        send_mail(
+            subject=asunto,
+            message=mensaje_plano,
+            html_message=html_mensaje,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email_destinatario],
+            fail_silently=False,
+        )
+
+        return JsonResponse({
+            'status': 'ok',
+            'codigo': codigo_seguridad,  # Retornado para validación o hashing
+            'mensaje': 'Código enviado exitosamente.'
+        }, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido.'}, status=400)
+    except Exception as e:
+        logger.error(f"[SmartBids] Error al enviar código de login: {str(e)}")
+        return JsonResponse({'status': 'error', 'mensaje': f'Error en el servidor: {str(e)}'}, status=500)

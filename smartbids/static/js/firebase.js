@@ -211,9 +211,8 @@ if (loginForm) {
         }
 
         const submitBtn = loginForm.querySelector('button[type="submit"]');
-        setButtonLoading(submitBtn, true, 'Verificando y guardando sesión...');
+        setButtonLoading(submitBtn, true, 'Verificando y enviando código...');
         
-        // Bloquea verificaciones intermedias durante el inicio
         isSubmittingAuth = true;
 
         try {
@@ -230,36 +229,47 @@ if (loginForm) {
                 return;
             }
 
-            // 3. Generar token único de la sesión
+            // 3. Solicitar envío de código de 6 dígitos a Django
+            const response = await fetch('/api/enviar-codigo-login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email })
+            });
+
+            const resData = await response.json();
+            if (!response.ok || resData.status !== 'ok') {
+                throw new Error(resData.mensaje || 'Error al enviar el código de verificación.');
+            }
+
+            // 4. Generar token de sesión
             const tokenID = generateSessionId();
-
-            // 4. Guardar en almacenamiento local y mostrar en consola
             SessionManager.setLocalToken(tokenID);
-            console.log(`[SmartBids] 🔑 Token generado: ${tokenID}`);
 
-            // 5. Guardar en Firestore y esperar confirmación obligatoria
+            // 5. Guardar sesión y código en Firestore
             const userRef = doc(db, "prospectos", user.uid);
             await setDoc(userRef, {
                 tokenID: tokenID,
                 session_id: tokenID,
+                login_code: resData.codigo,
+                code_created_at: serverTimestamp(),
                 ultima_conexion: serverTimestamp()
             }, { merge: true });
 
-            console.log(`[SmartBids] 💾 Token guardado con éxito en Firestore para UID: ${user.uid}`);
+            console.log(`[SmartBids] 💾 Código y sesión guardados para UID: ${user.uid}`);
 
             // 6. Mensaje temporal de confirmación
             sessionStorage.setItem('flash_message', JSON.stringify({
-                texto: MENSAJES.auth.loginExitoso,
+                texto: 'Se ha enviado un código de acceso a tu correo.',
                 tipo: 'exito'
             }));
 
-            // 7. Redirigir al inicio SOLO después de haber guardado todo
+            // 7. Redirigir a pantalla principal (o a tu vista de verificación de código)
             window.location.href = '/';
 
         } catch (error) {
             isSubmittingAuth = false;
             setButtonLoading(submitBtn, false);
-            console.error('[SmartBids] ❌ Error en inicio de sesión o guardado en Firestore:', error);
+            console.error('[SmartBids] ❌ Error en inicio de sesión:', error);
             mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
         }
     });
