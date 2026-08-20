@@ -11,8 +11,17 @@ import {
 import { 
     getFirestore, 
     doc, 
+    getDoc,
     setDoc, 
-    serverTimestamp 
+    addDoc, 
+    deleteDoc,
+    collection,
+    query,
+    where,
+    orderBy,
+    onSnapshot,
+    serverTimestamp,
+    Timestamp 
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 import { 
@@ -26,7 +35,8 @@ import {
     mostrarMensaje, 
     limpiarMensaje, 
     getFriendlyErrorMessage,
-    MENSAJES 
+    MENSAJES,
+    renderizarAlerta
 } from './mensaje.js';
 
 // 1. Configuración de Firebase
@@ -67,7 +77,7 @@ if (document.getElementById('login-form') || document.getElementById('register-f
     redirectIfAuthenticated(auth, '/');
 }
 
-// 4. Control de Estado de Autenticación
+// 4. Control de Estado de Autenticación y Protección de Vistas
 const loginButton = document.getElementById('btn-login');
 const profileButton = document.getElementById('btn-profile');
 
@@ -76,18 +86,42 @@ const updateNavButtons = (user) => {
     if (profileButton) profileButton.style.display = user ? 'inline-flex' : 'none';
 };
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     updateNavButtons(user);
 
     const profileEmail = document.getElementById('profile-email');
     const profileStatus = document.getElementById('profile-status');
     const isProfilePage = !!(profileEmail || profileStatus);
+    const isMensajeriaAdminPage = !!document.getElementById('form-mensajeria');
 
-    if (user) {
-        if (profileEmail) profileEmail.textContent = user.email || 'No disponible';
-        if (profileStatus) profileStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
-    } else if (isProfilePage) {
-        window.location.href = '/';
+    // Validación 1: Si no hay usuario autenticado
+    if (!user) {
+        if (isProfilePage || isMensajeriaAdminPage) {
+            window.location.href = '/ingreso';
+        }
+        return;
+    }
+
+    // Si está autenticado, pintar datos en perfil
+    if (profileEmail) profileEmail.textContent = user.email || 'No disponible';
+    if (profileStatus) profileStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
+
+    // Validación 2: Si está en mensajería, verificar que tenga estado "admin"
+    if (isMensajeriaAdminPage) {
+        try {
+            const userDocSnap = await getDoc(doc(db, "prospectos", user.uid));
+
+            if (!userDocSnap.exists() || userDocSnap.data().estado !== 'admin') {
+                sessionStorage.setItem('flash_message', JSON.stringify({
+                    texto: 'Acceso denegado: Se requieren permisos de administrador.',
+                    tipo: 'error'
+                }));
+                window.location.href = '/';
+            }
+        } catch (error) {
+            console.error('Error validando permisos de administrador:', error);
+            window.location.href = '/';
+        }
     }
 });
 
@@ -267,3 +301,179 @@ if (registerForm) {
         }
     });
 }
+
+// ==========================================================================
+// 9. GESTIÓN DE ALERTAS (PANEL ADMIN)
+// ==========================================================================
+const formMensajeria = document.getElementById('form-mensajeria');
+const listaAlertasAdmin = document.getElementById('lista-alertas-admin');
+const inputMsgId = document.getElementById('msg-id');
+const selectEstado = document.getElementById('msg-estado');
+const selectTipo = document.getElementById('msg-tipo');
+const btnCancelar = document.getElementById('btn-cancelar-edicion');
+const statusFeedback = document.getElementById('mensaje-status-feedback');
+
+if (formMensajeria) {
+    const colMensajeria = collection(db, "mensajeria");
+
+    // Escuchar alertas en tiempo real
+    const qAdmin = query(colMensajeria, orderBy("creadoEl", "desc"));
+    onSnapshot(qAdmin, (snapshot) => {
+        if (!listaAlertasAdmin) return;
+        listaAlertasAdmin.innerHTML = '';
+
+        if (snapshot.empty) {
+            listaAlertasAdmin.innerHTML = '<p style="color:#666; padding: 10px;">No hay alertas registradas.</p>';
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+
+            const esActivo = data.estado === 'activo';
+            const badgeColor = esActivo ? '#28a745' : '#6c757d';
+            const estadoTexto = esActivo ? 'Activo' : 'Inactivo';
+
+            const item = document.createElement('div');
+            item.style.cssText = "background: #fff; border: 1px solid #e0e0e0; padding: 14px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
+
+            item.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="margin: 0; color: #11634e; font-size: 1.05rem;"><strong>${data.asunto || 'Sin Asunto'}</strong></h4>
+                    <span style="background: ${badgeColor}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">
+                        ${estadoTexto}
+                    </span>
+                </div>
+                <p style="margin: 8px 0; color: #444; font-size: 0.95rem;">${data.cuerpo || ''}</p>
+                <div style="font-size: 0.85rem; color: #777; margin-bottom: 10px;">
+                    Tipo: <strong style="text-transform: capitalize;">${data.tipoAlerta || 'alerta'}</strong>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-edit btn" style="padding: 6px 14px; font-size: 0.85rem; background: #1ec498; color: #0b3831; font-weight: bold; cursor: pointer; border: none; border-radius: 6px;">Editar</button>
+                    <button type="button" class="btn-delete btn" style="padding: 6px 14px; font-size: 0.85rem; background: #dc3545; color: white; font-weight: bold; cursor: pointer; border: none; border-radius: 6px;">Eliminar</button>
+                </div>
+            `;
+
+            // Botón Editar
+            item.querySelector('.btn-edit').addEventListener('click', () => {
+                inputMsgId.value = id;
+                document.getElementById('msg-asunto').value = data.asunto || '';
+                document.getElementById('msg-cuerpo').value = data.cuerpo || '';
+                if (selectEstado) selectEstado.value = data.estado || 'activo';
+                if (selectTipo) selectTipo.value = data.tipoAlerta || 'alerta';
+
+                if (btnCancelar) btnCancelar.style.display = 'inline-block';
+                formMensajeria.scrollIntoView({ behavior: 'smooth' });
+            });
+
+            // Botón Eliminar con confirmación visual integrada
+            const btnDelete = item.querySelector('.btn-delete');
+            btnDelete.addEventListener('click', async (e) => {
+                e.preventDefault();
+
+                if (!btnDelete.dataset.confirming) {
+                    btnDelete.dataset.confirming = "true";
+                    btnDelete.textContent = "¿Eliminar?";
+                    btnDelete.style.background = "#bd2130";
+
+                    setTimeout(() => {
+                        btnDelete.dataset.confirming = "";
+                        btnDelete.textContent = "Eliminar";
+                        btnDelete.style.background = "#dc3545";
+                    }, 4000);
+                    return;
+                }
+
+                try {
+                    btnDelete.disabled = true;
+                    btnDelete.textContent = "Borrando...";
+                    await deleteDoc(doc(db, "mensajeria", id));
+                    mostrarMensaje('Alerta eliminada correctamente.', 'exito');
+                } catch (error) {
+                    console.error('Error al eliminar mensaje en Firestore:', error);
+                    mostrarMensaje('No se pudo eliminar el mensaje.', 'error');
+                    btnDelete.disabled = false;
+                    btnDelete.textContent = "Eliminar";
+                }
+            });
+
+            listaAlertasAdmin.appendChild(item);
+        });
+    }, (error) => {
+        console.error('Error al escuchar mensajes en panel admin:', error);
+    });
+
+    // Guardar Alerta (Crear o Modificar)
+    formMensajeria.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const idActual = inputMsgId.value;
+        const asunto = document.getElementById('msg-asunto').value.trim();
+        const cuerpo = document.getElementById('msg-cuerpo').value.trim();
+        const estado = selectEstado ? selectEstado.value : 'activo';
+        const tipoAlerta = selectTipo ? selectTipo.value : 'alerta';
+
+        const docData = {
+            asunto: asunto,
+            cuerpo: cuerpo,
+            estado: estado,
+            tipoAlerta: tipoAlerta,
+            actualizadoEl: serverTimestamp()
+        };
+
+        if (statusFeedback) {
+            statusFeedback.style.color = '#333';
+            statusFeedback.textContent = ' Guardando...';
+        }
+
+        try {
+            if (idActual) {
+                await setDoc(doc(db, "mensajeria", idActual), docData, { merge: true });
+            } else {
+                docData.creadoEl = serverTimestamp();
+                await addDoc(colMensajeria, docData);
+            }
+
+            formMensajeria.reset();
+            inputMsgId.value = '';
+
+            if (btnCancelar) btnCancelar.style.display = 'none';
+
+            if (statusFeedback) {
+                statusFeedback.style.color = 'green';
+                statusFeedback.textContent = ' ¡Guardado con éxito!';
+                setTimeout(() => { statusFeedback.textContent = ''; }, 3000);
+            }
+            mostrarMensaje('Mensaje guardado correctamente.', 'exito');
+        } catch (error) {
+            console.error('Error al guardar mensaje en Firestore:', error);
+            if (statusFeedback) {
+                statusFeedback.style.color = 'red';
+                statusFeedback.textContent = ' Error al guardar.';
+            }
+            mostrarMensaje('Error al guardar el mensaje.', 'error');
+        }
+    });
+
+    // Botón Cancelar
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', () => {
+            formMensajeria.reset();
+            inputMsgId.value = '';
+            btnCancelar.style.display = 'none';
+        });
+    }
+}
+
+// ==========================================================================
+// 10. ESCUCHA Y DESPLIEGUE PÚBLICO DE ALERTAS
+// ==========================================================================
+const colMensajes = collection(db, "mensajeria");
+const qMensajesActivos = query(colMensajes, where("estado", "==", "activo"));
+
+onSnapshot(qMensajesActivos, (snapshot) => {
+    snapshot.forEach((docSnap) => {
+        renderizarAlerta(docSnap.id, docSnap.data());
+    });
+});

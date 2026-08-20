@@ -141,3 +141,141 @@ export function limpiarMensaje() {
     container.style.transform = 'translate(-50%, -25px)';
     container.style.visibility = 'hidden';
 }
+
+// ==========================================================================
+// 4. CREACIÓN Y CONTROL DE ALERTAS DINÁMICAS (PILA APILADA CON COLA)
+// ==========================================================================
+const colaAlertas = [];
+let timerAlertaFrontal = null;
+
+export function renderizarAlerta(id, data) {
+    const contenedor = document.getElementById('dynamic-alerts-container');
+    if (!contenedor) return;
+
+    const STORAGE_KEY = `smartbids_hide_alert_${id}`;
+
+    // Si el usuario marcó no volver a mostrar, omitir
+    if (localStorage.getItem(STORAGE_KEY) === 'true') {
+        return;
+    }
+
+    // Evitar duplicados si ya está en la cola o en el DOM
+    if (colaAlertas.some(item => item.id === id) || document.getElementById(`alert-box-${id}`)) {
+        return;
+    }
+
+    // Crear el elemento de alerta
+    const alertBox = document.createElement('div');
+    alertBox.id = `alert-box-${id}`;
+    
+    const tipo = data.tipoAlerta || 'alerta';
+    alertBox.className = `test-alert-container dynamic-alert tipo-${tipo}`;
+
+    const icono = data.tipoAlerta === 'error' ? 'fa-circle-xmark' : 
+                  data.tipoAlerta === 'exito' ? 'fa-circle-check' : 'fa-triangle-exclamation';
+
+    alertBox.innerHTML = `
+        <div class="test-alert-content">
+            <i class="fa-solid ${icono} test-alert-icon"></i>
+            <div class="test-alert-text">
+                <h6>${data.asunto || 'Aviso'}</h6>
+                <p>${data.cuerpo || ''}</p>
+                <label class="test-alert-checkbox-label">
+                    <input type="checkbox" class="check-dont-show">
+                    <span>No volver a mostrar este mensaje</span>
+                </label>
+            </div>
+            <button type="button" class="test-alert-close" aria-label="Cerrar aviso">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="test-alert-progress-bar"></div>
+    `;
+
+    const closeBtn = alertBox.querySelector('.test-alert-close');
+    const dontShowCheck = alertBox.querySelector('.check-dont-show');
+
+    const cerrarEstaAlerta = () => {
+        if (dontShowCheck && dontShowCheck.checked) {
+            localStorage.setItem(STORAGE_KEY, 'true');
+        }
+        removerAlertaDeLaPila(id);
+    };
+
+    if (dontShowCheck) {
+        dontShowCheck.addEventListener('change', () => {
+            if (dontShowCheck.checked) {
+                localStorage.setItem(STORAGE_KEY, 'true');
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', cerrarEstaAlerta);
+    }
+
+    contenedor.appendChild(alertBox);
+
+    // Agregar a la lista de seguimiento
+    colaAlertas.push({ id, elemento: alertBox, cerrarCallback: cerrarEstaAlerta });
+
+    // Pequeño retardo de 50ms para permitir que el CSS anime la entrada con suavidad
+    setTimeout(() => {
+        actualizarPilaAlertas();
+    }, 50);
+}
+
+function removerAlertaDeLaPila(id) {
+    const index = colaAlertas.findIndex(item => item.id === id);
+    if (index === -1) return;
+
+    if (index === 0 && timerAlertaFrontal) {
+        clearTimeout(timerAlertaFrontal);
+        timerAlertaFrontal = null;
+    }
+
+    const { elemento } = colaAlertas[index];
+    colaAlertas.splice(index, 1);
+
+    // Animación suave de salida hacia arriba
+    elemento.classList.remove('activa', 'pila-pos-0', 'pila-pos-1', 'pila-pos-2');
+    elemento.classList.add('alerta-saliendo');
+
+    setTimeout(() => {
+        elemento.remove();
+        actualizarPilaAlertas();
+    }, 400);
+}
+
+function actualizarPilaAlertas() {
+    if (timerAlertaFrontal) {
+        clearTimeout(timerAlertaFrontal);
+        timerAlertaFrontal = null;
+    }
+
+    colaAlertas.forEach((item, index) => {
+        const el = item.elemento;
+
+        // Limpiar clases previas de posición y estado activo
+        el.classList.remove('pila-pos-0', 'pila-pos-1', 'pila-pos-2', 'pila-oculta', 'activa');
+
+        if (index === 0) {
+            // Tarjeta principal al frente
+            el.classList.add('pila-pos-0', 'activa');
+            timerAlertaFrontal = setTimeout(() => {
+                item.cerrarCallback();
+            }, 8000);
+        } else if (index === 1) {
+            // Segunda tarjeta
+            el.classList.add('pila-pos-1');
+        } else if (index === 2) {
+            // Tercera tarjeta
+            el.classList.add('pila-pos-2');
+        } else {
+            // En cola oculta
+            el.classList.add('pila-oculta');
+        }
+    });
+}

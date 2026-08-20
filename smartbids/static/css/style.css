@@ -922,21 +922,224 @@
 }
 
 
+/* ==========================================================================
+   SISTEMA DE CONTENEDOR Y ALERTAS DINÁMICAS (PILA APILADA)
+   ========================================================================== */
 
+.alerts-wrapper,
+#dynamic-alerts-container {
+    position: fixed;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 440px;
+    height: 120px; /* Altura base para permitir el desfase visual de la pila */
+    z-index: 4000;
+    pointer-events: none;
+}
 
+/* Tarjeta individual en pila */
+.test-alert-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                opacity 0.4s ease, 
+                box-shadow 0.4s ease;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+}
 
+/* Posición 0: Frente (Principal) */
+.test-alert-container.pila-pos-0 {
+    opacity: 1;
+    z-index: 30;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.14);
+}
 
+/* Posición 1: Inmediatamente detrás (asomando hacia abajo) */
+.test-alert-container.pila-pos-1 {
+    opacity: 0.9;
+    z-index: 20;
+    transform: translateY(14px) scale(0.96);
+    filter: brightness(0.97);
+    pointer-events: none; /* Bloqueada hasta llegar al frente */
+}
 
+/* Posición 2: Tercera en cola */
+.test-alert-container.pila-pos-2 {
+    opacity: 0.75;
+    z-index: 10;
+    transform: translateY(26px) scale(0.92);
+    filter: brightness(0.94);
+    pointer-events: none;
+}
 
+/* Ocultas más allá del top 3 */
+.test-alert-container.pila-oculta {
+    opacity: 0;
+    z-index: 1;
+    transform: translateY(35px) scale(0.88);
+    pointer-events: none;
+}
 
+/* Animación de salida al descartar */
+.test-alert-container.alerta-saliendo {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
 
+/* Contenido interno */
+.test-alert-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 1rem 1.2rem;
+}
 
+.test-alert-icon {
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
 
+.test-alert-text {
+    flex: 1;
+}
 
+.test-alert-text h6 {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+}
 
+.test-alert-text p {
+    font-size: 0.84rem;
+    line-height: 1.4;
+    margin: 0 0 8px 0;
+    font-weight: 500;
+}
 
+/* Checkbox 'No volver a mostrar' */
+.test-alert-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 600;
+    user-select: none;
+}
 
+.test-alert-checkbox-label input[type="checkbox"] {
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+}
 
+/* Botón cerrar (X) */
+.test-alert-close {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.8;
+}
+
+.test-alert-close:hover {
+    transform: scale(1.15);
+    opacity: 1;
+}
+
+/* Barra de progreso regresiva */
+.test-alert-progress-bar {
+    width: 100%;
+    height: 4px;
+}
+
+.test-alert-container.activa .test-alert-progress-bar {
+    animation: alertCountdown 8s linear forwards;
+}
+
+@keyframes alertCountdown {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+/* ==========================================================================
+   TEMAS / COLORES SEGÚN EL TIPO DE ALERTA
+   ========================================================================== */
+
+/* 1. Alerta / Advertencia (Por Defecto) */
+.test-alert-container,
+.test-alert-container.tipo-alerta {
+    background: #fffdf5;
+    border: 1.5px solid #fbd38d;
+}
+.test-alert-container .test-alert-icon,
+.test-alert-container.tipo-alerta .test-alert-icon { color: #dd6b20; }
+.test-alert-container .test-alert-text h6,
+.test-alert-container.tipo-alerta .test-alert-text h6 { color: #7b341e; }
+.test-alert-container .test-alert-text p,
+.test-alert-container.tipo-alerta .test-alert-text p { color: #9c4221; }
+.test-alert-container .test-alert-checkbox-label,
+.test-alert-container.tipo-alerta .test-alert-checkbox-label { color: #7b341e; }
+.test-alert-container .test-alert-checkbox-label input,
+.test-alert-container.tipo-alerta .test-alert-checkbox-label input { accent-color: #dd6b20; }
+.test-alert-container .test-alert-close,
+.test-alert-container.tipo-alerta .test-alert-close { color: #dd6b20; }
+.test-alert-container .test-alert-progress-bar,
+.test-alert-container.tipo-alerta .test-alert-progress-bar { background-color: #dd6b20; }
+
+/* 2. Error / Peligro */
+.test-alert-container.tipo-error {
+    background: #fff5f5;
+    border: 1.5px solid #feb2b2;
+}
+.test-alert-container.tipo-error .test-alert-icon { color: #e53e3e; }
+.test-alert-container.tipo-error .test-alert-text h6 { color: #9b2c2c; }
+.test-alert-container.tipo-error .test-alert-text p { color: #c53030; }
+.test-alert-container.tipo-error .test-alert-checkbox-label { color: #9b2c2c; }
+.test-alert-container.tipo-error .test-alert-checkbox-label input { accent-color: #e53e3e; }
+.test-alert-container.tipo-error .test-alert-close { color: #e53e3e; }
+.test-alert-container.tipo-error .test-alert-progress-bar { background-color: #e53e3e; }
+
+/* 3. Éxito / Info */
+.test-alert-container.tipo-exito {
+    background: #f0fff4;
+    border: 1.5px solid #9ae6b4;
+}
+.test-alert-container.tipo-exito .test-alert-icon { color: #1ec498; }
+.test-alert-container.tipo-exito .test-alert-text h6 { color: #22543d; }
+.test-alert-container.tipo-exito .test-alert-text p { color: #276749; }
+.test-alert-container.tipo-exito .test-alert-checkbox-label { color: #22543d; }
+.test-alert-container.tipo-exito .test-alert-checkbox-label input { accent-color: #1ec498; }
+.test-alert-container.tipo-exito .test-alert-close { color: #1ec498; }
+.test-alert-container.tipo-exito .test-alert-progress-bar { background-color: #1ec498; }
+
+/* Adaptación para pantallas móviles */
+@media (max-width: 640px) {
+    .alerts-wrapper,
+    #dynamic-alerts-container {
+        top: 75px;
+        width: 92%;
+        max-width: 360px;
+    }
+}
 
 
 
