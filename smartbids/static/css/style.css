@@ -1144,5 +1144,186 @@
 
 
 
+    /* Estilos complementarios para el Layout Fullscreen y Tabs del Perfil */
+    .profile-container {
+        width: 100%;
+        min-height: calc(100vh - 80px);
+        padding: 120px 4% 40px;
+        background-color: var(--light-bg);
+    }
 
+    .profile-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 2rem;
+        align-items: start;
+        width: 100%;
+    }
+
+    .profile-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .profile-avatar-circle {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--dark-green), var(--accent-green));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2.2rem;
+        font-weight: 800;
+        box-shadow: 0 8px 20px rgba(17, 99, 78, 0.2);
+    }
+
+    .status-indicator {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 18px;
+        height: 18px;
+        background-color: var(--accent-green);
+        border: 3px solid var(--white);
+        border-radius: 50%;
+    }
+
+    .profile-menu {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1.2rem;
+        text-align: left;
+    }
+
+    .profile-menu-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0.85rem 1.1rem;
+        border-radius: 12px;
+        color: var(--dark-green);
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        width: 100%;
+        transition: all 0.25s ease;
+    }
+
+    .profile-menu-btn:hover,
+    .profile-menu-btn.active {
+        background-color: var(--accent-green);
+        color: var(--white);
+        box-shadow: 0 4px 12px rgba(30, 196, 152, 0.25);
+    }
+
+    .profile-menu-btn i {
+        font-size: 1.1rem;
+        width: 20px;
+        text-align: center;
+    }
+
+    .profile-main-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.8rem;
+    }
+
+    .tab-content-panel {
+        display: none;
+    }
+
+    .tab-content-panel.active {
+        display: block;
+    }
+
+    .profile-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem;
+        margin-top: 1.2rem;
+        text-align: left;
+    }
+
+    .grid-full {
+        grid-column: span 2;
+    }
+
+    .form-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .form-item label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--dark-green);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.85rem 1.2rem;
+        border-radius: 12px;
+        border: 1.5px solid var(--soft-mint);
+        font-size: 0.95rem;
+        background: var(--white);
+        color: var(--gray-text);
+        font-weight: 600;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+        border-color: var(--accent-green);
+        box-shadow: 0 0 0 3px rgba(30, 196, 152, 0.15);
+        color: var(--dark-green);
+    }
+
+    .form-input:read-only {
+        background-color: var(--light-bg);
+        cursor: not-allowed;
+        color: var(--muted-teal);
+    }
+
+    .token-display-box {
+        background-color: var(--dark-bg);
+        color: var(--soft-mint);
+        padding: 0.85rem 1.2rem;
+        border-radius: 10px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        word-break: break-all;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    @media (max-width: 1024px) {
+        .profile-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .profile-form-grid {
+            grid-template-columns: 1fr;
+        }
+        .grid-full {
+            grid-column: span 1;
+        }
+        .profile-container {
+            padding: 100px 3% 30px;
+        }
+    }
         

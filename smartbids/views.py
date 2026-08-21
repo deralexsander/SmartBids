@@ -326,3 +326,93 @@ def enviar_codigo_login(request):
     except Exception as e:
         logger.error(f"[SmartBids] Error al enviar código de login: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': f'Error en el servidor: {str(e)}'}, status=500)
+
+# ==============================================================================
+# Notificación de Cambio de Contraseña
+# ==============================================================================
+
+@csrf_exempt
+def enviar_correo_cambio_password(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        email_destinatario = data.get('email')
+
+        if not email_destinatario:
+            return JsonResponse({'status': 'error', 'mensaje': 'El correo es requerido.'}, status=400)
+
+        asunto = '🔒 Tu contraseña en SmartBids ha sido modificada'
+        
+        mensaje_plano = (
+            f"Hola,\n\n"
+            f"Te informamos que la contraseña de tu cuenta ({email_destinatario}) ha sido actualizada exitosamente.\n\n"
+            f"Por razones de seguridad, tu sesión ha sido cerrada en todos los navegadores. "
+            f"Si no realizaste este cambio, por favor contáctanos de inmediato para asegurar tu cuenta.\n\n"
+            f"Saludos cordiales,\n"
+            f"El equipo de Seguridad de SmartBids"
+        )
+
+        html_mensaje = f"""
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; }}
+                .email-container {{ max-width: 580px; margin: 30px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }}
+                .header {{ background: linear-gradient(135deg, #11634e 0%, #0b3831 100%); padding: 30px 20px; text-align: center; color: #ffffff; }}
+                .header h1 {{ margin: 0; font-size: 22px; letter-spacing: 0.5px; }}
+                .content {{ padding: 30px 30px; color: #2d3748; line-height: 1.6; }}
+                .alert-box {{ background-color: #f0fdf4; border-left: 4px solid #1ec498; padding: 14px 18px; margin: 20px 0; border-radius: 4px; font-size: 14px; color: #166534; }}
+                .warning-box {{ background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 18px; margin: 20px 0; border-radius: 4px; font-size: 13px; color: #991b1b; }}
+                .footer {{ background-color: #f8fafc; padding: 15px; text-align: center; font-size: 12px; color: #a0aec0; border-top: 1px solid #edf2f7; }}
+            </style>
+        </head>
+        <body>
+            <div class="email-container">
+                <div class="header">
+                    <h1>Actualización de Seguridad</h1>
+                </div>
+                <div class="content">
+                    <p style="font-size: 16px; margin-top: 0;">Hola,</p>
+                    <p>Te confirmamos que la contraseña asociada a tu cuenta (<strong>{email_destinatario}</strong>) fue actualizada correctamente.</p>
+                    
+                    <div class="alert-box">
+                        <strong>Sesión cerrada:</strong> Como medida preventiva, se ha cerrado la sesión actual para que inicies con tus nuevas credenciales.
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>¿No fuiste tú?</strong> Si no realizaste esta modificación, ponte en contacto con nuestro equipo de soporte inmediatamente.
+                    </div>
+
+                    <p style="font-size: 14px; color: #718096; margin-top: 25px;">
+                        Saludos cordiales,<br>
+                        <strong style="color: #11634e;">El equipo de SmartBids</strong>
+                    </p>
+                </div>
+                <div class="footer">
+                    © SmartBids — Transformando el acceso al mercado público
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        send_mail(
+            subject=asunto,
+            message=mensaje_plano,
+            html_message=html_mensaje,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email_destinatario],
+            fail_silently=False,
+        )
+
+        return JsonResponse({'status': 'ok', 'mensaje': 'Correo de notificación enviado.'}, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido.'}, status=400)
+    except Exception as e:
+        logger.error(f"[SmartBids] Error al enviar notificación de cambio de contraseña: {str(e)}")
+        return JsonResponse({'status': 'error', 'mensaje': f'Error en el servidor: {str(e)}'}, status=500)

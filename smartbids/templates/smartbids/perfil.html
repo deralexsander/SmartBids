@@ -10,21 +10,207 @@
 {% endblock %}
 
 {% block contenido %}
-<section class="value-prop">
-    <div class="section-header">
+<div class="profile-container">
+    <div class="profile-layout">
 
-        <div class="stat-grid">
-            <label>Correo electrónico</label>
-            <div id="profile-email">Cargando...</div>
-            <label>Estado de verificación</label>
-            <div id="profile-status">Cargando...</div>
-        </div>
+        <aside class="profile-sidebar">
+            <div class="dashboard-card" style="text-align: center;">
+                <div class="profile-avatar-circle">
+                    <span id="profile-initials">--</span>
+                    <div class="status-indicator" title="Usuario activo"></div>
+                </div>
+                <h3 id="profile-fullname-header" style="color: var(--dark-green); font-size: 1.35rem; font-weight: 800; margin-bottom: 2px;">
+                    Cargando...
+                </h3>
+                <p id="profile-username-header" style="color: var(--muted-teal); font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem;">
+                    @usuario
+                </p>
 
-        <br>
+                <div class="dash-badge" style="display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase;">
+                    <i class="fa-solid fa-shield-halved"></i> Estado: <span id="profile-role-badge">--</span>
+                </div>
 
-        <button id="logout-button" type="button" class="btn btn-primary btn-large">
-            <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
-        </button>
+                <ul class="profile-menu">
+                    <li>
+                        <button type="button" class="profile-menu-btn active" onclick="cambiarPestana(event, 'tab-info')">
+                            <i class="fa-solid fa-user-pen"></i> Datos Personales
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-seguridad')">
+                            <i class="fa-solid fa-lock"></i> Contraseña y Seguridad
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-sesiones')">
+                            <i class="fa-solid fa-sliders"></i> Gestión y Control de Cuenta
+                        </button>
+                    </li>
+                </ul>
+
+                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);">
+
+                <button id="logout-button" type="button" class="btn btn-outline" style="width: 100%;">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
+                </button>
+            </div>
+        </aside>
+
+        <main class="profile-main-content">
+
+            <div class="prediction-box">
+                <div class="pred-text">
+                    <h5>Panel de Administración de Perfil</h5>
+                    <p>Gestiona y actualiza los parámetros de tu cuenta, seguridad operativa e identificadores únicos.</p>
+                </div>
+                <div class="pred-score">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+
+            <!-- Pestaña 1: Datos Personales -->
+            <div id="tab-info" class="dashboard-card tab-content-panel active">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-id-card" style="color: var(--accent-green);"></i>
+                        Información Personal
+                    </div>
+                    <span class="dash-badge">UID: <span id="profile-uid-header">--</span></span>
+                </div>
+
+                <form id="form-perfil-datos">
+                    <div class="profile-form-grid">
+                        <div class="form-item">
+                            <label for="profile-pnombre">Primer Nombre (pnombre)</label>
+                            <input type="text" class="form-input" id="profile-pnombre" name="pnombre" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="profile-snombre">Segundo Nombre (snombre)</label>
+                            <input type="text" class="form-input" id="profile-snombre" name="snombre">
+                        </div>
+                        <div class="form-item">
+                            <label for="profile-appaterno">Apellido Paterno (appaterno)</label>
+                            <input type="text" class="form-input" id="profile-appaterno" name="appaterno" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="profile-apmaterno">Apellido Materno (apmaterno)</label>
+                            <input type="text" class="form-input" id="profile-apmaterno" name="apmaterno">
+                        </div>
+                        <div class="form-item">
+                            <label for="profile-username">Nombre de Usuario (username)</label>
+                            <input type="text" class="form-input" id="profile-username" name="username" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="profile-telefono">Teléfono de Contacto</label>
+                            <input type="tel" class="form-input" id="profile-telefono" name="telefono">
+                        </div>
+                        <div class="form-item grid-full">
+                            <label for="profile-email">Correo Electrónico (email)</label>
+                            <input type="email" class="form-input" id="profile-email" name="email" readonly>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                        <button type="reset" class="btn btn-outline">Restablecer</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Pestaña 2: Contraseña y Seguridad -->
+            <div id="tab-seguridad" class="dashboard-card tab-content-panel">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-shield-halved" style="color: var(--accent-green);"></i>
+                        Cambiar Contraseña
+                    </div>
+                </div>
+
+                <form id="form-perfil-password">
+                    <div class="profile-form-grid">
+                        <div class="form-item grid-full">
+                            <label for="profile-current-pass">Contraseña Actual</label>
+                            <input type="password" id="profile-current-pass" name="current_pass" class="form-input" placeholder="Ingresa tu contraseña actual" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="profile-new-pass">Nueva Contraseña</label>
+                            <input type="password" id="profile-new-pass" name="new_pass" class="form-input" placeholder="Nueva contraseña" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="profile-confirm-pass">Confirmar Nueva Contraseña</label>
+                            <input type="password" id="profile-confirm-pass" name="confirm_pass" class="form-input" placeholder="Repite la nueva contraseña" required>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-key"></i> Actualizar Clave
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Pestaña 3: Gestión y Control de Cuenta -->
+            <div id="tab-sesiones" class="dashboard-card tab-content-panel">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-sliders" style="color: var(--accent-green);"></i>
+                        Parámetros y Estado del Sistema
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 1.2rem; text-align: left;">
+                    <div class="stat-grid" style="margin-top: 0.5rem;">
+                        <div class="stat-mini-card">
+                            <label>Estado de Verificación</label>
+                            <div id="profile-status" style="color: var(--accent-green); font-size: 1.05rem; font-weight: 700;">No verificado</div>
+                        </div>
+                        <div class="stat-mini-card">
+                            <label>Tipo de Acceso</label>
+                            <div id="profile-estado" style="color: var(--dark-green); font-size: 1.05rem; font-weight: 700;">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Apartado visible exclusivamente para Administradores -->
+                    <div id="admin-services-section" style="display: none;">
+                        <div class="dashboard-header" style="margin-top: 1.5rem; margin-bottom: 0.5rem;">
+                            <div class="dash-title">
+                                <i class="fa-solid fa-layer-group" style="color: var(--accent-green);"></i>
+                                Módulos y Servicios de la Plataforma
+                            </div>
+                            <span class="dash-badge">Servicios Activos</span>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                            <!-- Módulo Mensajería -->
+                            <div class="mockup-item" style="margin: 0; padding: 1.1rem 1.4rem;">
+                                <div class="mockup-info">
+                                    <h6 style="font-size: 1rem; margin-bottom: 2px;">Sistema de Alertas y Avisos</h6>
+                                    <span>Centro de notificaciones y anuncios del estado de la plataforma.</span>
+                                </div>
+                                <a href="/mensajeria" class="btn btn-primary" style="padding: 0.5rem 1.2rem; font-size: 0.88rem;">
+                                    <i class="fa-solid fa-bullhorn"></i> Abrir Avisos
+                                </a>
+                            </div>
+
+                            <!-- Módulo Gestión de Usuarios / Suscripción -->
+                            <div class="mockup-item" style="margin: 0; padding: 1.1rem 1.4rem;">
+                                <div class="mockup-info">
+                                    <h6 style="font-size: 1rem; margin-bottom: 2px;">Gestión de Cuentas y Accesos</h6>
+                                    <span>Administración de suscripciones, prospectos y perfiles autorizados.</span>
+                                </div>
+                                <button type="button" class="btn btn-outline" style="padding: 0.5rem 1.2rem; font-size: 0.88rem;">
+                                    <i class="fa-solid fa-users-gear"></i> Administrar Accesos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
     </div>
-</section>
+</div>
 {% endblock %}

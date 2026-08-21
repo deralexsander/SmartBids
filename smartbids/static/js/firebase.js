@@ -5,7 +5,10 @@ import {
     createUserWithEmailAndPassword, 
     sendEmailVerification, 
     signOut,
-    onAuthStateChanged 
+    onAuthStateChanged,
+    EmailAuthProvider,         
+    reauthenticateWithCredential,
+    updatePassword               
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 import { 
@@ -103,13 +106,11 @@ onAuthStateChanged(auth, async (user) => {
     if (!user) {
         SessionManager.clearLocalToken();
 
-        // Si intenta entrar a páginas protegidas, redirigir (el loader cubre la transición)
         if (isProfilePage || isMensajeriaAdminPage) {
             window.location.replace('/ingreso');
             return;
         }
 
-        // Si es una página pública o de login/registro, aplicamos UI y mostramos el contenido
         updateNavButtons(null);
         hidePageLoader();
         return;
@@ -134,7 +135,6 @@ onAuthStateChanged(auth, async (user) => {
             const userData = userDocSnap.data();
             const tokenRemoto = userData.tokenID || userData.session_id;
 
-            // Validación de sesión simultánea
             if (tokenRemoto && tokenLocal !== tokenRemoto) {
                 console.warn('[SmartBids] ⚠️ Sesión caducada.');
                 SessionManager.clearLocalToken();
@@ -149,7 +149,6 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
 
-            // Validación de permisos de Administrador
             if (isMensajeriaAdminPage && userData.estado !== 'admin') {
                 sessionStorage.setItem('flash_message', JSON.stringify({
                     texto: 'Acceso denegado: Se requieren permisos de administrador.',
@@ -159,7 +158,6 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
         } else if (isMensajeriaAdminPage) {
-            // Si no existe documento y está en admin, bloquear acceso
             window.location.replace('/');
             return;
         }
@@ -167,15 +165,17 @@ onAuthStateChanged(auth, async (user) => {
         console.error('[SmartBids] ❌ Error validando permisos:', error);
     }
 
-    // Pintar datos en perfil si corresponde
-    if (profileEmail) profileEmail.textContent = user.email || 'No disponible';
-    if (profileStatus) profileStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
+    // ==========================================
+    // AQUÍ: Activar la vista del perfil
+    // ==========================================
+    if (isProfilePage) {
+        inicializarVistaPerfil(user);
+    }
 
-    // 4. Todo validado correctamente: Aplicamos estado visual a los botones y cerramos el loader
+    // 4. Aplicamos estado visual a los botones y cerramos el loader
     updateNavButtons(user);
     hidePageLoader();
 });
-
 
 // Variable temporal para retener la referencia del usuario mientras valida el OTP
 let pendingUser = null;
@@ -721,3 +721,219 @@ onSnapshot(qMensajesActivos, (snapshot) => {
         renderizarAlerta(docSnap.id, docSnap.data());
     });
 });
+
+// ==========================================================================
+// SECCIÓN PERFIL: Lectura y Actualización en Tiempo Real desde Firestore
+// ==========================================================================
+
+function formatTimestamp(ts) {
+    if (!ts) return 'No registrada';
+    const date = ts.toDate ? ts.toDate() : new Date(ts);
+    return date.toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function inicializarVistaPerfil(user) {
+    if (!user) return;
+    const userDocRef = doc(db, "prospectos", user.uid);
+
+    // 1. Lectura en tiempo real del documento de Firestore
+    onSnapshot(userDocRef, (docSnap) => {
+        if (!docSnap.exists()) return;
+        const data = docSnap.data();
+
+        // Control de visibilidad para el apartado exclusivo de Administrador
+        const adminSection = document.getElementById('admin-services-section');
+        if (adminSection) {
+            adminSection.style.display = (data.estado === 'admin') ? 'block' : 'none';
+        }
+
+        // Header / Lateral
+        const pnombre = data.pnombre || '';
+        const appaterno = data.appaterno || '';
+        const snombre = data.snombre || '';
+        const apmaterno = data.apmaterno || '';
+        const nombreCompleto = [pnombre, snombre, appaterno, apmaterno].filter(Boolean).join(' ') || 'Usuario';
+        
+        const elFullName = document.getElementById('profile-fullname-header');
+        if (elFullName) elFullName.textContent = nombreCompleto;
+
+        const elUsernameHeader = document.getElementById('profile-username-header');
+        if (elUsernameHeader) elUsernameHeader.textContent = `@${data.username || 'sin_usuario'}`;
+
+        const elBadgeRole = document.getElementById('profile-role-badge');
+        if (elBadgeRole) elBadgeRole.textContent = data.estado || 'prospecto';
+
+        const elRole = document.getElementById('profile-estado');
+        if (elRole) elRole.textContent = data.estado || 'prospecto';
+
+        // Iniciales para el avatar
+        const elInitials = document.getElementById('profile-initials');
+        if (elInitials) {
+            const iniP = pnombre ? pnombre[0] : '';
+            const iniA = appaterno ? appaterno[0] : '';
+            elInitials.textContent = (iniP + iniA).toUpperCase() || 'SB';
+        }
+
+        // Metadatos
+        const elUid = document.getElementById('profile-uid-header');
+        if (elUid) elUid.textContent = user.uid;
+
+        const elCreated = document.getElementById('profile-created-at');
+        if (elCreated) elCreated.textContent = formatTimestamp(data.creadoEl || data.fecha_creacion);
+
+        const elLastLogin = document.getElementById('profile-last-login');
+        if (elLastLogin) elLastLogin.textContent = formatTimestamp(data.ultima_conexion);
+
+        // Inputs del Formulario Datos Personales
+        const inPnombre = document.getElementById('profile-pnombre');
+        const inSnombre = document.getElementById('profile-snombre');
+        const inAppaterno = document.getElementById('profile-appaterno');
+        const inApmaterno = document.getElementById('profile-apmaterno');
+        const inUsername = document.getElementById('profile-username');
+        const inTelefono = document.getElementById('profile-telefono');
+        const inEmail = document.getElementById('profile-email');
+
+        if (inPnombre && document.activeElement !== inPnombre) inPnombre.value = data.pnombre || '';
+        if (inSnombre && document.activeElement !== inSnombre) inSnombre.value = data.snombre || '';
+        if (inAppaterno && document.activeElement !== inAppaterno) inAppaterno.value = data.appaterno || '';
+        if (inApmaterno && document.activeElement !== inApmaterno) inApmaterno.value = data.apmaterno || '';
+        if (inUsername && document.activeElement !== inUsername) inUsername.value = data.username || '';
+        if (inTelefono && document.activeElement !== inTelefono) inTelefono.value = data.telefono || '';
+        if (inEmail) inEmail.value = user.email || data.email || '';
+
+        // Tokens y Sesiones
+        const elSessionId = document.getElementById('profile-session-id');
+        const elTokenId = document.getElementById('profile-token-id');
+        const tokenActivo = data.tokenID || data.session_id || 'No asignado';
+        
+        if (elSessionId) elSessionId.textContent = tokenActivo;
+        if (elTokenId) elTokenId.textContent = tokenActivo;
+
+        // Estado de verificación
+        const elStatus = document.getElementById('profile-status');
+        if (elStatus) elStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
+    });
+
+    // 2. Guardar cambios en Firestore al enviar formulario de datos
+    const formDatos = document.getElementById('form-perfil-datos');
+    if (formDatos) {
+        formDatos.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const submitBtn = formDatos.querySelector('button[type="submit"]');
+            setButtonLoading(submitBtn, true, 'Guardando...');
+
+            try {
+                await updateDoc(userDocRef, {
+                    pnombre: document.getElementById('profile-pnombre')?.value.trim() || '',
+                    snombre: document.getElementById('profile-snombre')?.value.trim() || '',
+                    appaterno: document.getElementById('profile-appaterno')?.value.trim() || '',
+                    apmaterno: document.getElementById('profile-apmaterno')?.value.trim() || '',
+                    username: document.getElementById('profile-username')?.value.trim() || '',
+                    telefono: document.getElementById('profile-telefono')?.value.trim() || '',
+                    actualizadoEl: serverTimestamp()
+                });
+                mostrarMensaje('Información personal actualizada con éxito.', 'exito');
+            } catch (err) {
+                console.error('Error actualizando perfil:', err);
+                mostrarMensaje('Error al actualizar los datos en Firestore.', 'error');
+            } finally {
+                setButtonLoading(submitBtn, false);
+            }
+        });
+    }
+
+    // 3. Formulario de Cambio de Contraseña
+    const formPass = document.getElementById('form-perfil-password') || document.getElementById('form-change-password');
+    if (formPass) {
+        formPass.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            limpiarMensaje();
+
+            const currentPass = document.getElementById('profile-current-pass')?.value || document.getElementById('current-password')?.value || '';
+            const newPass = document.getElementById('profile-new-pass')?.value || document.getElementById('new-password')?.value || '';
+            const confirmPass = document.getElementById('profile-confirm-pass')?.value || document.getElementById('confirm-password')?.value || '';
+
+            if (!currentPass || !newPass || !confirmPass) {
+                mostrarMensaje(MENSAJES?.validacion?.camposRequeridos || 'Por favor, completa todos los campos requeridos.', 'error');
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                mostrarMensaje(MENSAJES?.validacion?.passwordsNoCoinciden || 'Las contraseñas no coinciden.', 'error');
+                return;
+            }
+
+            if (newPass.length < 6) {
+                mostrarMensaje('La nueva contraseña debe tener al menos 6 caracteres.', 'error');
+                return;
+            }
+
+            const submitBtn = formPass.querySelector('button[type="submit"]');
+            setButtonLoading(submitBtn, true, 'Actualizando...');
+
+            try {
+                // 1. Reautenticar usuario antes de cambiar credenciales
+                const cred = EmailAuthProvider.credential(user.email, currentPass);
+                await reauthenticateWithCredential(user, cred);
+                
+                // 2. Actualizar contraseña en Firebase Auth
+                await updatePassword(user, newPass);
+
+                // 3. Notificar por correo mediante la API de Django
+                try {
+                    await fetch('/api/enviar-correo-cambio-password/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: user.email })
+                    });
+                } catch (mailErr) {
+                    console.warn('[SmartBids] No se pudo enviar el correo de cambio de contraseña:', mailErr);
+                }
+
+                // 4. Guardar mensaje flash para mostrarlo al llegar a la vista de login
+                sessionStorage.setItem('flash_message', JSON.stringify({
+                    texto: 'Contraseña actualizada correctamente. Por favor, inicia sesión con tu nueva clave.',
+                    tipo: 'exito'
+                }));
+
+                // 5. Limpiar token local y cerrar sesión
+                if (typeof SessionManager !== 'undefined' && SessionManager.clearLocalToken) {
+                    SessionManager.clearLocalToken();
+                }
+                await signOut(auth);
+
+                // 6. Redirigir a la vista de ingreso
+                window.location.href = '/ingreso';
+
+            } catch (err) {
+                setButtonLoading(submitBtn, false);
+                console.error('[SmartBids] Error al cambiar contraseña:', err);
+                mostrarMensaje(getFriendlyErrorMessage(err.code, err.message), 'error');
+            }
+        });
+    }
+
+    // 4. Copiado de Tokens
+    const setupCopyBtn = (btnId, textSpanId, msg) => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const text = document.getElementById(textSpanId)?.textContent;
+                if (text && text !== '--' && text !== 'No asignado') {
+                    navigator.clipboard.writeText(text).then(() => mostrarMensaje(msg, 'exito'));
+                }
+            });
+        }
+    };
+    setupCopyBtn('copy-session-id', 'profile-session-id', 'Session ID copiado al portapapeles.');
+    setupCopyBtn('copy-token-id', 'profile-token-id', 'Token ID copiado al portapapeles.');
+}
