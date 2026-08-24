@@ -1327,3 +1327,99 @@
         }
     }
         
+/* ==========================================================================
+   MODAL 2FA - VERIFICACIÓN OTP (CON ANIMACIÓN ENTRADA/SALIDA)
+   ========================================================================== */
+.modal-2fa-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-2fa-card {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 14px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.14);
+    opacity: 0;
+    transform: translateY(-25px) scale(0.94);
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
+                transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Animación de entrada (Caída suave y escala fluida) */
+.modal-2fa-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.modal-2fa-overlay.active .modal-2fa-card {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Animación de salida (Hacia arriba desvaneciéndose) */
+.modal-2fa-overlay.closing {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-2fa-overlay.closing .modal-2fa-card {
+    opacity: 0;
+    transform: translateY(-35px) scale(0.94);
+}
+
+/* Inputs de dígitos */
+.otp-inputs-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.otp-digit-input {
+    width: 45px;
+    height: 50px;
+    text-align: center;
+    font-size: 1.3rem;
+    border: 1.5px solid #cccccc;
+    border-radius: 8px;
+    font-weight: bold;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.otp-digit-input:focus {
+    border-color: var(--accent-green, #1ec498);
+}
+
+.otp-feedback-msg {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    color: #e53e3e;
+    min-height: 1.2rem;
+}
+
+.modal-2fa-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.modal-2fa-actions .btn {
+    width: 100%;
+}

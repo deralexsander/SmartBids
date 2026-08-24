@@ -57,34 +57,29 @@ export function setButtonLoading(button, isLoading, loadingText = 'Cargando...')
 // 4. Alternar visibilidad de contraseñas
 // ==========================================================================
 export function setupPasswordToggles() {
-    const togglePasswordButton = document.getElementById('toggle-password');
-    const togglePasswordIcon = document.getElementById('toggle-password-icon');
-    const togglePasswordConfirmButton = document.getElementById('toggle-password-confirm');
-    const togglePasswordConfirmIcon = document.getElementById('toggle-password-confirm-icon');
+    const bindToggle = (btnId, inputId, iconId) => {
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
 
-    if (togglePasswordButton && togglePasswordIcon) {
-        togglePasswordButton.addEventListener('click', () => {
-            const pwd = document.getElementById('password');
-            if (pwd) {
-                const isHidden = pwd.type === 'password';
-                pwd.type = isHidden ? 'text' : 'password';
-                togglePasswordIcon.classList.toggle('fa-eye');
-                togglePasswordIcon.classList.toggle('fa-eye-slash');
-            }
-        });
-    }
+        if (btn && input && icon) {
+            btn.addEventListener('click', () => {
+                const isHidden = input.type === 'password';
+                input.type = isHidden ? 'text' : 'password';
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+        }
+    };
 
-    if (togglePasswordConfirmButton && togglePasswordConfirmIcon) {
-        togglePasswordConfirmButton.addEventListener('click', () => {
-            const pwdConf = document.getElementById('password-confirm');
-            if (pwdConf) {
-                const isHidden = pwdConf.type === 'password';
-                pwdConf.type = isHidden ? 'text' : 'password';
-                togglePasswordConfirmIcon.classList.toggle('fa-eye');
-                togglePasswordConfirmIcon.classList.toggle('fa-eye-slash');
-            }
-        });
-    }
+    // 1. Formulario estándar (Ingreso / Login y Registro)
+    bindToggle('toggle-password', 'password', 'toggle-password-icon');
+    bindToggle('toggle-password-confirm', 'password-confirm', 'toggle-password-confirm-icon');
+
+    // 2. Formulario de Cambio de Contraseña (Perfil)
+    bindToggle('toggle-profile-current-pass', 'profile-current-pass', 'toggle-profile-current-icon');
+    bindToggle('toggle-profile-new-pass', 'profile-new-pass', 'toggle-profile-new-icon');
+    bindToggle('toggle-profile-confirm-pass', 'profile-confirm-pass', 'toggle-profile-confirm-icon');
 }
 
 // ==========================================================================
@@ -129,3 +124,44 @@ export function cambiarPestana(event, tabId) {
 }
 
 window.cambiarPestana = cambiarPestana;
+
+
+
+// ==========================================================================
+// 7. Control de Modal de Autenticación de Dos Factores (2FA)
+// ==========================================================================
+
+// Función para abrir con animación de entrada
+export function abrirModal2FA() {
+    const modal2FA = document.getElementById('modal-2fa');
+    const otpInputs = document.querySelectorAll('.otp-digit-input');
+
+    if (!modal2FA) return;
+
+    modal2FA.classList.remove('closing');
+    modal2FA.classList.add('active');
+
+    if (otpInputs.length > 0) {
+        otpInputs[0].focus();
+    }
+}
+
+// Función para cerrar con animación de salida
+export function cerrarModal2FA() {
+    const modal2FA = document.getElementById('modal-2fa');
+    const otpInputs = document.querySelectorAll('.otp-digit-input');
+
+    if (!modal2FA) return;
+
+    modal2FA.classList.add('closing');
+
+    setTimeout(() => {
+        modal2FA.classList.remove('active', 'closing');
+        otpInputs.forEach((input) => (input.value = ''));
+        const otpMsg = document.getElementById('otp-message');
+        if (otpMsg) otpMsg.textContent = '';
+    }, 400); // 400ms para permitir que la animación culmine
+}
+
+window.abrirModal2FA = abrirModal2FA;
+window.cerrarModal2FA = cerrarModal2FA;

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block nombrePag %}
-<title>Home</title>
+<title>Inicio</title>
 {% endblock %}
 
 {% block nav_links %}
@@ -250,46 +250,11 @@
     </section>
 
 
-    <footer>
-        <div class="footer-grid">
-            <div class="footer-brand">
-                <a href="#" class="logo" style="margin-bottom: 1rem;">
-                    <img src="{% static 'media/isotipo smartbids.png' %}" alt="SmartBids Icon" class="logo-icon">
-                    <div class="logo-text" style="color: var(--white);">Smart<span style="color: var(--accent-green);">Bids</span></div>
-                </a>
-                <p>Plataforma SaaS de inteligencia para licitaciones públicas en Chile. Desarrollada para potenciar el crecimiento de las MiPyMEs.</p>
-            </div>
-            <div class="footer-col">
-                <h5>Contacto</h5>
-                <ul>
-                    <li><a>Agua Santa 1400</a></li>
-                    <li><a>2520000 Viña del Mar</a></li>
-                    <li><a>Mobile: +56 9 6595 6863 </a></li>
-                    <li><a>Email: contacto@chileavanza.cl</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h5>Empresa</h5>
-                <ul>
-                    <li><a href="https://chileavanza.cl/">ChileAvanza</a></li>
-                    <li><a href="#">Prisma Team</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h5>Legal</h5>
-                <ul>
-                    <li><a href="#">Términos de Servicio</a></li>
-                    <li><a href="#">Política de Privacidad</a></li>
-                    <li><a href="#">Seguridad (2FA)</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 SmartBids. Todos los derechos reservados.</p>
-            <p>ChileAvanza • Proyecto de Título Capstone</p>
-        </div>
-    </footer>
 
 
 
+{% endblock %}
+
+{% block footer %}
+    {% include 'smartbids/includes/footer.html' %}
 {% endblock %}

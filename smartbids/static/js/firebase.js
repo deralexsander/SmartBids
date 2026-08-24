@@ -36,7 +36,9 @@ import {
     setupPasswordToggles,
     setButtonLoading,
     generateSessionId,  
-    SessionManager       
+    SessionManager,     
+    abrirModal2FA,
+    cerrarModal2FA  
 } from './functions.js';
 
 import { 
@@ -259,8 +261,7 @@ if (loginForm) {
             // 5. Guardar usuario en memoria y desplegar Modal
             pendingUser = user;
             setButtonLoading(submitBtn, false);
-            modal2FA.style.display = 'flex';
-            otpInputs[0].focus();
+            abrirModal2FA();
 
         } catch (error) {
             isSubmittingAuth = false;
@@ -334,9 +335,7 @@ if (btnVerificarOtp) {
 // Cancelar proceso de autenticación
 if (btnCancelarOtp) {
     btnCancelarOtp.addEventListener('click', async () => {
-        modal2FA.style.display = 'none';
-        otpInputs.forEach(input => input.value = '');
-        otpMessage.textContent = '';
+        cerrarModal2FA();
         
         isSubmittingAuth = false;
         if (pendingUser) {

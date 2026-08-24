@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block nombrePag %}
-<title>SmartBids - Mi Perfil</title>
+<title>Mi Perfil</title>
 {% endblock %}
 
 {% block btn_perfil %}
@@ -128,29 +128,46 @@
                     </div>
                 </div>
 
-                <form id="form-perfil-password">
-                    <div class="profile-form-grid">
-                        <div class="form-item grid-full">
-                            <label for="profile-current-pass">Contraseña Actual</label>
-                            <input type="password" id="profile-current-pass" name="current_pass" class="form-input" placeholder="Ingresa tu contraseña actual" required>
-                        </div>
-                        <div class="form-item">
-                            <label for="profile-new-pass">Nueva Contraseña</label>
-                            <input type="password" id="profile-new-pass" name="new_pass" class="form-input" placeholder="Nueva contraseña" required>
-                        </div>
-                        <div class="form-item">
-                            <label for="profile-confirm-pass">Confirmar Nueva Contraseña</label>
-                            <input type="password" id="profile-confirm-pass" name="confirm_pass" class="form-input" placeholder="Repite la nueva contraseña" required>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa-solid fa-key"></i> Actualizar Clave
-                        </button>
-                    </div>
-                </form>
+    <form id="form-perfil-password">
+        <div class="profile-form-grid">
+            <div class="form-item grid-full">
+                <label for="profile-current-pass">Contraseña Actual</label>
+                <div style="position: relative; width: 100%;">
+                    <input type="password" id="profile-current-pass" name="current_pass" class="form-input" placeholder="Ingresa tu contraseña actual" style="width: 100%; padding-right: 2.5rem;" required>
+                    <button type="button" id="toggle-profile-current-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
+                        <i class="fa-solid fa-eye" id="toggle-profile-current-icon"></i>
+                    </button>
+                </div>
             </div>
+
+            <div class="form-item">
+                <label for="profile-new-pass">Nueva Contraseña</label>
+                <div style="position: relative; width: 100%;">
+                    <input type="password" id="profile-new-pass" name="new_pass" class="form-input" placeholder="Nueva contraseña" style="width: 100%; padding-right: 2.5rem;" required>
+                    <button type="button" id="toggle-profile-new-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
+                        <i class="fa-solid fa-eye" id="toggle-profile-new-icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-item">
+                <label for="profile-confirm-pass">Confirmar Nueva Contraseña</label>
+                <div style="position: relative; width: 100%;">
+                    <input type="password" id="profile-confirm-pass" name="confirm_pass" class="form-input" placeholder="Repite la nueva contraseña" style="width: 100%; padding-right: 2.5rem;" required>
+                    <button type="button" id="toggle-profile-confirm-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
+                        <i class="fa-solid fa-eye" id="toggle-profile-confirm-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-key"></i> Actualizar Clave
+            </button>
+        </div>
+    </form>
+</div>
 
             <!-- Pestaña 3: Gestión y Control de Cuenta -->
             <div id="tab-sesiones" class="dashboard-card tab-content-panel">

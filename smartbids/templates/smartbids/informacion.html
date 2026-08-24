@@ -1,0 +1,226 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Información Legal y Seguridad</title>
+{% endblock %}
+
+{% block nav_links %}
+<ul>
+    <li><a href="{% url 'home' %}#">Inicio</a></li>
+    <li></li>
+    <li><a href="#terminos">Términos de Servicio</a></li>
+    <li><a href="#privacidad">Política de Privacidad</a></li>
+    <li><a href="#seguridad">Seguridad (2FA)</a></li>
+</ul>
+{% endblock %}
+
+{% block nav_buttons %}
+    <a id="btn-login" href="{% url 'ingreso' %}" class="btn btn-outline">Ingresar</a>
+{% endblock %}
+
+{% block contenido %}
+
+    <!-- Encabezado / Hero Informativo -->
+    <section class="value-prop" style="padding-top: 150px; padding-bottom: 60px;">
+        <div class="section-header">
+            <span class="section-subtitle">Transparencia y Confianza</span>
+            <h1 class="section-title">Centro Legal, Privacidad y Seguridad</h1>
+            <p class="section-desc">
+                En SmartBids estamos comprometidos con la transparencia operativa, la estricta protección de la información de tu empresa y el cumplimiento de las normativas de datos y compras públicas en Chile.
+            </p>
+        </div>
+
+        <div class="prop-grid">
+            <div class="prop-card">
+                <div class="prop-icon"><i class="fa-solid fa-file-contract"></i></div>
+                <h3>Términos Claros</h3>
+                <p>Conoce las condiciones del servicio SaaS, responsabilidades y alcances del análisis predictivo de licitaciones públicas.</p>
+            </div>
+            <div class="prop-card">
+                <div class="prop-icon"><i class="fa-solid fa-user-shield"></i></div>
+                <h3>Privacidad de Datos</h3>
+                <p>Tratamiento confidencial de los datos de tu MiPyME, credenciales y preferencias comerciales de búsqueda.</p>
+            </div>
+            <div class="prop-card">
+                <div class="prop-icon"><i class="fa-solid fa-lock"></i></div>
+                <h3>Autenticación 2FA</h3>
+                <p>Protección de grado empresarial con doble factor de autenticación y cifrado de extremo a extremo.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1. Términos de Servicio -->
+    <section class="features" id="terminos">
+        <div class="section-header" style="text-align: center; margin-bottom: 4rem;">
+            <span class="section-subtitle">Condiciones de Uso</span>
+            <h2 class="section-title">Términos del Servicio</h2>
+            <p class="section-desc">Regulaciones para el uso de la plataforma SaaS y el consumo de modelos de analítica avanzada.</p>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-text">
+                <h3>1. Alcance y Naturaleza del Servicio</h3>
+                <p>SmartBids es una plataforma de software como servicio (SaaS) orientada a la recopilación, análisis e inferencia predictiva de procesos de licitación pública en Chile (Mercado Público / ChileCompra).</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Carácter Infornativo y Predictivo:</strong> Las estimaciones de probabilidad de adjudicación emitidas por los algoritmos (Machine Learning / XGBoost) corresponden a análisis estadísticos basados en datos históricos y no constituyen garantía absoluta de adjudicación comercial.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Responsabilidad de la Oferta:</strong> Cada usuario y empresa es exclusivamente responsable de la preparación técnica, económica y envío formal de sus propuestas en las plataformas del Estado.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Disponibilidad:</strong> Mantenemos monitoreo continuo para asegurar alta disponibilidad del servicio y sincronización regular con las fuentes oficiales de datos.</li>
+                </ul>
+            </div>
+            <div class="feature-graphic">
+                <div class="graphic-mockup">
+                    <div class="mockup-item">
+                        <div class="mockup-info">
+                            <h6>Modelo Predictivo SmartBids</h6>
+                            <span>Análisis probabilístico sobre datos históricos</span>
+                        </div>
+                        <span class="mockup-status">Informativo</span>
+                    </div>
+                    <div class="mockup-item">
+                        <div class="mockup-info">
+                            <h6>Envío de Oferta Oficial</h6>
+                            <span>Responsabilidad exclusiva del proveedor</span>
+                        </div>
+                        <span class="mockup-status">Portal Estatal</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row reverse">
+            <div class="feature-text">
+                <h3>2. Cuentas de Usuario y Suscripciones</h3>
+                <p>Para acceder a las herramientas avanzadas, el suscriptor debe mantener su información de perfil y de empresa actualizada.</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Uso Intransferible:</strong> Las credenciales de acceso son personales y no deben ser compartidas con terceros fuera de la organización autorizada.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Uso Ético:</strong> Queda prohibido el uso de técnicas de extracción abusiva (scraping no autorizado) o intentos de vulneración a la infraestructura de SmartBids.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Cancelación:</strong> El usuario puede dar de baja su suscripción o solicitar la baja de su cuenta según los planes contratados.</li>
+                </ul>
+            </div>
+            <div class="feature-graphic">
+                <div class="dashboard-card">
+                    <div class="dashboard-header">
+                        <div class="dash-title">
+                            <i class="fa-solid fa-building-shield" style="color: var(--accent-green);"></i>
+                            Estado de la Cuenta
+                        </div>
+                        <span class="dash-badge">SaaS MiPyME</span>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-mini-card">
+                            <label>Acceso</label>
+                            <div>Empresarial</div>
+                        </div>
+                        <div class="stat-mini-card">
+                            <label>Soporte</label>
+                            <div>24/7 Activo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Política de Privacidad -->
+    <section class="features" id="privacidad" style="background-color: var(--white);">
+        <div class="section-header" style="text-align: center; margin-bottom: 4rem;">
+            <span class="section-subtitle">Protección de Datos</span>
+            <h2 class="section-title">Política de Privacidad</h2>
+            <p class="section-desc">Cómo recopilamos, utilizamos y salvaguardamos la información corporativa y personal.</p>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-text">
+                <h3>Recopilación y Uso de la Información</h3>
+                <p>En SmartBids implementamos estrictas políticas de tratamiento de datos en conformidad con la normativa chilena de protección de la vida privada (Ley N° 19.628 y sus actualizaciones).</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Datos de Registro:</strong> Nombre, correo corporativo, RUT de empresa y rubros comerciales para personalizar el motor de recomendaciones.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Datos de Actividad:</strong> Licitaciones guardadas, filtros de búsqueda y consultas de mercado para mejorar la experiencia de usuario.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>No Comercialización:</strong> SmartBids no comercializa ni arrienda bases de datos ni perfiles de clientes a terceros.</li>
+                </ul>
+            </div>
+            <div class="feature-graphic">
+                <div class="graphic-mockup">
+                    <div style="background: var(--white); padding: 1.5rem; border-radius: 12px;">
+                        <i class="fa-solid fa-shield-halved" style="font-size: 2.2rem; color: var(--accent-green); margin-bottom: 0.5rem;"></i>
+                        <h6 style="color: var(--dark-green); font-weight: 700; font-size: 1.1rem; margin-bottom: 0.4rem;">Cifrado de Extremo a Extremo</h6>
+                        <p style="font-size: 0.88rem; color: var(--gray-text); margin-bottom: 0;">Todas las conexiones y transferencias de datos sensibles operan bajo protocolos SSL/TLS de 256 bits.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Seguridad y Doble Factor (2FA) -->
+    <section class="ml-section" id="seguridad">
+        <div class="ml-grid">
+            <div class="ml-text">
+                <h2>Seguridad de Nivel Empresarial y <span>2FA</span></h2>
+                <p>Garantizamos la máxima integridad en las cuentas de nuestros usuarios mediante capas de seguridad avanzadas que mitigan riesgos de suplantación y accesos no autorizados.</p>
+                <a href="{% url 'ingreso' %}" class="btn btn-primary btn-large">Ir al Acceso Seguro</a>
+            </div>
+            <div class="ml-cards">
+                <div class="ml-card-item">
+                    <div class="ml-card-icon"><i class="fa-solid fa-key"></i></div>
+                    <div class="ml-card-content">
+                        <h4>Doble Factor de Autenticación (2FA / OTP)</h4>
+                        <p>Validación de identidad con código temporal de 6 dígitos enviado por correo o generado vía apps de autenticación.</p>
+                    </div>
+                </div>
+                <div class="ml-card-item">
+                    <div class="ml-card-icon"><i class="fa-solid fa-database"></i></div>
+                    <div class="ml-card-content">
+                        <h4>Protección y Hash de Credenciales</h4>
+                        <p>Almacenamiento protegido de contraseñas mediante funciones criptográficas irreversibles de última generación.</p>
+                    </div>
+                </div>
+                <div class="ml-card-item">
+                    <div class="ml-card-icon"><i class="fa-solid fa-network-wired"></i></div>
+                    <div class="ml-card-content">
+                        <h4>Monitoreo y Detección de Anomalías</h4>
+                        <p>Alertas inmediatas y bloqueo preventivo ante sesiones sospechosas o múltiples intentos fallidos de autenticación.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Resumen de Garantías -->
+    <section class="benefits-banner">
+        <div class="section-header">
+            <span class="section-subtitle">Compromiso SmartBids</span>
+            <h2 class="section-title">Pilares de nuestra infraestructura</h2>
+        </div>
+
+        <div class="benefits-grid">
+            <div class="benefit-box">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <h4>Cumplimiento Legal</h4>
+                <p>Alineado a los estándares de datos públicos y normativas legales vigentes en Chile.</p>
+            </div>
+            <div class="benefit-box">
+                <i class="fa-solid fa-lock"></i>
+                <h4>Sesiones Blindadas</h4>
+                <p>Cierre automático de sesiones inactivas y verificación periódica de seguridad.</p>
+            </div>
+            <div class="benefit-box">
+                <i class="fa-solid fa-server"></i>
+                <h4>Respaldos Continuos</h4>
+                <p>Copias de seguridad redundantes y almacenamiento con alta tolerancia a fallos.</p>
+            </div>
+            <div class="benefit-box">
+                <i class="fa-solid fa-headset"></i>
+                <h4>Canal de Privacidad</h4>
+                <p>Atención expedita para el ejercicio de derechos ARCO (Acceso, Rectificación y Cancelación).</p>
+            </div>
+        </div>
+    </section>
+
+
+
+{% endblock %}
+
+{% block footer %}
+    {% include 'smartbids/includes/footer.html' %}
+{% endblock %}

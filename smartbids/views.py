@@ -36,6 +36,9 @@ def mensajeria_view(request):
 def handler404_view(request, exception=None):
     return render(request, 'smartbids/404.html', status=404)
 
+def informacion_view(request):
+    return render(request, 'smartbids/informacion.html')
+
 
 # ==============================================================================
 # correo de Bienvenida
