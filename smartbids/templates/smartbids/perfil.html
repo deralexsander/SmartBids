@@ -2,17 +2,14 @@
 {% load static %}
 
 {% block nombrePag %}
-<title>Mi Perfil</title>
-{% endblock %}
-
-{% block btn_perfil %}
-{# Se sobreescribe vacío para no mostrar el botón en el header #}
+<title>Mi Perfil - SmartBids</title>
 {% endblock %}
 
 {% block contenido %}
 <div class="profile-container">
     <div class="profile-layout">
 
+        <!-- Barra Lateral de Navegación -->
         <aside class="profile-sidebar">
             <div class="dashboard-card" style="text-align: center;">
                 <div class="profile-avatar-circle">
@@ -37,13 +34,28 @@
                         </button>
                     </li>
                     <li>
+                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-empresa-view')">
+                            <i class="fa-solid fa-building"></i> Empresa y Negocio
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-preferencias')">
+                            <i class="fa-solid fa-sliders"></i> Preferencias y Reportes
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-filtros-catalogo')">
+                            <i class="fa-solid fa-filter"></i> Filtros de Licitación
+                        </button>
+                    </li>
+                    <li>
                         <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-seguridad')">
                             <i class="fa-solid fa-lock"></i> Contraseña y Seguridad
                         </button>
                     </li>
                     <li>
                         <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-sesiones')">
-                            <i class="fa-solid fa-sliders"></i> Gestión y Control de Cuenta
+                            <i class="fa-solid fa-circle-info"></i> Estado del Sistema
                         </button>
                     </li>
                 </ul>
@@ -56,12 +68,13 @@
             </div>
         </aside>
 
+        <!-- Contenido Principal de Pestañas -->
         <main class="profile-main-content">
 
             <div class="prediction-box">
                 <div class="pred-text">
                     <h5>Panel de Administración de Perfil</h5>
-                    <p>Gestiona y actualiza los parámetros de tu cuenta, seguridad operativa e identificadores únicos.</p>
+                    <p>Gestiona los parámetros de tu empresa, preferencias de búsqueda de licitaciones y configuración de seguridad.</p>
                 </div>
                 <div class="pred-score">
                     <i class="fa-solid fa-circle-check"></i>
@@ -119,7 +132,237 @@
                 </form>
             </div>
 
-            <!-- Pestaña 2: Contraseña y Seguridad -->
+            <!-- Pestaña 2: Empresa y Negocio -->
+            <div id="tab-empresa-view" class="dashboard-card tab-content-panel">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-building" style="color: var(--accent-green);"></i>
+                        Información de la Empresa (core.empresa)
+                    </div>
+                    <span class="dash-badge">Suscriptor ID: <span id="empresa-suscriptor-id">--</span></span>
+                </div>
+
+                <form id="form-perfil-empresa">
+                    <div class="profile-form-grid">
+                        <div class="form-item">
+                            <label for="empresa-select-previa">Seleccionar Empresa Registrada</label>
+                            <select class="form-input" id="empresa-select-previa" name="empresa_previa">
+                                <option value="">-- Seleccione Empresa --</option>
+                                <option value="BLUECOMPANY">BLUECOMPANY</option>
+                                <option value="CCN BUSES">CCN BUSES</option>
+                                <option value="CHILEAVANZA">CHILEAVANZA</option>
+                                <option value="CIS">CIS</option>
+                                <option value="EVERIS">EVERIS</option>
+                                <option value="GDS">GDS</option>
+                                <option value="INTRATEC">INTRATEC</option>
+                                <option value="PLATAFORMAGROUP">PLATAFORMAGROUP</option>
+                                <option value="SMARTBIDS">SMARTBIDS</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="empresa-nombre">Nombre Comercial (nombre_empresa)</label>
+                            <input type="text" class="form-input" id="empresa-nombre" name="nombre_empresa" placeholder="Ej: Mi Empresa SpA" required>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="empresa-rut">RUT Empresa (rut)</label>
+                            <input type="text" class="form-input" id="empresa-rut" name="rut" placeholder="76.xxx.xxx-k">
+                        </div>
+
+                        <div class="form-item">
+                            <label for="empresa-razon-social">Razón Social (razon_social)</label>
+                            <input type="text" class="form-input" id="empresa-razon-social" name="razon_social" placeholder="Razón social legal">
+                        </div>
+
+                        <div class="form-item">
+                            <label for="empresa-inicial">Sigla / Iniciales (inicial_empresa)</label>
+                            <input type="text" class="form-input" id="empresa-inicial" name="inicial_empresa" placeholder="Ej: ABC">
+                        </div>
+
+                        <div class="form-item">
+                            <label for="empresa-correo">Correo Notificaciones (correo_destinatario)</label>
+                            <input type="email" class="form-input" id="empresa-correo" name="correo_destinatario" placeholder="alertas@empresa.cl" required>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="empresa-correo-copia">Correos en Copia (core.empresa_correo_copia)</label>
+                            <input type="text" class="form-input" id="empresa-correo-copia" name="correo_copia" placeholder="copia1@empresa.cl, copia2@empresa.cl">
+                        </div>
+
+                        <div class="form-item">
+                            <label for="empresa-comuna">Comuna / Código Comuna (codigo_comuna)</label>
+                            <input type="text" class="form-input" id="empresa-comuna" name="codigo_comuna" placeholder="Ej: 05101 (Valparaíso)">
+                        </div>
+
+                        <div class="form-item grid-full">
+                            <label for="empresa-direccion">Dirección Casa Matriz (direccion)</label>
+                            <input type="text" class="form-input" id="empresa-direccion" name="direccion" placeholder="Calle, número, oficina o departamento">
+                        </div>
+
+                        <input type="hidden" id="empresa-id-suscriptor" name="id_suscriptor">
+                    </div>
+
+                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                        <button type="reset" class="btn btn-outline">Restablecer</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Empresa
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Pestaña 3: Preferencias y Reportes -->
+            <div id="tab-preferencias" class="dashboard-card tab-content-panel">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-sliders" style="color: var(--accent-green);"></i>
+                        Parámetros de Búsqueda y Reportes
+                    </div>
+                    <span class="dash-badge">Configuración Alertas</span>
+                </div>
+
+                <form id="form-perfil-preferencias">
+                    <div class="profile-form-grid">
+                        <div class="form-item">
+                            <label for="pref-frecuencia">Frecuencia de Envío de Reporte</label>
+                            <select class="form-input" id="pref-frecuencia" name="frecuencia_reporte">
+                                <option value="diario">Diario</option>
+                                <option value="tres_veces">Tres veces por semana</option>
+                                <option value="dos_veces">Dos veces por semana</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="quincenal">Quincenal</option>
+                                <option value="mensual">Mensual</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="pref-plazo-min">Plazo Mínimo (Días de Postulación)</label>
+                            <input type="number" class="form-input" id="pref-plazo-min" name="plazominimo" placeholder="Ej: 5" min="0">
+                        </div>
+
+                        <div class="form-item">
+                            <label for="pref-dias-restantes">Mínimo de Días Restantes</label>
+                            <input type="number" class="form-input" id="pref-dias-restantes" name="minimo_dias_restantes" placeholder="Ej: 2" min="0">
+                        </div>
+
+                        <div class="form-item">
+                            <label for="pref-ano-licitacion">Año de Licitación</label>
+                            <select class="form-input" id="pref-ano-licitacion" name="ano_licitacion">
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                                <option value="2020">2020</option>
+                                <option value="2016">2016</option>
+                                <option value="2010">2010</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="pref-monto-corte">Criterio Corte / Monto Mínimo</label>
+                            <select class="form-input" id="pref-monto-corte" name="criterio_monto">
+                                <option value="todos">Todos los montos</option>
+                                <option value="500k">&gt;= $500.000</option>
+                                <option value="1m">&gt; $1.000.000</option>
+                                <option value="10m">&gt;= $10.000.000</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="pref-convenio-marco">Filtro Convenio Marco</label>
+                            <select class="form-input" id="pref-convenio-marco" name="convenio_marco">
+                                <option value="sin_convenio">Sin Convenio Marco</option>
+                                <option value="con_convenio">Solo Convenio Marco</option>
+                                <option value="tecnologia">Tecnología (Data Center)</option>
+                                <option value="todos">Indiferente</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item grid-full">
+                            <label for="pref-palabras-clave">Palabras Clave de Interés (core.empresa_palabra_clave)</label>
+                            <input type="text" class="form-input" id="pref-palabras-clave" name="palabras_clave" placeholder="Ej: Servidores, Consultoría, Computadores, Soporte TI (separados por coma)">
+                        </div>
+
+                        <div class="form-item grid-full">
+                            <label for="pref-saludo-reporte">Destinatarios de Saludo en Reporte</label>
+                            <input type="text" class="form-input" id="pref-saludo-reporte" name="saludo_reporte" placeholder="Ej: Andrés, Ignacio, Rosario">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                        <button type="reset" class="btn btn-outline">Restablecer</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Preferencias
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Pestaña 4: Filtros de Licitación y Catálogo -->
+            <div id="tab-filtros-catalogo" class="dashboard-card tab-content-panel">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-layer-group" style="color: var(--accent-green);"></i>
+                        Filtros de Catálogo y Mercado Público
+                    </div>
+                    <span class="dash-badge">Segmentación</span>
+                </div>
+
+                <form id="form-perfil-filtros">
+                    <div class="profile-form-grid">
+                        <div class="form-item">
+                            <label for="filtro-actividad-econ">Giro / Actividad Económica (catalog.actividad_economica)</label>
+                            <select class="form-input" id="filtro-actividad-econ" name="actividad_economica">
+                                <option value="">-- Seleccionar Rubro --</option>
+                                <option value="620100">Actividades de programación informática</option>
+                                <option value="620200">Consultoría de informática y gestión de instalaciones</option>
+                                <option value="465100">Venta al por mayor de computadores y equipo periférico</option>
+                                <option value="todos">Todos los rubros</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="filtro-tipo-licitacion">Tipo de Licitación (catalog.tipo_licitacion)</label>
+                            <select class="form-input" id="filtro-tipo-licitacion" name="tipo_licitacion">
+                                <option value="todas">Todas las licitaciones</option>
+                                <option value="L1">L1 - Licitación Pública Menor a 100 UTM</option>
+                                <option value="LE">LE - Licitación Pública Entre 100 y 1.000 UTM</option>
+                                <option value="LP">LP - Licitación Pública Mayor a 1.000 UTM</option>
+                                <option value="LR">LR - Licitación Pública Mayor a 5.000 UTM</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="filtro-region">Región de Cobertura (catalog.region)</label>
+                            <select class="form-input" id="filtro-region" name="region">
+                                <option value="todas">Todas las regiones (Nacional)</option>
+                                <option value="13">Región Metropolitana</option>
+                                <option value="05">Región de Valparaíso</option>
+                                <option value="08">Región del Biobío</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="filtro-organismos">Organismos Objetivo (core.empresa_organismo)</label>
+                            <input type="text" class="form-input" id="filtro-organismos" name="organismos_objetivo" placeholder="Ej: Municipalidades, Hospitales, Ministerios">
+                        </div>
+
+                        <div class="form-item grid-full">
+                            <label for="filtro-cod-productos">Productos ONU / Códigos de Mercado Público (catalog.producto)</label>
+                            <input type="text" class="form-input" id="filtro-cod-productos" name="codigos_productos" placeholder="Ej: 43211507 (Computadores portátiles), 81111812 (Mantenimiento TI)">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                        <button type="reset" class="btn btn-outline">Restablecer</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Filtros
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Pestaña 5: Contraseña y Seguridad -->
             <div id="tab-seguridad" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
@@ -128,52 +371,52 @@
                     </div>
                 </div>
 
-    <form id="form-perfil-password">
-        <div class="profile-form-grid">
-            <div class="form-item grid-full">
-                <label for="profile-current-pass">Contraseña Actual</label>
-                <div style="position: relative; width: 100%;">
-                    <input type="password" id="profile-current-pass" name="current_pass" class="form-input" placeholder="Ingresa tu contraseña actual" style="width: 100%; padding-right: 2.5rem;" required>
-                    <button type="button" id="toggle-profile-current-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
-                        <i class="fa-solid fa-eye" id="toggle-profile-current-icon"></i>
-                    </button>
-                </div>
+                <form id="form-perfil-password">
+                    <div class="profile-form-grid">
+                        <div class="form-item grid-full">
+                            <label for="profile-current-pass">Contraseña Actual</label>
+                            <div style="position: relative; width: 100%;">
+                                <input type="password" id="profile-current-pass" name="current_pass" class="form-input" placeholder="Ingresa tu contraseña actual" style="width: 100%; padding-right: 2.5rem;" required>
+                                <button type="button" id="toggle-profile-current-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
+                                    <i class="fa-solid fa-eye" id="toggle-profile-current-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="profile-new-pass">Nueva Contraseña</label>
+                            <div style="position: relative; width: 100%;">
+                                <input type="password" id="profile-new-pass" name="new_pass" class="form-input" placeholder="Nueva contraseña" style="width: 100%; padding-right: 2.5rem;" required>
+                                <button type="button" id="toggle-profile-new-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
+                                    <i class="fa-solid fa-eye" id="toggle-profile-new-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="profile-confirm-pass">Confirmar Nueva Contraseña</label>
+                            <div style="position: relative; width: 100%;">
+                                <input type="password" id="profile-confirm-pass" name="confirm_pass" class="form-input" placeholder="Repite la nueva contraseña" style="width: 100%; padding-right: 2.5rem;" required>
+                                <button type="button" id="toggle-profile-confirm-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
+                                    <i class="fa-solid fa-eye" id="toggle-profile-confirm-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-key"></i> Actualizar Clave
+                        </button>
+                    </div>
+                </form>
             </div>
 
-            <div class="form-item">
-                <label for="profile-new-pass">Nueva Contraseña</label>
-                <div style="position: relative; width: 100%;">
-                    <input type="password" id="profile-new-pass" name="new_pass" class="form-input" placeholder="Nueva contraseña" style="width: 100%; padding-right: 2.5rem;" required>
-                    <button type="button" id="toggle-profile-new-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
-                        <i class="fa-solid fa-eye" id="toggle-profile-new-icon"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="form-item">
-                <label for="profile-confirm-pass">Confirmar Nueva Contraseña</label>
-                <div style="position: relative; width: 100%;">
-                    <input type="password" id="profile-confirm-pass" name="confirm_pass" class="form-input" placeholder="Repite la nueva contraseña" style="width: 100%; padding-right: 2.5rem;" required>
-                    <button type="button" id="toggle-profile-confirm-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
-                        <i class="fa-solid fa-eye" id="toggle-profile-confirm-icon"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
-            <button type="submit" class="btn btn-primary">
-                <i class="fa-solid fa-key"></i> Actualizar Clave
-            </button>
-        </div>
-    </form>
-</div>
-
-            <!-- Pestaña 3: Gestión y Control de Cuenta -->
+            <!-- Pestaña 6: Estado del Sistema / Administración -->
             <div id="tab-sesiones" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-sliders" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-circle-info" style="color: var(--accent-green);"></i>
                         Parámetros y Estado del Sistema
                     </div>
                 </div>
@@ -190,7 +433,7 @@
                         </div>
                     </div>
 
-                    <!-- Apartado visible exclusivamente para Administradores -->
+                    <!-- Apartado exclusivo para Administradores -->
                     <div id="admin-services-section" style="display: none;">
                         <div class="dashboard-header" style="margin-top: 1.5rem; margin-bottom: 0.5rem;">
                             <div class="dash-title">
@@ -201,7 +444,6 @@
                         </div>
 
                         <div style="display: flex; flex-direction: column; gap: 0.8rem;">
-                            <!-- Módulo Mensajería -->
                             <div class="mockup-item" style="margin: 0; padding: 1.1rem 1.4rem;">
                                 <div class="mockup-info">
                                     <h6 style="font-size: 1rem; margin-bottom: 2px;">Sistema de Alertas y Avisos</h6>
@@ -212,7 +454,6 @@
                                 </a>
                             </div>
 
-                            <!-- Módulo Gestión de Usuarios / Suscripción -->
                             <div class="mockup-item" style="margin: 0; padding: 1.1rem 1.4rem;">
                                 <div class="mockup-info">
                                     <h6 style="font-size: 1rem; margin-bottom: 2px;">Gestión de Cuentas y Accesos</h6>

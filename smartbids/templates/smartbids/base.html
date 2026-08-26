@@ -35,7 +35,30 @@
             <div class="logo-text">Smart<span>Bids</span></div>
         </a>
         <nav>
-            {% block nav_links %}{% endblock %}
+        <ul>
+            {# 1. Enlaces exclusivos para la página de INICIO (Home) #}
+            {% if request.resolver_match.url_name == 'home' %}
+                <li><a href="#propuesta">Propuesta de Valor</a></li>
+                <li><a href="#funcionalidades">Funcionalidades</a></li>
+                <li><a href="#inteligencia">IA Predictiva</a></li>
+                <li><a href="#beneficios">Beneficios</a></li>
+
+            {# 2. Enlaces exclusivos para la página de INFORMACIÓN LEGAL #}
+            {% elif request.resolver_match.url_name == 'informacion' %}
+                <li><a href="{% url 'home' %}">Inicio</a></li>
+                <li><span class="nav-separator">•</span></li>
+                <li><a href="#terminos">Términos de Servicio</a></li>
+                <li><a href="#privacidad">Política de Privacidad</a></li>
+                <li><a href="#seguridad">Seguridad (2FA)</a></li>
+            {% endif %}
+
+            {# 3. Enlace GLOBAL: Aparece en todas partes EXCEPTO #}
+            {% if request.resolver_match.url_name not in 'home informacion ingreso registro' %}
+                <li class="{% if request.resolver_match.url_name == 'mis_licitaciones' %}active{% endif %}">
+                    <a href="{% url 'mis_licitaciones' %}">Mis licitaciones</a>
+                </li>
+            {% endif %}
+        </ul>
         </nav>
         <div class="nav-buttons">
             {% block btn_perfil %}

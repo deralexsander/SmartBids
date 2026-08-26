@@ -39,6 +39,9 @@ def handler404_view(request, exception=None):
 def informacion_view(request):
     return render(request, 'smartbids/informacion.html')
 
+def mis_licitaciones_view(request):
+    return render(request, 'smartbids/Mis_licitaciones.html')
+
 
 # ==============================================================================
 # correo de Bienvenida

@@ -102,7 +102,7 @@ export const SessionManager = {
 };
 
 // ==========================================================================
-// 6. Control de Pestañas del Perfil (Accesible globalmente)
+// 6. Control de Pestañas del Perfil
 // ==========================================================================
 export function cambiarPestana(event, tabId) {
     document.querySelectorAll('.profile-menu-btn').forEach((btn) => {

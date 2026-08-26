@@ -87,8 +87,39 @@ if (mensajeFlash) {
 }
 
 // ==========================================================================
-// 4. Control de Estado de Autenticación, Seguridad y Cierre del Loader
+// 4. Control de Estado de Autenticación y Protección Declarativa de Rutas
 // ==========================================================================
+
+const PAGES_CONFIG = [
+    // 1. Solo para invitados (se bloquean si ya hay sesión iniciada)
+    { elementId: 'login-form', guestOnly: true, redirectFallback: '/' },
+    { elementId: 'register-form', guestOnly: true, redirectFallback: '/' },
+
+    // 2. Requieren inicio de sesión (Cualquier usuario autenticado)
+    { elementId: 'profile-email', requiresAuth: true, redirectFallback: '/ingreso' },
+    { elementId: 'form-perfil-datos', requiresAuth: true, redirectFallback: '/ingreso' },
+    { path: 'mis-licitaciones', requiresAuth: true, redirectFallback: '/ingreso' }, 
+
+    // 3. Exclusivas de Administrador
+    { 
+        elementId: 'form-mensajeria', 
+        requiresAuth: true, 
+        requiredRole: 'admin', 
+        redirectFallback: '/', 
+        errorMsg: 'Acceso denegado: Se requieren permisos de administrador.' 
+    }
+];
+
+// Función buscadora de reglas
+const matchCurrentPageConfig = () => {
+    const currentPath = window.location.pathname;
+    return PAGES_CONFIG.find(page => {
+        if (page.elementId && document.getElementById(page.elementId)) return true;
+        if (page.path && currentPath.includes(page.path)) return true;
+        return false;
+    });
+};
+
 const loginButton = document.getElementById('btn-login');
 const profileButton = document.getElementById('btn-profile');
 
@@ -98,18 +129,15 @@ const updateNavButtons = (user) => {
 };
 
 onAuthStateChanged(auth, async (user) => {
-    const isAuthPage = !!(document.getElementById('login-form') || document.getElementById('register-form'));
-    const profileEmail = document.getElementById('profile-email');
-    const profileStatus = document.getElementById('profile-status');
-    const isProfilePage = !!(profileEmail || profileStatus);
-    const isMensajeriaAdminPage = !!document.getElementById('form-mensajeria');
+    const pageRule = matchCurrentPageConfig();
 
-    // 1. Si NO hay usuario autenticado
+    // CASO 1: No hay usuario autenticado
     if (!user) {
         SessionManager.clearLocalToken();
 
-        if (isProfilePage || isMensajeriaAdminPage) {
-            window.location.replace('/ingreso');
+        // Si la página requiere login, lo expulsa a /ingreso
+        if (pageRule?.requiresAuth) {
+            window.location.replace(pageRule.redirectFallback || '/ingreso');
             return;
         }
 
@@ -118,15 +146,15 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
 
-    // 2. Si hay usuario y está intentando ver login o registro
-    if (isAuthPage && !isSubmittingAuth) {
-        window.location.replace('/');
+    // CASO 2: Usuario autenticado intentando entrar a Login o Registro
+    if (pageRule?.guestOnly && !isSubmittingAuth) {
+        window.location.replace(pageRule.redirectFallback || '/');
         return;
     }
 
     if (isSubmittingAuth) return;
 
-    // 3. Validar sesión única y roles en Firestore
+    // CASO 3: Usuario autenticado -> Validar Sesión Única y Roles
     const tokenLocal = SessionManager.getLocalToken();
 
     try {
@@ -137,7 +165,7 @@ onAuthStateChanged(auth, async (user) => {
             const userData = userDocSnap.data();
             const tokenRemoto = userData.tokenID || userData.session_id;
 
-            if (tokenRemoto && tokenLocal !== tokenRemoto) {
+            if (tokenRemoto && tokenLocal && tokenLocal !== tokenRemoto) {
                 console.warn('[SmartBids] ⚠️ Sesión caducada.');
                 SessionManager.clearLocalToken();
                 await signOut(auth);
@@ -151,30 +179,24 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
 
-            if (isMensajeriaAdminPage && userData.estado !== 'admin') {
+            if (pageRule?.requiredRole && userData.estado !== pageRule.requiredRole) {
                 sessionStorage.setItem('flash_message', JSON.stringify({
-                    texto: 'Acceso denegado: Se requieren permisos de administrador.',
+                    texto: pageRule.errorMsg || 'Acceso denegado.',
                     tipo: 'error'
                 }));
-                window.location.replace('/');
+                window.location.replace(pageRule.redirectFallback || '/');
                 return;
             }
-        } else if (isMensajeriaAdminPage) {
-            window.location.replace('/');
-            return;
         }
     } catch (error) {
         console.error('[SmartBids] ❌ Error validando permisos:', error);
     }
 
-    // ==========================================
-    // AQUÍ: Activar la vista del perfil
-    // ==========================================
-    if (isProfilePage) {
+    // Inicializar perfil si está en la vista correspondiente
+    if (document.getElementById('profile-email')) {
         inicializarVistaPerfil(user);
     }
 
-    // 4. Aplicamos estado visual a los botones y cerramos el loader
     updateNavButtons(user);
     hidePageLoader();
 });
@@ -320,9 +342,9 @@ if (btnVerificarOtp) {
                 tipo: 'exito'
             }));
 
-            // Redirigir a la vista principal
+            // Redirigir a la vista mis licitaciones
             isSubmittingAuth = false;
-            window.location.href = '/';
+            window.location.href = '/mis-licitaciones/';
 
         } catch (error) {
             setButtonLoading(btnVerificarOtp, false);
