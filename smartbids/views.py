@@ -42,6 +42,9 @@ def informacion_view(request):
 def mis_licitaciones_view(request):
     return render(request, 'smartbids/Mis_licitaciones.html')
 
+def dashboard_view(request):
+    return render(request, 'smartbids/dashboard.html')
+
 
 # ==============================================================================
 # correo de Bienvenida

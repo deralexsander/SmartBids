@@ -92,13 +92,14 @@ if (mensajeFlash) {
 
 const PAGES_CONFIG = [
     // 1. Solo para invitados (se bloquean si ya hay sesión iniciada)
-    { elementId: 'login-form', guestOnly: true, redirectFallback: '/' },
-    { elementId: 'register-form', guestOnly: true, redirectFallback: '/' },
+    { elementId: 'login-form', guestOnly: true, redirectFallback: '/perfil' },
+    { elementId: 'register-form', guestOnly: true, redirectFallback: '/perfil' },
 
     // 2. Requieren inicio de sesión (Cualquier usuario autenticado)
-    { elementId: 'profile-email', requiresAuth: true, redirectFallback: '/ingreso' },
-    { elementId: 'form-perfil-datos', requiresAuth: true, redirectFallback: '/ingreso' },
+    { elementId: 'profile-email', requiresAuth: true, redirectFallback: '/perfil' },
+    { elementId: 'form-perfil-datos', requiresAuth: true, redirectFallback: '/perfil' },
     { path: 'mis-licitaciones', requiresAuth: true, redirectFallback: '/ingreso' }, 
+    { path: 'dashboard', requiresAuth: true, redirectFallback: '/ingreso' }, 
 
     // 3. Exclusivas de Administrador
     { 
@@ -201,20 +202,21 @@ onAuthStateChanged(auth, async (user) => {
     hidePageLoader();
 });
 
-// Variable temporal para retener la referencia del usuario mientras valida el OTP
-let pendingUser = null;
+// Variable temporal para retener las credenciales/datos mientras valida el OTP
+let pendingEmail = null;
+let pendingPassword = null;
+let pendingUid = null;
 
 // ==========================================================================
 // 5. Inicio de Sesión y Verificación OTP (2FA)
 // ==========================================================================
 const loginForm = document.getElementById('login-form');
-const modal2FA = document.getElementById('modal-2FA') || document.getElementById('modal-2fa');
-const otpInputs = document.querySelectorAll('.otp-input');
+const otpInputs = document.querySelectorAll('.otp-digit-input, .otp-input');
 const btnVerificarOtp = document.getElementById('btn-verificar-otp');
 const btnCancelarOtp = document.getElementById('btn-cancelar-otp');
 const otpMessage = document.getElementById('otp-message');
 
-// Configurar comportamiento automático de los 6 inputs OTP (auto-focus y retroceso)
+// Configurar comportamiento de los 6 inputs OTP
 otpInputs.forEach((input, index) => {
     input.addEventListener('input', (e) => {
         if (e.target.value.length === 1 && index < otpInputs.length - 1) {
@@ -244,15 +246,13 @@ if (loginForm) {
 
         const submitBtn = loginForm.querySelector('button[type="submit"]');
         setButtonLoading(submitBtn, true, 'Validando credenciales...');
-        
-        isSubmittingAuth = true; // Previene que onAuthStateChanged redirija prematuramente
+        isSubmittingAuth = true;
 
         try {
-            // 1. Autenticar credenciales
+            // 1. Validar credenciales temporalmente
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // 2. Verificar que el correo esté confirmado
             if (!user.emailVerified) {
                 await signOut(auth);
                 isSubmittingAuth = false;
@@ -261,7 +261,7 @@ if (loginForm) {
                 return;
             }
 
-            // 3. Solicitar envío de código a Django
+            // 2. Solicitar envío de código al backend Django
             const response = await fetch('/api/enviar-codigo-login/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -273,15 +273,22 @@ if (loginForm) {
                 throw new Error(resData.mensaje || 'Error al enviar el código de verificación.');
             }
 
-            // 4. Guardar código en Firestore
+            // 3. Guardar código en Firestore mientras aún tiene permiso
             const userRef = doc(db, "prospectos", user.uid);
             await setDoc(userRef, {
                 login_code: String(resData.codigo),
                 code_created_at: serverTimestamp()
             }, { merge: true });
 
-            // 5. Guardar usuario en memoria y desplegar Modal
-            pendingUser = user;
+            // 4. Guardar datos temporales y CERRAR la sesión de Firebase de inmediato
+            // (Así, si el usuario refresca la página, Firebase no lo detectará como logueado)
+            pendingEmail = email;
+            pendingPassword = password;
+            pendingUid = user.uid;
+
+            await signOut(auth);
+
+            isSubmittingAuth = false;
             setButtonLoading(submitBtn, false);
             abrirModal2FA();
 
@@ -297,7 +304,10 @@ if (loginForm) {
 // Validar código ingresado en el Modal
 if (btnVerificarOtp) {
     btnVerificarOtp.addEventListener('click', async () => {
-        if (!pendingUser) return;
+        if (!pendingEmail || !pendingPassword || !pendingUid) {
+            otpMessage.textContent = 'Sesión expirada. Por favor, ingresa nuevamente.';
+            return;
+        }
 
         otpMessage.textContent = '';
         const codigoIngresado = Array.from(otpInputs).map(input => input.value.trim()).join('');
@@ -310,7 +320,12 @@ if (btnVerificarOtp) {
         setButtonLoading(btnVerificarOtp, true, 'Verificando...');
 
         try {
-            const userDocRef = doc(db, "prospectos", pendingUser.uid);
+            // 1. Reautenticar para validar y escribir sesión definitiva
+            isSubmittingAuth = true;
+            const userCredential = await signInWithEmailAndPassword(auth, pendingEmail, pendingPassword);
+            const user = userCredential.user;
+
+            const userDocRef = doc(db, "prospectos", user.uid);
             const userDocSnap = await getDoc(userDocRef);
 
             if (!userDocSnap.exists()) {
@@ -319,21 +334,23 @@ if (btnVerificarOtp) {
 
             const data = userDocSnap.data();
 
-            // Validar coincidencia del código
+            // 2. Validar coincidencia del código
             if (String(data.login_code) !== codigoIngresado) {
+                await signOut(auth); // Desloguear si el código fue erróneo
+                isSubmittingAuth = false;
                 setButtonLoading(btnVerificarOtp, false);
                 otpMessage.textContent = 'Código incorrecto. Inténtalo de nuevo.';
                 return;
             }
 
-            // Generar y almacenar el token de sesión definitivo
+            // 3. Generar token de sesión y confirmar Firestore
             const tokenID = generateSessionId();
             SessionManager.setLocalToken(tokenID);
 
             await setDoc(userDocRef, {
                 tokenID: tokenID,
                 session_id: tokenID,
-                login_code: null, // Limpiar código tras su uso
+                login_code: null, // Limpiar código utilizado
                 ultima_conexion: serverTimestamp()
             }, { merge: true });
 
@@ -342,11 +359,16 @@ if (btnVerificarOtp) {
                 tipo: 'exito'
             }));
 
-            // Redirigir a la vista mis licitaciones
+            // Limpiar memoria temporal
+            pendingEmail = null;
+            pendingPassword = null;
+            pendingUid = null;
+
             isSubmittingAuth = false;
             window.location.href = '/mis-licitaciones/';
 
         } catch (error) {
+            isSubmittingAuth = false;
             setButtonLoading(btnVerificarOtp, false);
             console.error('[SmartBids] ❌ Error al verificar código:', error);
             otpMessage.textContent = error.message || 'Error al validar el código.';
@@ -358,14 +380,15 @@ if (btnVerificarOtp) {
 if (btnCancelarOtp) {
     btnCancelarOtp.addEventListener('click', async () => {
         cerrarModal2FA();
-        
         isSubmittingAuth = false;
-        if (pendingUser) {
-            await signOut(auth);
-            pendingUser = null;
-        }
+        pendingEmail = null;
+        pendingPassword = null;
+        pendingUid = null;
+        await signOut(auth);
     });
 }
+
+
 
 // ==========================================================================
 // 6. Cierre de Sesión

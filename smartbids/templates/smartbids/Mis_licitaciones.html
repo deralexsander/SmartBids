@@ -2,12 +2,245 @@
 {% load static %}
 
 {% block nombrePag %}
-<title>Mis licitaciones</title>
+<title>Mis Licitaciones</title>
 {% endblock %}
 
-
-
 {% block contenido %}
+<section class="value-prop" style="padding-top: 130px; padding-bottom: 60px; min-height: 100vh; background-color: var(--light-bg); width: 100%; box-sizing: border-box;">
+    <div style="width: 100%; padding: 0 3%; box-sizing: border-box;">
+        
+        <!-- Encabezado Principal y Acciones -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
+            <div>
+                <h1 style="font-size: 2.3rem; color: var(--dark-green); font-weight: 800; letter-spacing: -0.5px; margin: 0.4rem 0 0.2rem;">
+                    Mis <span>Licitaciones</span>
+                </h1>
+            </div>
+            
+            <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline" style="padding: 0.6rem 1.2rem;">
+                    <i class="fa-solid fa-file-excel"></i> Exportar
+                </button>
+                <a href="{% url 'perfil' %}" class="btn btn-primary" style="padding: 0.6rem 1.4rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-sliders"></i> Ajustar Filtros en Perfil
+                </a>
+            </div>
+        </div>
 
+        <!-- Barra Métrica Compacta Horizontal (Visible al 100% en Móvil y Escritorio) -->
+        <div class="dashboard-card" style="padding: 1.2rem 1.8rem; margin-bottom: 2rem; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-width: 820px; width: 100%; gap: 1.5rem;">
+                
+                <!-- KPI 1: Total Licitaciones -->
+                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(30, 196, 152, 0.12); color: var(--accent-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(30, 196, 152, 0.25);">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                            Total Licitaciones
+                        </span>
+                        <div style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
+                            124
+                        </div>
+                    </div>
+                </div>
 
+                <!-- KPI 2: Match con Perfil -->
+                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(30, 196, 152, 0.12); color: var(--accent-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(30, 196, 152, 0.25);">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                            Match con Perfil
+                        </span>
+                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1.1;">38</span>
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Filtradas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Cierre Próximo -->
+                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(239, 68, 68, 0.12); color: #ef4444; flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(239, 68, 68, 0.25);">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                            Cierre Próximo (&lt; 3 días)
+                        </span>
+                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+                            <span style="font-size: 1.7rem; font-weight: 800; color: #ef4444; line-height: 1.1;">6</span>
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Activas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI 4: Convenio Marco -->
+                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1;">
+                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(59, 130, 246, 0.12); color: #3b82f6; flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(59, 130, 246, 0.25);">
+                        <i class="fa-solid fa-handshake"></i>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                            Convenio Marco
+                        </span>
+                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">15</span>
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Procesos</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Tabla Principal a Pantalla Completa -->
+        <div class="dashboard-card" style="padding: 1.5rem 2rem; width: 100%; box-sizing: border-box; overflow-x: auto;">
+            <div class="dashboard-header" style="margin-bottom: 1.5rem;">
+                <div class="dash-title" style="font-size: 1.2rem;">
+                    <i class="fa-solid fa-table-list" style="color: var(--accent-green);"></i>
+                    Procesos de Compra Disponibles
+                </div>
+                <span class="dash-badge">Filtros Aplicados desde Perfil</span>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem; min-width: 950px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color); color: var(--dark-green); font-weight: 800;">
+                        <th style="padding: 1rem 0.8rem;">Código / Tipo</th>
+                        <th style="padding: 1rem 0.8rem;">Organismo Comprador</th>
+                        <th style="padding: 1rem 0.8rem;">Unidad Compradora</th>
+                        <th style="padding: 1rem 0.8rem;">Ubicación</th>
+                        <th style="padding: 1rem 0.8rem;">Rubro y Producto</th>
+                        <th style="padding: 1rem 0.8rem;">Monto / Tramo</th>
+                        <th style="padding: 1rem 0.8rem; text-align: center;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody style="color: var(--gray-text);">
+                    <!-- Fila 1 -->
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">2392-14-LE26</div>
+                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">LE (100 - 1000 UTM)</span>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 700; color: var(--dark-green);">Subsecretaría de Telecomunicaciones</div>
+                            <small style="color: var(--muted-teal); font-weight: 600;">SUBTEL (RUT: 60.501.000-7)</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div>Depto. de Tecnologías de Información</div>
+                            <small style="color: var(--muted-teal);">Amunátegui 139, Santiago</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 600; color: var(--dark-green);">Santiago</div>
+                            <small style="color: var(--muted-teal);">RM (Región Metropolitana)</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
+                            <div style="font-weight: 700; color: var(--dark-green);">Servicios de Soporte de Servidores y Cloud</div>
+                            <small style="display: block; color: var(--muted-teal);">Prod: 81111812 - Mantenimiento TI</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$45.000.000</span>
+                            <small style="display: block; color: var(--muted-teal);">Tramo 3</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
+                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Fila 2 -->
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">1058-22-L126</div>
+                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">L1 (&lt; 100 UTM)</span>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 700; color: var(--dark-green);">I. Municipalidad de Valparaíso</div>
+                            <small style="color: var(--muted-teal); font-weight: 600;">MUNIVALPO (RUT: 69.050.100-2)</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div>Dirección de Administración y Finanzas</div>
+                            <small style="color: var(--muted-teal);">Condell 1490, Valparaíso</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 600; color: var(--dark-green);">Valparaíso</div>
+                            <small style="color: var(--muted-teal);">V Región de Valparaíso</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
+                            <div style="font-weight: 700; color: var(--dark-green);">Adquisición de Laptops para Educación</div>
+                            <small style="display: block; color: var(--muted-teal);">Prod: 43211507 - Computadores Portátiles</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$4.800.000</span>
+                            <small style="display: block; color: var(--muted-teal);">Tramo 1</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
+                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Fila 3 -->
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">4520-5-LP26</div>
+                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">LP (&gt; 1.000 UTM)</span>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 700; color: var(--dark-green);">Servicio de Salud Concepción</div>
+                            <small style="color: var(--muted-teal); font-weight: 600;">SSCONCE (RUT: 61.602.000-1)</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div>Hospital Guillermo Grant Benavente</div>
+                            <small style="color: var(--muted-teal);">San Martín 1436, Concepción</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <div style="font-weight: 600; color: var(--dark-green);">Concepción</div>
+                            <small style="color: var(--muted-teal);">VIII Región del Biobío</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
+                            <div style="font-weight: 700; color: var(--dark-green);">Desarrollo y Mantención de Ficha Clínica</div>
+                            <small style="display: block; color: var(--muted-teal);">Prod: 81111508 - Aplicaciones de Software</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
+                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$85.000.000</span>
+                            <small style="display: block; color: var(--muted-teal);">Tramo 4</small>
+                        </td>
+                        <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
+                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Paginador Inferior -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <span style="font-size: 0.88rem; color: var(--muted-teal); font-weight: 600;">
+                    Mostrando 1 a 3 de 38 procesos públicos
+                </span>
+                <div style="display: flex; gap: 0.4rem;">
+                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;" disabled>
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">1</button>
+                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">2</button>
+                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">3</button>
+                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
 {% endblock %}

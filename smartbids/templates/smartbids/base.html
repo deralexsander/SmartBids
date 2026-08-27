@@ -52,10 +52,13 @@
                 <li><a href="#seguridad">Seguridad (2FA)</a></li>
             {% endif %}
 
-            {# 3. Enlace GLOBAL: Aparece en todas partes EXCEPTO #}
+
             {% if request.resolver_match.url_name not in 'home informacion ingreso registro' %}
                 <li class="{% if request.resolver_match.url_name == 'mis_licitaciones' %}active{% endif %}">
                     <a href="{% url 'mis_licitaciones' %}">Mis licitaciones</a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">Dashboard</a>
                 </li>
             {% endif %}
         </ul>

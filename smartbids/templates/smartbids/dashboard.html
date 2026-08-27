@@ -1,0 +1,341 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Dashboard Analítico</title>
+<!-- Librería Chart.js para renderizar los gráficos interactivos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block contenido %}
+<section class="value-prop" style="padding-top: 130px; padding-bottom: 60px; min-height: 100vh; background-color: var(--light-bg); width: 100%; box-sizing: border-box;">
+    <div style="width: 100%; padding: 0 3%; box-sizing: border-box;">
+        
+        <!-- Encabezado Principal y Filtros Globales -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
+            <div>
+                <h1 style="font-size: 2.3rem; color: var(--dark-green); font-weight: 800; letter-spacing: -0.5px; margin: 0.4rem 0 0.2rem;">
+                    Dashboard <span>Analítico</span>
+                </h1>
+            </div>
+            
+            <!-- Selector de Rango de Fecha y Acciones -->
+            <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center;">
+                <div class="form-inline" style="margin: 0;">
+                    <select id="filtro-periodo" style="padding: 0.6rem 1rem; border-radius: 10px; border: 1.5px solid var(--soft-mint); background: var(--white); color: var(--dark-green); font-weight: 700;">
+                        <option value="30">Últimos 30 días</option>
+                        <option value="90" selected>Último Trimestre</option>
+                        <option value="365">Año en curso</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-outline" style="padding: 0.6rem 1.2rem;">
+                    <i class="fa-solid fa-download"></i> Exportar Informe
+                </button>
+            </div>
+        </div>
+
+        <!-- 1. Barra Métrica Compacta Horizontal de KPIs (Visible en Móvil con Scroll y Escritorio) -->
+        <div class="dashboard-card" style="padding: 1.2rem 1.8rem; margin-bottom: 2rem; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-width: 820px; width: 100%; gap: 1.5rem;">
+                
+                <!-- KPI 1: Monto Transado Estimado -->
+                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(30, 196, 152, 0.12); color: var(--accent-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(30, 196, 152, 0.25);">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                            Monto Transado Estimado
+                        </span>
+                        <div style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
+                            $1.480M
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI 2: Licitaciones Evaluadas -->
+                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(17, 99, 78, 0.12); color: var(--dark-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(17, 99, 78, 0.25);">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                            Licitaciones Evaluadas
+                        </span>
+                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">342</span>
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Totales</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Competidores Activos -->
+                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(59, 130, 246, 0.12); color: #3b82f6; flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(59, 130, 246, 0.25);">
+                        <i class="fa-solid fa-users-viewfinder"></i>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                            Competidores Activos
+                        </span>
+                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+                            <span style="font-size: 1.7rem; font-weight: 800; color: #3b82f6; line-height: 1.1;">89</span>
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Empresas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI 4: Tasa Media Adjudicación -->
+                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1;">
+                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(92, 150, 136, 0.15); color: var(--muted-teal); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(92, 150, 136, 0.25);">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                            Tasa Media Adjudicación
+                        </span>
+                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1.1;">24.6%</span>
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Promedio</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 2. Pestañas de Navegación del Dashboard -->
+        <div style="display: flex; gap: 0.8rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.8rem; flex-wrap: wrap;">
+            <button type="button" class="tab-dash-btn active" onclick="cambiarDashboard('tab-productos', this)">
+                <i class="fa-solid fa-box-archive"></i> Demanda de Productos (E03-H01)
+            </button>
+            <button type="button" class="tab-dash-btn" onclick="cambiarDashboard('tab-competencia', this)">
+                <i class="fa-solid fa-chart-pie"></i> Análisis de Competencia (E03-H02)
+            </button>
+            <button type="button" class="tab-dash-btn" onclick="cambiarDashboard('tab-compradores', this)">
+                <i class="fa-solid fa-building-columns"></i> Organismos Compradores
+            </button>
+        </div>
+
+        <!-- 3. Contenedor Dinámico de Vistas -->
+
+        <!-- VISTA A: DASHBOARD DE PRODUCTOS (E03-H01) -->
+        <div id="tab-productos" class="dashboard-view active">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                
+                <!-- Gráfico de Demanda Temporal -->
+                <div class="dashboard-card" style="padding: 1.5rem;">
+                    <div class="dashboard-header" style="margin-bottom: 1rem;">
+                        <div class="dash-title" style="font-size: 1.1rem;">
+                            <i class="fa-solid fa-chart-column" style="color: var(--accent-green);"></i>
+                            Volumen de Licitaciones por Categoría de Producto
+                        </div>
+                        <span class="dash-badge">Mensual</span>
+                    </div>
+                    <div style="position: relative; height: 280px; width: 100%;">
+                        <canvas id="graficoProductos"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Productos Más Solicitados -->
+                <div class="dashboard-card" style="padding: 1.5rem;">
+                    <div class="dashboard-header" style="margin-bottom: 1rem;">
+                        <div class="dash-title" style="font-size: 1.1rem;">
+                            <i class="fa-solid fa-fire" style="color: #ef4444;"></i>
+                            Top Productos Demandados
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.9rem;">
+                        <div class="stat-mini-card" style="margin: 0; padding: 0.8rem 1rem;">
+                            <label>81111812 - Mantenimiento TI</label>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <span style="font-size: 1.1rem; font-weight: 800; color: var(--dark-green);">84 Licitaciones</span>
+                                <small style="color: var(--accent-green); font-weight: 700;">+18% vs mes ant.</small>
+                            </div>
+                        </div>
+                        <div class="stat-mini-card" style="margin: 0; padding: 0.8rem 1rem;">
+                            <label>43211507 - Laptops y Servidores</label>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <span style="font-size: 1.1rem; font-weight: 800; color: var(--dark-green);">52 Licitaciones</span>
+                                <small style="color: var(--muted-teal); font-weight: 700;">+5% vs mes ant.</small>
+                            </div>
+                        </div>
+                        <div class="stat-mini-card" style="margin: 0; padding: 0.8rem 1rem;">
+                            <label>81111508 - Licencias Software</label>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <span style="font-size: 1.1rem; font-weight: 800; color: var(--dark-green);">39 Licitaciones</span>
+                                <small style="color: #ef4444; font-weight: 700;">-2% vs mes ant.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- VISTA B: DASHBOARD DE COMPETENCIA (E03-H02) -->
+        <div id="tab-competencia" class="dashboard-view" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                
+                <!-- Participación y Adjudicación -->
+                <div class="dashboard-card" style="padding: 1.5rem;">
+                    <div class="dashboard-header" style="margin-bottom: 1rem;">
+                        <div class="dash-title" style="font-size: 1.1rem;">
+                            <i class="fa-solid fa-pie-chart" style="color: var(--accent-green);"></i>
+                            Distribución de Adjudicaciones por Competidor
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 280px; width: 100%;">
+                        <canvas id="graficoCompetencia"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabla de Comportamiento de Oferentes -->
+                <div class="dashboard-card" style="padding: 1.5rem; overflow-x: auto;">
+                    <div class="dashboard-header" style="margin-bottom: 1rem;">
+                        <div class="dash-title" style="font-size: 1.1rem;">
+                            <i class="fa-solid fa-users" style="color: var(--accent-green);"></i>
+                            Ranking de Oferentes Principales
+                        </div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--border-color); color: var(--dark-green); font-weight: 800;">
+                                <th style="padding: 0.6rem 0.4rem;">Empresa Competidora</th>
+                                <th style="padding: 0.6rem 0.4rem;">Ofertas</th>
+                                <th style="padding: 0.6rem 0.4rem;">Tasa Adj.</th>
+                                <th style="padding: 0.6rem 0.4rem;">Monto Total</th>
+                            </tr>
+                        </thead>
+                        <tbody style="color: var(--gray-text);">
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">Soluciones TI Global SpA</td>
+                                <td style="padding: 0.8rem 0.4rem;">34</td>
+                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--accent-green);">41%</td>
+                                <td style="padding: 0.8rem 0.4rem;">$320M</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">TechCloud Chile Ltda.</td>
+                                <td style="padding: 0.8rem 0.4rem;">28</td>
+                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--accent-green);">28%</td>
+                                <td style="padding: 0.8rem 0.4rem;">$210M</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">Informatica Austral S.A.</td>
+                                <td style="padding: 0.8rem 0.4rem;">19</td>
+                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--accent-green);">15%</td>
+                                <td style="padding: 0.8rem 0.4rem;">$95M</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- VISTA C: DASHBOARD DE COMPRADORES -->
+        <div id="tab-compradores" class="dashboard-view" style="display: none;">
+            <div class="dashboard-card" style="padding: 1.5rem;">
+                <div class="dashboard-header" style="margin-bottom: 1rem;">
+                    <div class="dash-title" style="font-size: 1.1rem;">
+                        <i class="fa-solid fa-landmark" style="color: var(--accent-green);"></i>
+                        Organismos Estatales con Mayor Presupuesto Asignado
+                    </div>
+                </div>
+                <div style="position: relative; height: 260px; width: 100%;">
+                    <canvas id="graficoCompradores"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- Estilos específicos de pestañas -->
+<style>
+    .tab-dash-btn {
+        padding: 0.65rem 1.2rem;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--gray-text);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+    }
+    .tab-dash-btn:hover {
+        background: rgba(30, 196, 152, 0.08);
+        color: var(--dark-green);
+    }
+    .tab-dash-btn.active {
+        background: var(--dark-green);
+        color: var(--white);
+    }
+    @media (max-width: 900px) {
+        div[style*="grid-template-columns: 2fr 1fr"],
+        div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+
+<!-- Inicialización de Gráficos y Pestañas -->
+<script>
+    function cambiarDashboard(tabId, btn) {
+        document.querySelectorAll('.dashboard-view').forEach(view => view.style.display = 'none');
+        document.querySelectorAll('.tab-dash-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(tabId).style.display = 'block';
+        btn.classList.add('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Gráfico 1: Demanda de Productos
+        new Chart(document.getElementById('graficoProductos'), {
+            type: 'bar',
+            data: {
+                labels: ['Software & TI', 'Equipos Hardware', 'Consultoría', 'Servicios Cloud', 'Seguridad'],
+                datasets: [{
+                    label: 'Cantidad de Licitaciones',
+                    data: [84, 52, 39, 61, 28],
+                    backgroundColor: '#1ec498',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Gráfico 2: Competencia
+        new Chart(document.getElementById('graficoCompetencia'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Soluciones TI', 'TechCloud', 'Informatica Austral', 'Otros Oferentes'],
+                datasets: [{
+                    data: [41, 28, 15, 16],
+                    backgroundColor: ['#11634e', '#1ec498', '#5c9688', '#b1d2ca']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Gráfico 3: Organismos Compradores
+        new Chart(document.getElementById('graficoCompradores'), {
+            type: 'bar',
+            data: {
+                labels: ['SUBTEL', 'Municipalidad de Valparaíso', 'Servicio de Salud Biobío', 'Ministerio de Hacienda', 'FONASA'],
+                datasets: [{
+                    label: 'Presupuesto Licitado (en Millones CLP)',
+                    data: [450, 310, 280, 240, 200],
+                    backgroundColor: '#11634e',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    });
+</script>
+{% endblock %}
