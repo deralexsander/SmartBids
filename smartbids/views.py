@@ -6,6 +6,10 @@ from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from .models import Mensajeria
+
+
+from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +48,86 @@ def mis_licitaciones_view(request):
 
 def dashboard_view(request):
     return render(request, 'smartbids/dashboard.html')
+
+
+
+
+
+
+@csrf_exempt
+def listar_crear_mensajes(request):
+    # GET: Listar todos los mensajes para el panel admin
+    if request.method == 'GET':
+        mensajes = Mensajeria.objects.all().order_by('-creado_el')
+        data = [
+            {
+                'id': m.id,
+                'asunto': m.asunto,
+                'cuerpo': m.cuerpo,
+                'estado': m.estado,
+                'tipoAlerta': m.tipo_alerta,
+            }
+            for m in mensajes
+        ]
+        return JsonResponse(data, safe=False)
+
+    # POST: Crear un nuevo mensaje
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+            nuevo = Mensajeria.objects.create(
+                asunto=body.get('asunto', '').strip(),
+                cuerpo=body.get('cuerpo', '').strip(),
+                estado=body.get('estado', 'activo'),
+                tipo_alerta=body.get('tipoAlerta', 'alerta')
+            )
+            return JsonResponse({'status': 'ok', 'id': nuevo.id}, status=201)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=400)
+
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido'}, status=405)
+
+
+@csrf_exempt
+def detalle_mensaje(request, id):
+    mensaje_obj = get_object_or_404(Mensajeria, id=id)
+
+    # PUT: Editar mensaje existente
+    if request.method in ['PUT', 'POST']:
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+            mensaje_obj.asunto = body.get('asunto', mensaje_obj.asunto).strip()
+            mensaje_obj.cuerpo = body.get('cuerpo', mensaje_obj.cuerpo).strip()
+            mensaje_obj.estado = body.get('estado', mensaje_obj.estado)
+            mensaje_obj.tipo_alerta = body.get('tipoAlerta', mensaje_obj.tipo_alerta)
+            mensaje_obj.save()
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=400)
+
+    # DELETE: Eliminar mensaje
+    if request.method == 'DELETE':
+        mensaje_obj.delete()
+        return JsonResponse({'status': 'ok'})
+
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido'}, status=405)
+
+def obtener_alertas_activas(request):
+    # Consulta los mensajes con estado activo en PostgreSQL
+    alertas = Mensajeria.objects.filter(estado='activo').order_by('-creado_el')
+    
+    data = [
+        {
+            'id': alerta.id,
+            'asunto': alerta.asunto,
+            'cuerpo': alerta.cuerpo,
+            'tipoAlerta': alerta.tipo_alerta,
+            'estado': alerta.estado,
+        }
+        for alerta in alertas
+    ]
+    
+    return JsonResponse(data, safe=False)
 
 
 # ==============================================================================

@@ -144,35 +144,29 @@
 
                 <form id="form-perfil-empresa">
                     <div class="profile-form-grid">
-                        <div class="form-item">
-                            <label for="empresa-select-previa">Seleccionar Empresa Registrada</label>
-                            <select class="form-input" id="empresa-select-previa" name="empresa_previa">
-                                <option value="">-- Seleccione Empresa --</option>
-                                <option value="BLUECOMPANY">BLUECOMPANY</option>
-                                <option value="CCN BUSES">CCN BUSES</option>
-                                <option value="CHILEAVANZA">CHILEAVANZA</option>
-                                <option value="CIS">CIS</option>
-                                <option value="EVERIS">EVERIS</option>
-                                <option value="GDS">GDS</option>
-                                <option value="INTRATEC">INTRATEC</option>
-                                <option value="PLATAFORMAGROUP">PLATAFORMAGROUP</option>
-                                <option value="SMARTBIDS">SMARTBIDS</option>
-                            </select>
+                        <div class="form-item grid-full">
+                            <label for="empresa-rut">RUT Empresa (rut)</label>
+                            <div style="display: flex; gap: 0.75rem;">
+                                <input type="text" class="form-input" id="empresa-rut" name="rut" placeholder="76.xxx.xxx-k" required style="flex: 1;">
+                                <button type="button" class="btn btn-outline" id="btn-buscar-rut" style="white-space: nowrap;">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Buscar RUT
+                                </button>
+                            </div>
                         </div>
 
                         <div class="form-item">
                             <label for="empresa-nombre">Nombre Comercial (nombre_empresa)</label>
-                            <input type="text" class="form-input" id="empresa-nombre" name="nombre_empresa" placeholder="Ej: Mi Empresa SpA" required>
-                        </div>
-
-                        <div class="form-item">
-                            <label for="empresa-rut">RUT Empresa (rut)</label>
-                            <input type="text" class="form-input" id="empresa-rut" name="rut" placeholder="76.xxx.xxx-k">
+                            <input type="text" class="form-input" id="empresa-nombre" name="nombre_empresa" placeholder="Autocompletado por RUT" readonly required>
                         </div>
 
                         <div class="form-item">
                             <label for="empresa-razon-social">Razón Social (razon_social)</label>
-                            <input type="text" class="form-input" id="empresa-razon-social" name="razon_social" placeholder="Razón social legal">
+                            <input type="text" class="form-input" id="empresa-razon-social" name="razon_social" placeholder="Autocompletado por RUT" readonly>
+                        </div>
+
+                        <div class="form-item">
+                            <label for="empresa-actividad">Actividad Económica (actividad_economica)</label>
+                            <input type="text" class="form-input" id="empresa-actividad" name="actividad_economica" placeholder="Rubro principal" readonly>
                         </div>
 
                         <div class="form-item">

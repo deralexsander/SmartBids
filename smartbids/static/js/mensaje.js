@@ -280,5 +280,25 @@ function actualizarPilaAlertas() {
     });
 }
 
+// ==========================================================================
+// 5. CARGAR ALERTAS ACTIVAS DESDE POSTGRESQL (API)
+// ==========================================================================
+async function cargarAlertasPostgres() {
+    try {
+        const respuesta = await fetch('/api/alertas-activas/');
+        if (!respuesta.ok) return;
 
+        const alertas = await respuesta.json();
 
+        alertas.forEach(alerta => {
+            renderizarAlerta(alerta.id, alerta);
+        });
+    } catch (error) {
+        console.error('Error cargando alertas desde PostgreSQL:', error);
+    }
+}
+
+// Ejecutar al cargar el documento
+document.addEventListener('DOMContentLoaded', () => {
+    cargarAlertasPostgres();
+});

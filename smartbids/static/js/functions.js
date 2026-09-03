@@ -165,3 +165,7 @@ export function cerrarModal2FA() {
 
 window.abrirModal2FA = abrirModal2FA;
 window.cerrarModal2FA = cerrarModal2FA;
+
+
+
+
