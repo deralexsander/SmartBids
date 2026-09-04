@@ -31,6 +31,8 @@ ALLOWED_HOSTS = [
     'localhost',
     'chileavanza.cl',
     '.chileavanza.cl',
+    'smartbids-production.up.railway.app',
+    '.railway.app',
 ]
 
 

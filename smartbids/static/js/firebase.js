@@ -50,13 +50,13 @@ import {
 
 // 1. Configuración de Firebase
 const firebaseConfig = {
-  apiKey: 'AIzaSyBlCZkRsr39TbPnL3fse3QH-W3oMIv7384',
-  authDomain: 'smartbids-e0b99.firebaseapp.com',
-  projectId: 'smartbids-e0b99',
-  storageBucket: 'smartbids-e0b99.firebasestorage.app',
-  messagingSenderId: '958415636156',
-  appId: '1:958415636156:web:3859749919a9e9573ab2b9',
-  measurementId: 'G-8JED2S96M0',
+  apiKey: "AIzaSyD24idgUwRAX_M9nDVYwSfj6mtLR5PzBi8",
+  authDomain: "smartbids-system.firebaseapp.com",
+  projectId: "smartbids-system",
+  storageBucket: "smartbids-system.firebasestorage.app",
+  messagingSenderId: "177005728071",
+  appId: "1:177005728071:web:4e3a8dd8fa4a1e8c3d7c62",
+  measurementId: "G-3THREJGLY0"
 };
 
 // 2. Inicialización de SDKs
