@@ -28,8 +28,6 @@ import {
     Timestamp 
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-// firebase.js (Líneas 28 - 36 aprox.)
-
 import { 
     redirectIfAuthenticated, 
     hidePageLoader,         
@@ -48,16 +46,25 @@ import {
     MENSAJES,
 } from './mensaje.js';
 
-// 1. Configuración de Firebase
-const firebaseConfig = {
-  apiKey: 'AIzaSyBlCZkRsr39TbPnL3fse3QH-W3oMIv7384',
-  authDomain: 'smartbids-e0b99.firebaseapp.com',
-  projectId: 'smartbids-e0b99',
-  storageBucket: 'smartbids-e0b99.firebasestorage.app',
-  messagingSenderId: '958415636156',
-  appId: '1:958415636156:web:3859749919a9e9573ab2b9',
-  measurementId: 'G-8JED2S96M0',
-};
+// ==========================================================================
+// 1. Cargar Configuración de Firebase desde el bloque JSON enviado por Django
+// ==========================================================================
+const configScript = document.getElementById('firebase-config');
+let firebaseConfig = {};
+
+if (configScript) {
+    try {
+        firebaseConfig = JSON.parse(configScript.textContent);
+    } catch (e) {
+        console.error('[SmartBids] Error parseando JSON de Firebase:', e);
+    }
+}
+
+// Validar que apiKey exista antes de inicializar
+if (!firebaseConfig || !firebaseConfig.apiKey) {
+    console.error('[SmartBids] ❌ Error: No se encontraron las credenciales de Firebase. Verifica tu archivo .env y el servidor de Django.');
+}
+
 
 // 2. Inicialización de SDKs
 const app = initializeApp(firebaseConfig);
@@ -66,7 +73,7 @@ const db = getFirestore(app);
 
 export { app, auth, db };
 
-/// ==========================================================================
+// ==========================================================================
 // 3. Inicialización de componentes UI
 // ==========================================================================
 setupPasswordToggles();
@@ -280,7 +287,6 @@ if (loginForm) {
             }, { merge: true });
 
             // 4. Guardar datos temporales y CERRAR la sesión de Firebase de inmediato
-            // (Así, si el usuario refresca la página, Firebase no lo detectará como logueado)
             pendingEmail = email;
             pendingPassword = password;
             pendingUid = user.uid;
@@ -387,8 +393,6 @@ if (btnCancelarOtp) {
     });
 }
 
-
-
 // ==========================================================================
 // 6. Cierre de Sesión
 // ==========================================================================
@@ -409,8 +413,6 @@ if (logoutButton) {
 // ==========================================================================
 // 7. Recuperación de Contraseña
 // ==========================================================================
-
-
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener('click', async (e) => {
@@ -430,7 +432,8 @@ if (forgotPasswordLink) {
         forgotPasswordLink.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando...`;
 
         try {
-            const response = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=AIzaSyBlCZkRsr39TbPnL3fse3QH-W3oMIv7384', {
+            // Se actualiza la llamada utilizando la apiKey obtenida dinámicamente desde la configuración
+            const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseConfig.apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -551,9 +554,6 @@ if (registerForm) {
     });
 }
 
-
-
-
 // ==========================================================================
 // 9. GESTIÓN DE ALERTAS (PANEL ADMIN CONECTADO A POSTGRESQL)
 // ==========================================================================
@@ -566,7 +566,6 @@ const btnCancelar = document.getElementById('btn-cancelar-edicion');
 const statusFeedback = document.getElementById('mensaje-status-feedback');
 
 if (formMensajeria) {
-    // Función para consultar la lista de mensajes en PostgreSQL
     async function cargarListaAlertasAdmin() {
         if (!listaAlertasAdmin) return;
 
@@ -699,7 +698,6 @@ if (formMensajeria) {
         }
     }
 
-    // Guardar Alerta (Crear o Modificar en PostgreSQL)
     formMensajeria.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -756,7 +754,6 @@ if (formMensajeria) {
         }
     });
 
-    // Botón Cancelar
     if (btnCancelar) {
         btnCancelar.addEventListener('click', () => {
             formMensajeria.reset();
@@ -765,14 +762,8 @@ if (formMensajeria) {
         });
     }
 
-    // Carga inicial al entrar al panel
     cargarListaAlertasAdmin();
 }
-
-
-
-
-
 
 // ==========================================================================
 // SECCIÓN PERFIL: Lectura y Actualización en Tiempo Real desde Firestore
@@ -794,18 +785,15 @@ function inicializarVistaPerfil(user) {
     if (!user) return;
     const userDocRef = doc(db, "prospectos", user.uid);
 
-    // 1. Lectura en tiempo real del documento de Firestore
     onSnapshot(userDocRef, (docSnap) => {
         if (!docSnap.exists()) return;
         const data = docSnap.data();
 
-        // Control de visibilidad para el apartado exclusivo de Administrador
         const adminSection = document.getElementById('admin-services-section');
         if (adminSection) {
             adminSection.style.display = (data.estado === 'admin') ? 'block' : 'none';
         }
 
-        // Header / Lateral
         const pnombre = data.pnombre || '';
         const appaterno = data.appaterno || '';
         const snombre = data.snombre || '';
@@ -824,7 +812,6 @@ function inicializarVistaPerfil(user) {
         const elRole = document.getElementById('profile-estado');
         if (elRole) elRole.textContent = data.estado || 'prospecto';
 
-        // Iniciales para el avatar
         const elInitials = document.getElementById('profile-initials');
         if (elInitials) {
             const iniP = pnombre ? pnombre[0] : '';
@@ -832,7 +819,6 @@ function inicializarVistaPerfil(user) {
             elInitials.textContent = (iniP + iniA).toUpperCase() || 'SB';
         }
 
-        // Metadatos
         const elUid = document.getElementById('profile-uid-header');
         if (elUid) elUid.textContent = user.uid;
 
@@ -842,7 +828,6 @@ function inicializarVistaPerfil(user) {
         const elLastLogin = document.getElementById('profile-last-login');
         if (elLastLogin) elLastLogin.textContent = formatTimestamp(data.ultima_conexion);
 
-        // Inputs del Formulario Datos Personales
         const inPnombre = document.getElementById('profile-pnombre');
         const inSnombre = document.getElementById('profile-snombre');
         const inAppaterno = document.getElementById('profile-appaterno');
@@ -859,7 +844,6 @@ function inicializarVistaPerfil(user) {
         if (inTelefono && document.activeElement !== inTelefono) inTelefono.value = data.telefono || '';
         if (inEmail) inEmail.value = user.email || data.email || '';
 
-        // Tokens y Sesiones
         const elSessionId = document.getElementById('profile-session-id');
         const elTokenId = document.getElementById('profile-token-id');
         const tokenActivo = data.tokenID || data.session_id || 'No asignado';
@@ -867,12 +851,10 @@ function inicializarVistaPerfil(user) {
         if (elSessionId) elSessionId.textContent = tokenActivo;
         if (elTokenId) elTokenId.textContent = tokenActivo;
 
-        // Estado de verificación
         const elStatus = document.getElementById('profile-status');
         if (elStatus) elStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
     });
 
-    // 2. Guardar cambios en Firestore al enviar formulario de datos
     const formDatos = document.getElementById('form-perfil-datos');
     if (formDatos) {
         formDatos.addEventListener('submit', async (e) => {
@@ -901,7 +883,6 @@ function inicializarVistaPerfil(user) {
         });
     }
 
-    // 3. Formulario de Cambio de Contraseña
     const formPass = document.getElementById('form-perfil-password') || document.getElementById('form-change-password');
     if (formPass) {
         formPass.addEventListener('submit', async (e) => {
@@ -932,14 +913,11 @@ function inicializarVistaPerfil(user) {
             setButtonLoading(submitBtn, true, 'Actualizando...');
 
             try {
-                // 1. Reautenticar usuario antes de cambiar credenciales
                 const cred = EmailAuthProvider.credential(user.email, currentPass);
                 await reauthenticateWithCredential(user, cred);
                 
-                // 2. Actualizar contraseña en Firebase Auth
                 await updatePassword(user, newPass);
 
-                // 3. Notificar por correo mediante la API de Django
                 try {
                     await fetch('/api/enviar-correo-cambio-password/', {
                         method: 'POST',
@@ -950,19 +928,16 @@ function inicializarVistaPerfil(user) {
                     console.warn('[SmartBids] No se pudo enviar el correo de cambio de contraseña:', mailErr);
                 }
 
-                // 4. Guardar mensaje flash para mostrarlo al llegar a la vista de login
                 sessionStorage.setItem('flash_message', JSON.stringify({
                     texto: 'Contraseña actualizada correctamente. Por favor, inicia sesión con tu nueva clave.',
                     tipo: 'exito'
                 }));
 
-                // 5. Limpiar token local y cerrar sesión
                 if (typeof SessionManager !== 'undefined' && SessionManager.clearLocalToken) {
                     SessionManager.clearLocalToken();
                 }
                 await signOut(auth);
 
-                // 6. Redirigir a la vista de ingreso
                 window.location.href = '/ingreso';
 
             } catch (err) {
@@ -973,7 +948,6 @@ function inicializarVistaPerfil(user) {
         });
     }
 
-    // 4. Copiado de Tokens
     const setupCopyBtn = (btnId, textSpanId, msg) => {
         const btn = document.getElementById(btnId);
         if (btn) {
