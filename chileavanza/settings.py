@@ -31,6 +31,8 @@ ALLOWED_HOSTS = [
     'localhost',
     'chileavanza.cl',
     '.chileavanza.cl',
+    'smartbids-production.up.railway.app',
+    '.railway.app',
 ]
 
 
@@ -47,7 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # <--- Agregar aquí
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -60,7 +62,7 @@ ROOT_URLCONF = 'chileavanza.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'BACKEND': 'django.template.backends.DjangoTemplates',
         'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -128,9 +130,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-
-# Ruta donde 'collectstatic' recopilará todos los archivos para producción
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Configuración del almacenamiento para WhiteNoise
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 if (BASE_DIR / 'static').exists():
     STATICFILES_DIRS = [
@@ -149,7 +159,6 @@ EMAIL_BACKEND = 'smartbids.gmail_backend.GmailApiBackend'
 
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'smartbids.qa@chileavanza.cl')
 DEFAULT_FROM_EMAIL = f"SmartBids <{EMAIL_HOST_USER}>"
-
 
 
 FIREBASE_CONFIG = {
