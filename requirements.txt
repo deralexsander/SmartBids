@@ -38,3 +38,4 @@ uritemplate==4.2.0
 urllib3==2.7.0
 vermin==1.8.0
 whitenoise==6.12.0
+dj-database-url>=2.1.0
