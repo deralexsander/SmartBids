@@ -84,8 +84,8 @@ WSGI_APPLICATION = 'chileavanza.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Configuración adaptativa: prioriza DATABASE_URL (Railway) y si no existe usa la conexión local
-DATABASE_URL = os.getenv('DATABASE_URL')
+# Configuración adaptativa: evalúa la URL privada de Railway, luego la estándar, o la conexión local
+DATABASE_URL = os.getenv('DATABASE_PRIVATE_URL') or os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
     DATABASES = {
