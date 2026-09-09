@@ -14,7 +14,7 @@
             <p class="section-desc">Ingresa con tu correo para acceder a tu panel y gestionar tus oportunidades de licitaciones.</p>
         </div>
 
-        <form id="login-form">
+        <form id="login-form" novalidate>
             {% csrf_token %}
             <div class="form-inline" style="margin-bottom: 1rem;">
                 <input type="email" id="email" name="email" placeholder="Correo electrónico" required>
@@ -37,4 +37,27 @@
     </div>
 </section>
 
+<!-- Modal 2FA -->
+<div id="modal-2fa" class="modal-2fa-overlay">
+    <div class="modal-2fa-card">
+        <h3 class="modal-2fa-title">Verificación de Seguridad</h3>
+        <p class="modal-2fa-desc">Hemos enviado un código de 6 dígitos a tu correo electrónico.</p>
+        
+        <div class="otp-inputs-wrapper">
+            <input type="text" maxlength="1" class="otp-input otp-digit-input">
+            <input type="text" maxlength="1" class="otp-input otp-digit-input">
+            <input type="text" maxlength="1" class="otp-input otp-digit-input">
+            <input type="text" maxlength="1" class="otp-input otp-digit-input">
+            <input type="text" maxlength="1" class="otp-input otp-digit-input">
+            <input type="text" maxlength="1" class="otp-input otp-digit-input">
+        </div>
+
+        <p id="otp-message" class="otp-feedback-msg"></p>
+
+        <div class="modal-2fa-actions">
+            <button type="button" id="btn-verificar-otp" class="btn btn-primary btn-large">Verificar Código</button>
+            <button type="button" id="btn-cancelar-otp" class="btn btn-outline">Cancelar</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

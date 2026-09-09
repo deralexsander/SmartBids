@@ -14,22 +14,22 @@
             <p class="section-desc">Regístrate con tu correo para empezar a gestionar tus oportunidades en Mercado Público.</p>
         </div>
 
-        <form id="register-form">
+        <form id="register-form" novalidate>
             {% csrf_token %}
             <div class="form-inline" style="margin-bottom: 1rem;">
-                <input type="email" id="email" name="email" placeholder="Correo electrónico" required>
+                <input type="email" id="email" name="email" placeholder="Correo electrónico">
             </div>
             <div class="form-inline" style="margin-bottom: 1rem;">
-                <input type="email" id="email-confirm" name="email_confirm" placeholder="Confirmar correo" required>
+                <input type="email" id="email-confirm" name="email_confirm" placeholder="Confirmar correo">
             </div>
             <div class="form-inline" style="margin-bottom: 1rem; position: relative;">
-                <input type="password" id="password" name="password" placeholder="Contraseña" required>
+                <input type="password" id="password" name="password" placeholder="Contraseña">
                 <button type="button" id="toggle-password" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); border:none; background:none; cursor:pointer; color: var(--dark-green); font-size:1.1rem;">
                     <i class="fa-solid fa-eye" id="toggle-password-icon"></i>
                 </button>
             </div>
             <div class="form-inline" style="margin-bottom: 1.25rem; position: relative;">
-                <input type="password" id="password-confirm" name="password_confirm" placeholder="Confirmar contraseña" required>
+                <input type="password" id="password-confirm" name="password_confirm" placeholder="Confirmar contraseña">
                 <button type="button" id="toggle-password-confirm" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); border:none; background:none; cursor:pointer; color: var(--dark-green); font-size:1.1rem;">
                     <i class="fa-solid fa-eye" id="toggle-password-confirm-icon"></i>
                 </button>
@@ -45,6 +45,4 @@
         </form>
     </div>
 </section>
-
-
 {% endblock %}

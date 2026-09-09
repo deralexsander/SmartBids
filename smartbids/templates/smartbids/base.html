@@ -5,41 +5,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <script type="module" src="{% static 'js/firebase.js' %}"></script>
+    
+    <script type="module" src="{% static 'js/mensaje.js' %}"></script>
     <script type="module" src="{% static 'js/functions.js' %}"></script>
+    {{ FIREBASE_CONFIG|json_script:"firebase-config" }}
+    <script type="module" src="{% static 'js/firebase.js' %}"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="icon" href="{% static '' %}">
+    <link rel="icon" href="{% static 'media/isotipo smartbids.png' %}">
     {% block nombrePag %}{% endblock %}
 </head>
 <body>
+    {% block loader %}
     <div id="page-loader" class="page-loader">
         <div class="page-loader-panel">
             <div class="page-loader-bar"></div>
             <div class="page-loader-text">Cargando...</div>
         </div>
     </div>
+    {% endblock %}
 
+    {% block header %}
     <header>
         <a href="{% url 'home' %}" class="logo">
-            <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <img src="{% static 'media/isotipo smartbids.png' %}" alt="SmartBids Icon" class="logo-icon">
             <div class="logo-text">Smart<span>Bids</span></div>
         </a>
         <nav>
-            {% block nav_links %}{% endblock %}
+        <ul>
+            {# 1. Enlaces exclusivos para la página de INICIO (Home) #}
+            {% if request.resolver_match.url_name == 'home' %}
+                <li><a href="#propuesta">Propuesta de Valor</a></li>
+                <li><a href="#funcionalidades">Funcionalidades</a></li>
+                <li><a href="#inteligencia">IA Predictiva</a></li>
+                <li><a href="#beneficios">Beneficios</a></li>
+
+            {# 2. Enlaces exclusivos para la página de INFORMACIÓN LEGAL #}
+            {% elif request.resolver_match.url_name == 'informacion' %}
+                <li><a href="{% url 'home' %}">Inicio</a></li>
+                <li><span class="nav-separator">•</span></li>
+                <li><a href="#terminos">Términos de Servicio</a></li>
+                <li><a href="#privacidad">Política de Privacidad</a></li>
+                <li><a href="#seguridad">Seguridad (2FA)</a></li>
+            {% endif %}
+
+
+            {% if request.resolver_match.url_name not in 'home informacion ingreso registro' %}
+                <li class="{% if request.resolver_match.url_name == 'mis_licitaciones' %}active{% endif %}">
+                    <a href="{% url 'mis_licitaciones' %}">Mis licitaciones</a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">Dashboard</a>
+                </li>
+            {% endif %}
+        </ul>
         </nav>
         <div class="nav-buttons">
-            <a id="btn-profile" href="{% url 'perfil' %}" class="btn btn-primary" style="display: none;">Perfil</a>
+            {% block btn_perfil %}
+            <a id="btn-profile" href="{% url 'perfil' %}" class="btn btn-primary" title="Mi Perfil" aria-label="Mi Perfil" style="display: none; width: 42px; height: 42px; padding: 0; border-radius: 12px;">
+                <i class="fa-solid fa-user"></i>
+            </a>
+            {% endblock %}
             {% block nav_buttons %}{% endblock %}
         </div>
     </header>
+    {% endblock %}
 
+    <div id="global-message-container">
+        <div id="global-message-badge" class="floating-badge">
+            <i id="global-message-icon" class="fa-solid fa-circle-info"></i>
+            <span id="global-message-text"></span>
+        </div>
+    </div>
+
+    <div id="dynamic-alerts-container" class="alerts-wrapper"></div>
 
     {% block contenido %}{% endblock %}
-
+    {% block footer %}{% endblock %}
 
 </body>
 </html>
