@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
 from .views import obtener_alertas_activas
-
 urlpatterns = [
     path('', views.home, name='home'),
     path('home', views.home, name='home'),

@@ -1,5 +1,6 @@
 {% extends 'smartbids/base.html' %}
 {% load static %}
+{% load humanize %} <!-- Carga los filtros de formato numérico si los tienes habilitados, o usamos formato estándar -->
 
 {% block nombrePag %}
 <title>Mis Licitaciones</title>
@@ -31,7 +32,7 @@
         <div class="dashboard-card" style="padding: 1.2rem 1.8rem; margin-bottom: 2rem; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch;">
             <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-width: 820px; width: 100%; gap: 1.5rem;">
                 
-                <!-- KPI 1: Total Licitaciones -->
+                <!-- KPI 1: Total Licitaciones (Conectado a BD) -->
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(30, 196, 152, 0.12); color: var(--accent-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(30, 196, 152, 0.25);">
                         <i class="fa-solid fa-layer-group"></i>
@@ -41,7 +42,7 @@
                             Total Licitaciones
                         </span>
                         <div style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
-                            124
+                            {{ total_licitaciones|default:0 }}
                         </div>
                     </div>
                 </div>
@@ -56,7 +57,7 @@
                             Match con Perfil
                         </span>
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1.1;">38</span>
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1.1;">0</span>
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Filtradas</span>
                         </div>
                     </div>
@@ -72,7 +73,7 @@
                             Cierre Próximo (&lt; 3 días)
                         </span>
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: #ef4444; line-height: 1.1;">6</span>
+                            <span style="font-size: 1.7rem; font-weight: 800; color: #ef4444; line-height: 1.1;">0</span>
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Activas</span>
                         </div>
                     </div>
@@ -88,7 +89,7 @@
                             Convenio Marco
                         </span>
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">15</span>
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">0</span>
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Procesos</span>
                         </div>
                     </div>
@@ -104,138 +105,131 @@
                     <i class="fa-solid fa-table-list" style="color: var(--accent-green);"></i>
                     Procesos de Compra Disponibles
                 </div>
-                <span class="dash-badge">Filtros Aplicados desde Perfil</span>
+                <span class="dash-badge">Mostrando Todos los Registros (Paginados)</span>
             </div>
 
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem; min-width: 950px;">
                 <thead>
                     <tr style="border-bottom: 2px solid var(--border-color); color: var(--dark-green); font-weight: 800;">
                         <th style="padding: 1rem 0.8rem;">Código / Tipo</th>
-                        <th style="padding: 1rem 0.8rem;">Organismo Comprador</th>
                         <th style="padding: 1rem 0.8rem;">Unidad Compradora</th>
-                        <th style="padding: 1rem 0.8rem;">Ubicación</th>
-                        <th style="padding: 1rem 0.8rem;">Rubro y Producto</th>
-                        <th style="padding: 1rem 0.8rem;">Monto / Tramo</th>
+                        <th style="padding: 1rem 0.8rem;">Dirección</th>
+                        <th style="padding: 1rem 0.8rem;">Ubicación (Comuna)</th>
+                        <th style="padding: 1rem 0.8rem;">Nombre / Descripción</th>
+                        <th style="padding: 1rem 0.8rem;">Presupuesto / Cierre</th>
                         <th style="padding: 1rem 0.8rem; text-align: center;">Acción</th>
                     </tr>
                 </thead>
                 <tbody style="color: var(--gray-text);">
-                    <!-- Fila 1 -->
+                    {% for lic in licitaciones %}
                     <tr style="border-bottom: 1px solid var(--border-color);">
+                        <!-- Código y Tipo de Licitación -->
                         <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">2392-14-LE26</div>
-                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">LE (100 - 1000 UTM)</span>
+                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">{{ lic.lic_codigo }}</div>
+                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">
+                                {{ lic.lic_tipo_licitacion|default:"N/D" }}
+                            </span>
                         </td>
+                        
+                        <!-- Unidad Compradora (vía FK lic_codigo_ucom) -->
                         <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Subsecretaría de Telecomunicaciones</div>
-                            <small style="color: var(--muted-teal); font-weight: 600;">SUBTEL (RUT: 60.501.000-7)</small>
+                            <div style="font-weight: 700; color: var(--dark-green);">
+                                {{ lic.lic_codigo_ucom.ucom_descripcion|default:"Unidad de Compra" }}
+                            </div>
+                            <small style="color: var(--muted-teal); font-weight: 600;">RUT: {{ lic.lic_codigo_ucom.ucom_rut|default:"N/A" }}</small>
                         </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div>Depto. de Tecnologías de Información</div>
-                            <small style="color: var(--muted-teal);">Amunátegui 139, Santiago</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 600; color: var(--dark-green);">Santiago</div>
-                            <small style="color: var(--muted-teal);">RM (Región Metropolitana)</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Servicios de Soporte de Servidores y Cloud</div>
-                            <small style="display: block; color: var(--muted-teal);">Prod: 81111812 - Mantenimiento TI</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$45.000.000</span>
-                            <small style="display: block; color: var(--muted-teal);">Tramo 3</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
-                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
-                            </button>
-                        </td>
-                    </tr>
 
-                    <!-- Fila 2 -->
-                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <!-- Dirección -->
                         <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">1058-22-L126</div>
-                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">L1 (&lt; 100 UTM)</span>
+                            <div>{{ lic.lic_codigo_ucom.ucom_direccion|default:"Sin dirección" }}</div>
                         </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 700; color: var(--dark-green);">I. Municipalidad de Valparaíso</div>
-                            <small style="color: var(--muted-teal); font-weight: 600;">MUNIVALPO (RUT: 69.050.100-2)</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div>Dirección de Administración y Finanzas</div>
-                            <small style="color: var(--muted-teal);">Condell 1490, Valparaíso</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 600; color: var(--dark-green);">Valparaíso</div>
-                            <small style="color: var(--muted-teal);">V Región de Valparaíso</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Adquisición de Laptops para Educación</div>
-                            <small style="display: block; color: var(--muted-teal);">Prod: 43211507 - Computadores Portátiles</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$4.800.000</span>
-                            <small style="display: block; color: var(--muted-teal);">Tramo 1</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
-                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
-                            </button>
-                        </td>
-                    </tr>
 
-                    <!-- Fila 3 -->
-                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <!-- Ubicación -->
                         <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">4520-5-LP26</div>
-                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">LP (&gt; 1.000 UTM)</span>
+                            <div style="font-weight: 600; color: var(--dark-green);">
+                                {{ lic.lic_codigo_ucom.ucom_codigo_comuna|default:"Chile" }}
+                            </div>
                         </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Servicio de Salud Concepción</div>
-                            <small style="color: var(--muted-teal); font-weight: 600;">SSCONCE (RUT: 61.602.000-1)</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div>Hospital Guillermo Grant Benavente</div>
-                            <small style="color: var(--muted-teal);">San Martín 1436, Concepción</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 600; color: var(--dark-green);">Concepción</div>
-                            <small style="color: var(--muted-teal);">VIII Región del Biobío</small>
-                        </td>
+
+                        <!-- Nombre y Descripción -->
                         <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Desarrollo y Mantención de Ficha Clínica</div>
-                            <small style="display: block; color: var(--muted-teal);">Prod: 81111508 - Aplicaciones de Software</small>
+                            <div style="font-weight: 700; color: var(--dark-green);">{{ lic.lic_nombre }}</div>
+                            <small style="display: block; color: var(--muted-teal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ lic.lic_descripcion }}
+                            </small>
                         </td>
+
+                        <!-- Presupuesto Punteado y Cierre -->
                         <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$85.000.000</span>
-                            <small style="display: block; color: var(--muted-teal);">Tramo 4</small>
+                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">
+                                {% if lic.lic_presupuesto %}
+                                    ${{ lic.lic_presupuesto|floatformat:0|intcomma }}
+                                {% else %}
+                                    S/M
+                                {% endif %}
+                            </span>
+                            <small style="display: block; color: var(--muted-teal);">Cierre: {{ lic.lic_fecha_cierre|default:"Pendiente" }}</small>
                         </td>
+
+                        <!-- Acción -->
                         <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
-                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
+                            {% if lic.lic_url %}
+                            <a href="{{ lic.lic_url }}" target="_blank" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
+                            </a>
+                            {% else %}
+                            <button type="button" class="btn btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;" disabled>
+                                Sin enlace
                             </button>
+                            {% endif %}
                         </td>
                     </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--muted-teal);">
+                            No se encontraron licitaciones registradas en la base de datos de PostgreSQL.
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
 
-            <!-- Paginador Inferior -->
+            <!-- Paginador Inferior Dinámico -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <span style="font-size: 0.88rem; color: var(--muted-teal); font-weight: 600;">
-                    Mostrando 1 a 3 de 38 procesos públicos
+                    Mostrando página {{ licitaciones.number }} de {{ licitaciones.paginator.num_pages }} (Total: {{ total_licitaciones }} procesos)
                 </span>
-                <div style="display: flex; gap: 0.4rem;">
-                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;" disabled>
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <button type="button" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">1</button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">2</button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">3</button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+                
+                <div style="display: flex; gap: 0.4rem; align-items: center;">
+                    {% if licitaciones.has_previous %}
+                        <a href="?page=1" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem; text-decoration: none;">
+                            <i class="fa-solid fa-angles-left"></i>
+                        </a>
+                        <a href="?page={{ licitaciones.previous_page_number }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem; text-decoration: none;">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    {% else %}
+                        <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem; opacity: 0.5;" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                    {% endif %}
+
+                    <span style="padding: 0 0.5rem; font-weight: 700; color: var(--dark-green); font-size: 0.9rem;">
+                        {{ licitaciones.number }}
+                    </span>
+
+                    {% if licitaciones.has_next %}
+                        <a href="?page={{ licitaciones.next_page_number }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem; text-decoration: none;">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a href="?page={{ licitaciones.paginator.num_pages }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem; text-decoration: none;">
+                            <i class="fa-solid fa-angles-right"></i>
+                        </a>
+                    {% else %}
+                        <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem; opacity: 0.5;" disabled>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    {% endif %}
                 </div>
             </div>
 
