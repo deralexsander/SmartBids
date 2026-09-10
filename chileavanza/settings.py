@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Cargar las variables desde el archivo .env
 load_dotenv(BASE_DIR / '.env')
 
 
@@ -29,9 +30,12 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1',
+    'localhost',
+    'chileavanza.cl',
+    '.chileavanza.cl',]
 
 
 # Application definition
@@ -65,9 +69,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'chileavanza.settings.firebase_settings',
             ],
         },
     },
@@ -90,7 +96,18 @@ DATABASES = {
         'OPTIONS': {
             'options': '-c search_path=public,catalog,procurement,core,config'
         },
-    }
+    },
+    'dw': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DW_DB_NAME', 'smartbids_dw'),
+        'USER': os.getenv('DW_DB_USER', os.getenv('DB_USER')),
+        'PASSWORD': os.getenv('DW_DB_PASSWORD', os.getenv('DB_PASSWORD')),
+        'HOST': os.getenv('DW_DB_HOST', os.getenv('DB_HOST', 'localhost')),
+        'PORT': os.getenv('DW_DB_PORT', os.getenv('DB_PORT', '5432')),
+        'OPTIONS': {
+            'options': '-c search_path=dw,public'
+        },
+    },
 }
 
 
@@ -130,7 +147,38 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+if (BASE_DIR / 'static').exists():
+    STATICFILES_DIRS = [
+        BASE_DIR / 'static',
+    ]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ==============================================================================
+# CONFIGURACIÓN DEL SERVIDOR DE CORREOS (GMAIL API REST)
+# ==============================================================================
+EMAIL_BACKEND = 'smartbids.gmail_backend.GmailApiBackend'
+
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'smartbids.qa@chileavanza.cl')
+DEFAULT_FROM_EMAIL = f"SmartBids <{EMAIL_HOST_USER}>"
+
+
+
+FIREBASE_CONFIG = {
+    'apiKey': os.getenv('FIREBASE_API_KEY'),
+    'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN'),
+    'projectId': os.getenv('FIREBASE_PROJECT_ID'),
+    'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
+    'messagingSenderId': os.getenv('FIREBASE_MESSAGING_SENDER_ID'),
+    'appId': os.getenv('FIREBASE_APP_ID'),
+    'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID'),
+}
+
+# Función para inyectar FIREBASE_CONFIG en todos los HTML
+def firebase_settings(request):
+    return {
+        'FIREBASE_CONFIG': FIREBASE_CONFIG
+    }
