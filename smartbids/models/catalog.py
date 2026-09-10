@@ -7,6 +7,20 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 
+class ActividadEconomica(models.Model):
+    codigo_actividad = models.CharField(primary_key=True, max_length=8)
+    nombre_actividad = models.CharField(max_length=300)
+    afecto_iva = models.CharField(max_length=2)
+    categoria_tributaria = models.CharField(max_length=1)
+    disponible_internet = models.BooleanField()
+    activo = models.BooleanField()
+    codigo_subrubro = models.ForeignKey('SubrubroActividad', models.DO_NOTHING, db_column='codigo_subrubro')
+
+    class Meta:
+        managed = False
+        db_table = '"catalog"."actividad_economica"'
+    def __str__(self):
+        return f"{self.codigo_actividad} - {self.nombre_actividad}"
 
 class Ambito(models.Model):
     codigo_ambito = models.CharField(primary_key=True, max_length=3)
@@ -14,10 +28,18 @@ class Ambito(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'ambito'
+        db_table = '"catalog"."ambito"'
 
     def __str__(self):
         return f"{self.codigo_ambito} - {self.nombre_ambito}"
+
+class CategoriaLicitacion(models.Model):
+    codigo_cat_licitacion = models.SmallAutoField(primary_key=True)
+    nombre_cat_licitacion = models.CharField(unique=True, max_length=50)
+
+    class Meta:
+        managed = False
+        db_table = '"catalog"."categoria_licitacion"'
 
 class Comuna(models.Model):
     codigo_comuna = models.CharField(primary_key=True, max_length=5)
@@ -26,7 +48,7 @@ class Comuna(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'comuna'
+        db_table = '"catalog"."comuna"'
 
     def __str__(self):
         return f"{self.codigo_comuna} - {self.nombre_comuna}"
@@ -38,7 +60,7 @@ class GrupoProducto(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'grupo_producto'
+        db_table = '"catalog"."grupo_producto"'
 
     def __str__(self):
         return f"{self.codigo_grupo_producto} - {self.nombre_grupo_producto}"
@@ -53,79 +75,76 @@ class Nivel1Producto(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'nivel1_producto'
+        db_table = '"catalog"."nivel1_producto"'
 
     def __str__(self):
         return f"{self.codigo_nivel1} - {self.descripcion}"
 
 
-
-class Nivel2Producto(models.Model):
-    id_nivel2 = models.BigAutoField(primary_key=True)
-    codigo_nivel1 = models.ForeignKey(Nivel1Producto, models.DO_NOTHING, db_column='codigo_nivel1')
-    codigo_nivel2 = models.CharField(max_length=10)
-    descripcion = models.CharField(max_length=255)
-    activo = models.BooleanField()
-
-    class Meta:
-        managed = False
-        db_table = 'nivel2_producto'
-        unique_together = (('codigo_nivel1', 'codigo_nivel2', 'descripcion'),)
-
-    def __str__(self):
-        return f"{self.codigo_nivel2} - {self.descripcion}"
-
-class Nivel3Producto(models.Model):
-    id_nivel3 = models.BigAutoField(primary_key=True)
-    id_nivel2 = models.ForeignKey(Nivel2Producto, models.DO_NOTHING, db_column='id_nivel2')
-    codigo_nivel3 = models.CharField(max_length=10)
-    descripcion = models.CharField(max_length=255)
-    activo = models.BooleanField()
-
-    class Meta:
-        managed = False
-        db_table = 'nivel3_producto'
-        unique_together = (('id_nivel2', 'codigo_nivel3', 'descripcion'),)
-
-    def __str__(self):
-        return f"{self.codigo_nivel3} - {self.descripcion}"
-
 class Organismo(models.Model):
     codigo_organismo = models.BigIntegerField(primary_key=True)
     activo = models.BooleanField(blank=True, null=True)
-    organismo = models.CharField(max_length=200)
-    sigla = models.CharField(max_length=30, blank=True, null=True)
-    rut = models.CharField(max_length=15)
-    descripcion = models.TextField(blank=True, null=True)
-    reclamos = models.IntegerField(blank=True, null=True)
-    codigo_comuna = models.ForeignKey(Comuna, models.DO_NOTHING, db_column='codigo_comuna', blank=True, null=True)
-    codigo_sector = models.ForeignKey('Sector', models.DO_NOTHING, db_column='codigo_sector', blank=True, null=True)
-    direccion = models.CharField(max_length=300, blank=True, null=True)
+    org_nombre = models.CharField(max_length=200)
+    org_sigla = models.CharField(max_length=30, blank=True, null=True)
+    org_rut = models.CharField(max_length=15, blank=True, null=True)
+    org_reclamos = models.IntegerField(blank=True, null=True)
+    org_codigo_comuna = models.ForeignKey(Comuna, models.DO_NOTHING, db_column='org_codigo_comuna', blank=True, null=True)
+    org_codigo_sector = models.ForeignKey('Sector', models.DO_NOTHING, db_column='org_codigo_sector', blank=True, null=True)
+    org_direccion = models.CharField(max_length=300, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'organismo'
+        db_table = '"catalog"."organismo"'
 
     def __str__(self):
-        if self.sigla:
-            return f"{self.codigo_organismo} - {self.organismo} ({self.sigla})"
-        return f"{self.codigo_organismo} - {self.organismo}"
+        if self.org_sigla:
+            return f"{self.codigo_organismo} - {self.org_nombre} ({self.org_sigla})"
+        return f"{self.codigo_organismo} - {self.org_nombre}"
+
+class Pais(models.Model):
+    pais_codigo = models.BigAutoField(primary_key=True)
+    pais_nombre = models.CharField(max_length=100)
+    pais_codigo_iso2 = models.CharField(unique=True, max_length=2, blank=True, null=True)
+    pais_activo = models.BooleanField()
+
+    class Meta:
+        managed = False
+        db_table = '"catalog"."pais"'
 
 class Producto(models.Model):
-    codigo_producto = models.CharField(primary_key=True, max_length=20)
-    id_nivel3 = models.ForeignKey(Nivel3Producto, models.DO_NOTHING, db_column='id_nivel3')
-    codigo_nivel4 = models.CharField(max_length=10)
+    codigo_producto = models.CharField(primary_key=True, max_length=20, db_comment='codigo_producto = concatenación de nivel 1 + nivel 2 +nivel 3 + nivel 4')
     descripcion = models.CharField(max_length=255)
     codigo_unidad_medida = models.ForeignKey('UnidadMedida', models.DO_NOTHING, db_column='codigo_unidad_medida', blank=True, null=True)
     activo = models.BooleanField()
+    nivel1 = models.ForeignKey(Nivel1Producto, models.DO_NOTHING, db_column='nivel1', blank=True, null=True, db_comment='utilizar como FK de nivel1_producto')
+    nivel2 = models.CharField(max_length=10, blank=True, null=True)
+    nivel3 = models.CharField(max_length=10, blank=True, null=True)
+    nivel4 = models.CharField(max_length=10, blank=True, null=True)
+    glosa_nivel2 = models.CharField(max_length=200, blank=True, null=True)
+    glosa_nivel3 = models.CharField(max_length=200, blank=True, null=True)
+    glosa_nivel4 = models.CharField(max_length=200, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'producto'
+        db_table = '"catalog"."producto"'
+        
+class Proveedor(models.Model):
+    pk = models.CompositePrimaryKey('prov_codigo_proveedor', 'prov_codigo_sucursal')
+    prov_codigo_proveedor = models.BigIntegerField()
+    prov_codigo_sucursal = models.BigIntegerField()
+    prov_rut = models.CharField(max_length=25, blank=True, null=True)
+    prov_nombre = models.CharField(max_length=250, blank=True, null=True)
+    prov_razon_social = models.CharField(max_length=250, blank=True, null=True)
+    prov_direccion = models.CharField(max_length=200, blank=True, null=True)
+    prov_codigo_comuna = models.ForeignKey(Comuna, models.DO_NOTHING, db_column='prov_codigo_comuna', blank=True, null=True)
+    prov_tamano = models.CharField(max_length=50, blank=True, null=True)
+    prov_codigo_pais = models.ForeignKey(Pais, models.DO_NOTHING, db_column='prov_codigo_pais', blank=True, null=True)
+    prov_cod_actividad_economica = models.ForeignKey(ActividadEconomica, models.DO_NOTHING, db_column='prov_cod_actividad_economica', blank=True, null=True)
+    prov_activo = models.BooleanField(blank=True, null=True)
 
-    def __str__(self):
-        return f"{self.codigo_producto} - {self.descripcion}"
-
+    class Meta:
+        managed = False
+        db_table = '"catalog"."proveedor"'
 
 class Provincia(models.Model):
     codigo_provincia = models.CharField(primary_key=True, max_length=3)
@@ -134,7 +153,7 @@ class Provincia(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'provincia'
+        db_table = '"catalog"."provincia"'
 
     def __str__(self):
         return f"{self.codigo_provincia} - {self.nombre_provincia}"
@@ -143,14 +162,25 @@ class Provincia(models.Model):
 class Region(models.Model):
     codigo_region = models.CharField(primary_key=True, max_length=2)
     nombre_region = models.CharField(max_length=100)
+    region_3l = models.CharField(db_column='region_3L', max_length=3, blank=True, null=True)  # Field name made lowercase.
+
 
     class Meta:
         managed = False
-        db_table = 'region'
+        db_table = '"catalog"."region"'
 
     def __str__(self):
         return f"{self.codigo_region} - {self.nombre_region}"
 
+class RubroActividad(models.Model):
+    codigo_rubro = models.CharField(primary_key=True, max_length=2)
+    nombre_rubro = models.CharField(unique=True, max_length=200)
+
+    class Meta:
+        managed = False
+        db_table = '"catalog"."rubro_actividad"'
+    def __str__(self):
+        return self.nombre_rubro
 
 class Sector(models.Model):
     codigo_sector = models.CharField(primary_key=True, max_length=3)
@@ -158,36 +188,32 @@ class Sector(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'sector'
+        db_table = '"catalog"."sector"'
 
     def __str__(self):
         return f"{self.codigo_sector} - {self.nombre_sector}"
 
-class TipoLicitacion(models.Model):
-    codigo_tipo_licitacion = models.SmallAutoField(primary_key=True)
-    nombre_tipo_licitacion = models.CharField(unique=True, max_length=50)
+class SubrubroActividad(models.Model):
+    codigo_subrubro = models.CharField(primary_key=True, max_length=5)
+    nombre_subrubro = models.CharField(max_length=200)
+    codigo_rubro = models.ForeignKey(RubroActividad, models.DO_NOTHING, db_column='codigo_rubro')
 
     class Meta:
         managed = False
-        db_table = 'tipo_licitacion'
-
+        db_table = '"catalog"."subrubro_actividad"'
     def __str__(self):
-        return self.nombre_tipo_licitacion
+        return self.nombre_subrubro
 
-class TipoProcedimiento(models.Model):
-    codigo_procedimiento = models.CharField(primary_key=True, max_length=2)
+class TipoLicitacion(models.Model):
+    codigo_tipo_licitacion = models.CharField(primary_key=True, max_length=2)
     glosa = models.CharField(max_length=255, blank=True, null=True)
-    codigo_tipo_licitacion = models.ForeignKey(TipoLicitacion, models.DO_NOTHING, db_column='codigo_tipo_licitacion')
+    codigo_cat_licitacion = models.ForeignKey(CategoriaLicitacion, models.DO_NOTHING, db_column='codigo_cat_licitacion')
     codigo_tramo_licitacion = models.ForeignKey('TramoLicitacion', models.DO_NOTHING, db_column='codigo_tramo_licitacion')
     activo = models.BooleanField()
 
     class Meta:
         managed = False
-        db_table = 'tipo_procedimiento'
-
-    def __str__(self):
-        return f"{self.codigo_procedimiento} - {self.glosa}"
-
+        db_table = '"catalog"."tipo_licitacion"'
 
 class TramoLicitacion(models.Model):
     codigo_tramo_licitacion = models.SmallAutoField(primary_key=True)
@@ -195,11 +221,11 @@ class TramoLicitacion(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'tramo_licitacion'
-
+        db_table = '"catalog"."tramo_licitacion"'
+    
     def __str__(self):
         return self.nombre_tramo_licitacion
-
+    
 
 
 class UnidadMedida(models.Model):
@@ -208,56 +234,11 @@ class UnidadMedida(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'unidad_medida'
+        db_table = '"catalog"."unidad_medida"'
 
     def __str__(self):
         return f"{self.codigo_unidad_medida} - {self.nombre_unidad_medida}"
 
-class RubroActividad(models.Model):
-    codigo_rubro = models.CharField(primary_key=True, max_length=2)
-    nombre_rubro = models.CharField(max_length=200, unique=True)
-
-    class Meta:
-        db_table = '"catalog"."rubro_actividad"'
-
-    def __str__(self):
-        return self.nombre_rubro
-
-class SubrubroActividad(models.Model):
-    codigo_subrubro = models.CharField(primary_key=True, max_length=5)
-
-    rubro = models.ForeignKey(
-        RubroActividad,
-        on_delete=models.PROTECT,
-        db_column='codigo_rubro'
-    )
-
-    nombre_subrubro = models.CharField(max_length=200)
-
-    class Meta:
-        db_table = '"catalog"."subrubro_actividad"'
-
-    def __str__(self):
-        return self.nombre_subrubro
-
-class ActividadEconomica(models.Model):
-    codigo_actividad = models.CharField(primary_key=True, max_length=8)
-
-    subrubro = models.ForeignKey(
-        SubrubroActividad,
-        on_delete=models.PROTECT,
-        db_column='codigo_subrubro'
-    )
-
-    nombre_actividad = models.CharField(max_length=300)
-
-    afecto_iva = models.BooleanField()
-    categoria_tributaria = models.SmallIntegerField()
-    disponible_internet = models.BooleanField()
-    activo = models.BooleanField(default=True)
-
-    class Meta:
-        db_table = '"catalog"."actividad_economica"'
+    
         
-    def __str__(self):
-        return f"{self.codigo_actividad} - {self.nombre_actividad}"
+    
