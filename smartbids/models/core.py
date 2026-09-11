@@ -41,6 +41,7 @@ class Suscriptor(models.Model):
     sus_nombre_social = models.CharField(max_length=100, blank=True, null=True)
     sus_iniciales = models.CharField(max_length=5, blank=True, null=True)
     sus_nombre2 = models.CharField(max_length=100, blank=True, null=True)
+    token_sesion = models.CharField(max_length=128, blank=True, null=True)
 
     class Meta:
         managed = False

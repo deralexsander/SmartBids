@@ -92,22 +92,19 @@ if (mensajeFlash) {
     sessionStorage.removeItem('flash_message');
 }
 
+
+
 // ==========================================================================
-// 4. Control de Estado de Autenticación y Protección Declarativa de Rutas
+// 4. Control de Estado de Autenticación, Verificación Continua y Rutas
 // ==========================================================================
 
 const PAGES_CONFIG = [
-    // 1. Solo para invitados (se bloquean si ya hay sesión iniciada)
     { elementId: 'login-form', guestOnly: true, redirectFallback: '/perfil' },
     { elementId: 'register-form', guestOnly: true, redirectFallback: '/perfil' },
-
-    // 2. Requieren inicio de sesión (Cualquier usuario autenticado)
-    { elementId: 'profile-email', requiresAuth: true, redirectFallback: '/perfil' },
-    { elementId: 'form-perfil-datos', requiresAuth: true, redirectFallback: '/perfil' },
-    { path: 'mis-licitaciones', requiresAuth: true, redirectFallback: '/ingreso' }, 
-    { path: 'dashboard', requiresAuth: true, redirectFallback: '/ingreso' }, 
-
-    // 3. Exclusivas de Administrador
+    { elementId: 'profile-email', requiresAuth: true, redirectFallback: '/ingreso' },
+    { elementId: 'form-perfil-datos', requiresAuth: true, redirectFallback: '/ingreso' },
+    { path: '/mis-licitaciones', requiresAuth: true, redirectFallback: '/ingreso' }, 
+    { path: '/dashboard', requiresAuth: true, redirectFallback: '/ingreso' }, 
     { 
         elementId: 'form-mensajeria', 
         requiresAuth: true, 
@@ -117,15 +114,14 @@ const PAGES_CONFIG = [
     }
 ];
 
-// Función buscadora de reglas
-const matchCurrentPageConfig = () => {
+function matchCurrentPageConfig() {
     const currentPath = window.location.pathname;
     return PAGES_CONFIG.find(page => {
         if (page.elementId && document.getElementById(page.elementId)) return true;
         if (page.path && currentPath.includes(page.path)) return true;
         return false;
     });
-};
+}
 
 const loginButton = document.getElementById('btn-login');
 const profileButton = document.getElementById('btn-profile');
@@ -135,86 +131,276 @@ const updateNavButtons = (user) => {
     if (profileButton) profileButton.style.display = user ? 'inline-flex' : 'none';
 };
 
+// Variable para el temporizador de monitoreo continuo
+let intervaloMonitoreoSesion = null;
+
+// Función de validación y deslogueo automático
+async function validarSesionContraPostgres(user) {
+    if (!user || isSubmittingAuth) return;
+
+    const tokenLocal = SessionManager.getLocalToken();
+    if (!tokenLocal) return;
+
+    try {
+        const resp = await fetch('/api/verificar-sesion/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: user.uid, token: tokenLocal })
+        });
+        const resData = await resp.json();
+
+        // Si el token es diferente al que está en PostgreSQL, se expulsa al usuario
+        if (resData.status === 'ok' && resData.valido === false) {
+            console.warn('[SmartBids] ⚠️ Sesión caducada: El token cambió en la base de datos.');
+
+            if (intervaloMonitoreoSesion) clearInterval(intervaloMonitoreoSesion);
+
+            SessionManager.clearLocalToken();
+            await signOut(auth);
+
+            sessionStorage.setItem('flash_message', JSON.stringify({
+                texto: 'Tu sesión ha caducado porque se inició sesión desde otro dispositivo.',
+                tipo: 'error'
+            }));
+
+            window.location.replace('/ingreso');
+        }
+    } catch (err) {
+        console.error('[SmartBids] Error verificando sesión en PostgreSQL:', err);
+    }
+}
+
 onAuthStateChanged(auth, async (user) => {
     const pageRule = matchCurrentPageConfig();
 
-    // CASO 1: No hay usuario autenticado
+    // 1. Si no hay sesión iniciada
     if (!user) {
+        if (intervaloMonitoreoSesion) clearInterval(intervaloMonitoreoSesion);
         SessionManager.clearLocalToken();
 
-        // Si la página requiere login, lo expulsa a /ingreso
         if (pageRule?.requiresAuth) {
             window.location.replace(pageRule.redirectFallback || '/ingreso');
             return;
         }
-
         updateNavButtons(null);
         hidePageLoader();
         return;
     }
 
-    // CASO 2: Usuario autenticado intentando entrar a Login o Registro
+    // 2. Si ya está autenticado e intenta ir a login o registro
     if (pageRule?.guestOnly && !isSubmittingAuth) {
-        window.location.replace(pageRule.redirectFallback || '/');
+        window.location.replace('/');
         return;
     }
 
     if (isSubmittingAuth) return;
 
-    // CASO 3: Usuario autenticado -> Validar Sesión Única y Roles
-    const tokenLocal = SessionManager.getLocalToken();
-
-    try {
-        const userDocRef = doc(db, "prospectos", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            const tokenRemoto = userData.tokenID || userData.session_id;
-
-            if (tokenRemoto && tokenLocal && tokenLocal !== tokenRemoto) {
-                console.warn('[SmartBids] ⚠️ Sesión caducada.');
-                SessionManager.clearLocalToken();
-                await signOut(auth);
-
-                sessionStorage.setItem('flash_message', JSON.stringify({
-                    texto: 'Tu sesión ha caducado porque se inició sesión desde otro dispositivo.',
-                    tipo: 'error'
-                }));
-
-                window.location.replace('/ingreso');
-                return;
-            }
-
-            if (pageRule?.requiredRole && userData.estado !== pageRule.requiredRole) {
-                sessionStorage.setItem('flash_message', JSON.stringify({
-                    texto: pageRule.errorMsg || 'Acceso denegado.',
-                    tipo: 'error'
-                }));
-                window.location.replace(pageRule.redirectFallback || '/');
-                return;
-            }
-        }
-    } catch (error) {
-        console.error('[SmartBids] ❌ Error validando permisos:', error);
+    // 3. Imprimir el token local actual en consola
+    const tokenActual = SessionManager.getLocalToken();
+    if (tokenActual) {
+        console.log(`tokenID: ${tokenActual}`);
     }
 
-    // Inicializar perfil si está en la vista correspondiente
-    if (document.getElementById('profile-email')) {
-        inicializarVistaPerfil(user);
+    // 4. Validar token contra PostgreSQL de inmediato
+    await validarSesionContraPostgres(user);
+
+    // 5. Iniciar monitoreo en segundo plano cada 10 segundos
+    if (!intervaloMonitoreoSesion) {
+        intervaloMonitoreoSesion = setInterval(() => {
+            validarSesionContraPostgres(user);
+        }, 10000);
+    }
+
+    // 6. Cargar datos si está en perfil y apagar loader
+    if (document.getElementById('profile-email') || document.getElementById('form-perfil-datos')) {
+        await inicializarVistaPerfil(user);
     }
 
     updateNavButtons(user);
     hidePageLoader();
 });
 
-// Variable temporal para retener las credenciales/datos mientras valida el OTP
+
+// ==========================================================================
+// SECCIÓN PERFIL: Conectada a PostgreSQL (Sin llamadas a Firestore)
+// ==========================================================================
+function formatTimestamp(ts) {
+    if (!ts) return 'No registrada';
+    const date = new Date(ts);
+    return date.toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+async function inicializarVistaPerfil(user) {
+    if (!user) return;
+
+    try {
+        const resp = await fetch('/api/obtener-perfil/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: user.uid })
+        });
+        const resData = await resp.json();
+
+        if (resData.status === 'ok') {
+            const data = resData.datos;
+            const emp = data.empresa || {};
+            const pref = data.preferencias || {};
+
+            // 1. Sidebar y Cabeceras
+            const n1 = data.sus_nombre1 || '';
+            const n2 = data.sus_nombre2 || '';
+            const a1 = data.sus_apellido1 || '';
+            const a2 = data.sus_apellido2 || '';
+            const nombreCompleto = [n1, n2, a1, a2].filter(Boolean).join(' ') || 'Suscriptor';
+
+            document.getElementById('profile-fullname-header').textContent = nombreCompleto;
+            document.getElementById('profile-social-header').textContent = data.sus_nombre_social ? `@${data.sus_nombre_social}` : `@suscriptor_${data.id_suscriptor}`;
+            document.getElementById('profile-role-badge').textContent = data.codigo_estado === 2 ? 'Habilitado' : 'Pendiente';
+            document.getElementById('profile-initials').textContent = data.sus_iniciales || (n1 && a1 ? (n1[0] + a1[0]).toUpperCase() : 'SB');
+            document.getElementById('profile-id-suscriptor').textContent = data.id_suscriptor || '--';
+            document.getElementById('profile-uid-header').textContent = user.uid;
+            document.getElementById('profile-created-at').textContent = formatTimestamp(data.fecha_registro);
+            document.getElementById('profile-last-login').textContent = formatTimestamp(data.fecha_actualizacion);
+            document.getElementById('profile-token-id').textContent = data.token_sesion || SessionManager.getLocalToken() || 'No asignado';
+            document.getElementById('profile-email').value = user.email || '';
+
+            // 2. Formulario Datos Personales
+            document.getElementById('profile-nombre1').value = n1;
+            document.getElementById('profile-nombre2').value = n2;
+            document.getElementById('profile-apellido1').value = a1;
+            document.getElementById('profile-apellido2').value = a2;
+            document.getElementById('profile-nombre-social').value = data.sus_nombre_social || '';
+            document.getElementById('profile-iniciales').value = data.sus_iniciales || '';
+
+            // 3. Formulario Empresa
+            document.getElementById('empresa-rut').value = emp.emp_rut || '';
+            document.getElementById('empresa-fantasia').value = emp.emp_nombre_fantasia || '';
+            document.getElementById('empresa-razon-social').value = emp.emp_razon_social || '';
+            document.getElementById('empresa-correo').value = emp.emp_contacto_correo || '';
+            document.getElementById('empresa-iniciales').value = emp.emp_iniciales || '';
+            document.getElementById('empresa-telefono').value = emp.emp_contacto_telefono || '';
+            document.getElementById('empresa-comuna').value = emp.emp_codigo_comuna || '';
+            document.getElementById('empresa-direccion').value = emp.emp_direccion || '';
+
+            // 4. Formulario Filtros de Licitación
+            document.getElementById('pref-comunas').value = pref.pref_comunas || '';
+            document.getElementById('pref-productos').value = pref.pref_productos || '';
+            document.getElementById('pref-tipo-lic').value = pref.pref_tipo_licitacion || '';
+            document.getElementById('pref-ucom').value = pref.pref_ucom || '';
+            document.getElementById('pref-palabras').value = pref.pref_palabras_claves || '';
+        }
+    } catch (err) {
+        console.error('[SmartBids] Error al cargar perfil desde PostgreSQL:', err);
+    }
+
+    // Submit: Datos Personales
+    const formDatos = document.getElementById('form-perfil-datos');
+    if (formDatos) {
+        formDatos.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = formDatos.querySelector('button[type="submit"]');
+            setButtonLoading(btn, true, 'Guardando...');
+            try {
+                const resp = await fetch('/api/actualizar-perfil/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        uid: user.uid,
+                        sus_nombre1: document.getElementById('profile-nombre1').value,
+                        sus_nombre2: document.getElementById('profile-nombre2').value,
+                        sus_apellido1: document.getElementById('profile-apellido1').value,
+                        sus_apellido2: document.getElementById('profile-apellido2').value,
+                        sus_nombre_social: document.getElementById('profile-nombre-social').value,
+                        sus_iniciales: document.getElementById('profile-iniciales').value,
+                    })
+                });
+                const res = await resp.json();
+                mostrarMensaje(res.mensaje, res.status === 'ok' ? 'exito' : 'error');
+                await inicializarVistaPerfil(user);
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        };
+    }
+
+    // Submit: Empresa
+    const formEmpresa = document.getElementById('form-perfil-empresa');
+    if (formEmpresa) {
+        formEmpresa.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = formEmpresa.querySelector('button[type="submit"]');
+            setButtonLoading(btn, true, 'Guardando...');
+            try {
+                const resp = await fetch('/api/actualizar-empresa/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        uid: user.uid,
+                        emp_rut: document.getElementById('empresa-rut').value,
+                        emp_nombre_fantasia: document.getElementById('empresa-fantasia').value,
+                        emp_razon_social: document.getElementById('empresa-razon-social').value,
+                        emp_contacto_correo: document.getElementById('empresa-correo').value,
+                        emp_iniciales: document.getElementById('empresa-iniciales').value,
+                        emp_contacto_telefono: document.getElementById('empresa-telefono').value,
+                        emp_codigo_comuna: document.getElementById('empresa-comuna').value,
+                        emp_direccion: document.getElementById('empresa-direccion').value,
+                    })
+                });
+                const res = await resp.json();
+                mostrarMensaje(res.mensaje, res.status === 'ok' ? 'exito' : 'error');
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        };
+    }
+
+    // Submit: Filtros de Licitación
+    const formFiltros = document.getElementById('form-perfil-preferencias');
+    if (formFiltros) {
+        formFiltros.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = formFiltros.querySelector('button[type="submit"]');
+            setButtonLoading(btn, true, 'Guardando...');
+            try {
+                const resp = await fetch('/api/actualizar-preferencias/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        uid: user.uid,
+                        pref_comunas: document.getElementById('pref-comunas').value,
+                        pref_productos: document.getElementById('pref-productos').value,
+                        pref_tipo_licitacion: document.getElementById('pref-tipo-lic').value,
+                        pref_ucom: document.getElementById('pref-ucom').value,
+                        pref_palabras_claves: document.getElementById('pref-palabras').value,
+                    })
+                });
+                const res = await resp.json();
+                mostrarMensaje(res.mensaje, res.status === 'ok' ? 'exito' : 'error');
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        };
+    }
+}
+
+
+
+
+
+
+// Variable temporal para retener credenciales mientras valida el OTP
 let pendingEmail = null;
 let pendingPassword = null;
 let pendingUid = null;
 
 // ==========================================================================
-// 5. Inicio de Sesión y Verificación OTP (2FA)
+// 5. Inicio de Sesión y Verificación OTP (2FA) - Sin Firestore
 // ==========================================================================
 const loginForm = document.getElementById('login-form');
 const otpInputs = document.querySelectorAll('.otp-digit-input, .otp-input');
@@ -222,7 +408,7 @@ const btnVerificarOtp = document.getElementById('btn-verificar-otp');
 const btnCancelarOtp = document.getElementById('btn-cancelar-otp');
 const otpMessage = document.getElementById('otp-message');
 
-// Configurar comportamiento de los 6 inputs OTP
+// Control de navegación entre los 6 inputs OTP
 otpInputs.forEach((input, index) => {
     input.addEventListener('input', (e) => {
         if (e.target.value.length === 1 && index < otpInputs.length - 1) {
@@ -236,6 +422,8 @@ otpInputs.forEach((input, index) => {
         }
     });
 });
+
+
 
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
@@ -255,7 +443,6 @@ if (loginForm) {
         isSubmittingAuth = true;
 
         try {
-            // 1. Validar credenciales temporalmente
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
@@ -267,7 +454,7 @@ if (loginForm) {
                 return;
             }
 
-            // 2. Solicitar envío de código al backend Django
+            // Enviar código por correo
             const response = await fetch('/api/enviar-codigo-login/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -279,14 +466,6 @@ if (loginForm) {
                 throw new Error(resData.mensaje || 'Error al enviar el código de verificación.');
             }
 
-            // 3. Guardar código en Firestore mientras aún tiene permiso
-            const userRef = doc(db, "prospectos", user.uid);
-            await setDoc(userRef, {
-                login_code: String(resData.codigo),
-                code_created_at: serverTimestamp()
-            }, { merge: true });
-
-            // 4. Guardar datos temporales y CERRAR la sesión de Firebase de inmediato
             pendingEmail = email;
             pendingPassword = password;
             pendingUid = user.uid;
@@ -306,7 +485,7 @@ if (loginForm) {
     });
 }
 
-// Validar código ingresado en el Modal
+// Validar código OTP del Modal y fijar el Token
 if (btnVerificarOtp) {
     btnVerificarOtp.addEventListener('click', async () => {
         if (!pendingEmail || !pendingPassword || !pendingUid) {
@@ -325,46 +504,41 @@ if (btnVerificarOtp) {
         setButtonLoading(btnVerificarOtp, true, 'Verificando...');
 
         try {
-            // 1. Reautenticar para validar y escribir sesión definitiva
-            isSubmittingAuth = true;
-            const userCredential = await signInWithEmailAndPassword(auth, pendingEmail, pendingPassword);
-            const user = userCredential.user;
+            // 1. Generar nuevo TokenID con generateSessionId()
+            const tokenID = generateSessionId();
 
-            const userDocRef = doc(db, "prospectos", user.uid);
-            const userDocSnap = await getDoc(userDocRef);
+            // 2. Enviar el código y el tokenID al backend de Django
+            const response = await fetch('/api/validar-codigo-login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: pendingEmail,
+                    uid: pendingUid,
+                    codigo: codigoIngresado,
+                    session_token: tokenID
+                })
+            });
 
-            if (!userDocSnap.exists()) {
-                throw new Error('No se encontró información del usuario.');
-            }
-
-            const data = userDocSnap.data();
-
-            // 2. Validar coincidencia del código
-            if (String(data.login_code) !== codigoIngresado) {
-                await signOut(auth); // Desloguear si el código fue erróneo
-                isSubmittingAuth = false;
+            const resData = await response.json();
+            if (!response.ok || resData.status !== 'ok') {
                 setButtonLoading(btnVerificarOtp, false);
-                otpMessage.textContent = 'Código incorrecto. Inténtalo de nuevo.';
+                otpMessage.textContent = resData.mensaje || 'Código incorrecto. Inténtalo de nuevo.';
                 return;
             }
 
-            // 3. Generar token de sesión y confirmar Firestore
-            const tokenID = generateSessionId();
-            SessionManager.setLocalToken(tokenID);
+            // 3. Autenticar en Firebase Auth
+            isSubmittingAuth = true;
+            await signInWithEmailAndPassword(auth, pendingEmail, pendingPassword);
 
-            await setDoc(userDocRef, {
-                tokenID: tokenID,
-                session_id: tokenID,
-                login_code: null, // Limpiar código utilizado
-                ultima_conexion: serverTimestamp()
-            }, { merge: true });
+            // 4. Guardar token en LocalStorage y mostrarlo en la consola
+            SessionManager.setLocalToken(tokenID);
+            console.log(`tokenID: ${tokenID}`);
 
             sessionStorage.setItem('flash_message', JSON.stringify({
                 texto: '¡Bienvenido! Sesión iniciada con éxito.',
                 tipo: 'exito'
             }));
 
-            // Limpiar memoria temporal
             pendingEmail = null;
             pendingPassword = null;
             pendingUid = null;
@@ -468,7 +642,7 @@ if (forgotPasswordLink) {
 }
 
 // ==========================================================================
-// 8. Registro de Nuevo Usuario y Creación de Prospecto en Firestore
+// 8. Registro de Nuevo Usuario y Creación en PostgreSQL (Estado Habilitado = 2)
 // ==========================================================================
 const registerForm = document.getElementById('register-form');
 if (registerForm) {
@@ -499,34 +673,30 @@ if (registerForm) {
         const submitBtn = registerForm.querySelector('button[type="submit"]');
         setButtonLoading(submitBtn, true, 'Registrando...');
 
+        // Instancia aislada para registrar en background sin alterar la sesión local
         const secondaryApp = initializeApp(firebaseConfig, `SecondaryApp_${Date.now()}`);
         const secondaryAuth = getAuth(secondaryApp);
-        const secondaryDb = getFirestore(secondaryApp);
 
         try {
+            // 1. Crear la cuenta en Firebase Authentication
             const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
             const user = userCredential.user;
 
-            // 1. Guardar documento en Firestore
-            await setDoc(doc(secondaryDb, "prospectos", user.uid), {
-                uid: user.uid,
-                email: user.email,
-                telefono: "",
-                fecha_creacion: serverTimestamp(),
-                username: "",
-                pnombre: "",
-                snombre: "",
-                appaterno: "",
-                apmaterno: "",
-                tokenID: "",
-                estado: "prospecto",
-                creadoEl: serverTimestamp()
+            // 2. Guardar en PostgreSQL conectando el UID (Estado 2 = Habilitado)
+            const resDb = await fetch('/api/registrar-prospecto/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: user.uid })
             });
 
-            // 2. Correo de verificación de Firebase Auth
+            if (!resDb.ok) {
+                console.warn('[SmartBids] Error al persistir el suscriptor en PostgreSQL.');
+            }
+
+            // 3. Correo de verificación de Firebase Auth
             await sendEmailVerification(user);
 
-            // 3. Enviar correo de bienvenida mediante el servidor SMTP Django
+            // 4. Enviar correo de bienvenida mediante el servidor SMTP Django
             try {
                 await fetch('/api/enviar-correo-bienvenida/', {
                     method: 'POST',
@@ -537,7 +707,7 @@ if (registerForm) {
                 console.warn('[SmartBids] No se pudo enviar correo de bienvenida:', mailErr);
             }
 
-            // 4. Mensaje temporal y redirección a ingreso
+            // 5. Mensaje temporal y redirección a ingreso
             sessionStorage.setItem('flash_message', JSON.stringify({
                 texto: MENSAJES.auth.registroExitoso,
                 tipo: 'exito'
@@ -765,201 +935,3 @@ if (formMensajeria) {
     cargarListaAlertasAdmin();
 }
 
-// ==========================================================================
-// SECCIÓN PERFIL: Lectura y Actualización en Tiempo Real desde Firestore
-// ==========================================================================
-
-function formatTimestamp(ts) {
-    if (!ts) return 'No registrada';
-    const date = ts.toDate ? ts.toDate() : new Date(ts);
-    return date.toLocaleDateString('es-CL', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function inicializarVistaPerfil(user) {
-    if (!user) return;
-    const userDocRef = doc(db, "prospectos", user.uid);
-
-    onSnapshot(userDocRef, (docSnap) => {
-        if (!docSnap.exists()) return;
-        const data = docSnap.data();
-
-        const adminSection = document.getElementById('admin-services-section');
-        if (adminSection) {
-            adminSection.style.display = (data.estado === 'admin') ? 'block' : 'none';
-        }
-
-        const pnombre = data.pnombre || '';
-        const appaterno = data.appaterno || '';
-        const snombre = data.snombre || '';
-        const apmaterno = data.apmaterno || '';
-        const nombreCompleto = [pnombre, snombre, appaterno, apmaterno].filter(Boolean).join(' ') || 'Usuario';
-        
-        const elFullName = document.getElementById('profile-fullname-header');
-        if (elFullName) elFullName.textContent = nombreCompleto;
-
-        const elUsernameHeader = document.getElementById('profile-username-header');
-        if (elUsernameHeader) elUsernameHeader.textContent = `@${data.username || 'sin_usuario'}`;
-
-        const elBadgeRole = document.getElementById('profile-role-badge');
-        if (elBadgeRole) elBadgeRole.textContent = data.estado || 'prospecto';
-
-        const elRole = document.getElementById('profile-estado');
-        if (elRole) elRole.textContent = data.estado || 'prospecto';
-
-        const elInitials = document.getElementById('profile-initials');
-        if (elInitials) {
-            const iniP = pnombre ? pnombre[0] : '';
-            const iniA = appaterno ? appaterno[0] : '';
-            elInitials.textContent = (iniP + iniA).toUpperCase() || 'SB';
-        }
-
-        const elUid = document.getElementById('profile-uid-header');
-        if (elUid) elUid.textContent = user.uid;
-
-        const elCreated = document.getElementById('profile-created-at');
-        if (elCreated) elCreated.textContent = formatTimestamp(data.creadoEl || data.fecha_creacion);
-
-        const elLastLogin = document.getElementById('profile-last-login');
-        if (elLastLogin) elLastLogin.textContent = formatTimestamp(data.ultima_conexion);
-
-        const inPnombre = document.getElementById('profile-pnombre');
-        const inSnombre = document.getElementById('profile-snombre');
-        const inAppaterno = document.getElementById('profile-appaterno');
-        const inApmaterno = document.getElementById('profile-apmaterno');
-        const inUsername = document.getElementById('profile-username');
-        const inTelefono = document.getElementById('profile-telefono');
-        const inEmail = document.getElementById('profile-email');
-
-        if (inPnombre && document.activeElement !== inPnombre) inPnombre.value = data.pnombre || '';
-        if (inSnombre && document.activeElement !== inSnombre) inSnombre.value = data.snombre || '';
-        if (inAppaterno && document.activeElement !== inAppaterno) inAppaterno.value = data.appaterno || '';
-        if (inApmaterno && document.activeElement !== inApmaterno) inApmaterno.value = data.apmaterno || '';
-        if (inUsername && document.activeElement !== inUsername) inUsername.value = data.username || '';
-        if (inTelefono && document.activeElement !== inTelefono) inTelefono.value = data.telefono || '';
-        if (inEmail) inEmail.value = user.email || data.email || '';
-
-        const elSessionId = document.getElementById('profile-session-id');
-        const elTokenId = document.getElementById('profile-token-id');
-        const tokenActivo = data.tokenID || data.session_id || 'No asignado';
-        
-        if (elSessionId) elSessionId.textContent = tokenActivo;
-        if (elTokenId) elTokenId.textContent = tokenActivo;
-
-        const elStatus = document.getElementById('profile-status');
-        if (elStatus) elStatus.textContent = user.emailVerified ? 'Verificado' : 'No verificado';
-    });
-
-    const formDatos = document.getElementById('form-perfil-datos');
-    if (formDatos) {
-        formDatos.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const submitBtn = formDatos.querySelector('button[type="submit"]');
-            setButtonLoading(submitBtn, true, 'Guardando...');
-
-            try {
-                await updateDoc(userDocRef, {
-                    pnombre: document.getElementById('profile-pnombre')?.value.trim() || '',
-                    snombre: document.getElementById('profile-snombre')?.value.trim() || '',
-                    appaterno: document.getElementById('profile-appaterno')?.value.trim() || '',
-                    apmaterno: document.getElementById('profile-apmaterno')?.value.trim() || '',
-                    username: document.getElementById('profile-username')?.value.trim() || '',
-                    telefono: document.getElementById('profile-telefono')?.value.trim() || '',
-                    actualizadoEl: serverTimestamp()
-                });
-                mostrarMensaje('Información personal actualizada con éxito.', 'exito');
-            } catch (err) {
-                console.error('Error actualizando perfil:', err);
-                mostrarMensaje('Error al actualizar los datos en Firestore.', 'error');
-            } finally {
-                setButtonLoading(submitBtn, false);
-            }
-        });
-    }
-
-    const formPass = document.getElementById('form-perfil-password') || document.getElementById('form-change-password');
-    if (formPass) {
-        formPass.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            limpiarMensaje();
-
-            const currentPass = document.getElementById('profile-current-pass')?.value || document.getElementById('current-password')?.value || '';
-            const newPass = document.getElementById('profile-new-pass')?.value || document.getElementById('new-password')?.value || '';
-            const confirmPass = document.getElementById('profile-confirm-pass')?.value || document.getElementById('confirm-password')?.value || '';
-
-            if (!currentPass || !newPass || !confirmPass) {
-                mostrarMensaje(MENSAJES?.validacion?.camposRequeridos || 'Por favor, completa todos los campos requeridos.', 'error');
-                return;
-            }
-
-            if (newPass !== confirmPass) {
-                mostrarMensaje(MENSAJES?.validacion?.passwordsNoCoinciden || 'Las contraseñas no coinciden.', 'error');
-                return;
-            }
-
-            if (newPass.length < 6) {
-                mostrarMensaje('La nueva contraseña debe tener al menos 6 caracteres.', 'error');
-                return;
-            }
-
-            const submitBtn = formPass.querySelector('button[type="submit"]');
-            setButtonLoading(submitBtn, true, 'Actualizando...');
-
-            try {
-                const cred = EmailAuthProvider.credential(user.email, currentPass);
-                await reauthenticateWithCredential(user, cred);
-                
-                await updatePassword(user, newPass);
-
-                try {
-                    await fetch('/api/enviar-correo-cambio-password/', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: user.email })
-                    });
-                } catch (mailErr) {
-                    console.warn('[SmartBids] No se pudo enviar el correo de cambio de contraseña:', mailErr);
-                }
-
-                sessionStorage.setItem('flash_message', JSON.stringify({
-                    texto: 'Contraseña actualizada correctamente. Por favor, inicia sesión con tu nueva clave.',
-                    tipo: 'exito'
-                }));
-
-                if (typeof SessionManager !== 'undefined' && SessionManager.clearLocalToken) {
-                    SessionManager.clearLocalToken();
-                }
-                await signOut(auth);
-
-                window.location.href = '/ingreso';
-
-            } catch (err) {
-                setButtonLoading(submitBtn, false);
-                console.error('[SmartBids] Error al cambiar contraseña:', err);
-                mostrarMensaje(getFriendlyErrorMessage(err.code, err.message), 'error');
-            }
-        });
-    }
-
-    const setupCopyBtn = (btnId, textSpanId, msg) => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const text = document.getElementById(textSpanId)?.textContent;
-                if (text && text !== '--' && text !== 'No asignado') {
-                    navigator.clipboard.writeText(text).then(() => mostrarMensaje(msg, 'exito'));
-                }
-            });
-        }
-    };
-    setupCopyBtn('copy-session-id', 'profile-session-id', 'Session ID copiado al portapapeles.');
-    setupCopyBtn('copy-token-id', 'profile-token-id', 'Token ID copiado al portapapeles.');
-}
