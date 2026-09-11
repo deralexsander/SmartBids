@@ -6,7 +6,8 @@ from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from .models import Mensajeria
+from .models import Mensajeria, FactItemOrdenCompra, FactOrdenCompra
+from django.db.models import Count
 
 
 from django.shortcuts import get_object_or_404
@@ -509,3 +510,71 @@ def enviar_correo_cambio_password(request):
     except Exception as e:
         logger.error(f"[SmartBids] Error al enviar notificación de cambio de contraseña: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': f'Error en el servidor: {str(e)}'}, status=500)
+    
+    
+    
+    #=================================
+    ## VISTAS DE DASHBOARD
+    #=================================
+    
+    
+
+
+def dashboard_view(request):
+
+    # 1. Productos más comprados
+    productos_mas_comprados = (
+        FactItemOrdenCompra.objects
+        .using('dw')
+        .values('producto_key__producto_nombre')
+        .annotate(
+            cantidad_ordenes=Count(
+                'orden_codigo',
+                distinct=True
+            )
+        )
+        .order_by('-cantidad_ordenes')[:10]
+    )
+
+    # 2. Competencia (proveedores)
+    proveedores_competencia = (
+        FactOrdenCompra.objects
+        .using('dw')
+        .values(
+            'proveedor_key__proveedor_nombre'
+        )
+        .annotate(
+            cantidad_ordenes=Count(
+                'orden_codigo',
+                distinct=True
+            )
+        )
+        .order_by('-cantidad_ordenes')[:5]
+    )
+    # 3. Organismos Compradores
+    organismos_compradores = (
+    FactOrdenCompra.objects
+    .using('dw')
+    .values(
+        'comprador_key__comprador_organismo_nombre'
+    )
+    .annotate(
+        cantidad_ordenes=Count(
+            'orden_codigo',
+            distinct=True
+        )
+    )
+    .order_by('-cantidad_ordenes')[:5]
+)
+
+    context = {
+        'productos_mas_comprados': productos_mas_comprados,
+        'proveedores_competencia': proveedores_competencia,
+        'organismos_compradores': organismos_compradores,
+    }
+
+    return render(
+        request,
+        'smartbids/dashboard.html',
+        context
+    )

@@ -128,7 +128,7 @@
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
                         <div class="dash-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-chart-column" style="color: var(--accent-green);"></i>
-                            Volumen de Licitaciones por Categoría de Producto
+                            Volumen de Órdenes de compra por Categoría de Producto
                         </div>
                         <span class="dash-badge">Mensual</span>
                     </div>
@@ -288,54 +288,118 @@
     function cambiarDashboard(tabId, btn) {
         document.querySelectorAll('.dashboard-view').forEach(view => view.style.display = 'none');
         document.querySelectorAll('.tab-dash-btn').forEach(b => b.classList.remove('active'));
-        
+
         document.getElementById(tabId).style.display = 'block';
         btn.classList.add('active');
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+
         // Gráfico 1: Demanda de Productos
         new Chart(document.getElementById('graficoProductos'), {
             type: 'bar',
+
             data: {
-                labels: ['Software & TI', 'Equipos Hardware', 'Consultoría', 'Servicios Cloud', 'Seguridad'],
+                labels: [
+                    {% for producto in productos_mas_comprados %}
+                        "{{ producto.producto_key__producto_nombre|escapejs }}",
+                    {% endfor %}
+                ],
+
                 datasets: [{
-                    label: 'Cantidad de Licitaciones',
-                    data: [84, 52, 39, 61, 28],
+                    label: 'Cantidad de Órdenes de Compra',
+
+                    data: [
+                        {% for producto in productos_mas_comprados %}
+                            {{ producto.cantidad_ordenes }},
+                        {% endfor %}
+                    ],
+
                     backgroundColor: '#1ec498',
                     borderRadius: 6
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
         });
+
 
         // Gráfico 2: Competencia
         new Chart(document.getElementById('graficoCompetencia'), {
             type: 'doughnut',
+
             data: {
-                labels: ['Soluciones TI', 'TechCloud', 'Informatica Austral', 'Otros Oferentes'],
+                labels: [
+                    {% for proveedor in proveedores_competencia %}
+                        "{{ proveedor.proveedor_key__proveedor_nombre|escapejs }}",
+                    {% endfor %}
+                ],
+
                 datasets: [{
-                    data: [41, 28, 15, 16],
-                    backgroundColor: ['#11634e', '#1ec498', '#5c9688', '#b1d2ca']
+                    data: [
+                        {% for proveedor in proveedores_competencia %}
+                            {{ proveedor.cantidad_ordenes }},
+                        {% endfor %}
+                    ],
+
+                    backgroundColor: [
+                        '#11634e',
+                        '#1ec498',
+                        '#5c9688',
+                        '#b1d2ca',
+                        '#7bb8aa'
+                    ]
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
         });
+        
 
         // Gráfico 3: Organismos Compradores
         new Chart(document.getElementById('graficoCompradores'), {
             type: 'bar',
+
             data: {
-                labels: ['SUBTEL', 'Municipalidad de Valparaíso', 'Servicio de Salud Biobío', 'Ministerio de Hacienda', 'FONASA'],
+                labels: [
+                    {% for organismo in organismos_compradores %}
+                        "{{ organismo.comprador_key__comprador_organismo_nombre|escapejs }}",
+                    {% endfor %}
+                ],
+
                 datasets: [{
-                    label: 'Presupuesto Licitado (en Millones CLP)',
-                    data: [450, 310, 280, 240, 200],
+                    label: 'Cantidad de Órdenes de Compra',
+
+                    data: [
+                        {% for organismo in organismos_compradores %}
+                            {{ organismo.cantidad_ordenes }},
+                        {% endfor %}
+                    ],
+
                     backgroundColor: '#11634e',
                     borderRadius: 6
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
         });
+        
+
     });
 </script>
 {% endblock %}
