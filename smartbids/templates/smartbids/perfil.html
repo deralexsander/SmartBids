@@ -12,10 +12,13 @@
         <!-- Barra Lateral -->
         <aside class="profile-sidebar">
             <div class="dashboard-card" style="text-align: center;">
-                <div class="profile-avatar-circle">
-                    <span id="profile-initials">--</span>
-                    <div class="status-indicator" title="Usuario activo"></div>
+                
+                <!-- Avatar cuadrado con ancho adaptable idéntico a los botones -->
+                <div class="prediction-box" style="width: 100%; border-radius: 12px; margin: 0 0 1.2rem 0; padding: 1.4rem 1rem; box-sizing: border-box; justify-content: center; position: relative; min-height: 80px; box-shadow: 0 4px 14px rgba(17, 99, 78, 0.15);">
+                    <span id="profile-initials" style="font-size: 2rem; font-weight: 800; letter-spacing: 2px; color: var(--white); text-transform: uppercase;">--</span>
+                    <div class="status-indicator" title="Usuario activo" style="right: 8px; bottom: 8px;"></div>
                 </div>
+
                 <h3 id="profile-fullname-header" style="color: var(--dark-green); font-size: 1.35rem; font-weight: 800; margin-bottom: 2px;">
                     Cargando...
                 </h3>
@@ -57,7 +60,7 @@
 
                 <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);">
 
-                <button id="logout-button" type="button" class="btn btn-outline" style="width: 100%;">
+                <button id="logout-button" type="button" class="btn btn-outline" style="width: 100%; border-color: #e53e3e; color: #e53e3e;">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
                 </button>
             </div>
@@ -66,6 +69,7 @@
         <!-- Contenido Principal -->
         <main class="profile-main-content">
 
+            <!-- Banner Informativo -->
             <div class="prediction-box">
                 <div class="pred-text">
                     <h5>Panel de Administración y Preferencias</h5>
@@ -83,7 +87,9 @@
                         <i class="fa-solid fa-id-card" style="color: var(--accent-green);"></i>
                         Información del Suscriptor
                     </div>
-                    <span class="dash-badge">ID: <span id="profile-id-suscriptor">--</span></span>
+                    <!-- Elemento oculto para que JS lo actualice sin romper la vista -->
+                    <span id="profile-id-suscriptor" style="display: none;">--</span>
+                    <span class="dash-badge">Perfil Verificado</span>
                 </div>
 
                 <form id="form-perfil-datos">
@@ -113,7 +119,7 @@
                             <input type="text" class="form-input" id="profile-iniciales" name="sus_iniciales" maxlength="5">
                         </div>
                         <div class="form-item grid-full">
-                            <label for="profile-email">Correo Electrónico (Firebase Auth)</label>
+                            <label for="profile-email">Correo Electrónico</label>
                             <input type="email" class="form-input" id="profile-email" readonly>
                         </div>
                     </div>
@@ -133,7 +139,7 @@
                         <i class="fa-solid fa-building" style="color: var(--accent-green);"></i>
                         Información de la Empresa
                     </div>
-                    <span class="dash-badge">core.empresa</span>
+                    <span class="dash-badge">empresa</span>
                 </div>
 
                 <form id="form-perfil-empresa">
@@ -180,7 +186,7 @@
                 </form>
             </div>
 
-            <!-- 3. Filtros de Licitación (No lineales: core.preferencia) -->
+            <!-- 3. Filtros de Licitación (core.preferencia) -->
             <div id="tab-filtros" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
@@ -194,46 +200,50 @@
                 </p>
 
                 <form id="form-perfil-preferencias">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 1.5rem;">
                         
                         <!-- Columna 1: Cobertura Territorial -->
-                        <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; border-top: 3px solid var(--accent-green);">
-                            <div style="font-weight: 700; color: var(--dark-green); margin-bottom: 1rem;">
-                                <i class="fa-solid fa-map-location-dot"></i> Cobertura Territorial
+                        <div class="stat-mini-card" style="border-left: 4px solid var(--accent-green); padding: 1.2rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <div style="font-weight: 800; color: var(--dark-green); font-size: 1rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-map-location-dot" style="color: var(--accent-green);"></i> Cobertura Territorial
                             </div>
                             <div class="form-item">
                                 <label for="pref-comunas">Comunas de Cobertura</label>
-                                <textarea id="pref-comunas" class="form-input" rows="4" placeholder="Ej: Valparaíso, Viña del Mar, Santiago (separadas por coma)"></textarea>
+                                <textarea id="pref-comunas" class="form-input" rows="3" placeholder="Ej: Valparaíso, Viña del Mar, Santiago (separadas por coma)"></textarea>
                             </div>
                         </div>
 
                         <!-- Columna 2: Productos y Catálogo -->
-                        <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; border-top: 3px solid var(--accent-green);">
-                            <div style="font-weight: 700; color: var(--dark-green); margin-bottom: 1rem;">
-                                <i class="fa-solid fa-boxes-stacked"></i> Catálogo y Rubro
+                        <div class="stat-mini-card" style="border-left: 4px solid var(--dark-green); padding: 1.2rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <div style="font-weight: 800; color: var(--dark-green); font-size: 1rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-boxes-stacked" style="color: var(--dark-green);"></i> Catálogo y Rubro
                             </div>
-                            <div class="form-item" style="margin-bottom: 1rem;">
-                                <label for="pref-productos">Productos ONU / Rubros</label>
-                                <textarea id="pref-productos" class="form-input" rows="4" placeholder="Ej: 43211507 (Computadores), 81111812 (Mantenimiento TI)"></textarea>
-                            </div>
-                            <div class="form-item">
-                                <label for="pref-tipo-lic">Tipo de Procedimiento</label>
-                                <input type="text" id="pref-tipo-lic" class="form-input" placeholder="Ej: L1, LE, LP">
+                            <div class="profile-form-grid" style="margin-top: 0.5rem;">
+                                <div class="form-item">
+                                    <label for="pref-productos">Productos ONU / Rubros</label>
+                                    <textarea id="pref-productos" class="form-input" rows="3" placeholder="Ej: 43211507 (Computadores), 81111812 (Mantenimiento TI)"></textarea>
+                                </div>
+                                <div class="form-item">
+                                    <label for="pref-tipo-lic">Tipo de Procedimiento</label>
+                                    <input type="text" id="pref-tipo-lic" class="form-input" placeholder="Ej: L1, LE, LP">
+                                </div>
                             </div>
                         </div>
 
                         <!-- Columna 3: Organismos Públicos -->
-                        <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; border-top: 3px solid var(--accent-green);">
-                            <div style="font-weight: 700; color: var(--dark-green); margin-bottom: 1rem;">
-                                <i class="fa-solid fa-landmark"></i> Entidades Públicas
+                        <div class="stat-mini-card" style="border-left: 4px solid var(--muted-teal); padding: 1.2rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <div style="font-weight: 800; color: var(--dark-green); font-size: 1rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-landmark" style="color: var(--muted-teal);"></i> Entidades Públicas y Palabras Clave
                             </div>
-                            <div class="form-item" style="margin-bottom: 1rem;">
-                                <label for="pref-ucom">Unidades de Compra / Organismos</label>
-                                <textarea id="pref-ucom" class="form-input" rows="4" placeholder="Ej: Hospital Carlos Van Buren, Municipalidad de Valparaíso"></textarea>
-                            </div>
-                            <div class="form-item">
-                                <label for="pref-palabras">Palabras Clave (Hasta 20)</label>
-                                <input type="text" id="pref-palabras" class="form-input" placeholder="Ej: Servidores, Redes, Cloud">
+                            <div class="profile-form-grid" style="margin-top: 0.5rem;">
+                                <div class="form-item">
+                                    <label for="pref-ucom">Unidades de Compra / Organismos</label>
+                                    <textarea id="pref-ucom" class="form-input" rows="3" placeholder="Ej: Hospital Carlos Van Buren, Municipalidad de Valparaíso"></textarea>
+                                </div>
+                                <div class="form-item">
+                                    <label for="pref-palabras">Palabras Clave (Hasta 20)</label>
+                                    <input type="text" id="pref-palabras" class="form-input" placeholder="Ej: Servidores, Redes, Cloud">
+                                </div>
                             </div>
                         </div>
 
@@ -298,13 +308,25 @@
                         <label>Última Conexión / Actualización</label>
                         <div id="profile-last-login" style="color: var(--dark-green); font-weight: 700;">--</div>
                     </div>
-                    <div class="stat-mini-card">
-                        <label>Firebase UID</label>
-                        <div id="profile-uid-header" style="color: var(--gray-text); font-size: 0.85rem; word-break: break-all;">--</div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.2rem;">
+                    <div class="form-item">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase;">
+                            Firebase UID
+                        </label>
+                        <div class="token-display-box">
+                            <span id="profile-uid-header">--</span>
+                        </div>
                     </div>
-                    <div class="stat-mini-card">
-                        <label>Token de Sesión (PostgreSQL)</label>
-                        <div id="profile-token-id" style="color: var(--accent-green); font-size: 0.85rem; word-break: break-all;">--</div>
+
+                    <div class="form-item">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase;">
+                            Token de Sesión
+                        </label>
+                        <div class="token-display-box" style="border-left: 3px solid var(--accent-green);">
+                            <span id="profile-token-id" style="color: var(--accent-green);">--</span>
+                        </div>
                     </div>
                 </div>
             </div>
