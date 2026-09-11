@@ -162,7 +162,7 @@ class Provincia(models.Model):
 class Region(models.Model):
     codigo_region = models.CharField(primary_key=True, max_length=2)
     nombre_region = models.CharField(max_length=100)
-    region_3l = models.CharField(db_column='region_3L', max_length=3, blank=True, null=True)  # Field name made lowercase.
+    region_3l = models.CharField(db_column='region_3L', max_length=3, blank=True, null=True)  # nombre de la region resumido en 3 letras
 
 
     class Meta:
