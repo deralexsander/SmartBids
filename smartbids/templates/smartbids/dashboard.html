@@ -10,15 +10,17 @@
 {% block contenido %}
 <section class="value-prop" style="padding-top: 130px; padding-bottom: 60px; min-height: 100vh; background-color: var(--light-bg); width: 100%; box-sizing: border-box;">
     <div style="width: 100%; padding: 0 3%; box-sizing: border-box;">
-        
-        <!-- Encabezado Principal y Filtros Globales -->
+
+        <!-- ============================================================ -->
+        <!-- ENCABEZADO PRINCIPAL Y FILTROS GLOBALES                       -->
+        <!-- ============================================================ -->
         <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
             <div>
                 <h1 style="font-size: 2.3rem; color: var(--dark-green); font-weight: 800; letter-spacing: -0.5px; margin: 0.4rem 0 0.2rem;">
                     Dashboard <span>Analítico</span>
                 </h1>
             </div>
-            
+
             <!-- Selector de Rango de Fecha y Acciones -->
             <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center;">
                 <div class="form-inline" style="margin: 0;">
@@ -34,95 +36,126 @@
             </div>
         </div>
 
-        <!-- 1. Barra Métrica Compacta Horizontal de KPIs (Visible en Móvil con Scroll y Escritorio) -->
+        <!-- ============================================================ -->
+        <!-- BARRA DE KPIs (compacta, horizontal, con scroll en móvil)     -->
+        <!-- ============================================================ -->
         <div class="dashboard-card" style="padding: 1.2rem 1.8rem; margin-bottom: 2rem; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch;">
             <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-width: 820px; width: 100%; gap: 1.5rem;">
-                
-                <!-- KPI 1: Monto Transado Estimado -->
+
+                <!-- KPI 1: Monto Total -->
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(30, 196, 152, 0.12); color: var(--accent-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(30, 196, 152, 0.25);">
                         <i class="fa-solid fa-coins"></i>
                     </div>
+
                     <div>
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
-                            Monto Transado Estimado
+                            Monto Total Transado
                         </span>
+
                         <div style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
-                            $1.480M
+                            {{ monto_total_ordenes }}
                         </div>
                     </div>
                 </div>
 
-                <!-- KPI 2: Licitaciones Evaluadas -->
+
+                <!-- KPI 2: Órdenes de Compra -->
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(17, 99, 78, 0.12); color: var(--dark-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(17, 99, 78, 0.25);">
                         <i class="fa-solid fa-file-invoice-dollar"></i>
                     </div>
+
                     <div>
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
-                            Licitaciones Evaluadas
+                            Órdenes de Compra
                         </span>
+
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">342</span>
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Totales</span>
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
+                                {{ total_ordenes }}
+                            </span>
+
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">
+                                Registradas
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- KPI 3: Competidores Activos -->
+
+                <!-- KPI 3: Proveedores Activos -->
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(59, 130, 246, 0.12); color: #3b82f6; flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(59, 130, 246, 0.25);">
                         <i class="fa-solid fa-users-viewfinder"></i>
                     </div>
+
                     <div>
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
-                            Competidores Activos
+                            Proveedores Activos
                         </span>
+
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: #3b82f6; line-height: 1.1;">89</span>
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Empresas</span>
+                            <span style="font-size: 1.7rem; font-weight: 800; color: #3b82f6; line-height: 1.1;">
+                                {{ proveedores_activos }}
+                            </span>
+
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">
+                                Empresas
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- KPI 4: Tasa Media Adjudicación -->
+
+                <!-- KPI 4: Compradores Activos -->
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1;">
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(92, 150, 136, 0.15); color: var(--muted-teal); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(92, 150, 136, 0.25);">
-                        <i class="fa-solid fa-award"></i>
+                        <i class="fa-solid fa-building"></i>
                     </div>
+
                     <div>
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
-                            Tasa Media Adjudicación
+                            Compradores Activos
                         </span>
+
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1.1;">24.6%</span>
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Promedio</span>
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1.1;">
+                                {{ compradores_activos }}
+                            </span>
+
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">
+                                Organismos
+                            </span>
                         </div>
                     </div>
                 </div>
 
             </div>
-        </div>
+        </div>        
 
-        <!-- 2. Pestañas de Navegación del Dashboard -->
+        <!-- ============================================================ -->
+        <!-- PESTAÑAS DE NAVEGACIÓN DEL DASHBOARD                          -->
+        <!-- ============================================================ -->
         <div style="display: flex; gap: 0.8rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.8rem; flex-wrap: wrap;">
             <button type="button" class="tab-dash-btn active" onclick="cambiarDashboard('tab-productos', this)">
-                <i class="fa-solid fa-box-archive"></i> Demanda de Productos (E03-H01)
+                <i class="fa-solid fa-box-archive"></i> Demanda de Productos
             </button>
             <button type="button" class="tab-dash-btn" onclick="cambiarDashboard('tab-competencia', this)">
-                <i class="fa-solid fa-chart-pie"></i> Análisis de Competencia (E03-H02)
+                <i class="fa-solid fa-chart-pie"></i> Análisis de Competencia
             </button>
             <button type="button" class="tab-dash-btn" onclick="cambiarDashboard('tab-compradores', this)">
                 <i class="fa-solid fa-building-columns"></i> Organismos Compradores
             </button>
         </div>
 
-        <!-- 3. Contenedor Dinámico de Vistas -->
-
-        <!-- VISTA A: DASHBOARD DE PRODUCTOS (E03-H01) -->
+        <!-- ============================================================ -->
+        <!-- VISTA A: DASHBOARD DE PRODUCTOS                               -->
+        <!-- (agregar aquí los nuevos gráficos/tarjetas de esta pestaña)   -->
+        <!-- ============================================================ -->
         <div id="tab-productos" class="dashboard-view active">
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                
+
                 <!-- Gráfico de Demanda Temporal -->
                 <div class="dashboard-card" style="padding: 1.5rem;">
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
@@ -169,20 +202,24 @@
                         </div>
                     </div>
                 </div>
+                <!-- próximos gráficos de "Productos" van dentro de este mismo grid o en una fila nueva -->
 
             </div>
         </div>
 
-        <!-- VISTA B: DASHBOARD DE COMPETENCIA (E03-H02) -->
+        <!-- ============================================================ -->
+        <!-- VISTA B: DASHBOARD DE COMPETENCIA (E03-H02)                   -->
+        <!-- (agregar aquí los nuevos gráficos/tarjetas de esta pestaña)   -->
+        <!-- ============================================================ -->
         <div id="tab-competencia" class="dashboard-view" style="display: none;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                
-                <!-- Participación y Adjudicación -->
+
+                <!-- Gráfico 1: Participación y Adjudicación -->
                 <div class="dashboard-card" style="padding: 1.5rem;">
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
                         <div class="dash-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-pie-chart" style="color: var(--accent-green);"></i>
-                            Distribución de Adjudicaciones por Competidor
+                            Distribución de Órdenes de compra por Competidor
                         </div>
                     </div>
                     <div style="position: relative; height: 280px; width: 100%;">
@@ -190,68 +227,107 @@
                     </div>
                 </div>
 
-                <!-- Tabla de Comportamiento de Oferentes -->
+                <!-- Tabla de Principales Competidores -->
                 <div class="dashboard-card" style="padding: 1.5rem; overflow-x: auto;">
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
                         <div class="dash-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-users" style="color: var(--accent-green);"></i>
-                            Ranking de Oferentes Principales
+                            Principales Competidores
                         </div>
                     </div>
+
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
                         <thead>
                             <tr style="border-bottom: 2px solid var(--border-color); color: var(--dark-green); font-weight: 800;">
-                                <th style="padding: 0.6rem 0.4rem;">Empresa Competidora</th>
-                                <th style="padding: 0.6rem 0.4rem;">Ofertas</th>
-                                <th style="padding: 0.6rem 0.4rem;">Tasa Adj.</th>
+                                <th style="padding: 0.6rem 0.4rem;">Competidor</th>
+                                <th style="padding: 0.6rem 0.4rem;">Órdenes de Compra</th>
+                                <th style="padding: 0.6rem 0.4rem;">Participación</th>
                                 <th style="padding: 0.6rem 0.4rem;">Monto Total</th>
                             </tr>
                         </thead>
+
                         <tbody style="color: var(--gray-text);">
+
+                            {% for competidor in competidores %}
                             <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">Soluciones TI Global SpA</td>
-                                <td style="padding: 0.8rem 0.4rem;">34</td>
-                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--accent-green);">41%</td>
-                                <td style="padding: 0.8rem 0.4rem;">$320M</td>
+
+                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">
+                                    {{ competidor.nombre }}
+                                </td>
+
+                                <td style="padding: 0.8rem 0.4rem;">
+                                    {{ competidor.adjudicaciones }}
+                                </td>
+
+                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--accent-green);">
+                                    {{ competidor.participacion }}%
+                                </td>
+
+                                <td style="padding: 0.8rem 0.4rem;">
+                                    {{ competidor.monto_adjudicado}}
+                                </td>
+
                             </tr>
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">TechCloud Chile Ltda.</td>
-                                <td style="padding: 0.8rem 0.4rem;">28</td>
-                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--accent-green);">28%</td>
-                                <td style="padding: 0.8rem 0.4rem;">$210M</td>
+
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" style="padding: 1rem; text-align: center;">
+                                    No hay datos disponibles.
+                                </td>
                             </tr>
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">Informatica Austral S.A.</td>
-                                <td style="padding: 0.8rem 0.4rem;">19</td>
-                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--accent-green);">15%</td>
-                                <td style="padding: 0.8rem 0.4rem;">$95M</td>
-                            </tr>
+                            {% endfor %}
+
                         </tbody>
                     </table>
                 </div>
 
+                <!-- Gráfico 2: Evolución de Órdenes de Compra por Competidor -->
+                <div class="dashboard-card" style="padding: 1.5rem; margin-top: 1.5rem;">
+                    <div class="dashboard-header" style="margin-bottom: 1rem;">
+                        <div class="dash-title" style="font-size: 1.1rem;">
+                            <i class="fa-solid fa-chart-line" style="color: var(--accent-green);"></i>
+                            Evolución de Órdenes de Compra por Competidor
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 350px;">
+                        <canvas id="evolucionCompetidoresChart"></canvas>
+                    </div>
+                </div>
+                <!-- próximos gráficos de "Competencia" van dentro de este mismo grid o en una fila nueva -->
+
             </div>
         </div>
 
-        <!-- VISTA C: DASHBOARD DE COMPRADORES -->
+        <!-- ============================================================ -->
+        <!-- VISTA C: DASHBOARD DE COMPRADORES                             -->
+        <!-- (agregar aquí los nuevos gráficos/tarjetas de esta pestaña)   -->
+        <!-- ============================================================ -->
         <div id="tab-compradores" class="dashboard-view" style="display: none;">
-            <div class="dashboard-card" style="padding: 1.5rem;">
-                <div class="dashboard-header" style="margin-bottom: 1rem;">
-                    <div class="dash-title" style="font-size: 1.1rem;">
-                        <i class="fa-solid fa-landmark" style="color: var(--accent-green);"></i>
-                        Organismos Estatales con Mayor Presupuesto Asignado
+            <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+
+                <!-- Gráfico de Organismos Compradores -->
+                <div class="dashboard-card" style="padding: 1.5rem;">
+                    <div class="dashboard-header" style="margin-bottom: 1rem;">
+                        <div class="dash-title" style="font-size: 1.1rem;">
+                            <i class="fa-solid fa-landmark" style="color: var(--accent-green);"></i>
+                            Organismos Estatales con Mayor Presupuesto Asignado
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 260px; width: 100%;">
+                        <canvas id="graficoCompradores"></canvas>
                     </div>
                 </div>
-                <div style="position: relative; height: 260px; width: 100%;">
-                    <canvas id="graficoCompradores"></canvas>
-                </div>
+                <!-- próximos gráficos de "Compradores" van dentro de este mismo grid o en una fila nueva -->
+
             </div>
         </div>
 
     </div>
 </section>
 
-<!-- Estilos específicos de pestañas -->
+<!-- ============================================================ -->
+<!-- ESTILOS ESPECÍFICOS DE LAS PESTAÑAS                           -->
+<!-- ============================================================ -->
 <style>
     .tab-dash-btn {
         padding: 0.65rem 1.2rem;
@@ -283,8 +359,14 @@
     }
 </style>
 
-<!-- Inicialización de Gráficos y Pestañas -->
+<!-- ============================================================ -->
+<!-- LÓGICA DE PESTAÑAS Y GRÁFICOS                                 -->
+<!-- Organizado en una función de inicialización por pestaña, así -->
+<!-- cada nuevo gráfico se agrega dentro de la función que le      -->
+<!-- corresponde (initGraficosProductos / Competencia / Compradores) -->
+<!-- ============================================================ -->
 <script>
+    // --- Navegación entre pestañas ---
     function cambiarDashboard(tabId, btn) {
         document.querySelectorAll('.dashboard-view').forEach(view => view.style.display = 'none');
         document.querySelectorAll('.tab-dash-btn').forEach(b => b.classList.remove('active'));
@@ -293,9 +375,9 @@
         btn.classList.add('active');
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-
-        // Gráfico 1: Demanda de Productos
+    // --- Pestaña: Demanda de Productos ---
+    function initGraficosProductos() {
+        // Gráfico 1: Volumen de Órdenes de compra por Categoría de Producto
         new Chart(document.getElementById('graficoProductos'), {
             type: 'bar',
 
@@ -326,8 +408,12 @@
             }
         });
 
+        // <-- próximos gráficos de "Productos" se inicializan aquí -->
+    }
 
-        // Gráfico 2: Competencia
+    // --- Pestaña: Análisis de Competencia ---
+    function initGraficosCompetencia() {
+        // Gráfico 1: Distribución de Órdenes de compra por Competidor
         new Chart(document.getElementById('graficoCompetencia'), {
             type: 'doughnut',
 
@@ -366,9 +452,82 @@
                 }
             }
         });
-        
 
-        // Gráfico 3: Organismos Compradores
+        // Gráfico 2: Evolución de Órdenes de Compra por Competidor
+        const evolucionCompetidores = {{ evolucion_competidores|safe }};
+
+        const periodosCompetidores = evolucionCompetidores.map(
+            fila => fila.periodo
+        );
+
+        const nombresCompetidores = [
+            {% for proveedor in proveedores_competencia %}
+                "{{ proveedor.proveedor_key__proveedor_nombre|escapejs }}",
+            {% endfor %}
+        ];
+
+        const datasetsCompetidores = nombresCompetidores.map(nombre => ({
+            label: nombre,
+
+            data: evolucionCompetidores.map(
+                fila => fila[nombre] || 0
+            ),
+
+            tension: 0.3,
+            fill: false,
+            pointRadius: 3,
+            pointHoverRadius: 5
+        }));
+
+        new Chart(document.getElementById('evolucionCompetidoresChart'), {
+            type: 'line',
+
+            data: {
+                labels: periodosCompetidores,
+                datasets: datasetsCompetidores
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Órdenes de Compra'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Período'
+                        }
+                    }
+                }
+            }
+        });
+
+        // <-- próximos gráficos de "Competencia" se inicializan aquí -->
+    }
+
+    // --- Pestaña: Organismos Compradores ---
+    function initGraficosCompradores() {
+        // Gráfico 1: Organismos Estatales con Mayor Presupuesto Asignado
         new Chart(document.getElementById('graficoCompradores'), {
             type: 'bar',
 
@@ -398,8 +557,15 @@
                 maintainAspectRatio: false
             }
         });
-        
 
+        // <-- próximos gráficos de "Compradores" se inicializan aquí -->
+    }
+
+    // --- Inicialización general al cargar el DOM ---
+    document.addEventListener('DOMContentLoaded', () => {
+        initGraficosProductos();
+        initGraficosCompetencia();
+        initGraficosCompradores();
     });
 </script>
 {% endblock %}
