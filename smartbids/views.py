@@ -6,6 +6,9 @@ from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
+from django.db.models import Count
+from django.utils import timezone
 from .models import (
     Mensajeria,
     FactItemOrdenCompra,
@@ -13,11 +16,9 @@ from .models import (
     Suscriptor,
     Empresa,
     Preferencia,
+    Licitacion,
+    EstadoSuscriptor
 )
-from .models.procurement import Licitacion
-from django.db.models import Count
-from django.utils import timezone
-from django.core.paginator import Paginator
 
 logger = logging.getLogger(__name__)
 
@@ -93,12 +94,14 @@ def registrar_prospecto(request):
 
         ahora = timezone.now()
 
-        # codigo_estado = 2 ("Habilitado")
+        # Obtener o asignar la instancia de EstadoSuscriptor (ejemplo: ID 2 = Habilitado)
+        estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=2).first()
+
         Suscriptor.objects.create(
             firebase_uid=uid,
             fecha_registro=ahora,
             fecha_actualizacion=ahora,
-            codigo_estado=2,
+            codigo_estado=estado_instancia, # <--- Usar la instancia asignada
             sus_nombre1='',
             sus_apellido1=''
         )
@@ -108,8 +111,6 @@ def registrar_prospecto(request):
     except Exception as e:
         logger.error(f"[SmartBids] Error al registrar prospecto: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
-
-
 # ==============================================================================
 # AUTENTICACIÓN 2FA Y TOKEN DE SESIÓN ÚNICA
 # ==============================================================================
@@ -206,7 +207,6 @@ def enviar_codigo_login(request):
 
 @csrf_exempt
 def validar_codigo_login(request):
-    """Valida el código OTP y persiste el nuevo token de sesión en la tabla core.suscriptor."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
 
@@ -222,22 +222,32 @@ def validar_codigo_login(request):
         if not registro or registro['codigo'] != str(codigo):
             return JsonResponse({'status': 'error', 'mensaje': 'Código incorrecto o expirado.'}, status=400)
 
-        # Quitar el código usado
         CODIGOS_OTP_TEMPORALES.pop(email, None)
 
-        # 2. Guardar token en PostgreSQL
-        suscriptor = Suscriptor.objects.filter(firebase_uid=uid).first()
-        if suscriptor:
-            suscriptor.token_sesion = session_token
-            suscriptor.fecha_actualizacion = timezone.now()
-            suscriptor.save(update_fields=['token_sesion', 'fecha_actualizacion'])
+        # 2. Guardar token en PostgreSQL (crear si no existe por algún fallo previo)
+        ahora = timezone.now()
+        estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=2).first()
+
+        suscriptor, created = Suscriptor.objects.get_or_create(
+            firebase_uid=uid,
+            defaults={
+                'fecha_registro': ahora,
+                'fecha_actualizacion': ahora,
+                'codigo_estado': estado_instancia,
+                'sus_nombre1': '',
+                'sus_apellido1': ''
+            }
+        )
+        
+        suscriptor.token_sesion = session_token
+        suscriptor.fecha_actualizacion = ahora
+        suscriptor.save(update_fields=['token_sesion', 'fecha_actualizacion'])
 
         return JsonResponse({'status': 'ok', 'mensaje': 'Token y sesión guardados correctamente en PostgreSQL.'})
 
     except Exception as e:
         logger.error(f"[SmartBids] Error al validar código: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
-
 
 @csrf_exempt
 def verificar_sesion_activa(request):
@@ -267,6 +277,8 @@ def verificar_sesion_activa(request):
 
 
 
+# views.py
+
 @csrf_exempt
 def obtener_perfil_suscriptor(request):
     if request.method != 'POST':
@@ -276,13 +288,22 @@ def obtener_perfil_suscriptor(request):
         data = json.loads(request.body.decode('utf-8'))
         uid = data.get('uid')
 
+        if not uid:
+            return JsonResponse({'status': 'error', 'mensaje': 'El UID es requerido.'}, status=400)
+
         suscriptor = Suscriptor.objects.filter(firebase_uid=uid).first()
+
+        # Si el suscriptor aún no existe en PostgreSQL, se responde de forma segura sin romper el frontend (evita 404/500)
         if not suscriptor:
-            return JsonResponse({'status': 'error', 'mensaje': 'Suscriptor no encontrado.'}, status=404)
+            return JsonResponse({
+                'status': 'ok',
+                'datos': None,
+                'mensaje': 'Suscriptor no encontrado en la base de datos local.'
+            })
 
         # Datos de empresa si existe
         empresa_data = {}
-        if suscriptor.sus_rut_empresa:
+        if getattr(suscriptor, 'sus_rut_empresa', None):
             emp = suscriptor.sus_rut_empresa
             empresa_data = {
                 'emp_rut': emp.emp_rut,
@@ -305,6 +326,9 @@ def obtener_perfil_suscriptor(request):
             'pref_palabras_claves': pref.pref_palabras_claves or '' if pref else '',
         }
 
+        # Extraer el valor primitive/ID de codigo_estado para no romper JsonResponse
+        cod_estado_val = suscriptor.codigo_estado_id if suscriptor.codigo_estado_id else None
+
         return JsonResponse({
             'status': 'ok',
             'datos': {
@@ -316,7 +340,7 @@ def obtener_perfil_suscriptor(request):
                 'sus_apellido2': suscriptor.sus_apellido2 or '',
                 'sus_nombre_social': suscriptor.sus_nombre_social or '',
                 'sus_iniciales': suscriptor.sus_iniciales or '',
-                'codigo_estado': suscriptor.codigo_estado,
+                'codigo_estado': cod_estado_val,  # <--- CORREGIDO (envía el ID/valor primitivo)
                 'token_sesion': getattr(suscriptor, 'token_sesion', '') or '',
                 'fecha_registro': suscriptor.fecha_registro.isoformat() if suscriptor.fecha_registro else None,
                 'fecha_actualizacion': suscriptor.fecha_actualizacion.isoformat() if suscriptor.fecha_actualizacion else None,
@@ -325,8 +349,8 @@ def obtener_perfil_suscriptor(request):
             }
         })
     except Exception as e:
+        logger.error(f"[SmartBids] Error en obtener_perfil_suscriptor: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
-
 
 @csrf_exempt
 def actualizar_empresa_suscriptor(request):
