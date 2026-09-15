@@ -22,8 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
 
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -34,6 +32,13 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+
+# Configuración de orígenes de confianza para protección CSRF en producción (Railway)
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.railway.app',
+    'https://chileavanza.cl',
+    'https://*.chileavanza.cl',
+]
 
 
 # Application definition
@@ -86,9 +91,11 @@ WSGI_APPLICATION = 'chileavanza.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Le indicamos explícitamente a dj_database_url que lea DATABASE_PRIVATE_URL o DATABASE_URL
 DATABASES = {
     'default': dj_database_url.config(
         default=f"postgres://{os.getenv('DB_USER', 'postgres')}:{os.getenv('DB_PASSWORD', '')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'smartbids')}",
+        env='DATABASE_PRIVATE_URL' if os.getenv('DATABASE_PRIVATE_URL') else 'DATABASE_URL',
         conn_max_age=600,
         conn_health_checks=True,
     )
