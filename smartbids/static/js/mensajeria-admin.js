@@ -1,4 +1,10 @@
 import { mostrarMensaje } from './mensaje.js';
+import { auth } from './firebase-config.js';
+
+function encabezadosAdministrador() {
+    const uid = auth.currentUser?.uid;
+    return uid ? { 'X-Firebase-UID': uid } : {};
+}
 
 // ==========================================================================
 // 9. GESTIÓN DE ALERTAS (PANEL ADMIN CONECTADO A POSTGRESQL)
@@ -11,12 +17,15 @@ const selectTipo = document.getElementById('msg-tipo');
 const btnCancelar = document.getElementById('btn-cancelar-edicion');
 const statusFeedback = document.getElementById('mensaje-status-feedback');
 
-if (formMensajeria) {
+function iniciarMensajeriaAdministrador() {
+    if (!formMensajeria) return;
     async function cargarListaAlertasAdmin() {
         if (!listaAlertasAdmin) return;
 
         try {
-            const res = await fetch('/api/mensajeria/');
+            const res = await fetch('/api/mensajeria/', {
+                headers: encabezadosAdministrador()
+            });
             if (!res.ok) throw new Error('Error al consultar alertas');
             const dataList = await res.json();
 
@@ -121,7 +130,10 @@ if (formMensajeria) {
                         btnDelete.disabled = true;
                         btnDelete.textContent = "Borrando...";
 
-                        const res = await fetch(`/api/mensajeria/${id}/`, { method: 'DELETE' });
+                        const res = await fetch(`/api/mensajeria/${id}/`, {
+                            method: 'DELETE',
+                            headers: encabezadosAdministrador()
+                        });
                         if (!res.ok) throw new Error('Error al borrar');
 
                         mostrarMensaje('Alerta eliminada correctamente.', 'exito');
@@ -171,7 +183,10 @@ if (formMensajeria) {
 
             const res = await fetch(url, {
                 method: metodo,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...encabezadosAdministrador()
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -210,5 +225,7 @@ if (formMensajeria) {
 
     cargarListaAlertasAdmin();
 }
+
+document.addEventListener('smartbids:admin-ready', iniciarMensajeriaAdministrador, { once: true });
 
 

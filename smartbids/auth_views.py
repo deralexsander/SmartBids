@@ -1,8 +1,11 @@
 import secrets
 import json
 import logging
+import hashlib
+from datetime import timedelta
 from django.http import JsonResponse
 from django.core.mail import send_mail
+from django.core.cache import cache
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -14,6 +17,36 @@ from .models import Suscriptor, Mensajeria, Empresa, Preferencia, EstadoSuscript
 logger = logging.getLogger(__name__)
 
 CODIGOS_OTP_TEMPORALES = {}
+OTP_EXPIRACION_SEGUNDOS = 600
+OTP_REENVIO_SEGUNDOS = 60
+OTP_MAXIMOS_POR_HORA = 5
+
+
+def _identificador_cliente(request, email):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+    ip = ip or request.META.get('REMOTE_ADDR', 'unknown')
+    identificador = f'{email.strip().lower()}:{ip}'
+    return hashlib.sha256(identificador.encode('utf-8')).hexdigest()
+
+
+def _limite_envio_otp(request, email):
+    identificador = _identificador_cliente(request, email)
+    clave_ultimo_envio = f'smartbids:otp:last:{identificador}'
+    clave_intentos = f'smartbids:otp:hour:{identificador}'
+
+    ultimo_envio = cache.get(clave_ultimo_envio)
+    if ultimo_envio:
+        segundos = int(timezone.now().timestamp() - ultimo_envio)
+        if segundos < OTP_REENVIO_SEGUNDOS:
+            return OTP_REENVIO_SEGUNDOS - segundos
+
+    intentos = cache.get(clave_intentos, 0)
+    if intentos >= OTP_MAXIMOS_POR_HORA:
+        return OTP_REENVIO_SEGUNDOS
+
+    cache.set(clave_ultimo_envio, timezone.now().timestamp(), OTP_REENVIO_SEGUNDOS)
+    cache.set(clave_intentos, intentos + 1, 3600)
+    return 0
 
 
 @csrf_exempt
@@ -64,6 +97,13 @@ def enviar_codigo_login(request):
 
         if not email_destinatario:
             return JsonResponse({'status': 'error', 'mensaje': 'El correo electrónico es requerido.'}, status=400)
+
+        segundos_espera = _limite_envio_otp(request, email_destinatario)
+        if segundos_espera:
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Espera {segundos_espera} segundos antes de solicitar otro código.'
+            }, status=429, headers={'Retry-After': str(segundos_espera)})
 
         # Generar código criptográfico de 6 dígitos
         codigo_seguridad = f"{secrets.randbelow(900000) + 100000}"
@@ -154,6 +194,10 @@ def validar_codigo_login(request):
         # 1. Validar OTP en memoria
         registro = CODIGOS_OTP_TEMPORALES.get(email)
         if not registro or registro['codigo'] != str(codigo):
+            return JsonResponse({'status': 'error', 'mensaje': 'Código incorrecto o expirado.'}, status=400)
+
+        if timezone.now() - registro['creado_el'] > timedelta(seconds=OTP_EXPIRACION_SEGUNDOS):
+            CODIGOS_OTP_TEMPORALES.pop(email, None)
             return JsonResponse({'status': 'error', 'mensaje': 'Código incorrecto o expirado.'}, status=400)
 
         CODIGOS_OTP_TEMPORALES.pop(email, None)

@@ -1,5 +1,6 @@
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import {
+    getAuth,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     sendEmailVerification,
@@ -47,7 +48,35 @@ const loginForm = document.getElementById('login-form');
 const otpInputs = document.querySelectorAll('.otp-digit-input, .otp-input');
 const btnVerificarOtp = document.getElementById('btn-verificar-otp');
 const btnCancelarOtp = document.getElementById('btn-cancelar-otp');
+const btnReenviarOtp = document.getElementById('btn-reenviar-otp');
 const otpMessage = document.getElementById('otp-message');
+let temporizadorReenvioOtp = null;
+
+function iniciarCooldownReenvio() {
+    if (!btnReenviarOtp) return;
+
+    let segundosRestantes = 60;
+    btnReenviarOtp.disabled = true;
+    btnReenviarOtp.textContent = `Reenviar código (${segundosRestantes}s)`;
+
+    if (temporizadorReenvioOtp) {
+        clearInterval(temporizadorReenvioOtp);
+    }
+
+    temporizadorReenvioOtp = setInterval(() => {
+        segundosRestantes -= 1;
+
+        if (segundosRestantes <= 0) {
+            clearInterval(temporizadorReenvioOtp);
+            temporizadorReenvioOtp = null;
+            btnReenviarOtp.disabled = false;
+            btnReenviarOtp.textContent = 'Reenviar código';
+            return;
+        }
+
+        btnReenviarOtp.textContent = `Reenviar código (${segundosRestantes}s)`;
+    }, 1000);
+}
 
 // Control de navegación entre los 6 inputs OTP
 otpInputs.forEach((input, index) => {
@@ -104,7 +133,9 @@ if (loginForm) {
 
             const resData = await response.json();
             if (!response.ok || resData.status !== 'ok') {
-                throw new Error(resData.mensaje || 'Error al enviar el código de verificación.');
+                const error = new Error(resData.mensaje || 'Error al enviar el código de verificación.');
+                error.status = response.status;
+                throw error;
             }
 
             pendingEmail = email;
@@ -116,12 +147,18 @@ if (loginForm) {
             AuthState.isSubmittingAuth = false;
             setButtonLoading(submitBtn, false);
             abrirModal2FA();
+            iniciarCooldownReenvio();
 
         } catch (error) {
+            if (error.status === 429) {
+                await signOut(auth);
+                mostrarMensaje(error.message, 'error');
+            } else {
+                console.error('[SmartBids] ❌ Error en inicio de sesión:', error);
+                mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
+            }
             AuthState.isSubmittingAuth = false;
             setButtonLoading(submitBtn, false);
-            console.error('[SmartBids] ❌ Error en inicio de sesión:', error);
-            mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
         }
     });
 }
@@ -192,6 +229,38 @@ if (btnVerificarOtp) {
             setButtonLoading(btnVerificarOtp, false);
             console.error('[SmartBids] ❌ Error al verificar código:', error);
             otpMessage.textContent = error.message || 'Error al validar el código.';
+        }
+    });
+}
+
+if (btnReenviarOtp) {
+    btnReenviarOtp.addEventListener('click', async () => {
+        if (!pendingEmail || btnReenviarOtp.disabled) return;
+
+        btnReenviarOtp.disabled = true;
+        btnReenviarOtp.textContent = 'Enviando...';
+        otpMessage.textContent = '';
+
+        try {
+            const response = await fetch('/api/enviar-codigo-login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: pendingEmail, reenvio: true })
+            });
+            const data = await response.json();
+
+            if (!response.ok || data.status !== 'ok') {
+                throw new Error(data.mensaje || 'No se pudo reenviar el código.');
+            }
+
+            otpInputs.forEach((input) => (input.value = ''));
+            otpInputs[0]?.focus();
+            otpMessage.textContent = 'Se envió un nuevo código a tu correo.';
+            iniciarCooldownReenvio();
+        } catch (error) {
+            btnReenviarOtp.disabled = false;
+            btnReenviarOtp.textContent = 'Reenviar código';
+            otpMessage.textContent = error.message;
         }
     });
 }

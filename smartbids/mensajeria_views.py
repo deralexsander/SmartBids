@@ -4,12 +4,34 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
-from .models import Mensajeria
+from .models import Mensajeria, Suscriptor
+
+
+def _usuario_es_administrador(request):
+    uid = request.headers.get('X-Firebase-UID')
+    if not uid:
+        return False
+
+    suscriptor = Suscriptor.objects.select_related('codigo_estado').filter(
+        firebase_uid=uid
+    ).first()
+    nombre_estado = suscriptor.codigo_estado.nombre_estado if suscriptor and suscriptor.codigo_estado else ''
+    return nombre_estado.strip().casefold() == 'administrador'
+
+
+def _respuesta_acceso_denegado():
+    return JsonResponse({
+        'status': 'error',
+        'mensaje': 'Acceso denegado: se requieren permisos de administrador.'
+    }, status=403)
 
 
 
 @csrf_exempt
 def listar_crear_mensajes(request):
+    if not _usuario_es_administrador(request):
+        return _respuesta_acceso_denegado()
+
     if request.method == 'GET':
         mensajes = Mensajeria.objects.all().order_by('-creado_el')
         data = [
@@ -41,6 +63,9 @@ def listar_crear_mensajes(request):
 
 @csrf_exempt
 def detalle_mensaje(request, id):
+    if not _usuario_es_administrador(request):
+        return _respuesta_acceso_denegado()
+
     mensaje_obj = get_object_or_404(Mensajeria, id=id)
 
     if request.method in ['PUT', 'POST']:

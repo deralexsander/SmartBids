@@ -39,6 +39,40 @@ const updateNavButtons = (user) => {
     if (profileButton) profileButton.style.display = user ? 'inline-flex' : 'none';
 };
 
+async function validarAccesoMensajeria(user, pageRule) {
+    if (!pageRule?.requiredRole) return true;
+
+    try {
+        const response = await fetch('/api/obtener-perfil/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: user.uid })
+        });
+        const data = await response.json();
+        const nombreEstado = data.datos?.nombre_estado || '';
+        const rolNormalizado = nombreEstado.trim().toLowerCase();
+        const tieneRol = pageRule.requiredRole === 'admin'
+            ? rolNormalizado === 'admin' || rolNormalizado === 'administrador'
+            : rolNormalizado === pageRule.requiredRole;
+
+        if (!tieneRol) {
+            sessionStorage.setItem('flash_message', JSON.stringify({
+                texto: pageRule.errorMsg,
+                tipo: 'error'
+            }));
+            window.location.replace(pageRule.redirectFallback || '/');
+            return false;
+        }
+
+        document.dispatchEvent(new CustomEvent('smartbids:admin-ready'));
+        return true;
+    } catch (error) {
+        console.error('[SmartBids] Error verificando permisos de mensajería:', error);
+        window.location.replace(pageRule.redirectFallback || '/');
+        return false;
+    }
+}
+
 // Variable para el temporizador de monitoreo continuo
 let intervaloMonitoreoSesion = null;
 
@@ -102,6 +136,8 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     if (AuthState.isSubmittingAuth) return;
+
+    if (!(await validarAccesoMensajeria(user, pageRule))) return;
 
     // 3. Imprimir el token local actual en consola
     const tokenActual = SessionManager.getLocalToken();
