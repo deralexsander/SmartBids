@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block nombrePag %}
-<title>Gestión de Usuarios - SmartBids</title>
+<title>Gestión de Usuarios</title>
 {% endblock %}
 
 {% block contenido %}
@@ -18,8 +18,9 @@
             </p>
         </div>
 
-        <!-- Acciones Rápidas Superiores -->
+        <!-- Acciones Rápidas Superiores (3 Tarjetas en cuadrícula simétrica) -->
         <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <!-- 1. Mensajería y Alertas -->
             <a href="{% url 'mensajeria' %}" class="dashboard-card" style="text-decoration: none; color: inherit; transition: transform 0.2s ease;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div class="prop-icon" style="margin: 0; width: 50px; height: 50px; font-size: 1.3rem;">
@@ -32,6 +33,7 @@
                 </div>
             </a>
 
+            <!-- 2. Política de Seguridad -->
             <button type="button" id="btn-abrir-politica-password" class="dashboard-card" style="border: 1px solid var(--border-color); text-align: left; cursor: pointer; color: inherit; transition: transform 0.2s ease; width: 100%;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div class="prop-icon" style="margin: 0; width: 50px; height: 50px; font-size: 1.3rem;">
@@ -43,6 +45,72 @@
                     </div>
                 </div>
             </button>
+
+            <!-- 3. Alerta de Perfil -->
+            <button type="button" id="btn-abrir-config-perfil" class="dashboard-card" style="border: 1px solid var(--border-color); text-align: left; cursor: pointer; color: inherit; transition: transform 0.2s ease; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="prop-icon" style="margin: 0; width: 50px; height: 50px; font-size: 1.3rem;">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--dark-green); font-size: 1.15rem; font-weight: 700; margin-bottom: 2px;">Alerta de Perfil</h4>
+                        <p style="color: var(--gray-text); font-size: 0.85rem; margin: 0;">Umbral (%) y días de reaparición.</p>
+                    </div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Modal: Configuración de Alerta de Completitud de Perfil -->
+        <div id="config-perfil-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="config-perfil-title">
+            <div class="dashboard-card" style="width: min(560px, 94%); padding: 2rem 2.2rem; border-radius: 20px; box-shadow: 0 24px 60px rgba(17, 99, 78, 0.18); border: 1px solid var(--border-color); background: var(--white); text-align: left;">
+                
+                <div class="dashboard-header" style="align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                    <div>
+                        <h2 id="config-perfil-title" style="font-size: 1.4rem; color: var(--dark-green); font-weight: 800; margin: 0;">
+                            Configuración de Alerta de Perfil
+                        </h2>
+                        <p style="font-size: 0.88rem; color: var(--gray-text); margin: 4px 0 0 0;">
+                            Define cuándo debe dispararse el modal de recordatorio y cada cuántos días reaparecerá tras omitirlo.
+                        </p>
+                    </div>
+                    <button type="button" id="btn-cerrar-config-perfil-x" aria-label="Cerrar modal" style="background: none; border: none; font-size: 1.4rem; color: var(--muted-teal); cursor: pointer; padding: 4px;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <form id="config-perfil-form">
+                    <div style="margin-bottom: 1.2rem;">
+                        <label for="input-cfg-umbral" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--dark-green); text-transform: uppercase; margin-bottom: 0.4rem;">
+                            Porcentaje mínimo requerido (%)
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="number" id="input-cfg-umbral" min="10" max="100" class="form-input" placeholder="Ej: 90" required style="max-width: 140px;">
+                            <span style="font-size: 0.85rem; color: var(--gray-text);">Si el usuario tiene menos de este valor, se muestra el aviso.</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label for="input-cfg-dias" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--dark-green); text-transform: uppercase; margin-bottom: 0.4rem;">
+                            Frecuencia de reaparición al omitir (días)
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="number" id="input-cfg-dias" min="1" max="90" class="form-input" placeholder="Ej: 7" required style="max-width: 140px;">
+                            <span style="font-size: 0.85rem; color: var(--gray-text);">Días de espera antes de volver a consultar al usuario.</span>
+                        </div>
+                    </div>
+
+                    <p id="config-perfil-feedback" style="min-height: 1.2rem; font-size: 0.88rem; font-weight: 600; margin-bottom: 1rem; text-align: center;"></p>
+
+                    <div class="dashboard-header" style="justify-content: flex-end; gap: 0.8rem; border-top: 1px solid var(--border-color); padding-top: 1.2rem; margin-bottom: 0;">
+                        <button type="button" id="btn-cerrar-config-perfil" class="btn btn-outline" style="padding: 0.6rem 1.4rem;">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.6rem;">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Ajustes
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Módulo Principal: Directorio de Usuarios -->
@@ -98,6 +166,7 @@
     </div>
 </section>
 
+<!-- Modal: Confirmar eliminación de usuario -->
 <div id="delete-user-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-user-title">
     <div class="modal-2fa-card">
         <h3 id="delete-user-title">Eliminar usuario</h3>
@@ -110,6 +179,7 @@
     </div>
 </div>
 
+<!-- Modal: Confirmar cambio de rol/estado -->
 <div id="change-role-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="change-role-title">
     <div class="modal-2fa-card">
         <h3 id="change-role-title">Confirmar cambio de estado</h3>

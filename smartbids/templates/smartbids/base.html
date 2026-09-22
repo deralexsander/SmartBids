@@ -21,6 +21,8 @@
     <script type="module" src="{% static 'js/autenticacion.js' %}"></script>
     <script type="module" src="{% static 'js/mensajeria-admin.js' %}"></script>
     <script type="module" src="{% static 'js/firebase.js' %}"></script>
+    <script type="module" src="{% static 'js/admin-policy.js' %}"></script>
+    <script type="module" src="{% static 'js/admin-users.js' %}"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -117,7 +119,8 @@
             </h3>
 
             <p style="color: var(--gray-text); font-size: 0.92rem; line-height: 1.5; margin-bottom: 1.2rem;">
-                Tu perfil se encuentra al <strong id="modal-porcentaje-texto" style="color: #e53e3e;">0%</strong>. Para calibrar adecuadamente las alertas inteligentes y participar en procesos de compra pública, se requiere al menos un <strong>90%</strong> de los antecedentes.
+                Tu perfil se encuentra al <strong id="modal-porcentaje-texto" style="color: #e53e3e;">0%</strong>. 
+                Para calibrar adecuadamente las alertas inteligentes y participar en procesos de compra pública, se requiere al menos un <strong id="modal-umbral-requerido-texto">90%</strong> de los antecedentes.
             </p>
 
             <!-- Mini Barra de Porcentaje -->

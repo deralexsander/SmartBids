@@ -1,6 +1,9 @@
 import { auth } from './firebase-config.js';
 import { mostrarMensaje } from './mensaje.js';
 
+// =========================================================================
+// POLÍTICA DE CONTRASEÑAS (FIREBASE IDENTITY PLATFORM)
+// =========================================================================
 const policyModal = document.getElementById('password-policy-modal');
 const policyForm = document.getElementById('password-policy-form');
 const policyMessage = document.getElementById('password-policy-feedback');
@@ -20,7 +23,7 @@ let policyCache = null;
 let policyRequest = null;
 
 function adminHeaders() {
-    const uid = auth.currentUser?.uid;
+    const uid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
     return uid ? { 'X-Firebase-UID': uid } : {};
 }
 
@@ -162,5 +165,111 @@ if (policyForm) policyForm.addEventListener('submit', savePolicy);
 if (policyModal) {
     policyModal.addEventListener('click', (event) => {
         if (event.target === policyModal) closePolicyModal();
+    });
+}
+
+
+// =========================================================================
+// MODAL CONFIGURACIÓN DE ALERTA DE PERFIL (POSTGRESQL)
+// =========================================================================
+const btnAbrirConfig = document.getElementById('btn-abrir-config-perfil');
+const modalConfig = document.getElementById('config-perfil-modal');
+const btnCerrarConfig = document.getElementById('btn-cerrar-config-perfil');
+const btnCerrarConfigX = document.getElementById('btn-cerrar-config-perfil-x');
+const formConfig = document.getElementById('config-perfil-form');
+const inputUmbral = document.getElementById('input-cfg-umbral');
+const inputDias = document.getElementById('input-cfg-dias');
+const feedbackConfig = document.getElementById('config-perfil-feedback');
+
+function cerrarModalConfig() {
+    if (modalConfig) {
+        modalConfig.classList.remove('active');
+        modalConfig.style.display = 'none';
+        if (feedbackConfig) feedbackConfig.textContent = '';
+    }
+}
+
+// 1. LEER DATOS DIRECTAMENTE DE POSTGRESQL AL ABRIR EL MODAL
+if (btnAbrirConfig) {
+    btnAbrirConfig.addEventListener('click', async () => {
+        if (!modalConfig) return;
+        modalConfig.style.display = 'flex';
+        modalConfig.classList.add('active');
+
+        if (feedbackConfig) {
+            feedbackConfig.textContent = 'Cargando parámetros desde PostgreSQL...';
+            feedbackConfig.style.color = 'var(--muted-teal)';
+        }
+
+        try {
+            const resp = await fetch('/api/parametros/alerta-perfil/');
+            const data = await resp.json();
+
+            if (data.status === 'ok' && data.datos) {
+                inputUmbral.value = data.datos.porcentaje_minimo;
+                inputDias.value = data.datos.dias_reaparicion;
+                if (feedbackConfig) feedbackConfig.textContent = '';
+            } else {
+                if (feedbackConfig) {
+                    feedbackConfig.textContent = data.mensaje || 'Error al obtener parámetros.';
+                    feedbackConfig.style.color = '#c53030';
+                }
+            }
+        } catch (err) {
+            console.error('[SmartBids] Error al leer parámetros:', err);
+            if (feedbackConfig) {
+                feedbackConfig.textContent = 'Error de conexión con el servidor.';
+                feedbackConfig.style.color = '#c53030';
+            }
+        }
+    });
+}
+
+if (btnCerrarConfig) btnCerrarConfig.addEventListener('click', cerrarModalConfig);
+if (btnCerrarConfigX) btnCerrarConfigX.addEventListener('click', cerrarModalConfig);
+
+// 2. GUARDAR DATOS EN POSTGRESQL
+if (formConfig) {
+    formConfig.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (feedbackConfig) {
+            feedbackConfig.textContent = 'Guardando cambios en PostgreSQL...';
+            feedbackConfig.style.color = 'var(--muted-teal)';
+        }
+
+        try {
+            const resp = await fetch('/api/parametros/alerta-perfil/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...adminHeaders()
+                },
+                body: JSON.stringify({
+                    porcentaje_minimo: parseInt(inputUmbral.value, 10),
+                    dias_reaparicion: parseInt(inputDias.value, 10)
+                })
+            });
+
+            const res = await resp.json();
+            if (res.status === 'ok') {
+                if (feedbackConfig) {
+                    feedbackConfig.textContent = '¡Parámetros actualizados con éxito!';
+                    feedbackConfig.style.color = 'var(--dark-green)';
+                }
+                setTimeout(cerrarModalConfig, 900);
+            } else {
+                if (feedbackConfig) {
+                    feedbackConfig.textContent = res.mensaje || 'No se pudo guardar.';
+                    feedbackConfig.style.color = '#c53030';
+                }
+            }
+        } catch (err) {
+            console.error('[SmartBids] Error al guardar:', err);
+            if (feedbackConfig) {
+                feedbackConfig.textContent = 'Error al enviar petición.';
+                feedbackConfig.style.color = '#c53030';
+            }
+        }
     });
 }

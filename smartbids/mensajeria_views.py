@@ -3,9 +3,8 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-
+from .models.config import ParametroGlobal
 from .models import Mensajeria, Suscriptor
-
 
 def _usuario_es_administrador(request):
     uid = request.headers.get('X-Firebase-UID')
@@ -99,3 +98,119 @@ def obtener_alertas_activas(request):
         for alerta in alertas
     ]
     return JsonResponse(data, safe=False)
+
+
+
+
+
+@csrf_exempt
+def parametro_alerta_perfil(request):
+    if request.method == 'GET':
+        datos = {
+            'porcentaje_minimo': 90,
+            'dias_reaparicion': 7
+        }
+        try:
+            parametros = ParametroGlobal.objects.filter(codigo_parametro__in=[1, 2])
+            for p in parametros:
+                if p.codigo_parametro == 1:
+                    datos['porcentaje_minimo'] = p.valor_parametro
+                elif p.codigo_parametro == 2:
+                    datos['dias_reaparicion'] = p.valor_parametro
+            return JsonResponse({'status': 'ok', 'datos': datos})
+        except Exception as e:
+            print("❌ Error en Postgres al leer config.parametros_globales:", e)
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
+
+    elif request.method in ['POST', 'PATCH', 'PUT']:
+        if not _usuario_es_administrador(request):
+            return _respuesta_acceso_denegado()
+
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+            umbral = int(body.get('porcentaje_minimo', 90))
+            dias = int(body.get('dias_reaparicion', 7))
+
+            ParametroGlobal.objects.update_or_create(
+                codigo_parametro=1,
+                defaults={
+                    'nombre_parametro': 'porcentaje_minimo_requerido',
+                    'valor_parametro': umbral,
+                    'descripcion': 'Si el usuario tiene menos de este valor (%), se muestra el aviso'
+                }
+            )
+
+            ParametroGlobal.objects.update_or_create(
+                codigo_parametro=2,
+                defaults={
+                    'nombre_parametro': 'dias_reaparicion_omitir',
+                    'valor_parametro': dias,
+                    'descripcion': 'Días de espera antes de volver a consultar al usuario'
+                }
+            )
+
+            return JsonResponse({'status': 'ok', 'mensaje': 'Ajustes guardados en PostgreSQL.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=400)
+
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+    """
+    GET: Lee el porcentaje y los días de espera (para perfil.js y el modal).
+    POST / PATCH: Actualiza los valores en PostgreSQL (solo para admin).
+    """
+    if request.method == 'GET':
+        # Valores por defecto de contingencia
+        datos = {
+            'porcentaje_minimo': 90,
+            'dias_reaparicion': 7
+        }
+        try:
+            parametros = ParametroGlobal.objects.filter(codigo_parametro__in=[1, 2])
+            for p in parametros:
+                if p.codigo_parametro == 1:
+                    datos['porcentaje_minimo'] = p.valor_parametro
+                elif p.codigo_parametro == 2:
+                    datos['dias_reaparicion'] = p.valor_parametro
+            return JsonResponse({'status': 'ok', 'datos': datos})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
+
+    elif request.method in ['POST', 'PATCH', 'PUT']:
+        if not _usuario_es_administrador(request):
+            return _respuesta_acceso_denegado()
+
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+            umbral = int(body.get('porcentaje_minimo', 90))
+            dias = int(body.get('dias_reaparicion', 7))
+
+            if not (0 <= umbral <= 100):
+                return JsonResponse({'status': 'error', 'mensaje': 'El porcentaje debe estar entre 0 y 100.'}, status=400)
+            if not (1 <= dias <= 99):
+                return JsonResponse({'status': 'error', 'mensaje': 'Los días deben estar entre 1 y 99.'}, status=400)
+
+            # Actualiza o crea fila 1 (porcentaje)
+            ParametroGlobal.objects.update_or_create(
+                codigo_parametro=1,
+                defaults={
+                    'nombre_parametro': 'porcentaje_minimo_requerido',
+                    'valor_parametro': umbral,
+                    'descripcion': 'Si el usuario tiene menos de este valor (%), se muestra el aviso'
+                }
+            )
+
+            # Actualiza o crea fila 2 (días)
+            ParametroGlobal.objects.update_or_create(
+                codigo_parametro=2,
+                defaults={
+                    'nombre_parametro': 'dias_reaparicion_omitir',
+                    'valor_parametro': dias,
+                    'descripcion': 'Días de espera antes de volver a consultar al usuario'
+                }
+            )
+
+            return JsonResponse({'status': 'ok', 'mensaje': 'Parámetros actualizados correctamente en PostgreSQL.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=400)
+
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)

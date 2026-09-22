@@ -15,50 +15,114 @@ function formatTimestamp(ts) {
     });
 }
 
+// Instancias globales de tags
+let comunasManager = null;
+let productosManager = null;
+let ucomManager = null;
+let territoryData = null;
+
 // ==========================================================================
-// 1. CÁLCULO DE COMPLETITUD Y SEMÁFORO DE COLORES (ROJO - AMARILLO - VERDE)
+// 1. CÁLCULO CENTRALIZADO Y SINCRONIZADO (14 ÍTEMS EXACTOS)
 // ==========================================================================
-export function actualizarPorcentajePerfil() {
-    const checkVal = (id) => Boolean(document.getElementById(id)?.value?.trim());
+export function calcularMetricasPerfil(dataObj = null) {
+    let suscriptorChecks = [];
+    let empresaChecks = [];
+    let filtrosChecks = [];
+    const faltantes = [];
 
-    // 1. Datos Personales (Información del Suscriptor)
-    const suscriptorChecks = [
-        checkVal('profile-nombre1'),
-        checkVal('profile-apellido1'),
-        checkVal('profile-nombre-social') || checkVal('profile-nombre2') || checkVal('profile-apellido2'),
-        checkVal('profile-iniciales')
-    ];
+    if (dataObj) {
+        // Cálculo cuando se evalúa con el objeto JSON traído del backend
+        const emp = dataObj.empresa || {};
+        const pref = dataObj.preferencias || {};
 
-    // 2. Información de la Empresa
-    const empresaChecks = [
-        checkVal('empresa-rut'),
-        checkVal('empresa-fantasia'),
-        checkVal('empresa-razon-social'),
-        checkVal('empresa-correo'),
-        checkVal('empresa-comuna'),
-        checkVal('empresa-direccion') || checkVal('empresa-telefono') || checkVal('empresa-iniciales')
-    ];
+        const checkSus1 = Boolean(dataObj.sus_nombre1?.trim());
+        const checkSus2 = Boolean(dataObj.sus_apellido1?.trim());
+        const checkSocial = Boolean(dataObj.sus_nombre_social?.trim() || dataObj.sus_nombre2?.trim() || dataObj.sus_apellido2?.trim());
+        const checkInic = Boolean(dataObj.sus_iniciales?.trim());
 
-    // 3. Filtros y los 3 Ejes de Mercado
-    const countComunas = comunasManager ? comunasManager.getCodes().length : 0;
-    const countProductos = productosManager ? productosManager.getCodes().length : 0;
-    const countUcom = ucomManager ? ucomManager.getCodes().length : 0;
-    const tieneProcedimiento = checkVal('pref-tipo-lic');
-    const tienePalabras = checkVal('pref-palabras');
+        suscriptorChecks = [checkSus1, checkSus2, checkSocial, checkInic];
 
-    const filtrosChecks = [
-        countComunas > 0,
-        countProductos > 0,
-        countUcom > 0,
-        tieneProcedimiento || tienePalabras
-    ];
+        if (!checkSus1 || !checkSus2) faltantes.push('Nombres y apellidos del suscriptor');
+        if (!checkInic) faltantes.push('Iniciales del suscriptor');
 
-    // Total de 14 items ponderados equitativamente
+        const checkRut = Boolean(emp.emp_rut?.trim());
+        const checkFantasia = Boolean((emp.emp_fantasia || emp.emp_nombre_fantasia)?.trim());
+        const checkRazon = Boolean(emp.emp_razon_social?.trim());
+        const checkCorreo = Boolean(emp.emp_contacto_correo?.trim());
+        const checkComuna = Boolean(emp.emp_codigo_comuna);
+        const checkExtra = Boolean(emp.emp_direccion?.trim() || emp.emp_contacto_telefono?.trim() || emp.emp_iniciales?.trim());
+
+        empresaChecks = [checkRut, checkFantasia, checkRazon, checkCorreo, checkComuna, checkExtra];
+
+        if (!checkRut) faltantes.push('RUT de la empresa');
+        if (!checkFantasia) faltantes.push('Nombre de fantasía de la empresa');
+        if (!checkRazon) faltantes.push('Razón social');
+        if (!checkCorreo) faltantes.push('Correo de notificaciones');
+        if (!checkComuna) faltantes.push('Comuna de casa matriz');
+
+        const countComunas = (pref.comunas_detalle || []).length;
+        const countProds = (pref.productos_detalle || []).length;
+        const countUcom = (pref.ucom_detalle || []).length;
+        const tieneTipos = Array.isArray(pref.pref_tipo_licitacion) ? pref.pref_tipo_licitacion.length > 0 : Boolean(pref.pref_tipo_licitacion);
+        const tienePalabras = Array.isArray(pref.pref_palabras_claves) ? pref.pref_palabras_claves.length > 0 : Boolean(pref.pref_palabras_claves);
+
+        filtrosChecks = [
+            countComunas > 0,
+            countProds > 0,
+            countUcom > 0,
+            tieneTipos || tienePalabras
+        ];
+
+        if (countComunas === 0) faltantes.push('Cobertura territorial (comunas)');
+        if (countProds === 0) faltantes.push('Catálogo de productos (ONU)');
+        if (countUcom === 0) faltantes.push('Organismos o unidades de compra');
+        if (!tieneTipos && !tienePalabras) faltantes.push('Tipos de licitación o palabras clave');
+
+    } else {
+        // Cálculo reactivo en vivo leyendo los formularios del DOM
+        const checkVal = (id) => Boolean(document.getElementById(id)?.value?.trim());
+
+        suscriptorChecks = [
+            checkVal('profile-nombre1'),
+            checkVal('profile-apellido1'),
+            checkVal('profile-nombre-social') || checkVal('profile-nombre2') || checkVal('profile-apellido2'),
+            checkVal('profile-iniciales')
+        ];
+
+        empresaChecks = [
+            checkVal('empresa-rut'),
+            checkVal('empresa-fantasia'),
+            checkVal('empresa-razon-social'),
+            checkVal('empresa-correo'),
+            checkVal('empresa-comuna'),
+            checkVal('empresa-direccion') || checkVal('empresa-telefono') || checkVal('empresa-iniciales')
+        ];
+
+        const countComunas = comunasManager ? comunasManager.getCodes().length : 0;
+        const countProductos = productosManager ? productosManager.getCodes().length : 0;
+        const countUcom = ucomManager ? ucomManager.getCodes().length : 0;
+        const tieneProcedimiento = checkVal('pref-tipo-lic');
+        const tienePalabras = checkVal('pref-palabras');
+
+        filtrosChecks = [
+            countComunas > 0,
+            countProductos > 0,
+            countUcom > 0,
+            tieneProcedimiento || tienePalabras
+        ];
+    }
+
+    // 14 ítems totales con ponderación idéntica
     const totalItems = [...suscriptorChecks, ...empresaChecks, ...filtrosChecks];
     const completados = totalItems.filter(Boolean).length;
     const porcentaje = Math.round((completados / totalItems.length) * 100);
 
-    // Actualización de elementos en el DOM
+    return { porcentaje, faltantes };
+}
+
+export function actualizarPorcentajePerfil() {
+    const { porcentaje } = calcularMetricasPerfil(null);
+
     const barFill = document.getElementById('profile-progress-fill');
     const numberText = document.getElementById('profile-progress-number');
     const statusText = document.getElementById('profile-progress-status');
@@ -68,19 +132,16 @@ export function actualizarPorcentajePerfil() {
     barFill.style.width = `${porcentaje}%`;
     numberText.textContent = `${porcentaje}%`;
 
-    // Escala del Semáforo
+    // Semáforo de colores
     if (porcentaje < 40) {
-        // Rojo
         barFill.style.backgroundColor = '#e53e3e';
         numberText.style.color = '#e53e3e';
         if (statusText) statusText.textContent = 'Perfil básico. Faltan datos esenciales de empresa o filtros.';
     } else if (porcentaje < 80) {
-        // Amarillo / Ámbar
         barFill.style.backgroundColor = '#dd6b20';
         numberText.style.color = '#dd6b20';
         if (statusText) statusText.textContent = 'Perfil intermedio. Puedes afinar tus filtros de búsqueda y datos tributarios.';
     } else {
-        // Verde
         barFill.style.backgroundColor = 'var(--accent-green)';
         numberText.style.color = 'var(--dark-green)';
         if (statusText) statusText.textContent = '¡Excelente! Perfil y filtros de licitación completamente calibrados.';
@@ -95,7 +156,7 @@ class TagManager {
         this.container = document.getElementById(containerId);
         this.hiddenInput = document.getElementById(hiddenInputId);
         this.placeholderText = placeholderText;
-        this.items = new Map(); // code -> label
+        this.items = new Map();
     }
 
     setItems(itemArray) {
@@ -168,14 +229,8 @@ class TagManager {
     }
 }
 
-// Instancias globales de tags
-let comunasManager = null;
-let productosManager = null;
-let ucomManager = null;
-let territoryData = null;
-
 // ==========================================================================
-// 3. BUSCADOR FLOTANTE CON AUTOCOMPLETADO (ACUMULATIVO)
+// 3. BUSCADOR FLOTANTE CON AUTOCOMPLETADO
 // ==========================================================================
 function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSelect) {
     const input = document.getElementById(inputId);
@@ -239,7 +294,7 @@ function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSele
 }
 
 // ==========================================================================
-// 4. ÁRBOL GEOGRÁFICO (MODAL TRI-STATE)
+// 4. ÁRBOL GEOGRÁFICO
 // ==========================================================================
 async function setupTerritoryTree() {
     const openBtn = document.getElementById('btn-ajustar-cobertura');
@@ -420,7 +475,7 @@ async function setupTerritoryTree() {
 }
 
 // ==========================================================================
-// 5. FUNCIONALIDADES AUXILIARES: CONTRASEÑA Y CIERRE DE SESIÓN
+// 5. CAMBIO DE CONTRASEÑA Y CIERRE DE SESIÓN
 // ==========================================================================
 function setupPasswordFunctionality(user) {
     const formPassword = document.getElementById('form-perfil-password');
@@ -452,7 +507,6 @@ function setupPasswordFunctionality(user) {
                     return;
                 }
 
-                // Re-autenticación obligatoria
                 const credential = EmailAuthProvider.credential(currentUser.email, currentPass);
                 await reauthenticateWithCredential(currentUser, credential);
                 await updatePassword(currentUser, newPass);
@@ -494,7 +548,7 @@ function setupLogoutButton() {
 }
 
 // ==========================================================================
-// 6. INICIALIZADOR PRINCIPAL DE LA VISTA PERFIL
+// 6. INICIALIZADOR DE LA VISTA PERFIL
 // ==========================================================================
 export async function inicializarVistaPerfil(user) {
     if (!comunasManager) {
@@ -519,7 +573,6 @@ export async function inicializarVistaPerfil(user) {
     setupPasswordFunctionality(user);
     setupLogoutButton();
 
-    // Eventos reactivos: recalcular porcentaje al escribir o modificar formularios
     ['form-perfil-datos', 'form-perfil-empresa', 'form-perfil-preferencias'].forEach(formId => {
         const f = document.getElementById(formId);
         if (f && f.dataset.listenerAttached !== 'true') {
@@ -600,7 +653,7 @@ export async function inicializarVistaPerfil(user) {
             setVal('empresa-comuna', emp.emp_codigo_comuna);
             setVal('empresa-direccion', emp.emp_direccion);
 
-            // Cargar Tags de Preferencias
+            // Preferencias
             comunasManager.setItems(pref.comunas_detalle || []);
             productosManager.setItems(pref.productos_detalle || []);
             ucomManager.setItems(pref.ucom_detalle || []);
@@ -608,7 +661,6 @@ export async function inicializarVistaPerfil(user) {
             setVal('pref-tipo-lic', Array.isArray(pref.pref_tipo_licitacion) ? pref.pref_tipo_licitacion.join(', ') : (pref.pref_tipo_licitacion || ''));
             setVal('pref-palabras', Array.isArray(pref.pref_palabras_claves) ? pref.pref_palabras_claves.join(', ') : (pref.pref_palabras_claves || ''));
 
-            // Calcular porcentaje inicial tras volcar los datos
             actualizarPorcentajePerfil();
         }
     } catch (err) {
@@ -741,62 +793,85 @@ auth.onAuthStateChanged((user) => {
         if (document.getElementById('form-perfil-preferencias')) {
             inicializarVistaPerfil(user);
         }
+
+        const currentPath = window.location.pathname.toLowerCase();
+        if (currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard')) {
+            evaluarYMostrarModalPerfil();
+        }
     }
 });
 
 // ==========================================================================
-// CONTROL DEL MODAL DE COMPLETITUD (< 90%)
+// 7. CONTROL DEL MODAL DE COMPLETITUD (SINCRONIZADO CON POSTGRESQL)
 // ==========================================================================
 const KEY_OMITIR_MODAL = 'smartbids_omitir_modal_perfil_hasta';
 
-export function evaluarYMostrarModalPerfil(datosPerfil) {
+export async function evaluarYMostrarModalPerfil(datosPerfil) {
     const modal = document.getElementById('modal-completar-perfil');
     if (!modal) return;
 
-    // No mostrar si ya está en la vista de edición de perfil
-    if (window.location.pathname.includes('/perfil')) return;
+    const currentPath = window.location.pathname.toLowerCase();
+    const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
+    if (!esRutaObjetivo) return;
 
-    // Control de no ser molesto: verificar si fue omitido recientemente (7 días)
+    // 1. Obtener parámetros en tiempo real desde la tabla config.parametros_globales en PostgreSQL
+    let UMBRAL_CONFIGURADO = 90;
+    let DIAS_CONFIGURADOS = 7;
+
+    try {
+        const respParam = await fetch('/api/parametros/alerta-perfil/');
+        const resParam = await respParam.json();
+        if (resParam.status === 'ok' && resParam.datos) {
+            UMBRAL_CONFIGURADO = Number(resParam.datos.porcentaje_minimo) || 90;
+            DIAS_CONFIGURADOS = Number(resParam.datos.dias_reaparicion) || 7;
+        }
+    } catch (e) {
+        console.warn('[SmartBids] No se pudieron obtener los parámetros globales de BD, usando respaldo.');
+    }
+
+    // Actualizar el texto del umbral en el modal para que refleje PostgreSQL
+    const txtUmbralReq = document.getElementById('modal-umbral-requerido-texto');
+    if (txtUmbralReq) {
+        txtUmbralReq.textContent = `${UMBRAL_CONFIGURADO}%`;
+    }
+
+    // 2. Verificar si está dentro del período omitido
     const omitidoHasta = localStorage.getItem(KEY_OMITIR_MODAL);
     if (omitidoHasta && Date.now() < Number(omitidoHasta)) {
         return;
     }
 
-    const data = datosPerfil || {};
-    const emp = data.empresa || {};
-    const pref = data.preferencias || {};
+    // 3. Obtener datos del suscriptor si no vienen por parámetro
+    let data = datosPerfil;
+    if (!data) {
+        const uid = localStorage.getItem('smartbids_uid') || auth.currentUser?.uid;
+        if (!uid) return;
 
-    const faltantes = [];
+        try {
+            const respPerfil = await fetch('/api/obtener-perfil/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid })
+            });
+            const resData = await respPerfil.json();
+            if (resData.status === 'ok') {
+                data = resData.datos;
+            }
+        } catch (err) {
+            console.error('[SmartBids] Error al recuperar perfil para modal:', err);
+            return;
+        }
+    }
 
-    // 1. Suscriptor
-    if (!data.sus_nombre1 || !data.sus_apellido1) faltantes.push('Nombres y apellidos del suscriptor');
-    if (!data.sus_iniciales) faltantes.push('Iniciales del suscriptor');
+    if (!data) return;
 
-    // 2. Empresa
-    if (!emp.emp_rut) faltantes.push('RUT de la empresa');
-    if (!emp.emp_fantasia && !emp.emp_nombre_fantasia) faltantes.push('Nombre de fantasía de la empresa');
-    if (!emp.emp_razon_social) faltantes.push('Razón social');
-    if (!emp.emp_contacto_correo) faltantes.push('Correo de notificaciones');
-    if (!emp.emp_codigo_comuna) faltantes.push('Comuna de casa matriz');
+    // 4. Calcular métrica usando la misma fórmula de 14 ítems
+    const { porcentaje, faltantes } = calcularMetricasPerfil(data);
 
-    // 3. Ejes de licitación
-    const countComunas = (pref.comunas_detalle || []).length;
-    const countProds = (pref.productos_detalle || []).length;
-    const countUcom = (pref.ucom_detalle || []).length;
+    // Si el perfil cumple o supera el umbral configurado en PostgreSQL, no se muestra
+    if (porcentaje >= UMBRAL_CONFIGURADO) return;
 
-    if (countComunas === 0) faltantes.push('Cobertura territorial (comunas)');
-    if (countProds === 0) faltantes.push('Catálogo de productos (ONU)');
-    if (countUcom === 0) faltantes.push('Organismos o unidades de compra');
-
-    // Total ítems evaluados = 10
-    const totalItems = 10;
-    const itemsCompletados = totalItems - faltantes.length;
-    const porcentaje = Math.max(0, Math.round((itemsCompletados / totalItems) * 100));
-
-    // Si tiene 90% o más, no se muestra el modal
-    if (porcentaje >= 90) return;
-
-    // Llenar datos de la UI del Modal
+    // 5. Poblar elementos visuales en el modal
     const txtPorcentaje = document.getElementById('modal-porcentaje-texto');
     const barra = document.getElementById('modal-barra-relleno');
     const listaUl = document.getElementById('lista-faltantes-perfil');
@@ -814,9 +889,9 @@ export function evaluarYMostrarModalPerfil(datosPerfil) {
         }
     }
 
-    // Configuración de botones de cierre con animación fluida de salida
-    const cerrarModal = (diasPospuesto = 7) => {
-        const tiempoMilisegundos = diasPospuesto * 24 * 60 * 60 * 1000;
+    // 6. Cierre y omisión aplicando los días definidos en PostgreSQL
+    const cerrarModal = (dias = DIAS_CONFIGURADOS) => {
+        const tiempoMilisegundos = dias * 24 * 60 * 60 * 1000;
         localStorage.setItem(KEY_OMITIR_MODAL, String(Date.now() + tiempoMilisegundos));
 
         modal.classList.remove('active');
@@ -832,22 +907,20 @@ export function evaluarYMostrarModalPerfil(datosPerfil) {
 
     if (btnOmitir && !btnOmitir.dataset.bound) {
         btnOmitir.dataset.bound = 'true';
-        btnOmitir.addEventListener('click', () => cerrarModal(7));
+        btnOmitir.addEventListener('click', () => cerrarModal(DIAS_CONFIGURADOS));
     }
 
     if (btnX && !btnX.dataset.bound) {
         btnX.dataset.bound = 'true';
-        btnX.addEventListener('click', () => cerrarModal(3));
+        btnX.addEventListener('click', () => cerrarModal(Math.max(1, Math.round(DIAS_CONFIGURADOS / 2))));
     }
 
-    // ⏱️ Espera de 1 segundo (1000 ms) y entrada suave mediante requestAnimationFrame
+    // Despliegue animado
     setTimeout(() => {
         modal.style.display = 'flex';
         modal.classList.remove('closing');
-
-        // Permite que el navegador registre primero el display antes de activar la transición CSS
         requestAnimationFrame(() => {
             modal.classList.add('active');
         });
-    }, 1000);
+    }, 1200);
 }

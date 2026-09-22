@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/actualizar-preferencias/', views.actualizar_preferencias_suscriptor, name='actualizar_preferencias'),
     path('api/catalogos-preferencias/', views.catalogos_preferencias, name='catalogos_preferencias'),
     path('api/firebase/politica-contrasenas/', views.politica_contrasenas_firebase, name='politica_contrasenas_firebase'),
+    path('api/parametros/alerta-perfil/', views.parametro_alerta_perfil, name='api_parametro_alerta_perfil'),
     path('api/firebase/usuarios/', views.usuarios_firebase, name='usuarios_firebase'),
 
 ]
