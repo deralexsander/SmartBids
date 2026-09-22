@@ -261,7 +261,12 @@ async function inicializarVistaPerfil(user) {
 
             document.getElementById('profile-fullname-header').textContent = nombreCompleto;
             document.getElementById('profile-social-header').textContent = data.sus_nombre_social ? `@${data.sus_nombre_social}` : `@suscriptor_${data.id_suscriptor}`;
-            document.getElementById('profile-role-badge').textContent = data.codigo_estado === 2 ? 'Habilitado' : 'Pendiente';
+            
+            // ===================================================================
+            // ✅ ESTADO LEÍDO DIRECTO DE POSTGRESQL (config.estado_suscriptor)
+            // ===================================================================
+            document.getElementById('profile-role-badge').textContent = data.nombre_estado || 'Sin Estado';
+            
             document.getElementById('profile-initials').textContent = data.sus_iniciales || (n1 && a1 ? (n1[0] + a1[0]).toUpperCase() : 'SB');
             document.getElementById('profile-id-suscriptor').textContent = data.id_suscriptor || '--';
             document.getElementById('profile-uid-header').textContent = user.uid;
@@ -388,9 +393,6 @@ async function inicializarVistaPerfil(user) {
         };
     }
 }
-
-
-
 
 
 
