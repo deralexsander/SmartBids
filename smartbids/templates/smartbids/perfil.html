@@ -69,14 +69,24 @@
         <!-- Contenido Principal -->
         <main class="profile-main-content">
 
-            <!-- Banner Informativo -->
-            <div class="prediction-box">
-                <div class="pred-text">
-                    <h5>Panel de Administración y Preferencias</h5>
-                    <p>Configura tu identidad, los datos tributarios de tu empresa y calibra los 3 ejes independientes para el rastreo de licitaciones.</p>
+            <!-- Banner Dinámico: Barra de Porcentaje con Semáforo (Rojo / Amarillo / Verde) -->
+            <div class="dashboard-card" style="padding: 1.4rem 1.6rem; border-radius: 16px; margin-bottom: 1.5rem; background: var(--white); border: 1.5px solid var(--soft-mint); box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.8rem;">
+                    <div>
+                        <h5 style="color: var(--dark-green); font-size: 1.15rem; font-weight: 800; margin: 0;">Panel de Administración y Preferencias</h5>
+                        <p id="profile-progress-status" style="font-size: 0.88rem; color: var(--muted-teal); margin: 3px 0 0 0; font-weight: 600;">
+                            Calculando completitud del perfil...
+                        </p>
+                    </div>
+                    <div style="display: flex; align-items: baseline; gap: 5px;">
+                        <span id="profile-progress-number" style="font-size: 2.1rem; font-weight: 800; color: #e53e3e; line-height: 1;">0%</span>
+                        <small style="font-weight: 700; color: var(--muted-teal); font-size: 0.85rem;">completado</small>
+                    </div>
                 </div>
-                <div class="pred-score">
-                    <i class="fa-solid fa-circle-check"></i>
+
+                <!-- Pista y Relleno de Barra -->
+                <div style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 20px; overflow: hidden; position: relative;">
+                    <div id="profile-progress-fill" style="width: 0%; height: 100%; background-color: #e53e3e; border-radius: 20px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;"></div>
                 </div>
             </div>
 
@@ -211,7 +221,7 @@
                             
                             <!-- Contenedor Chips Comunas -->
                             <div id="chips-comunas" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg);">
-                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin comunas específicas seleccionadas (Aplica cobertura nacional)</span>
+                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin comunas seleccionadas (Aplica cobertura nacional)</span>
                             </div>
                             <input type="hidden" id="pref-comunas" name="pref_comunas">
                         </div>
@@ -228,7 +238,7 @@
                             </div>
 
                             <div id="chips-productos" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg); margin-bottom: 0.8rem;">
-                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin productos filtrados (Aplica a todos los rubros)</span>
+                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin filtros de productos (Aplica a todos los rubros)</span>
                             </div>
                             <input type="hidden" id="pref-productos" name="pref_productos">
 
@@ -256,7 +266,7 @@
                             </div>
 
                             <div id="chips-ucom" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg);">
-                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin unidades específicas (Monitorea compras de todo el Estado)</span>
+                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin entidades específicas (Monitorea todo el Estado)</span>
                             </div>
                             <input type="hidden" id="pref-ucom" name="pref_ucom">
                         </div>
@@ -391,4 +401,6 @@
 
     </div>
 </div>
+
+<script type="module" src="{% static 'js/perfil.js' %}"></script>
 {% endblock %}

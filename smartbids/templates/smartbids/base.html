@@ -98,6 +98,51 @@
 
     <div id="dynamic-alerts-container" class="alerts-wrapper"></div>
 
+    <!-- Modal de Completitud de Perfil -->
+    <div id="modal-completar-perfil" class="modal-2fa-overlay" style="position: fixed; inset: 0; background: rgba(11, 56, 49, 0.6); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="modal-2fa-card" style="max-width: 520px; width: 92%; padding: 2.2rem; background: var(--white); border-radius: 18px; text-align: center; box-shadow: 0 20px 45px rgba(0,0,0,0.2); position: relative; border: 1px solid var(--soft-mint);">
+            
+            <!-- Botón Cerrar (X) -->
+            <button type="button" id="btn-cerrar-x-perfil" style="position: absolute; top: 18px; right: 18px; background: transparent; border: none; font-size: 1.3rem; color: var(--muted-teal); cursor: pointer; transition: color 0.2s ease;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Ícono y Encabezado -->
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(234, 179, 8, 0.15); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.2rem;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <h3 style="color: var(--dark-green); font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem;">
+                Completa tu Perfil
+            </h3>
+
+            <p style="color: var(--gray-text); font-size: 0.92rem; line-height: 1.5; margin-bottom: 1.2rem;">
+                Tu perfil se encuentra al <strong id="modal-porcentaje-texto" style="color: #e53e3e;">0%</strong>. Para calibrar adecuadamente las alertas inteligentes y participar en procesos de compra pública, se requiere al menos un <strong>90%</strong> de los antecedentes.
+            </p>
+
+            <!-- Mini Barra de Porcentaje -->
+            <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 20px; overflow: hidden; margin-bottom: 1.5rem;">
+                <div id="modal-barra-relleno" style="width: 0%; height: 100%; background: #e53e3e; border-radius: 20px; transition: width 0.6s ease;"></div>
+            </div>
+
+            <!-- Lista de faltantes -->
+            <div id="modal-items-pendientes" style="text-align: left; background: var(--light-bg); padding: 0.9rem 1.1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--dark-green);">
+                <strong>Antecedentes sugeridos por completar:</strong>
+                <ul id="lista-faltantes-perfil" style="margin: 0.4rem 0 0 1.2rem; padding: 0;"></ul>
+            </div>
+
+            <!-- Acciones -->
+            <div style="display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap;">
+                <button type="button" id="btn-omitir-completar-perfil" class="btn btn-outline" style="padding: 0.65rem 1.3rem; font-size: 0.9rem;">
+                    Omitir por ahora
+                </button>
+                <a href="{% url 'perfil' %}" id="btn-ir-completar-perfil" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-size: 0.9rem; text-decoration: none;">
+                    <i class="fa-solid fa-sliders"></i> Completar Ahora
+                </a>
+            </div>
+        </div>
+    </div>
+
     {% block contenido %}{% endblock %}
     {% block footer %}{% endblock %}
     {% block scripts %}{% endblock %}

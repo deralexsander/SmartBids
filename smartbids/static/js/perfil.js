@@ -16,7 +16,79 @@ function formatTimestamp(ts) {
 }
 
 // ==========================================================================
-// 1. GESTOR DE TAGS / CHIPS (Muestra NOMBRE, guarda CÓDIGO)
+// 1. CÁLCULO DE COMPLETITUD Y SEMÁFORO DE COLORES (ROJO - AMARILLO - VERDE)
+// ==========================================================================
+export function actualizarPorcentajePerfil() {
+    const checkVal = (id) => Boolean(document.getElementById(id)?.value?.trim());
+
+    // 1. Datos Personales (Información del Suscriptor)
+    const suscriptorChecks = [
+        checkVal('profile-nombre1'),
+        checkVal('profile-apellido1'),
+        checkVal('profile-nombre-social') || checkVal('profile-nombre2') || checkVal('profile-apellido2'),
+        checkVal('profile-iniciales')
+    ];
+
+    // 2. Información de la Empresa
+    const empresaChecks = [
+        checkVal('empresa-rut'),
+        checkVal('empresa-fantasia'),
+        checkVal('empresa-razon-social'),
+        checkVal('empresa-correo'),
+        checkVal('empresa-comuna'),
+        checkVal('empresa-direccion') || checkVal('empresa-telefono') || checkVal('empresa-iniciales')
+    ];
+
+    // 3. Filtros y los 3 Ejes de Mercado
+    const countComunas = comunasManager ? comunasManager.getCodes().length : 0;
+    const countProductos = productosManager ? productosManager.getCodes().length : 0;
+    const countUcom = ucomManager ? ucomManager.getCodes().length : 0;
+    const tieneProcedimiento = checkVal('pref-tipo-lic');
+    const tienePalabras = checkVal('pref-palabras');
+
+    const filtrosChecks = [
+        countComunas > 0,
+        countProductos > 0,
+        countUcom > 0,
+        tieneProcedimiento || tienePalabras
+    ];
+
+    // Total de 14 items ponderados equitativamente
+    const totalItems = [...suscriptorChecks, ...empresaChecks, ...filtrosChecks];
+    const completados = totalItems.filter(Boolean).length;
+    const porcentaje = Math.round((completados / totalItems.length) * 100);
+
+    // Actualización de elementos en el DOM
+    const barFill = document.getElementById('profile-progress-fill');
+    const numberText = document.getElementById('profile-progress-number');
+    const statusText = document.getElementById('profile-progress-status');
+
+    if (!barFill || !numberText) return;
+
+    barFill.style.width = `${porcentaje}%`;
+    numberText.textContent = `${porcentaje}%`;
+
+    // Escala del Semáforo
+    if (porcentaje < 40) {
+        // Rojo
+        barFill.style.backgroundColor = '#e53e3e';
+        numberText.style.color = '#e53e3e';
+        if (statusText) statusText.textContent = 'Perfil básico. Faltan datos esenciales de empresa o filtros.';
+    } else if (porcentaje < 80) {
+        // Amarillo / Ámbar
+        barFill.style.backgroundColor = '#dd6b20';
+        numberText.style.color = '#dd6b20';
+        if (statusText) statusText.textContent = 'Perfil intermedio. Puedes afinar tus filtros de búsqueda y datos tributarios.';
+    } else {
+        // Verde
+        barFill.style.backgroundColor = 'var(--accent-green)';
+        numberText.style.color = 'var(--dark-green)';
+        if (statusText) statusText.textContent = '¡Excelente! Perfil y filtros de licitación completamente calibrados.';
+    }
+}
+
+// ==========================================================================
+// 2. GESTOR DE TAGS / CHIPS (Muestra NOMBRE, guarda CÓDIGO)
 // ==========================================================================
 class TagManager {
     constructor(containerId, hiddenInputId, placeholderText) {
@@ -75,6 +147,7 @@ class TagManager {
 
         if (codes.length === 0) {
             this.container.innerHTML = `<span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">${this.placeholderText}</span>`;
+            actualizarPorcentajePerfil();
             return;
         }
 
@@ -90,6 +163,8 @@ class TagManager {
             chip.querySelector('i').addEventListener('click', () => this.remove(code));
             this.container.appendChild(chip);
         });
+
+        actualizarPorcentajePerfil();
     }
 }
 
@@ -100,7 +175,7 @@ let ucomManager = null;
 let territoryData = null;
 
 // ==========================================================================
-// 2. BUSCADOR FLOTANTE CON AUTOCOMPLETADO (ACUMULATIVO)
+// 3. BUSCADOR FLOTANTE CON AUTOCOMPLETADO (ACUMULATIVO)
 // ==========================================================================
 function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSelect) {
     const input = document.getElementById(inputId);
@@ -164,7 +239,7 @@ function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSele
 }
 
 // ==========================================================================
-// 3. ÁRBOL GEOGRÁFICO (MODAL TRI-STATE)
+// 4. ÁRBOL GEOGRÁFICO (MODAL TRI-STATE)
 // ==========================================================================
 async function setupTerritoryTree() {
     const openBtn = document.getElementById('btn-ajustar-cobertura');
@@ -345,7 +420,7 @@ async function setupTerritoryTree() {
 }
 
 // ==========================================================================
-// 4. FUNCIONALIDADES AUXILIARES: CONTRASEÑA Y CIERRE DE SESIÓN
+// 5. FUNCIONALIDADES AUXILIARES: CONTRASEÑA Y CIERRE DE SESIÓN
 // ==========================================================================
 function setupPasswordFunctionality(user) {
     const formPassword = document.getElementById('form-perfil-password');
@@ -419,7 +494,7 @@ function setupLogoutButton() {
 }
 
 // ==========================================================================
-// 5. INICIALIZADOR PRINCIPAL DE LA VISTA PERFIL
+// 6. INICIALIZADOR PRINCIPAL DE LA VISTA PERFIL
 // ==========================================================================
 export async function inicializarVistaPerfil(user) {
     if (!comunasManager) {
@@ -443,6 +518,16 @@ export async function inicializarVistaPerfil(user) {
     setupTerritoryTree();
     setupPasswordFunctionality(user);
     setupLogoutButton();
+
+    // Eventos reactivos: recalcular porcentaje al escribir o modificar formularios
+    ['form-perfil-datos', 'form-perfil-empresa', 'form-perfil-preferencias'].forEach(formId => {
+        const f = document.getElementById(formId);
+        if (f && f.dataset.listenerAttached !== 'true') {
+            f.dataset.listenerAttached = 'true';
+            f.addEventListener('input', actualizarPorcentajePerfil);
+            f.addEventListener('change', actualizarPorcentajePerfil);
+        }
+    });
 
     const targetUid = user?.uid || auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
     if (!targetUid) return;
@@ -522,6 +607,9 @@ export async function inicializarVistaPerfil(user) {
 
             setVal('pref-tipo-lic', Array.isArray(pref.pref_tipo_licitacion) ? pref.pref_tipo_licitacion.join(', ') : (pref.pref_tipo_licitacion || ''));
             setVal('pref-palabras', Array.isArray(pref.pref_palabras_claves) ? pref.pref_palabras_claves.join(', ') : (pref.pref_palabras_claves || ''));
+
+            // Calcular porcentaje inicial tras volcar los datos
+            actualizarPorcentajePerfil();
         }
     } catch (err) {
         console.error('[SmartBids] Error al cargar perfil:', err);
@@ -551,6 +639,7 @@ export async function inicializarVistaPerfil(user) {
                 });
                 const res = await resp.json();
                 mostrarMensaje(res.mensaje, res.status === 'ok' ? 'exito' : 'error');
+                actualizarPorcentajePerfil();
             } catch (err) {
                 mostrarMensaje('Error de red al actualizar datos personales.', 'error');
             } finally {
@@ -585,6 +674,7 @@ export async function inicializarVistaPerfil(user) {
                 });
                 const res = await resp.json();
                 mostrarMensaje(res.mensaje, res.status === 'ok' ? 'exito' : 'error');
+                actualizarPorcentajePerfil();
             } catch (err) {
                 mostrarMensaje('Error de conexión al guardar los datos de empresa.', 'error');
             } finally {
@@ -631,6 +721,7 @@ export async function inicializarVistaPerfil(user) {
                 } else {
                     mostrarMensaje(`No se pudo guardar: ${res.mensaje}`, 'error');
                 }
+                actualizarPorcentajePerfil();
             } catch (err) {
                 console.error('[SmartBids] Error de red:', err);
                 mostrarMensaje('Error al conectar con el servidor Django.', 'error');
@@ -645,7 +736,6 @@ export async function inicializarVistaPerfil(user) {
 auth.onAuthStateChanged((user) => {
     if (user) {
         localStorage.setItem('smartbids_uid', user.uid);
-        // GUARDAR COOKIE ACCESIBLE PARA DJANGO
         document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
         
         if (document.getElementById('form-perfil-preferencias')) {
@@ -653,3 +743,111 @@ auth.onAuthStateChanged((user) => {
         }
     }
 });
+
+// ==========================================================================
+// CONTROL DEL MODAL DE COMPLETITUD (< 90%)
+// ==========================================================================
+const KEY_OMITIR_MODAL = 'smartbids_omitir_modal_perfil_hasta';
+
+export function evaluarYMostrarModalPerfil(datosPerfil) {
+    const modal = document.getElementById('modal-completar-perfil');
+    if (!modal) return;
+
+    // No mostrar si ya está en la vista de edición de perfil
+    if (window.location.pathname.includes('/perfil')) return;
+
+    // Control de no ser molesto: verificar si fue omitido recientemente (7 días)
+    const omitidoHasta = localStorage.getItem(KEY_OMITIR_MODAL);
+    if (omitidoHasta && Date.now() < Number(omitidoHasta)) {
+        return;
+    }
+
+    const data = datosPerfil || {};
+    const emp = data.empresa || {};
+    const pref = data.preferencias || {};
+
+    const faltantes = [];
+
+    // 1. Suscriptor
+    if (!data.sus_nombre1 || !data.sus_apellido1) faltantes.push('Nombres y apellidos del suscriptor');
+    if (!data.sus_iniciales) faltantes.push('Iniciales del suscriptor');
+
+    // 2. Empresa
+    if (!emp.emp_rut) faltantes.push('RUT de la empresa');
+    if (!emp.emp_fantasia && !emp.emp_nombre_fantasia) faltantes.push('Nombre de fantasía de la empresa');
+    if (!emp.emp_razon_social) faltantes.push('Razón social');
+    if (!emp.emp_contacto_correo) faltantes.push('Correo de notificaciones');
+    if (!emp.emp_codigo_comuna) faltantes.push('Comuna de casa matriz');
+
+    // 3. Ejes de licitación
+    const countComunas = (pref.comunas_detalle || []).length;
+    const countProds = (pref.productos_detalle || []).length;
+    const countUcom = (pref.ucom_detalle || []).length;
+
+    if (countComunas === 0) faltantes.push('Cobertura territorial (comunas)');
+    if (countProds === 0) faltantes.push('Catálogo de productos (ONU)');
+    if (countUcom === 0) faltantes.push('Organismos o unidades de compra');
+
+    // Total ítems evaluados = 10
+    const totalItems = 10;
+    const itemsCompletados = totalItems - faltantes.length;
+    const porcentaje = Math.max(0, Math.round((itemsCompletados / totalItems) * 100));
+
+    // Si tiene 90% o más, no se muestra el modal
+    if (porcentaje >= 90) return;
+
+    // Llenar datos de la UI del Modal
+    const txtPorcentaje = document.getElementById('modal-porcentaje-texto');
+    const barra = document.getElementById('modal-barra-relleno');
+    const listaUl = document.getElementById('lista-faltantes-perfil');
+
+    if (txtPorcentaje) txtPorcentaje.textContent = `${porcentaje}%`;
+    if (barra) {
+        barra.style.width = `${porcentaje}%`;
+        barra.style.backgroundColor = porcentaje < 40 ? '#e53e3e' : '#dd6b20';
+    }
+
+    if (listaUl) {
+        listaUl.innerHTML = faltantes.slice(0, 4).map(f => `<li>${f}</li>`).join('');
+        if (faltantes.length > 4) {
+            listaUl.innerHTML += `<li>Y ${faltantes.length - 4} dato(s) adicional(es)...</li>`;
+        }
+    }
+
+    // Configuración de botones de cierre con animación fluida de salida
+    const cerrarModal = (diasPospuesto = 7) => {
+        const tiempoMilisegundos = diasPospuesto * 24 * 60 * 60 * 1000;
+        localStorage.setItem(KEY_OMITIR_MODAL, String(Date.now() + tiempoMilisegundos));
+
+        modal.classList.remove('active');
+        modal.classList.add('closing');
+        setTimeout(() => {
+            modal.classList.remove('closing');
+            modal.style.display = 'none';
+        }, 450);
+    };
+
+    const btnOmitir = document.getElementById('btn-omitir-completar-perfil');
+    const btnX = document.getElementById('btn-cerrar-x-perfil');
+
+    if (btnOmitir && !btnOmitir.dataset.bound) {
+        btnOmitir.dataset.bound = 'true';
+        btnOmitir.addEventListener('click', () => cerrarModal(7));
+    }
+
+    if (btnX && !btnX.dataset.bound) {
+        btnX.dataset.bound = 'true';
+        btnX.addEventListener('click', () => cerrarModal(3));
+    }
+
+    // ⏱️ Espera de 1 segundo (1000 ms) y entrada suave mediante requestAnimationFrame
+    setTimeout(() => {
+        modal.style.display = 'flex';
+        modal.classList.remove('closing');
+
+        // Permite que el navegador registre primero el display antes de activar la transición CSS
+        requestAnimationFrame(() => {
+            modal.classList.add('active');
+        });
+    }, 1000);
+}

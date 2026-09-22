@@ -2,7 +2,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { auth } from './firebase-config.js';
 import { AuthState } from './auth-state.js';
 import { hidePageLoader, SessionManager } from './functions.js';
-import { inicializarVistaPerfil } from './perfil.js';
+import { inicializarVistaPerfil, evaluarYMostrarModalPerfil } from './perfil.js';
 
 
 
@@ -160,9 +160,29 @@ onAuthStateChanged(auth, async (user) => {
         }, 10000);
     }
 
-    // 6. Cargar datos si está en perfil y apagar loader
+    // 6. Inicializar perfil si está en su vista correspondiente
     if (document.getElementById('profile-email') || document.getElementById('form-perfil-datos')) {
         await inicializarVistaPerfil(user);
+    } else {
+        // 🎯 Restricción: Evaluar modal ÚNICAMENTE en "mis-licitaciones" o "dashboard"
+        const currentPath = window.location.pathname.toLowerCase();
+        const esRutaPermitida = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
+
+        if (esRutaPermitida) {
+            try {
+                const resp = await fetch('/api/obtener-perfil/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: user.uid })
+                });
+                const resData = await resp.json();
+                if (resData.status === 'ok' && resData.datos) {
+                    evaluarYMostrarModalPerfil(resData.datos);
+                }
+            } catch (err) {
+                console.error('[SmartBids] Error al verificar completitud para modal:', err);
+            }
+        }
     }
 
     updateNavButtons(user);
