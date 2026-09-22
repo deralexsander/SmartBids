@@ -15,7 +15,7 @@ function formatTimestamp(ts) {
     });
 }
 
-// Instancias globales de tags
+// Instancias globales
 let comunasManager = null;
 let productosManager = null;
 let ucomManager = null;
@@ -31,7 +31,6 @@ export function calcularMetricasPerfil(dataObj = null) {
     const faltantes = [];
 
     if (dataObj) {
-        // Cálculo cuando se evalúa con el objeto JSON traído del backend
         const emp = dataObj.empresa || {};
         const pref = dataObj.preferencias || {};
 
@@ -50,7 +49,7 @@ export function calcularMetricasPerfil(dataObj = null) {
         const checkRazon = Boolean(emp.emp_razon_social?.trim());
         const checkCorreo = Boolean(emp.emp_contacto_correo?.trim());
         const checkComuna = Boolean(emp.emp_codigo_comuna);
-        const checkExtra = Boolean(emp.emp_direccion?.trim() || emp.emp_contacto_telefono?.trim() || emp.emp_iniciales?.trim());
+        const checkExtra = Boolean(emp.emp_direccion?.trim() || emp.emp_contacto_telefono?.trim() || emp.emp_iniciales?.trim() || emp.emp_contacto_nombre?.trim());
 
         empresaChecks = [checkRut, checkFantasia, checkRazon, checkCorreo, checkComuna, checkExtra];
 
@@ -79,7 +78,6 @@ export function calcularMetricasPerfil(dataObj = null) {
         if (!tieneTipos && !tienePalabras) faltantes.push('Tipos de licitación o palabras clave');
 
     } else {
-        // Cálculo reactivo en vivo leyendo los formularios del DOM
         const checkVal = (id) => Boolean(document.getElementById(id)?.value?.trim());
 
         suscriptorChecks = [
@@ -95,7 +93,7 @@ export function calcularMetricasPerfil(dataObj = null) {
             checkVal('empresa-razon-social'),
             checkVal('empresa-correo'),
             checkVal('empresa-comuna'),
-            checkVal('empresa-direccion') || checkVal('empresa-telefono') || checkVal('empresa-iniciales')
+            checkVal('empresa-direccion') || checkVal('empresa-telefono') || checkVal('empresa-iniciales') || checkVal('empresa-contacto-nombre')
         ];
 
         const countComunas = comunasManager ? comunasManager.getCodes().length : 0;
@@ -112,7 +110,6 @@ export function calcularMetricasPerfil(dataObj = null) {
         ];
     }
 
-    // 14 ítems totales con ponderación idéntica
     const totalItems = [...suscriptorChecks, ...empresaChecks, ...filtrosChecks];
     const completados = totalItems.filter(Boolean).length;
     const porcentaje = Math.round((completados / totalItems.length) * 100);
@@ -132,7 +129,6 @@ export function actualizarPorcentajePerfil() {
     barFill.style.width = `${porcentaje}%`;
     numberText.textContent = `${porcentaje}%`;
 
-    // Semáforo de colores
     if (porcentaje < 40) {
         barFill.style.backgroundColor = '#e53e3e';
         numberText.style.color = '#e53e3e';
@@ -149,7 +145,7 @@ export function actualizarPorcentajePerfil() {
 }
 
 // ==========================================================================
-// 2. GESTOR DE TAGS / CHIPS (Muestra NOMBRE, guarda CÓDIGO)
+// 2. GESTOR DE TAGS / CHIPS
 // ==========================================================================
 class TagManager {
     constructor(containerId, hiddenInputId, placeholderText) {
@@ -190,7 +186,6 @@ class TagManager {
     getCodes() {
         const codesFromMap = Array.from(this.items.keys()).filter(Boolean);
         if (codesFromMap.length > 0) return codesFromMap;
-        
         if (this.hiddenInput && this.hiddenInput.value.trim()) {
             return this.hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean);
         }
@@ -230,7 +225,7 @@ class TagManager {
 }
 
 // ==========================================================================
-// 3. BUSCADOR FLOTANTE CON AUTOCOMPLETADO
+// 3. AUTOCOMPLETADO Y ÁRBOL
 // ==========================================================================
 function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSelect) {
     const input = document.getElementById(inputId);
@@ -293,9 +288,6 @@ function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSele
     });
 }
 
-// ==========================================================================
-// 4. ÁRBOL GEOGRÁFICO
-// ==========================================================================
 async function setupTerritoryTree() {
     const openBtn = document.getElementById('btn-ajustar-cobertura');
     const modal = document.getElementById('territory-modal');
@@ -475,7 +467,7 @@ async function setupTerritoryTree() {
 }
 
 // ==========================================================================
-// 5. CAMBIO DE CONTRASEÑA Y CIERRE DE SESIÓN
+// 4. SEGURIDAD Y SESIÓN
 // ==========================================================================
 function setupPasswordFunctionality(user) {
     const formPassword = document.getElementById('form-perfil-password');
@@ -544,6 +536,81 @@ function setupLogoutButton() {
                 }
             }
         });
+    }
+}
+
+// ==========================================================================
+// 5. FUNCIONES DE APOYO PARA FORMULARIO DE EMPRESA
+// ==========================================================================
+function setFieldState(elementId, value, forceEditable = false) {
+    const input = document.getElementById(elementId);
+    if (!input) return;
+
+    const tieneValor = value !== null && value !== undefined && String(value).trim() !== '';
+    input.value = tieneValor ? String(value).trim() : '';
+
+    if (tieneValor && !forceEditable) {
+        input.readOnly = true;
+        input.style.backgroundColor = '#f1f5f9';
+        input.style.cursor = 'not-allowed';
+        input.title = 'Dato registrado oficialmente en el sistema. No modificable.';
+    } else {
+        input.readOnly = false;
+        input.style.backgroundColor = '#ffffff';
+        input.style.cursor = 'text';
+        input.title = '';
+    }
+}
+
+function limpiarCamposEmpresa() {
+    const campos = [
+        'empresa-fantasia',
+        'empresa-razon-social',
+        'empresa-contacto-nombre',
+        'empresa-correo',
+        'empresa-iniciales',
+        'empresa-telefono',
+        'empresa-comuna',
+        'empresa-direccion'
+    ];
+    campos.forEach(id => {
+        setFieldState(id, '', true);
+    });
+}
+
+function bloquearFormularioEmpresa() {
+    const camposEmpresa = [
+        'empresa-rut',
+        'empresa-fantasia',
+        'empresa-razon-social',
+        'empresa-contacto-nombre',
+        'empresa-correo',
+        'empresa-iniciales',
+        'empresa-telefono',
+        'empresa-comuna',
+        'empresa-direccion'
+    ];
+
+    camposEmpresa.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.readOnly = true;
+            el.style.backgroundColor = '#f1f5f9';
+            el.style.cursor = 'not-allowed';
+            el.title = 'Información consolidada y registrada en el sistema.';
+        }
+    });
+
+    const btnBuscar = document.getElementById('btn-buscar-rut-empresa');
+    if (btnBuscar) {
+        btnBuscar.disabled = true;
+        btnBuscar.style.opacity = '0.5';
+        btnBuscar.style.cursor = 'not-allowed';
+    }
+
+    const btnGuardar = document.getElementById('btn-guardar-empresa');
+    if (btnGuardar) {
+        btnGuardar.style.display = 'none';
     }
 }
 
@@ -643,15 +710,21 @@ export async function inicializarVistaPerfil(user) {
             setVal('profile-nombre-social', data.sus_nombre_social);
             setVal('profile-iniciales', data.sus_iniciales);
 
-            // Empresa
+            // Datos Empresa
             setVal('empresa-rut', emp.emp_rut);
             setVal('empresa-fantasia', emp.emp_fantasia || emp.emp_nombre_fantasia);
             setVal('empresa-razon-social', emp.emp_razon_social);
+            setVal('empresa-contacto-nombre', emp.emp_contacto_nombre);
             setVal('empresa-correo', emp.emp_contacto_correo);
             setVal('empresa-iniciales', emp.emp_iniciales);
             setVal('empresa-telefono', emp.emp_contacto_telefono);
             setVal('empresa-comuna', emp.emp_codigo_comuna);
             setVal('empresa-direccion', emp.emp_direccion);
+
+            // Bloqueo al recargar si ya tiene empresa registrada
+            if (emp.emp_rut && String(emp.emp_rut).trim() !== '') {
+                bloquearFormularioEmpresa();
+            }
 
             // Preferencias
             comunasManager.setItems(pref.comunas_detalle || []);
@@ -700,42 +773,7 @@ export async function inicializarVistaPerfil(user) {
         };
     }
 
-    // Submit: Empresa
-    const formEmpresa = document.getElementById('form-perfil-empresa');
-    if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
-        formEmpresa.dataset.bound = 'true';
-        formEmpresa.onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = formEmpresa.querySelector('button[type="submit"]');
-            setButtonLoading(btn, true, 'Guardando...');
-            try {
-                const resp = await fetch('/api/actualizar-empresa/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        uid: targetUid,
-                        emp_rut: document.getElementById('empresa-rut')?.value || '',
-                        emp_nombre_fantasia: document.getElementById('empresa-fantasia')?.value || '',
-                        emp_razon_social: document.getElementById('empresa-razon-social')?.value || '',
-                        emp_contacto_correo: document.getElementById('empresa-correo')?.value || '',
-                        emp_iniciales: document.getElementById('empresa-iniciales')?.value || '',
-                        emp_contacto_telefono: document.getElementById('empresa-telefono')?.value || '',
-                        emp_codigo_comuna: document.getElementById('empresa-comuna')?.value || '',
-                        emp_direccion: document.getElementById('empresa-direccion')?.value || '',
-                    })
-                });
-                const res = await resp.json();
-                mostrarMensaje(res.mensaje, res.status === 'ok' ? 'exito' : 'error');
-                actualizarPorcentajePerfil();
-            } catch (err) {
-                mostrarMensaje('Error de conexión al guardar los datos de empresa.', 'error');
-            } finally {
-                setButtonLoading(btn, false);
-            }
-        };
-    }
-
-    // Submit: Filtros de Licitación
+    // Submit: Preferencias
     const formFiltros = document.getElementById('form-perfil-preferencias');
     if (formFiltros && formFiltros.dataset.bound !== 'true') {
         formFiltros.dataset.bound = 'true';
@@ -784,7 +822,189 @@ export async function inicializarVistaPerfil(user) {
     }
 }
 
-// Conexión de autenticación
+// ==========================================================================
+// 7. EVENTOS DE EMPRESA Y MODAL DE CONFIRMACIÓN
+// ==========================================================================
+const btnBuscarRut = document.getElementById('btn-buscar-rut-empresa');
+const inputRutEmpresa = document.getElementById('empresa-rut');
+
+if (btnBuscarRut && inputRutEmpresa) {
+    const ejecutarBusqueda = async () => {
+        const rutValor = inputRutEmpresa.value.trim();
+        if (!rutValor) {
+            mostrarMensaje('Ingresa un RUT para buscar la empresa.', 'error');
+            return;
+        }
+
+        btnBuscarRut.disabled = true;
+        btnBuscarRut.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...';
+
+        try {
+            const resp = await fetch('/api/buscar-empresa-rut/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rut: rutValor })
+            });
+            const res = await resp.json();
+
+            if (res.status === 'ok' && res.datos) {
+                const datos = res.datos;
+
+                inputRutEmpresa.value = datos.emp_rut || rutValor;
+                inputRutEmpresa.readOnly = false;
+                inputRutEmpresa.style.backgroundColor = '#ffffff';
+                inputRutEmpresa.style.cursor = 'text';
+
+                setFieldState('empresa-fantasia', datos.emp_nombre_fantasia);
+                setFieldState('empresa-razon-social', datos.emp_razon_social);
+                setFieldState('empresa-contacto-nombre', '');
+                setFieldState('empresa-direccion', datos.emp_direccion);
+                setFieldState('empresa-comuna', datos.emp_codigo_comuna);
+                setFieldState('empresa-correo', datos.emp_contacto_correo);
+                setFieldState('empresa-telefono', datos.emp_contacto_telefono);
+                setFieldState('empresa-iniciales', datos.emp_iniciales);
+
+                mostrarMensaje('Datos de empresa cargados con éxito.', 'exito');
+            } else {
+                limpiarCamposEmpresa();
+                mostrarMensaje(
+                    res.mensaje || 'Empresa no encontrada en los registros. Puedes ingresar los datos manualmente.',
+                    'alerta'
+                );
+            }
+
+            if (typeof actualizarPorcentajePerfil === 'function') {
+                actualizarPorcentajePerfil();
+            }
+        } catch (error) {
+            console.error('[SmartBids] Error al consultar RUT:', error);
+            mostrarMensaje('Error de conexión al consultar el RUT.', 'error');
+        } finally {
+            btnBuscarRut.disabled = false;
+            btnBuscarRut.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Buscar por RUT';
+        }
+    };
+
+    btnBuscarRut.addEventListener('click', ejecutarBusqueda);
+    inputRutEmpresa.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            ejecutarBusqueda();
+        }
+    });
+}
+
+const modalConfirmEmpresa = document.getElementById('modal-confirmar-empresa');
+const btnAceptarEmpresa = document.getElementById('btn-aceptar-modal-empresa');
+const btnCancelarEmpresa = document.getElementById('btn-cancelar-modal-empresa');
+
+function abrirModalConfirmEmpresa(rut, razon, fantasia) {
+    if (!modalConfirmEmpresa) return;
+
+    const elRut = document.getElementById('modal-confirm-rut');
+    const elRazon = document.getElementById('modal-confirm-razon');
+    const elFantasia = document.getElementById('modal-confirm-fantasia');
+
+    if (elRut) elRut.textContent = rut;
+    if (elRazon) elRazon.textContent = razon;
+    if (elFantasia) elFantasia.textContent = fantasia;
+
+    modalConfirmEmpresa.style.display = 'flex';
+    modalConfirmEmpresa.classList.remove('closing');
+    requestAnimationFrame(() => {
+        modalConfirmEmpresa.classList.add('active');
+    });
+}
+
+function cerrarModalConfirmEmpresa() {
+    if (!modalConfirmEmpresa) return;
+
+    modalConfirmEmpresa.classList.remove('active');
+    modalConfirmEmpresa.classList.add('closing');
+    setTimeout(() => {
+        modalConfirmEmpresa.classList.remove('closing');
+        modalConfirmEmpresa.style.display = 'none';
+    }, 350);
+}
+
+if (btnCancelarEmpresa && !btnCancelarEmpresa.dataset.bound) {
+    btnCancelarEmpresa.dataset.bound = 'true';
+    btnCancelarEmpresa.addEventListener('click', cerrarModalConfirmEmpresa);
+}
+
+const formEmpresa = document.getElementById('form-perfil-empresa');
+
+if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
+    formEmpresa.dataset.bound = 'true';
+
+    formEmpresa.onsubmit = (e) => {
+        e.preventDefault();
+
+        const rut = document.getElementById('empresa-rut')?.value.trim();
+        const razonSocial = document.getElementById('empresa-razon-social')?.value.trim();
+        const fantasia = document.getElementById('empresa-fantasia')?.value.trim();
+        const correo = document.getElementById('empresa-correo')?.value.trim();
+
+        if (!rut || !razonSocial || !fantasia || !correo) {
+            mostrarMensaje('Por favor completa todos los campos obligatorios de la empresa (*).', 'error');
+            return;
+        }
+
+        abrirModalConfirmEmpresa(rut, razonSocial, fantasia);
+    };
+}
+
+if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
+    btnAceptarEmpresa.dataset.bound = 'true';
+
+    btnAceptarEmpresa.addEventListener('click', async () => {
+        cerrarModalConfirmEmpresa();
+
+        const formBtn = formEmpresa ? formEmpresa.querySelector('button[type="submit"]') : null;
+        if (formBtn) setButtonLoading(formBtn, true, 'Guardando...');
+
+        const targetUid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
+
+        try {
+            const resp = await fetch('/api/actualizar-empresa/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    uid: targetUid,
+                    emp_rut: document.getElementById('empresa-rut')?.value.trim() || '',
+                    emp_nombre_fantasia: document.getElementById('empresa-fantasia')?.value.trim() || '',
+                    emp_razon_social: document.getElementById('empresa-razon-social')?.value.trim() || '',
+                    emp_contacto_nombre: document.getElementById('empresa-contacto-nombre')?.value.trim() || '',
+                    emp_contacto_correo: document.getElementById('empresa-correo')?.value.trim() || '',
+                    emp_iniciales: document.getElementById('empresa-iniciales')?.value.trim() || '',
+                    emp_contacto_telefono: document.getElementById('empresa-telefono')?.value.trim() || '',
+                    emp_codigo_comuna: document.getElementById('empresa-comuna')?.value.trim() || '',
+                    emp_direccion: document.getElementById('empresa-direccion')?.value.trim() || '',
+                })
+            });
+            const res = await resp.json();
+
+            if (res.status === 'ok') {
+                mostrarMensaje(res.mensaje || 'Empresa guardada con éxito.', 'exito');
+                bloquearFormularioEmpresa();
+            } else {
+                mostrarMensaje(res.mensaje || 'Error al guardar la empresa.', 'error');
+            }
+
+            if (typeof actualizarPorcentajePerfil === 'function') {
+                actualizarPorcentajePerfil();
+            }
+        } catch (err) {
+            mostrarMensaje('Error de conexión al guardar los datos de empresa.', 'error');
+        } finally {
+            if (formBtn) setButtonLoading(formBtn, false);
+        }
+    });
+}
+
+// ==========================================================================
+// 8. ESCUCHA DE SESIÓN Y MODAL DE COMPLETITUD
+// ==========================================================================
 auth.onAuthStateChanged((user) => {
     if (user) {
         localStorage.setItem('smartbids_uid', user.uid);
@@ -801,9 +1021,6 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// ==========================================================================
-// 7. CONTROL DEL MODAL DE COMPLETITUD (SINCRONIZADO CON POSTGRESQL)
-// ==========================================================================
 const KEY_OMITIR_MODAL = 'smartbids_omitir_modal_perfil_hasta';
 
 export async function evaluarYMostrarModalPerfil(datosPerfil) {
@@ -814,7 +1031,6 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
     const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
     if (!esRutaObjetivo) return;
 
-    // 1. Obtener parámetros en tiempo real desde la tabla config.parametros_globales en PostgreSQL
     let UMBRAL_CONFIGURADO = 90;
     let DIAS_CONFIGURADOS = 7;
 
@@ -829,19 +1045,16 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
         console.warn('[SmartBids] No se pudieron obtener los parámetros globales de BD, usando respaldo.');
     }
 
-    // Actualizar el texto del umbral en el modal para que refleje PostgreSQL
     const txtUmbralReq = document.getElementById('modal-umbral-requerido-texto');
     if (txtUmbralReq) {
         txtUmbralReq.textContent = `${UMBRAL_CONFIGURADO}%`;
     }
 
-    // 2. Verificar si está dentro del período omitido
     const omitidoHasta = localStorage.getItem(KEY_OMITIR_MODAL);
     if (omitidoHasta && Date.now() < Number(omitidoHasta)) {
         return;
     }
 
-    // 3. Obtener datos del suscriptor si no vienen por parámetro
     let data = datosPerfil;
     if (!data) {
         const uid = localStorage.getItem('smartbids_uid') || auth.currentUser?.uid;
@@ -865,13 +1078,10 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
 
     if (!data) return;
 
-    // 4. Calcular métrica usando la misma fórmula de 14 ítems
     const { porcentaje, faltantes } = calcularMetricasPerfil(data);
 
-    // Si el perfil cumple o supera el umbral configurado en PostgreSQL, no se muestra
     if (porcentaje >= UMBRAL_CONFIGURADO) return;
 
-    // 5. Poblar elementos visuales en el modal
     const txtPorcentaje = document.getElementById('modal-porcentaje-texto');
     const barra = document.getElementById('modal-barra-relleno');
     const listaUl = document.getElementById('lista-faltantes-perfil');
@@ -889,7 +1099,6 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
         }
     }
 
-    // 6. Cierre y omisión aplicando los días definidos en PostgreSQL
     const cerrarModal = (dias = DIAS_CONFIGURADOS) => {
         const tiempoMilisegundos = dias * 24 * 60 * 60 * 1000;
         localStorage.setItem(KEY_OMITIR_MODAL, String(Date.now() + tiempoMilisegundos));
@@ -915,7 +1124,6 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
         btnX.addEventListener('click', () => cerrarModal(Math.max(1, Math.round(DIAS_CONFIGURADOS / 2))));
     }
 
-    // Despliegue animado
     setTimeout(() => {
         modal.style.display = 'flex';
         modal.classList.remove('closing');

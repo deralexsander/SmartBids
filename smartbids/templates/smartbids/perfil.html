@@ -153,18 +153,32 @@
 
                 <form id="form-perfil-empresa">
                     <div class="profile-form-grid">
-                        <div class="form-item">
+                        <!-- RUT con botón de búsqueda integrado -->
+                        <div class="form-item grid-full">
                             <label for="empresa-rut">RUT Empresa *</label>
-                            <input type="text" class="form-input" id="empresa-rut" name="emp_rut" placeholder="76.xxx.xxx-k" required>
+                            <div style="display: flex; gap: 0.75rem;">
+                                <input type="text" class="form-input" id="empresa-rut" name="emp_rut" placeholder="76.xxx.xxx-k" required style="flex: 1;">
+                                <button type="button" class="btn btn-outline" id="btn-buscar-rut-empresa" style="white-space: nowrap; padding: 0.6rem 1.2rem;">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Buscar por RUT
+                                </button>
+                            </div>
                         </div>
+
                         <div class="form-item">
                             <label for="empresa-fantasia">Nombre Fantasía *</label>
                             <input type="text" class="form-input" id="empresa-fantasia" name="emp_nombre_fantasia" placeholder="Nombre comercial" required>
                         </div>
-                        <div class="form-item grid-full">
+                        <div class="form-item">
                             <label for="empresa-razon-social">Razón Social *</label>
                             <input type="text" class="form-input" id="empresa-razon-social" name="emp_razon_social" placeholder="Razón legal completa" required>
                         </div>
+                        
+                        <!-- Campo que faltaba en la interfaz -->
+                        <div class="form-item">
+                            <label for="empresa-contacto-nombre">Nombre de Contacto / Encargado</label>
+                            <input type="text" class="form-input" id="empresa-contacto-nombre" name="emp_contacto_nombre" placeholder="Ej: Juan Pérez">
+                        </div>
+
                         <div class="form-item">
                             <label for="empresa-correo">Correo Notificaciones *</label>
                             <input type="email" class="form-input" id="empresa-correo" name="emp_contacto_correo" placeholder="alertas@empresa.cl" required>
@@ -188,11 +202,46 @@
                     </div>
 
                     <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="btn-guardar-empresa">
                             <i class="fa-solid fa-floppy-disk"></i> Guardar Empresa
                         </button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Modal de Confirmación para Guardar Empresa -->
+            <div id="modal-confirmar-empresa" class="modal-2fa-overlay" style="display: none;">
+                <div class="modal-2fa-card" style="max-width: 480px; text-align: center;">
+                    <div style="width: 55px; height: 55px; border-radius: 50%; background: rgba(30, 196, 152, 0.15); color: var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1.2rem;">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+
+                    <h3 class="modal-2fa-title" style="color: var(--dark-green); font-size: 1.3rem;">Confirmar Datos de Empresa</h3>
+                    
+                    <p class="modal-2fa-desc" style="margin-bottom: 1rem;">
+                        Verifica que los antecedentes tributarios ingresados sean correctos:
+                    </p>
+
+                    <!-- Resumen de antecedentes -->
+                    <div style="background: var(--light-bg); border: 1px solid var(--soft-mint); border-radius: 10px; padding: 1rem; text-align: left; font-size: 0.88rem; margin-bottom: 1.2rem; color: var(--dark-green); line-height: 1.6;">
+                        <div><strong>• RUT:</strong> <span id="modal-confirm-rut">--</span></div>
+                        <div><strong>• Razón Social:</strong> <span id="modal-confirm-razon">--</span></div>
+                        <div><strong>• Nombre Comercial:</strong> <span id="modal-confirm-fantasia">--</span></div>
+                    </div>
+
+                    <p style="font-size: 0.82rem; color: var(--gray-text); margin-bottom: 1.5rem;">
+                        <i class="fa-solid fa-circle-info" style="color: var(--muted-teal);"></i> Una vez guardados, los datos quedarán registrados y protegidos contra modificaciones.
+                    </p>
+
+                    <div style="display: flex; gap: 0.8rem; justify-content: center;">
+                        <button type="button" id="btn-cancelar-modal-empresa" class="btn btn-outline" style="padding: 0.6rem 1.4rem;">
+                            Revisar o Cambiar
+                        </button>
+                        <button type="button" id="btn-aceptar-modal-empresa" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">
+                            <i class="fa-solid fa-check"></i> Confirmar y Guardar
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 3. Filtros de Licitación (core.preferencia) -->

@@ -1,12 +1,14 @@
 import json
 import logging
+import re
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.db import DatabaseError
+from django.db.models import Q
 
 from .models import Suscriptor, Empresa, Preferencia, EstadoSuscriptor
-from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector
+from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor
 from .models.procurement import UnidadCompra
 
 logger = logging.getLogger(__name__)
@@ -83,7 +85,6 @@ def obtener_perfil_suscriptor(request):
                 return [x.strip() for x in val.split(',') if x.strip()]
             return []
 
-        # Traducir códigos a nombres para la interfaz
         raw_comunas = to_list(pref.pref_comunas) if pref else []
         mapa_comunas = {
             str(c['codigo_comuna']).strip(): c['nombre_comuna']
@@ -126,6 +127,7 @@ def obtener_perfil_suscriptor(request):
                     'emp_rut': emp.emp_rut if emp else '',
                     'emp_fantasia': emp.emp_nombre_fantasia if emp else '',
                     'emp_razon_social': emp.emp_razon_social if emp else '',
+                    'emp_contacto_nombre': getattr(emp, 'emp_contacto_nombre', '') if emp else '',
                     'emp_contacto_correo': emp.emp_contacto_correo if emp else '',
                     'emp_iniciales': emp.emp_iniciales if emp else '',
                     'emp_contacto_telefono': emp.emp_contacto_telefono if emp else '',
@@ -163,12 +165,10 @@ def actualizar_preferencias_suscriptor(request):
         if not suscriptor:
             return JsonResponse({'status': 'error', 'mensaje': 'Suscriptor no encontrado.'}, status=404)
 
-        # 1. Normalizar y validar tipos según el esquema de PostgreSQL
         comunas = [str(c).strip()[:5] for c in data.get('pref_comunas', []) if str(c).strip()]
         productos = [str(p).strip()[:20] for p in data.get('pref_productos', []) if str(p).strip()]
         tipo_lic = [str(t).strip()[:2] for t in data.get('pref_tipo_licitacion', []) if str(t).strip()]
         
-        # Validar ucom para el campo bigint[]
         ucom = []
         for u in data.get('pref_ucom', []):
             try:
@@ -178,9 +178,7 @@ def actualizar_preferencias_suscriptor(request):
 
         palabras = [str(w).strip()[:50] for w in data.get('pref_palabras_claves', []) if str(w).strip()]
 
-        # 2. Persistir en la tabla core.preferencia
         pref, _ = Preferencia.objects.get_or_create(id_suscriptor=suscriptor)
-
         pref.pref_comunas = comunas
         pref.pref_productos = productos
         pref.pref_tipo_licitacion = tipo_lic
@@ -188,7 +186,6 @@ def actualizar_preferencias_suscriptor(request):
         pref.pref_palabras_claves = palabras
         pref.save()
 
-        # Actualizar fecha de modificación del suscriptor
         suscriptor.fecha_actualizacion = timezone.now()
         suscriptor.save(update_fields=['fecha_actualizacion'])
 
@@ -203,64 +200,7 @@ def actualizar_preferencias_suscriptor(request):
     except Exception as e:
         logger.error(f"[SmartBids] Error general al guardar preferencias: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': f'Error al guardar preferencias: {str(e)}'}, status=500)
-    """Guarda códigos en PostgreSQL e informa las cantidades guardadas."""
-    if request.method != 'POST':
-        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
 
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-        uid = data.get('uid')
-
-        if not uid:
-            return JsonResponse({'status': 'error', 'mensaje': 'Falla: No se envió el identificador (UID) de sesión.'}, status=400)
-
-        suscriptor = Suscriptor.objects.filter(firebase_uid=uid).first()
-        if not suscriptor:
-            return JsonResponse({'status': 'error', 'mensaje': f'No existe ningún suscriptor registrado con el UID: {uid}'}, status=404)
-
-        # Limpiar y ajustar los datos según los tipos exactos de la BD
-        comunas = [str(c).strip()[:5] for c in data.get('pref_comunas', []) if str(c).strip()]
-        productos = [str(p).strip()[:20] for p in data.get('pref_productos', []) if str(p).strip()]
-        tipo_lic = [str(t).strip()[:2] for t in data.get('pref_tipo_licitacion', []) if str(t).strip()]
-        
-        ucom = []
-        for u in data.get('pref_ucom', []):
-            try:
-                ucom.append(int(u))
-            except (ValueError, TypeError):
-                continue
-
-        palabras = [str(w).strip()[:50] for w in data.get('pref_palabras_claves', []) if str(w).strip()]
-
-        pref, creada = Preferencia.objects.get_or_create(id_suscriptor=suscriptor)
-
-        pref.pref_comunas = comunas
-        pref.pref_productos = productos
-        pref.pref_tipo_licitacion = tipo_lic
-        pref.pref_ucom = ucom
-        pref.pref_palabras_claves = palabras
-        pref.save()
-
-        suscriptor.fecha_actualizacion = timezone.now()
-        suscriptor.save(update_fields=['fecha_actualizacion'])
-
-        # Mensaje con el conteo de elementos guardados
-        mensaje_exito = (
-            f"Preferencias guardadas con éxito en PostgreSQL "
-            f"({len(comunas)} comunas, {len(productos)} productos, {len(ucom)} unidades de compra)."
-        )
-
-        return JsonResponse({
-            'status': 'ok',
-            'mensaje': mensaje_exito
-        })
-
-    except DatabaseError as db_err:
-        logger.error(f"[SmartBids] Error de PostgreSQL al guardar preferencias: {str(db_err)}")
-        return JsonResponse({'status': 'error', 'mensaje': f'Error de PostgreSQL: {str(db_err)}'}, status=500)
-    except Exception as e:
-        logger.error(f"[SmartBids] Error general: {str(e)}")
-        return JsonResponse({'status': 'error', 'mensaje': f'Error al guardar: {str(e)}'}, status=500)
 
 @csrf_exempt
 def actualizar_perfil_suscriptor(request):
@@ -313,6 +253,7 @@ def actualizar_empresa_suscriptor(request):
             defaults={
                 'emp_razon_social': (data.get('emp_razon_social') or '').strip(),
                 'emp_nombre_fantasia': (data.get('emp_nombre_fantasia') or '').strip(),
+                'emp_contacto_nombre': (data.get('emp_contacto_nombre') or '').strip(),
                 'emp_iniciales': (data.get('emp_iniciales') or '').strip(),
                 'emp_contacto_correo': (data.get('emp_contacto_correo') or '').strip(),
                 'emp_direccion': (data.get('emp_direccion') or '').strip(),
@@ -325,4 +266,68 @@ def actualizar_empresa_suscriptor(request):
         suscriptor.save(update_fields=['sus_rut_empresa'])
         return JsonResponse({'status': 'ok', 'mensaje': 'Datos de la empresa actualizados correctamente.'})
     except Exception as e:
+        logger.error(f"[SmartBids] Error al actualizar empresa: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': f'Error al actualizar empresa: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def buscar_empresa_por_rut(request):
+    """
+    Busca la empresa en catalog.proveedor por RUT considerando formatos
+    con o sin puntos y con o sin guion.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        rut_raw = (data.get('rut') or '').strip()
+
+        if not rut_raw:
+            return JsonResponse({'status': 'error', 'mensaje': 'Debe ingresar un RUT.'}, status=400)
+
+        rut_sin_puntos = rut_raw.replace('.', '').strip()
+
+        filtro = (
+            Q(prov_rut__iexact=rut_raw) |
+            Q(prov_rut__iexact=rut_sin_puntos) |
+            Q(prov_rut__icontains=rut_sin_puntos)
+        )
+        
+        if '-' in rut_sin_puntos:
+            cuerpo = rut_sin_puntos.split('-')[0]
+            if len(cuerpo) >= 5:
+                filtro |= Q(prov_rut__icontains=cuerpo)
+
+        proveedor = Proveedor.objects.filter(filtro).first()
+
+        if not proveedor:
+            return JsonResponse({
+                'status': 'not_found',
+                'mensaje': 'Empresa no encontrada en los registros de proveedores. Puedes ingresar los datos manualmente.'
+            })
+
+        codigo_comuna = ''
+        if proveedor.prov_codigo_comuna:
+            codigo_comuna = getattr(proveedor.prov_codigo_comuna, 'codigo_comuna', '') or ''
+
+        datos_empresa = {
+            'emp_rut': proveedor.prov_rut or rut_raw,
+            'emp_razon_social': (proveedor.prov_razon_social or '').strip(),
+            'emp_nombre_fantasia': (proveedor.prov_nombre or '').strip(),
+            'emp_direccion': (proveedor.prov_direccion or '').strip(),
+            'emp_codigo_comuna': codigo_comuna,
+            'emp_contacto_correo': '',
+            'emp_contacto_telefono': '',
+            'emp_iniciales': ''
+        }
+
+        return JsonResponse({
+            'status': 'ok',
+            'datos': datos_empresa,
+            'mensaje': 'Datos de la empresa obtenidos con éxito.'
+        })
+
+    except Exception as e:
+        logger.error(f"[SmartBids] Error al buscar empresa por RUT: {str(e)}")
+        return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
