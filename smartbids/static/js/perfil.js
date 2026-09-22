@@ -643,8 +643,13 @@ export async function inicializarVistaPerfil(user) {
 
 // Conexión de autenticación
 auth.onAuthStateChanged((user) => {
-    if (user && document.getElementById('form-perfil-preferencias')) {
+    if (user) {
         localStorage.setItem('smartbids_uid', user.uid);
-        inicializarVistaPerfil(user);
+        // GUARDAR COOKIE ACCESIBLE PARA DJANGO
+        document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
+        
+        if (document.getElementById('form-perfil-preferencias')) {
+            inicializarVistaPerfil(user);
+        }
     }
 });
