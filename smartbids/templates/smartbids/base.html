@@ -72,6 +72,9 @@
                 <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <a href="{% url 'dashboard' %}">Dashboard</a>
                 </li>
+                <li id="admin-general-nav" style="display: none;" class="{% if request.resolver_match.url_name == 'administracion_general' %}active{% endif %}">
+                    <a href="{% url 'administracion_general' %}">Administración General</a>
+                </li>
             {% endif %}
         </ul>
         </nav>
@@ -97,6 +100,7 @@
 
     {% block contenido %}{% endblock %}
     {% block footer %}{% endblock %}
+    {% block scripts %}{% endblock %}
 
 </body>
 </html>

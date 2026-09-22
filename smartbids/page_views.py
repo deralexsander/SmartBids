@@ -16,6 +16,9 @@ def perfil_view(request):
 def mensajeria_view(request):
     return render(request, 'smartbids/mensajeria.html')
 
+def administracion_general_view(request):
+    return render(request, 'smartbids/administracion_general.html')
+
 def handler404_view(request, exception=None):
     return render(request, 'smartbids/404.html', status=404)
 

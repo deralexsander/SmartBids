@@ -19,6 +19,13 @@ const PAGES_CONFIG = [
         requiredRole: 'admin', 
         redirectFallback: '/', 
         errorMsg: 'Acceso denegado: Se requieren permisos de administrador.' 
+    },
+    {
+        elementId: 'admin-general-page',
+        requiresAuth: true,
+        requiredRole: 'admin',
+        redirectFallback: '/',
+        errorMsg: 'Acceso denegado: se requieren permisos de administrador.'
     }
 ];
 
@@ -33,15 +40,15 @@ function matchCurrentPageConfig() {
 
 const loginButton = document.getElementById('btn-login');
 const profileButton = document.getElementById('btn-profile');
+const adminGeneralNav = document.getElementById('admin-general-nav');
 
 const updateNavButtons = (user) => {
     if (loginButton) loginButton.style.display = user ? 'none' : 'inline-flex';
     if (profileButton) profileButton.style.display = user ? 'inline-flex' : 'none';
+    if (!user && adminGeneralNav) adminGeneralNav.style.display = 'none';
 };
 
-async function validarAccesoMensajeria(user, pageRule) {
-    if (!pageRule?.requiredRole) return true;
-
+async function validarRolAdministrador(user) {
     try {
         const response = await fetch('/api/obtener-perfil/', {
             method: 'POST',
@@ -51,24 +58,14 @@ async function validarAccesoMensajeria(user, pageRule) {
         const data = await response.json();
         const nombreEstado = data.datos?.nombre_estado || '';
         const rolNormalizado = nombreEstado.trim().toLowerCase();
-        const tieneRol = pageRule.requiredRole === 'admin'
-            ? rolNormalizado === 'admin' || rolNormalizado === 'administrador'
-            : rolNormalizado === pageRule.requiredRole;
+        const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador';
 
-        if (!tieneRol) {
-            sessionStorage.setItem('flash_message', JSON.stringify({
-                texto: pageRule.errorMsg,
-                tipo: 'error'
-            }));
-            window.location.replace(pageRule.redirectFallback || '/');
-            return false;
-        }
-
-        document.dispatchEvent(new CustomEvent('smartbids:admin-ready'));
-        return true;
+        if (tieneRol && adminGeneralNav) adminGeneralNav.style.display = 'list-item';
+        if (tieneRol) document.dispatchEvent(new CustomEvent('smartbids:admin-ready'));
+        return tieneRol;
     } catch (error) {
-        console.error('[SmartBids] Error verificando permisos de mensajería:', error);
-        window.location.replace(pageRule.redirectFallback || '/');
+        console.error('[SmartBids] Error verificando rol administrativo:', error);
+        if (adminGeneralNav) adminGeneralNav.style.display = 'none';
         return false;
     }
 }
@@ -137,7 +134,15 @@ onAuthStateChanged(auth, async (user) => {
 
     if (AuthState.isSubmittingAuth) return;
 
-    if (!(await validarAccesoMensajeria(user, pageRule))) return;
+    const esAdministrador = await validarRolAdministrador(user);
+    if (pageRule?.requiredRole && !esAdministrador) {
+        sessionStorage.setItem('flash_message', JSON.stringify({
+            texto: pageRule.errorMsg,
+            tipo: 'error'
+        }));
+        window.location.replace(pageRule.redirectFallback || '/');
+        return;
+    }
 
     // 3. Imprimir el token local actual en consola
     const tokenActual = SessionManager.getLocalToken();

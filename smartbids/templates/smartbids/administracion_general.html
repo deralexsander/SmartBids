@@ -1,0 +1,255 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Gestión de Usuarios - SmartBids</title>
+{% endblock %}
+
+{% block contenido %}
+<section id="admin-general-page" class="value-prop" style="padding-top: 130px; padding-bottom: 60px; min-height: 100vh; background-color: var(--light-bg); text-align: left;">
+    <div style="max-width: 1280px; margin: 0 auto; width: 100%;">
+        
+        <!-- Encabezado de la página -->
+        <div class="section-header" style="margin: 0 0 2.2rem 0; max-width: 100%; text-align: left;">
+            <span class="section-subtitle">Panel de Control</span>
+            <h1 class="section-title" style="margin-bottom: 0.5rem;">Gestión de Usuarios y Accesos</h1>
+            <p class="section-desc" style="max-width: 720px; margin: 0;">
+                Supervisa el directorio centralizado, audita los accesos a la plataforma y gestiona roles en tiempo real.
+            </p>
+        </div>
+
+        <!-- Acciones Rápidas Superiores -->
+        <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <a href="{% url 'mensajeria' %}" class="dashboard-card" style="text-decoration: none; color: inherit; transition: transform 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="prop-icon" style="margin: 0; width: 50px; height: 50px; font-size: 1.3rem;">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--dark-green); font-size: 1.15rem; font-weight: 700; margin-bottom: 2px;">Mensajería y Alertas</h4>
+                        <p style="color: var(--gray-text); font-size: 0.85rem; margin: 0;">Avisos globales y notificaciones.</p>
+                    </div>
+                </div>
+            </a>
+
+            <button type="button" id="btn-abrir-politica-password" class="dashboard-card" style="border: 1px solid var(--border-color); text-align: left; cursor: pointer; color: inherit; transition: transform 0.2s ease; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="prop-icon" style="margin: 0; width: 50px; height: 50px; font-size: 1.3rem;">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--dark-green); font-size: 1.15rem; font-weight: 700; margin-bottom: 2px;">Política de Seguridad</h4>
+                        <p style="color: var(--gray-text); font-size: 0.85rem; margin: 0;">Reglas y complejidad de claves.</p>
+                    </div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Módulo Principal: Directorio de Usuarios -->
+        <div id="admin-users-section" class="dashboard-card" style="padding: 2.2rem; background: var(--white);">
+            
+            <!-- Barra superior: Título, Métricas y Buscador -->
+            <div class="dashboard-header" style="flex-wrap: wrap; gap: 1.5rem; align-items: center; margin-bottom: 1.8rem; padding-bottom: 1.5rem;">
+                <div>
+                    <div class="dash-title" style="font-size: 1.35rem;">
+                        <i class="fa-solid fa-users-gear" style="color: var(--accent-green);"></i> Directorio de Usuarios
+                    </div>
+                    <p style="margin: 4px 0 0; color: var(--muted-teal); font-size: 0.88rem; font-weight: 600;">
+                        Sincronización activa con Firebase Authentication y base de datos
+                    </p>
+                </div>
+
+                <div class="form-inline" style="margin: 0; min-width: 300px; max-width: 420px; flex: 1;">
+                    <div style="position: relative; width: 100%;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%); color: var(--muted-teal); font-size: 0.95rem;"></i>
+                        <input type="search" id="admin-users-search" class="form-input" placeholder="Buscar por correo, UID o rol..." aria-label="Buscar usuarios" style="padding-left: 2.8rem; width: 100%;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback de mensajes dinámicos -->
+            <p id="admin-users-message" class="otp-feedback-msg" role="status" style="margin-bottom: 1rem; text-align: left;"></p>
+
+            <!-- Tabla de Usuarios con separación holgada y scroll horizontal -->
+            <div style="width: 100%; border: 1px solid var(--border-color); border-radius: 16px; background: var(--white); box-shadow: 0 4px 20px rgba(17, 99, 78, 0.04); overflow-x: auto;">
+                <table style="width: 100%; min-width: 760px; table-layout: auto; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background-color: var(--light-bg); color: var(--dark-green); font-weight: 800;">
+                            <th style="padding: 1rem 0.8rem; border-bottom: 2px solid var(--border-color); min-width: 190px;">Usuario / Correo</th>
+                            <th style="padding: 1rem 0.8rem; border-bottom: 2px solid var(--border-color); min-width: 145px;">Registro</th>
+                            <th style="padding: 1rem 0.8rem; border-bottom: 2px solid var(--border-color); min-width: 145px;">Último Acceso</th>
+                            <th style="padding: 1rem 0.8rem; border-bottom: 2px solid var(--border-color); min-width: 130px;">UID</th>
+                            <th style="padding: 1rem 0.8rem; border-bottom: 2px solid var(--border-color); min-width: 165px;">Rol / Estado</th>
+                            <th style="padding: 1rem 0.8rem; border-bottom: 2px solid var(--border-color); text-align: center; min-width: 115px;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-body" style="color: var(--gray-text);">
+                        <tr>
+                            <td colspan="6" style="padding: 3rem; text-align: center; color: var(--muted-teal);">
+                                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.5rem; color: var(--accent-green); margin-bottom: 0.5rem; display: block;"></i>
+                                Cargando usuarios registrados...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<div id="delete-user-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-user-title">
+    <div class="modal-2fa-card">
+        <h3 id="delete-user-title">Eliminar usuario</h3>
+        <p>Esta acción eliminará la cuenta de Firebase Authentication y el registro asociado en PostgreSQL.</p>
+        <p id="delete-user-email" class="otp-feedback-msg"></p>
+        <div class="modal-2fa-actions">
+            <button type="button" id="btn-confirm-delete-user" class="btn btn-primary">Sí, eliminar</button>
+            <button type="button" id="btn-cancel-delete-user" class="btn btn-outline">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<div id="change-role-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="change-role-title">
+    <div class="modal-2fa-card">
+        <h3 id="change-role-title">Confirmar cambio de estado</h3>
+        <p>¿Deseas cambiar el estado de este usuario?</p>
+        <p id="change-role-user" class="otp-feedback-msg"></p>
+        <p style="color: var(--dark-green); font-weight: 700;">Nuevo estado: <span id="change-role-value"></span></p>
+        <div class="modal-2fa-actions">
+            <button type="button" id="btn-confirm-change-role" class="btn btn-primary">Sí, cambiar</button>
+            <button type="button" id="btn-cancel-change-role" class="btn btn-outline">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Política de contraseñas -->
+<div id="password-policy-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="password-policy-title">
+    <div class="dashboard-card" style="width: min(780px, 94%); max-height: 88vh; overflow-y: auto; padding: 2.2rem 2.5rem; border-radius: 20px; box-shadow: 0 24px 60px rgba(17, 99, 78, 0.18); border: 1px solid var(--border-color); background: var(--white); text-align: left;">
+        
+        <div class="dashboard-header" style="align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+            <div>
+                <h2 id="password-policy-title" style="font-size: 1.6rem; color: var(--dark-green); font-weight: 800; margin: 0;">
+                    Política de contraseñas
+                </h2>
+                <p style="font-size: 0.9rem; color: var(--gray-text); margin: 6px 0 0 0;">
+                    Aplica requisitos de complejidad a las cuentas que usan correo electrónico y contraseña.
+                </p>
+            </div>
+            <button type="button" id="btn-cerrar-politica-password-x" aria-label="Cerrar modal" style="background: none; border: none; font-size: 1.4rem; color: var(--muted-teal); cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; transition: color 0.2s ease;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="password-policy-form" novalidate>
+            <div style="background: var(--light-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.4rem; margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 800; color: var(--dark-green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.2rem;">
+                    Modo de aplicación forzosa
+                </label>
+                <p style="font-size: 0.85rem; color: var(--gray-text); margin-bottom: 1rem;">
+                    Define el comportamiento de validación al registrar usuarios.
+                </p>
+
+                <div class="stat-grid" style="gap: 1.2rem;">
+                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; user-select: none; background: var(--white); border: 1px solid var(--border-color); padding: 0.9rem 1rem; border-radius: 12px;">
+                        <input type="radio" name="enforcementMode" id="mode-enforce" value="ENFORCE" style="margin-top: 3px; accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer;">
+                        <div>
+                            <span style="font-size: 0.92rem; font-weight: 700; color: var(--dark-green); display: block;">Exigir aplicación</span>
+                            <span style="font-size: 0.8rem; color: var(--gray-text); display: block; line-height: 1.35; margin-top: 2px;">
+                                Los intentos de registro fallarán hasta que el usuario cumpla con los requisitos.
+                            </span>
+                        </div>
+                    </label>
+
+                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; user-select: none; background: var(--white); border: 1px solid var(--border-color); padding: 0.9rem 1rem; border-radius: 12px;">
+                        <input type="radio" name="enforcementMode" id="mode-off" value="OFF" checked style="margin-top: 3px; accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer;">
+                        <div>
+                            <span style="font-size: 0.92rem; font-weight: 700; color: var(--dark-green); display: block;">Notificar aplicación</span>
+                            <span style="font-size: 0.8rem; color: var(--gray-text); display: block; line-height: 1.35; margin-top: 2px;">
+                                Permite registrarse aunque falten criterios, devolviendo avisos informativos.
+                            </span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 800; color: var(--dark-green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.8rem;">
+                    Requisitos de caracteres
+                </label>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem; margin-bottom: 0.9rem;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--dark-green); font-weight: 600; cursor: pointer; user-select: none; background: var(--light-bg); padding: 0.75rem 0.8rem; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <input type="checkbox" id="password-policy-uppercase" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer;">
+                        Mayúsculas
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--dark-green); font-weight: 600; cursor: pointer; user-select: none; background: var(--light-bg); padding: 0.75rem 0.8rem; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <input type="checkbox" id="password-policy-lowercase" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer;">
+                        Minúsculas
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--dark-green); font-weight: 600; cursor: pointer; user-select: none; background: var(--light-bg); padding: 0.75rem 0.8rem; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <input type="checkbox" id="password-policy-special" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer;">
+                        Especiales
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--dark-green); font-weight: 600; cursor: pointer; user-select: none; background: var(--light-bg); padding: 0.75rem 0.8rem; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <input type="checkbox" id="password-policy-numeric" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer;">
+                        Números
+                    </label>
+                </div>
+
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--dark-green); font-weight: 600; cursor: pointer; user-select: none; background: var(--white); padding: 0.75rem 0.9rem; border-radius: 10px; border: 1px dashed var(--soft-mint);">
+                    <input type="checkbox" id="password-policy-force-upgrade" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer;">
+                    Forzar actualización al iniciar sesión
+                </label>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 800; color: var(--dark-green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.8rem;">
+                    Límites de longitud
+                </label>
+
+                <div class="stat-grid" style="gap: 1.2rem;">
+                    <div>
+                        <label for="password-policy-min-length" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted-teal); margin-bottom: 0.35rem;">
+                            Longitud mínima (6 a 30)
+                        </label>
+                        <input type="number" id="password-policy-min-length" min="6" max="30" class="form-input" style="padding: 0.75rem 1rem;">
+                        <span id="min-length-error" style="display: none; font-size: 0.78rem; color: #e53e3e; margin-top: 4px; font-weight: 600;">
+                            Debe ser entre 6 y 30.
+                        </span>
+                    </div>
+
+                    <div>
+                        <label for="password-policy-max-length" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted-teal); margin-bottom: 0.35rem;">
+                            Longitud máxima (6 a 4096)
+                        </label>
+                        <input type="number" id="password-policy-max-length" min="6" max="4096" class="form-input" style="padding: 0.75rem 1rem;">
+                        <span id="max-length-error" style="display: none; font-size: 0.78rem; color: #e53e3e; margin-top: 4px; font-weight: 600;">
+                            Debe ser entre 6 y 4096.
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <p id="password-policy-feedback" style="min-height: 1.2rem; font-size: 0.88rem; font-weight: 600; margin-bottom: 1.2rem; text-align: center;"></p>
+
+            <div class="dashboard-header" style="justify-content: flex-end; gap: 0.8rem; border-top: 1px solid var(--border-color); padding-top: 1.2rem; margin-bottom: 0;">
+                <button type="button" id="btn-cerrar-politica-password" class="btn btn-outline" style="padding: 0.6rem 1.4rem;">
+                    Descartar
+                </button>
+                <button type="submit" id="btn-guardar-politica" class="btn btn-primary" style="padding: 0.6rem 1.6rem;">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar política
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{% static 'js/admin-policy.js' %}"></script>
+<script type="module" src="{% static 'js/admin-users.js' %}"></script>
+{% endblock %}

@@ -8,6 +8,7 @@ urlpatterns = [
     path('registro/', views.register_view, name='registro'),
     path('perfil/', views.perfil_view, name='perfil'),
     path('mensajeria/', views.mensajeria_view, name='mensajeria'),
+    path('administracion-general/', views.administracion_general_view, name='administracion_general'),
     path('404/', views.handler404_view, name='handler404'),
     path('informacion/', views.informacion_view, name='informacion'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
@@ -27,5 +28,7 @@ urlpatterns = [
     path('api/actualizar-perfil/', views.actualizar_perfil_suscriptor, name='actualizar_perfil'),
     path('api/actualizar-empresa/', views.actualizar_empresa_suscriptor, name='actualizar_empresa'),
     path('api/actualizar-preferencias/', views.actualizar_preferencias_suscriptor, name='actualizar_preferencias'),
+    path('api/firebase/politica-contrasenas/', views.politica_contrasenas_firebase, name='politica_contrasenas_firebase'),
+    path('api/firebase/usuarios/', views.usuarios_firebase, name='usuarios_firebase'),
 
 ]
