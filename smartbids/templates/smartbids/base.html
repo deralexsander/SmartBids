@@ -6,9 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     
-    <script type="module" src="{% static 'js/mensaje.js' %}"></script>
-    <script type="module" src="{% static 'js/functions.js' %}"></script>
     {{ FIREBASE_CONFIG|json_script:"firebase-config" }}
+    <script type="module" src="{% static 'js/firebase-config.js' %}"></script>
+    <script type="module" src="{% static 'js/auth-state.js' %}"></script>
+    <script type="module" src="{% static 'js/ui.js' %}"></script>
+    <script type="module" src="{% static 'js/session.js' %}"></script>
+    <script type="module" src="{% static 'js/profile-ui.js' %}"></script>
+    <script type="module" src="{% static 'js/two-factor.js' %}"></script>
+    <script type="module" src="{% static 'js/licitaciones-ui.js' %}"></script>
+    <script type="module" src="{% static 'js/functions.js' %}"></script>
+    <script type="module" src="{% static 'js/mensaje.js' %}"></script>
+    <script type="module" src="{% static 'js/perfil.js' %}"></script>
+    <script type="module" src="{% static 'js/sesion.js' %}"></script>
+    <script type="module" src="{% static 'js/autenticacion.js' %}"></script>
+    <script type="module" src="{% static 'js/mensajeria-admin.js' %}"></script>
     <script type="module" src="{% static 'js/firebase.js' %}"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
