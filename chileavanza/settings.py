@@ -21,8 +21,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
 
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -32,10 +30,23 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1',
+ALLOWED_HOSTS = [
+    '127.0.0.1',
     'localhost',
     'chileavanza.cl',
-    '.chileavanza.cl',]
+    '.chileavanza.cl',
+    '.railway.app',
+    '.up.railway.app',
+    '*',
+]
+
+# CSRF Trusted Origins para Railway
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.railway.app',
+    'https://*.up.railway.app',
+    'https://chileavanza.cl',
+    'https://*.chileavanza.cl',
+]
 
 
 # Application definition
@@ -54,6 +65,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Requerido para servir estáticos en producción
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -67,7 +79,7 @@ ROOT_URLCONF = 'chileavanza.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'] if (BASE_DIR / 'templates').exists() else [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -135,9 +147,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-cl'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 
@@ -149,10 +161,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Directorio donde collectstatic reunirá los archivos en Railway
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 if (BASE_DIR / 'static').exists():
     STATICFILES_DIRS = [
         BASE_DIR / 'static',
     ]
+
+# Compresión y caché de WhiteNoise
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -166,7 +184,6 @@ EMAIL_BACKEND = 'smartbids.gmail_backend.GmailApiBackend'
 
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'smartbids.qa@chileavanza.cl')
 DEFAULT_FROM_EMAIL = f"SmartBids <{EMAIL_HOST_USER}>"
-
 
 
 FIREBASE_CONFIG = {
