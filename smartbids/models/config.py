@@ -41,3 +41,18 @@ class Mensajeria(models.Model):
 
     def __str__(self):
         return f"[{self.tipo_alerta.upper()}] {self.asunto} ({self.estado})"
+
+
+class ParametroGlobal(models.Model):
+    codigo_parametro = models.SmallIntegerField(primary_key=True)
+    nombre_parametro = models.CharField(max_length=50, unique=True)
+    valor_parametro = models.SmallIntegerField()
+    descripcion = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = '"config"."parametros_globales"'
+        verbose_name = 'Parámetro Global'
+        verbose_name_plural = 'Parámetros Globales'
+
+    def __str__(self):
+        return f"{self.nombre_parametro}: {self.valor_parametro}"

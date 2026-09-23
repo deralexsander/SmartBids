@@ -13,13 +13,14 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Cargar las variables desde el archivo .env
 load_dotenv(BASE_DIR / '.env')
+
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -31,14 +32,10 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
-
-# Configuración de orígenes de confianza para protección CSRF en producción (Railway)
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.railway.app',
-    'https://chileavanza.cl',
-    'https://*.chileavanza.cl',
-]
+ALLOWED_HOSTS = ['127.0.0.1',
+    'localhost',
+    'chileavanza.cl',
+    '.chileavanza.cl',]
 
 
 # Application definition
@@ -57,7 +54,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -71,7 +67,7 @@ ROOT_URLCONF = 'chileavanza.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -91,14 +87,29 @@ WSGI_APPLICATION = 'chileavanza.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Le indicamos explícitamente a dj_database_url que lea DATABASE_PRIVATE_URL o DATABASE_URL
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f"postgres://{os.getenv('DB_USER', 'postgres')}:{os.getenv('DB_PASSWORD', '')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'smartbids')}",
-        env='DATABASE_PRIVATE_URL' if os.getenv('DATABASE_PRIVATE_URL') else 'DATABASE_URL',
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+        'OPTIONS': {
+            'options': '-c search_path=public,catalog,procurement,core,config'
+        },
+    },
+    'dw': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DW_DB_NAME', 'smartbids_dw'),
+        'USER': os.getenv('DW_DB_USER', os.getenv('DB_USER')),
+        'PASSWORD': os.getenv('DW_DB_PASSWORD', os.getenv('DB_PASSWORD')),
+        'HOST': os.getenv('DW_DB_HOST', os.getenv('DB_HOST', 'localhost')),
+        'PORT': os.getenv('DW_DB_PORT', os.getenv('DB_PORT', '5432')),
+        'OPTIONS': {
+            'options': '-c search_path=dw,public'
+        },
+    },
 }
 
 
@@ -137,17 +148,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Configuración del almacenamiento para WhiteNoise
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
 
 if (BASE_DIR / 'static').exists():
     STATICFILES_DIRS = [
@@ -166,6 +166,7 @@ EMAIL_BACKEND = 'smartbids.gmail_backend.GmailApiBackend'
 
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'smartbids.qa@chileavanza.cl')
 DEFAULT_FROM_EMAIL = f"SmartBids <{EMAIL_HOST_USER}>"
+
 
 
 FIREBASE_CONFIG = {

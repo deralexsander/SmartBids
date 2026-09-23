@@ -48,4 +48,4 @@ class LicitacionesProductos(models.Model):
 
     class Meta:
         managed = False
-        db_table = '"procurement".".licitaciones_productos"'
+        db_table = '"procurement"."licitaciones_productos"'
