@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from urllib.parse import urlparse, unquote
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,10 +20,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Cargar las variables desde el archivo .env
 load_dotenv(BASE_DIR / '.env')
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
@@ -40,7 +37,7 @@ ALLOWED_HOSTS = [
     '*',
 ]
 
-# CSRF Trusted Origins para Railway
+# CSRF Trusted Origins para Railway y dominios de produccion
 CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
     'https://*.up.railway.app',
@@ -62,10 +59,9 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
 ]
 
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Requerido para servir estáticos en producción
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Imprescindible para servir estáticos en Railway
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -99,30 +95,61 @@ WSGI_APPLICATION = 'chileavanza.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-        'OPTIONS': {
-            'options': '-c search_path=public,catalog,procurement,core,config'
+_db_url_env = os.getenv('DATABASE_PRIVATE_URL') or os.getenv('DATABASE_URL')
+
+if _db_url_env:
+    # Conexion remota/interna automatica en Railway
+    _url = urlparse(_db_url_env)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _url.path.lstrip('/'),
+            'USER': unquote(_url.username or ''),
+            'PASSWORD': unquote(_url.password or ''),
+            'HOST': _url.hostname,
+            'PORT': _url.port or 5432,
+            'OPTIONS': {
+                'options': '-c search_path=public,catalog,procurement,core,config'
+            },
         },
-    },
-    'dw': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DW_DB_NAME', 'smartbids_dw'),
-        'USER': os.getenv('DW_DB_USER', os.getenv('DB_USER')),
-        'PASSWORD': os.getenv('DW_DB_PASSWORD', os.getenv('DB_PASSWORD')),
-        'HOST': os.getenv('DW_DB_HOST', os.getenv('DB_HOST', 'localhost')),
-        'PORT': os.getenv('DW_DB_PORT', os.getenv('DB_PORT', '5432')),
-        'OPTIONS': {
-            'options': '-c search_path=dw,public'
+        'dw': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DW_DB_NAME', 'smartbids_dw'),
+            'USER': unquote(_url.username or ''),
+            'PASSWORD': unquote(_url.password or ''),
+            'HOST': _url.hostname,
+            'PORT': _url.port or 5432,
+            'OPTIONS': {
+                'options': '-c search_path=dw,public'
+            },
         },
-    },
-}
+    }
+else:
+    # Conexion de respaldo para entorno local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'smartbids'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {
+                'options': '-c search_path=public,catalog,procurement,core,config'
+            },
+        },
+        'dw': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DW_DB_NAME', 'smartbids_dw'),
+            'USER': os.getenv('DW_DB_USER', os.getenv('DB_USER', 'postgres')),
+            'PASSWORD': os.getenv('DW_DB_PASSWORD', os.getenv('DB_PASSWORD', '')),
+            'HOST': os.getenv('DW_DB_HOST', os.getenv('DB_HOST', 'localhost')),
+            'PORT': os.getenv('DW_DB_PORT', os.getenv('DB_PORT', '5432')),
+            'OPTIONS': {
+                'options': '-c search_path=dw,public'
+            },
+        },
+    }
 
 
 # Password validation
@@ -169,7 +196,7 @@ if (BASE_DIR / 'static').exists():
         BASE_DIR / 'static',
     ]
 
-# Compresión y caché de WhiteNoise
+# Compresion y cache de WhiteNoise
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
