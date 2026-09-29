@@ -615,6 +615,28 @@ function bloquearFormularioEmpresa() {
 }
 
 // ==========================================================================
+// FUNCIÓN AUXILIAR: ACTUALIZAR INICIALES EN BARRA LATERAL (MÁX 5, EN MAYÚSCULAS)
+// ==========================================================================
+function actualizarInicialesSidebar() {
+    const n1 = document.getElementById('profile-nombre1')?.value.trim() || '';
+    const n2 = document.getElementById('profile-nombre2')?.value.trim() || '';
+    const a1 = document.getElementById('profile-apellido1')?.value.trim() || '';
+    const a2 = document.getElementById('profile-apellido2')?.value.trim() || '';
+
+    const iniciales = [n1, n2, a1, a2]
+        .filter(Boolean)
+        .map(p => p[0].toUpperCase())
+        .join('')
+        .slice(0, 5);
+
+    const avatarInitials = document.getElementById('profile-initials');
+    if (avatarInitials) {
+        avatarInitials.textContent = iniciales || '--';
+    }
+    return iniciales;
+}
+
+// ==========================================================================
 // 6. INICIALIZADOR DE LA VISTA PERFIL
 // ==========================================================================
 export async function inicializarVistaPerfil(user) {
@@ -639,6 +661,18 @@ export async function inicializarVistaPerfil(user) {
     setupTerritoryTree();
     setupPasswordFunctionality(user);
     setupLogoutButton();
+
+    // Al escribir en nombres o apellidos, se actualiza el avatar lateral dinámicamente
+    ['profile-nombre1', 'profile-nombre2', 'profile-apellido1', 'profile-apellido2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.dataset.initBound !== 'true') {
+            el.dataset.initBound = 'true';
+            el.addEventListener('input', () => {
+                actualizarInicialesSidebar();
+                actualizarPorcentajePerfil();
+            });
+        }
+    });
 
     ['form-perfil-datos', 'form-perfil-empresa', 'form-perfil-preferencias'].forEach(formId => {
         const f = document.getElementById(formId);
@@ -701,14 +735,13 @@ export async function inicializarVistaPerfil(user) {
             const emailInput = document.getElementById('profile-email');
             if (emailInput) emailInput.value = user?.email || auth.currentUser?.email || '';
 
-            // Datos Personales
+            // Llenado de Datos Personales
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
             setVal('profile-nombre1', n1);
             setVal('profile-nombre2', n2);
             setVal('profile-apellido1', a1);
             setVal('profile-apellido2', a2);
             setVal('profile-nombre-social', data.sus_nombre_social);
-            setVal('profile-iniciales', data.sus_iniciales);
 
             // Datos Empresa
             setVal('empresa-rut', emp.emp_rut);
@@ -721,7 +754,6 @@ export async function inicializarVistaPerfil(user) {
             setVal('empresa-comuna', emp.emp_codigo_comuna);
             setVal('empresa-direccion', emp.emp_direccion);
 
-            // Bloqueo al recargar si ya tiene empresa registrada
             if (emp.emp_rut && String(emp.emp_rut).trim() !== '') {
                 bloquearFormularioEmpresa();
             }
@@ -740,7 +772,7 @@ export async function inicializarVistaPerfil(user) {
         console.error('[SmartBids] Error al cargar perfil:', err);
     }
 
-    // Submit: Datos Personales
+    // Submit: Datos Personales (Genera las iniciales automáticamente al guardar)
     const formDatos = document.getElementById('form-perfil-datos');
     if (formDatos && formDatos.dataset.bound !== 'true') {
         formDatos.dataset.bound = 'true';
@@ -748,6 +780,9 @@ export async function inicializarVistaPerfil(user) {
             e.preventDefault();
             const btn = formDatos.querySelector('button[type="submit"]');
             setButtonLoading(btn, true, 'Guardando...');
+
+            const autoInitials = actualizarInicialesSidebar();
+
             try {
                 const resp = await fetch('/api/actualizar-perfil/', {
                     method: 'POST',
@@ -759,7 +794,7 @@ export async function inicializarVistaPerfil(user) {
                         sus_apellido1: document.getElementById('profile-apellido1')?.value || '',
                         sus_apellido2: document.getElementById('profile-apellido2')?.value || '',
                         sus_nombre_social: document.getElementById('profile-nombre-social')?.value || '',
-                        sus_iniciales: document.getElementById('profile-iniciales')?.value || '',
+                        sus_iniciales: autoInitials,
                     })
                 });
                 const res = await resp.json();
