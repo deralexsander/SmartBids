@@ -15,6 +15,31 @@ function formatTimestamp(ts) {
     });
 }
 
+// ==========================================================================
+// CONTROL DE CAMBIOS NO GUARDADOS
+// ==========================================================================
+let cambiosSinGuardar = {
+    info: false,
+    empresa: false,
+    filtros: false
+};
+
+export function registrarCambio(seccion) {
+    if (cambiosSinGuardar.hasOwnProperty(seccion)) {
+        cambiosSinGuardar[seccion] = true;
+    }
+}
+
+export function limpiarCambio(seccion) {
+    if (cambiosSinGuardar.hasOwnProperty(seccion)) {
+        cambiosSinGuardar[seccion] = false;
+    }
+}
+
+export function tieneCambiosPendientes() {
+    return cambiosSinGuardar.info || cambiosSinGuardar.empresa || cambiosSinGuardar.filtros;
+}
+
 // Instancias globales
 let comunasManager = null;
 let productosManager = null;
@@ -159,7 +184,7 @@ class TagManager {
         this.items = new Map();
     }
 
-    setItems(itemArray) {
+    setItems(itemArray, marcarModificado = false) {
         this.items.clear();
         (itemArray || []).forEach(item => {
             if (typeof item === 'object' && item !== null) {
@@ -171,6 +196,9 @@ class TagManager {
                 if (val) this.items.set(val, val);
             }
         });
+        if (marcarModificado) {
+            registrarCambio('filtros');
+        }
         this.render();
     }
 
@@ -179,11 +207,13 @@ class TagManager {
         const l = String(label || code || '').trim();
         if (!c) return;
         this.items.set(c, l);
+        registrarCambio('filtros');
         this.render();
     }
 
     remove(code) {
         this.items.delete(String(code).trim());
+        registrarCambio('filtros');
         this.render();
     }
 
@@ -508,7 +538,10 @@ async function setupTerritoryTree() {
 
                 const hiddenInput = document.getElementById('empresa-comuna');
                 const labelInput = document.getElementById('empresa-comuna-label');
-                if (hiddenInput) hiddenInput.value = cod;
+                if (hiddenInput && hiddenInput.value !== cod) {
+                    hiddenInput.value = cod;
+                    registrarCambio('empresa');
+                }
                 if (labelInput) labelInput.value = `${nombre} (${cod})`;
             }
         } else {
@@ -518,7 +551,7 @@ async function setupTerritoryTree() {
                 label: c.dataset.label || c.value
             }));
             if (comunasManager) {
-                comunasManager.setItems(selected);
+                comunasManager.setItems(selected, true);
             }
         }
         actualizarPorcentajePerfil();
@@ -736,7 +769,7 @@ async function setupProductsTree() {
         }));
 
         if (productosManager) {
-            productosManager.setItems(selected);
+            productosManager.setItems(selected, true);
         }
         actualizarPorcentajePerfil();
         closeModal();
@@ -744,7 +777,7 @@ async function setupProductsTree() {
 }
 
 // ==========================================================================
-// ÁRBOL DE ENTIDADES PÚBLICAS Y UNIDADES DE COMPRA (UCOM) - CORREGIDO
+// ÁRBOL DE ENTIDADES PÚBLICAS Y UNIDADES DE COMPRA (UCOM)
 // ==========================================================================
 async function setupUcomTree() {
     const openBtn = document.getElementById('btn-ajustar-ucom');
@@ -771,7 +804,6 @@ async function setupUcomTree() {
         if (counter) counter.textContent = `${total} unidades seleccionadas`;
     }
 
-    // Sincroniza el checkbox padre según el estado de sus hijos
     function updateParentState(node, childSelector, checkSelector) {
         const children = [...node.querySelectorAll(childSelector)];
         if (!children.length) return;
@@ -861,7 +893,6 @@ async function setupUcomTree() {
 
         tree.innerHTML = html || '<p style="text-align: center; color: var(--muted-teal); padding: 2rem;">No se encontraron organismos o unidades.</p>';
 
-        // Acordeón / Despliegue de carpetas
         tree.querySelectorAll('.tree-toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.dataset.target;
@@ -877,7 +908,6 @@ async function setupUcomTree() {
             });
         });
 
-        // Casilla Marcar Sector -> afecta a todos sus organismos y unidades
         tree.querySelectorAll('.tree-sector').forEach(secNode => {
             const check = secNode.querySelector(':scope > .tree-header input.sec-check');
             if (check) {
@@ -891,7 +921,6 @@ async function setupUcomTree() {
             }
         });
 
-        // Casilla "Todas" de un organismo -> afecta a sus unidades y actualiza al Sector
         tree.querySelectorAll('.tree-organismo').forEach(orgNode => {
             const check = orgNode.querySelector(':scope > .tree-header input.org-check');
             if (check) {
@@ -908,7 +937,6 @@ async function setupUcomTree() {
             }
         });
 
-        // Casilla de una unidad individual -> actualiza a su Organismo y a su Sector
         tree.querySelectorAll('.ucom-check').forEach(check => {
             check.addEventListener('change', () => {
                 const orgNode = check.closest('.tree-organismo');
@@ -923,7 +951,6 @@ async function setupUcomTree() {
             });
         });
 
-        // Sincronizar estados iniciales de casillas
         tree.querySelectorAll('.tree-organismo').forEach(o => {
             updateParentState(o, '.tree-children input.ucom-check', ':scope > .tree-header input.org-check');
         });
@@ -973,9 +1000,6 @@ async function setupUcomTree() {
     closeBtn.addEventListener('click', closeModal);
     if (closeX) closeX.addEventListener('click', closeModal);
 
-    // ======================================================================
-    // BUSCADOR EN VIVO INTELIGENTE (HERENCIA JERÁRQUICA)
-    // ======================================================================
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             clearTimeout(debounceTimer);
@@ -1000,7 +1024,6 @@ async function setupUcomTree() {
                             const code = uNode.querySelector('.ucom-code')?.textContent.toLowerCase() || '';
                             const matchUcom = !term || desc.includes(term) || code.includes(term);
 
-                            // Si coincide el Sector o el Organismo, se muestran TODAS sus unidades
                             const visible = !term || matchSector || matchOrganismo || matchUcom;
                             uNode.style.display = visible ? 'flex' : 'none';
 
@@ -1012,7 +1035,6 @@ async function setupUcomTree() {
 
                         if (debeMostrarOrg && term) secTieneHijosCoincidentes = true;
 
-                        // Desplegar automáticamente si hay búsqueda activa
                         const orgChildren = orgNode.querySelector('.tree-children');
                         const orgIcon = orgNode.querySelector('.toggle-icon');
                         if (term && debeMostrarOrg) {
@@ -1043,7 +1065,6 @@ async function setupUcomTree() {
         });
     }
 
-    // Botón "Aplicar Selección"
     saveBtn.addEventListener('click', () => {
         const checkedUcoms = [...tree.querySelectorAll('.ucom-check:checked')];
         const selected = checkedUcoms.map(u => ({
@@ -1052,7 +1073,7 @@ async function setupUcomTree() {
         }));
 
         if (ucomManager) {
-            ucomManager.setItems(selected);
+            ucomManager.setItems(selected, true);
         }
         actualizarPorcentajePerfil();
         closeModal();
@@ -1117,16 +1138,22 @@ function setupLogoutButton() {
     if (logoutBtn && logoutBtn.dataset.bound !== 'true') {
         logoutBtn.dataset.bound = 'true';
         logoutBtn.addEventListener('click', async () => {
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                try {
-                    SessionManager.clearLocalToken();
-                    localStorage.removeItem('smartbids_uid');
-                    await signOut(auth);
-                    window.location.replace('/ingreso');
-                } catch (err) {
-                    console.error('[SmartBids] Error al cerrar sesión:', err);
-                    window.location.replace('/ingreso');
+            if (tieneCambiosPendientes()) {
+                const modalSalida = document.getElementById('modal-confirmar-salida-pestana');
+                if (modalSalida) {
+                    abrirModalSalidaPestana('logout', 'Datos con cambios pendientes');
+                    return;
                 }
+            }
+
+            try {
+                SessionManager.clearLocalToken();
+                localStorage.removeItem('smartbids_uid');
+                await signOut(auth);
+                window.location.replace('/ingreso');
+            } catch (err) {
+                console.error('[SmartBids] Error al cerrar sesión:', err);
+                window.location.replace('/ingreso');
             }
         });
     }
@@ -1143,6 +1170,15 @@ function setFieldState(elementId, value, forceEditable = false) {
     input.value = tieneValor ? String(value).trim() : '';
 
     const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
+
+    // El campo de iniciales SIEMPRE se mantiene como solo lectura (bloqueado)
+    if (elementId === 'empresa-iniciales') {
+        input.readOnly = true;
+        input.style.backgroundColor = '#f1f5f9';
+        input.style.cursor = 'not-allowed';
+        input.title = 'Iniciales generadas automáticamente a partir de la Razón Social o Nombre Fantasía.';
+        return;
+    }
 
     if (tieneValor && !forceEditable) {
         input.readOnly = true;
@@ -1177,7 +1213,6 @@ function limpiarCamposEmpresa() {
         'empresa-razon-social',
         'empresa-contacto-nombre',
         'empresa-correo',
-        'empresa-iniciales',
         'empresa-telefono',
         'empresa-comuna',
         'empresa-comuna-label',
@@ -1186,6 +1221,9 @@ function limpiarCamposEmpresa() {
     campos.forEach(id => {
         setFieldState(id, '', true);
     });
+
+    // Mantener iniciales vacías pero siempre bloqueadas
+    setFieldState('empresa-iniciales', '');
 
     const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
     if (btnComuna) {
@@ -1264,10 +1302,6 @@ function autogenerarInicialesEmpresa() {
     const inputIniciales = document.getElementById('empresa-iniciales');
     if (!inputIniciales) return;
 
-    if (inputIniciales.readOnly && inputIniciales.style.cursor === 'not-allowed') {
-        return;
-    }
-
     const fantasia = document.getElementById('empresa-fantasia')?.value.trim() || '';
     const razon = document.getElementById('empresa-razon-social')?.value.trim() || '';
 
@@ -1345,26 +1379,53 @@ export async function inicializarVistaPerfil(user) {
         }
     });
 
+    // El campo de iniciales es permanentemente bloqueado
     const inputEmpresaInic = document.getElementById('empresa-iniciales');
-    if (inputEmpresaInic && inputEmpresaInic.dataset.capsBound !== 'true') {
-        inputEmpresaInic.dataset.capsBound = 'true';
-        inputEmpresaInic.addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase();
-            actualizarPorcentajePerfil();
+    if (inputEmpresaInic) {
+        inputEmpresaInic.readOnly = true;
+        inputEmpresaInic.style.backgroundColor = '#f1f5f9';
+        inputEmpresaInic.style.cursor = 'not-allowed';
+    }
+
+    // Escuchadores de modificación para activar alerta
+    const fDatos = document.getElementById('form-perfil-datos');
+    if (fDatos && fDatos.dataset.listenerAttached !== 'true') {
+        fDatos.dataset.listenerAttached = 'true';
+        ['input', 'change'].forEach(evt => {
+            fDatos.addEventListener(evt, () => {
+                registrarCambio('info');
+                actualizarPorcentajePerfil();
+            });
         });
     }
 
-    ['form-perfil-datos', 'form-perfil-empresa', 'form-perfil-preferencias'].forEach(formId => {
-        const f = document.getElementById(formId);
-        if (f && f.dataset.listenerAttached !== 'true') {
-            f.dataset.listenerAttached = 'true';
-            f.addEventListener('input', actualizarPorcentajePerfil);
-            f.addEventListener('change', actualizarPorcentajePerfil);
-        }
-    });
+    const fEmpresa = document.getElementById('form-perfil-empresa');
+    if (fEmpresa && fEmpresa.dataset.listenerAttached !== 'true') {
+        fEmpresa.dataset.listenerAttached = 'true';
+        ['input', 'change'].forEach(evt => {
+            fEmpresa.addEventListener(evt, () => {
+                registrarCambio('empresa');
+                actualizarPorcentajePerfil();
+            });
+        });
+    }
+
+    const fFiltros = document.getElementById('form-perfil-preferencias');
+    if (fFiltros && fFiltros.dataset.listenerAttached !== 'true') {
+        fFiltros.dataset.listenerAttached = 'true';
+        ['input', 'change'].forEach(evt => {
+            fFiltros.addEventListener(evt, () => {
+                registrarCambio('filtros');
+                actualizarPorcentajePerfil();
+            });
+        });
+    }
 
     document.querySelectorAll('input[name="pref_tipo_lic_check"]').forEach(cb => {
-        cb.addEventListener('change', actualizarPorcentajePerfil);
+        cb.addEventListener('change', () => {
+            registrarCambio('filtros');
+            actualizarPorcentajePerfil();
+        });
     });
 
     // Sugeridor ortográfico reactivo
@@ -1417,6 +1478,7 @@ export async function inicializarVistaPerfil(user) {
             inputPalabras.value = partes.map(p => p.trim()).filter(Boolean).join(', ') + ', ';
             boxSugerencia.style.display = 'none';
             inputPalabras.focus();
+            registrarCambio('filtros');
             actualizarPorcentajePerfil();
         });
     }
@@ -1485,8 +1547,10 @@ export async function inicializarVistaPerfil(user) {
             setVal('empresa-razon-social', emp.emp_razon_social);
             setVal('empresa-contacto-nombre', emp.emp_contacto_nombre);
             setVal('empresa-correo', emp.emp_contacto_correo);
-            setVal('empresa-iniciales', emp.emp_iniciales);
             setVal('empresa-telefono', emp.emp_contacto_telefono);
+
+            // Cargar iniciales bloqueadas
+            setFieldState('empresa-iniciales', emp.emp_iniciales);
 
             const codComuna = emp.emp_codigo_comuna || '';
             const nomComuna = emp.emp_nombre_comuna || '';
@@ -1517,6 +1581,10 @@ export async function inicializarVistaPerfil(user) {
             });
 
             setVal('pref-palabras', Array.isArray(pref.pref_palabras_claves) ? pref.pref_palabras_claves.join(', ') : (pref.pref_palabras_claves || ''));
+
+            limpiarCambio('info');
+            limpiarCambio('empresa');
+            limpiarCambio('filtros');
 
             actualizarPorcentajePerfil();
         }
@@ -1549,7 +1617,12 @@ export async function inicializarVistaPerfil(user) {
                     })
                 });
                 const res = await resp.json();
-                mostrarMensaje(res.mensaje, res.status === 'ok' ? 'exito' : 'error');
+                if (res.status === 'ok') {
+                    limpiarCambio('info');
+                    mostrarMensaje(res.mensaje, 'exito');
+                } else {
+                    mostrarMensaje(res.mensaje, 'error');
+                }
                 actualizarPorcentajePerfil();
             } catch (err) {
                 mostrarMensaje('Error de red al actualizar datos personales.', 'error');
@@ -1599,6 +1672,7 @@ export async function inicializarVistaPerfil(user) {
                 const res = await resp.json();
 
                 if (res.status === 'ok') {
+                    limpiarCambio('filtros');
                     mostrarMensaje(res.mensaje, 'exito');
                     if (boxSugerencia) boxSugerencia.style.display = 'none';
                     document.getElementById('pref-palabras').value = (res.palabras_sanitizadas || palabrasLimpias).join(', ');
@@ -1668,13 +1742,15 @@ if (btnBuscarRut && inputRutEmpresa) {
                 if (datos.emp_iniciales && datos.emp_iniciales.trim()) {
                     setFieldState('empresa-iniciales', datos.emp_iniciales);
                 } else {
-                    setFieldState('empresa-iniciales', '', true);
+                    setFieldState('empresa-iniciales', '');
                     autogenerarInicialesEmpresa();
                 }
 
+                registrarCambio('empresa');
                 mostrarMensaje('Datos de empresa cargados con éxito.', 'exito');
             } else {
                 limpiarCamposEmpresa();
+                registrarCambio('empresa');
                 mostrarMensaje(
                     res.mensaje || 'Empresa no encontrada en los registros. Puedes ingresar los datos manualmente.',
                     'alerta'
@@ -1792,6 +1868,7 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
             const res = await resp.json();
 
             if (res.status === 'ok') {
+                limpiarCambio('empresa');
                 mostrarMensaje(res.mensaje || 'Empresa guardada con éxito.', 'exito');
                 bloquearFormularioEmpresa();
             } else {
@@ -1939,24 +2016,151 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
 }
 
 // ==========================================================================
-// 9. FUNCIÓN GLOBAL DE CONTROL DE PESTAÑAS
+// 9. GESTIÓN DEL MODAL DE CONFIRMACIÓN DE SALIDA (ESTILO SISTEMA)
 // ==========================================================================
-export function cambiarPestana(event, tabId) {
+let pestanaDestinoPendiente = null;
+let accionSalidaPendiente = null; // 'tab' o 'logout'
+
+function abrirModalSalidaPestana(tipoAccion, nombreSeccion, targetTabId = null) {
+    const modal = document.getElementById('modal-confirmar-salida-pestana');
+    const labelSeccion = document.getElementById('modal-nombre-seccion-cambios');
+    if (!modal) return;
+
+    accionSalidaPendiente = tipoAccion;
+    pestanaDestinoPendiente = targetTabId;
+
+    if (labelSeccion) {
+        labelSeccion.textContent = nombreSeccion;
+    }
+
+    modal.style.display = 'flex';
+    modal.classList.remove('closing');
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
+}
+
+function cerrarModalSalidaPestana() {
+    const modal = document.getElementById('modal-confirmar-salida-pestana');
+    if (!modal) return;
+
+    modal.classList.remove('active');
+    modal.classList.add('closing');
+    setTimeout(() => {
+        modal.classList.remove('closing');
+        modal.style.display = 'none';
+    }, 350);
+}
+
+// Eventos de los botones del modal de salida
+document.addEventListener('DOMContentLoaded', () => {
+    const btnGuardarModal = document.getElementById('btn-guardar-cambios-pestana');
+    const btnDescartarModal = document.getElementById('btn-descartar-cambios-pestana');
+
+    if (btnGuardarModal && !btnGuardarModal.dataset.bound) {
+        btnGuardarModal.dataset.bound = 'true';
+        btnGuardarModal.addEventListener('click', async () => {
+            cerrarModalSalidaPestana();
+
+            const pestanaActiva = document.querySelector('.tab-content-panel.active');
+            const idActivo = pestanaActiva ? pestanaActiva.id : '';
+
+            // Guarda la pestaña activa actual
+            if (idActivo === 'tab-info') {
+                const f = document.getElementById('form-perfil-datos');
+                if (f) f.requestSubmit();
+            } else if (idActivo === 'tab-empresa') {
+                const f = document.getElementById('form-perfil-empresa');
+                if (f) f.requestSubmit();
+            } else if (idActivo === 'tab-filtros') {
+                const f = document.getElementById('form-perfil-preferencias');
+                if (f) f.requestSubmit();
+            }
+
+            // Si la acción era cambiar de pestaña, cambia después de enviar
+            if (accionSalidaPendiente === 'tab' && pestanaDestinoPendiente) {
+                setTimeout(() => {
+                    aplicarCambioPestanaDirecto(pestanaDestinoPendiente);
+                }, 300);
+            }
+        });
+    }
+
+    if (btnDescartarModal && !btnDescartarModal.dataset.bound) {
+        btnDescartarModal.dataset.bound = 'true';
+        btnDescartarModal.addEventListener('click', async () => {
+            cerrarModalSalidaPestana();
+
+            const pestanaActiva = document.querySelector('.tab-content-panel.active');
+            const idActivo = pestanaActiva ? pestanaActiva.id : '';
+
+            // Descartar cambios de la pestaña activa
+            if (idActivo === 'tab-info') limpiarCambio('info');
+            if (idActivo === 'tab-empresa') limpiarCambio('empresa');
+            if (idActivo === 'tab-filtros') limpiarCambio('filtros');
+
+            if (accionSalidaPendiente === 'tab' && pestanaDestinoPendiente) {
+                aplicarCambioPestanaDirecto(pestanaDestinoPendiente);
+            } else if (accionSalidaPendiente === 'logout') {
+                limpiarCambio('info');
+                limpiarCambio('empresa');
+                limpiarCambio('filtros');
+                SessionManager.clearLocalToken();
+                localStorage.removeItem('smartbids_uid');
+                await signOut(auth);
+                window.location.replace('/ingreso');
+            }
+        });
+    }
+});
+
+function aplicarCambioPestanaDirecto(tabId) {
     document.querySelectorAll('.profile-menu-btn').forEach((btn) => {
         btn.classList.remove('active');
+        if (btn.getAttribute('onclick')?.includes(tabId)) {
+            btn.classList.add('active');
+        }
     });
 
     document.querySelectorAll('.tab-content-panel').forEach((panel) => {
         panel.classList.remove('active');
     });
 
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-    }
-
     const target = document.getElementById(tabId);
     if (target) {
         target.classList.add('active');
     }
+}
+
+// ==========================================================================
+// 10. FUNCIÓN GLOBAL DE CONTROL DE PESTAÑAS (USA EL MODAL EN LUGAR DE CHROME)
+// ==========================================================================
+export function cambiarPestana(event, tabId) {
+    const pestanaActiva = document.querySelector('.tab-content-panel.active');
+    const idActivo = pestanaActiva ? pestanaActiva.id : '';
+
+    if (idActivo && idActivo !== tabId) {
+        let hayCambiosEnPestanaActual = false;
+        let nombreSeccion = '';
+
+        if (idActivo === 'tab-info' && cambiosSinGuardar.info) {
+            hayCambiosEnPestanaActual = true;
+            nombreSeccion = 'Datos Personales';
+        } else if (idActivo === 'tab-empresa' && cambiosSinGuardar.empresa) {
+            hayCambiosEnPestanaActual = true;
+            nombreSeccion = 'Datos de la Empresa';
+        } else if (idActivo === 'tab-filtros' && cambiosSinGuardar.filtros) {
+            hayCambiosEnPestanaActual = true;
+            nombreSeccion = 'Filtros de Licitación';
+        }
+
+        if (hayCambiosEnPestanaActual) {
+            // Abre el modal visual estilizado en lugar del alert nativo del navegador
+            abrirModalSalidaPestana('tab', nombreSeccion, tabId);
+            return;
+        }
+    }
+
+    aplicarCambioPestanaDirecto(tabId);
 }
 window.cambiarPestana = cambiarPestana;
