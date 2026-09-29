@@ -20,6 +20,7 @@ let comunasManager = null;
 let productosManager = null;
 let ucomManager = null;
 let territoryData = null;
+let productosData = null;
 let modoModalTerritorio = 'cobertura'; // 'cobertura' o 'empresa'
 
 // ==========================================================================
@@ -197,7 +198,7 @@ class TagManager {
         if (!this.container) return;
         this.container.innerHTML = '';
         const codes = Array.from(this.items.keys());
-        
+
         if (this.hiddenInput) {
             this.hiddenInput.value = codes.join(',');
         }
@@ -226,7 +227,7 @@ class TagManager {
 }
 
 // ==========================================================================
-// 3. AUTOCOMPLETADO Y ÁRBOL JERÁRQUICO COLAPSABLE
+// 3. AUTOCOMPLETADO Y ÁRBOLES JERÁRQUICOS
 // ==========================================================================
 function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSelect) {
     const input = document.getElementById(inputId);
@@ -253,7 +254,7 @@ function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSele
                 const response = await fetch(`/api/catalogos-preferencias/?tipo=${catalogType}&q=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 const list = data.resultados || [];
-                
+
                 resultsBox.innerHTML = '';
                 if (list.length === 0) {
                     resultsBox.innerHTML = '<div style="padding: 10px; font-size: 0.85rem; color: var(--muted-teal);">Sin coincidencias.</div>';
@@ -262,10 +263,10 @@ function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSele
                         const itemEl = document.createElement('div');
                         itemEl.style.cssText = 'padding: 8px 12px; cursor: pointer; font-size: 0.88rem; border-bottom: 1px solid #f0f0f0; transition: background 0.15s;';
                         itemEl.innerHTML = `<strong>${item[labelField]}</strong> <small style="color: var(--muted-teal);">(${item[codeField]})</small>`;
-                        
+
                         itemEl.onmouseenter = () => itemEl.style.background = 'rgba(30, 196, 152, 0.08)';
                         itemEl.onmouseleave = () => itemEl.style.background = 'transparent';
-                        
+
                         itemEl.addEventListener('pointerdown', (e) => {
                             e.preventDefault();
                             onSelect(item[codeField], item[labelField]);
@@ -416,7 +417,6 @@ async function setupTerritoryTree() {
 
         tree.innerHTML = html || '<p style="text-align: center; color: var(--muted-teal);">No se encontraron divisiones territoriales.</p>';
 
-        // Eventos para expandir y colapsar al hacer clic en el encabezado
         tree.querySelectorAll('.tree-toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.dataset.target;
@@ -432,7 +432,6 @@ async function setupTerritoryTree() {
             });
         });
 
-        // Cascada de selección para filtros
         if (!esModoEmpresa) {
             tree.querySelectorAll('.tree-region').forEach(regNode => {
                 const check = regNode.querySelector(':scope > .tree-header input.region-check');
@@ -474,25 +473,12 @@ async function setupTerritoryTree() {
             });
         });
 
-        // Hover estilizado en tarjetas de comuna
-        tree.querySelectorAll('.tree-item-comuna').forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                el.style.borderColor = 'var(--accent-green)';
-                el.style.backgroundColor = 'rgba(30, 196, 152, 0.05)';
-            });
-            el.addEventListener('mouseleave', () => {
-                el.style.borderColor = '#f1f5f9';
-                el.style.backgroundColor = '#ffffff';
-            });
-        });
-
         if (!esModoEmpresa) {
             tree.querySelectorAll('.tree-province').forEach(updateParentState);
             tree.querySelectorAll('.tree-region').forEach(updateParentState);
         }
         updateCounter();
 
-        // Si ya hay una comuna preseleccionada, desplegar automáticamente la ruta
         if (esModoEmpresa && currentEmpresaCode) {
             const radioSeleccionado = tree.querySelector(`.comuna-check[value="${currentEmpresaCode}"]`);
             if (radioSeleccionado) {
@@ -528,11 +514,9 @@ async function setupTerritoryTree() {
                 : 'Marca o desmarca regiones, provincias o comunas específicas para tus filtros.';
         }
 
-        // Obtener comuna actual de la empresa
         const codComunaEmpresa = document.getElementById('empresa-comuna')?.value?.trim() || '';
 
         try {
-            // Siempre consulta pasando la comuna de la empresa para priorizar su región
             const resp = await fetch(`/api/catalogos-preferencias/?tipo=territorio&comuna_empresa=${encodeURIComponent(codComunaEmpresa)}`);
             territoryData = await resp.json();
             renderTree(territoryData);
@@ -542,13 +526,11 @@ async function setupTerritoryTree() {
         }
     }
 
-    // Modal para filtros de licitación
     if (openBtnCobertura && openBtnCobertura.dataset.bound !== 'true') {
         openBtnCobertura.dataset.bound = 'true';
         openBtnCobertura.addEventListener('click', () => abrirModal('cobertura'));
     }
 
-    // Modal para comuna de empresa (Botón Mapa)
     if (openBtnEmpresa && openBtnEmpresa.dataset.bound !== 'true') {
         openBtnEmpresa.dataset.bound = 'true';
         openBtnEmpresa.addEventListener('click', () => {
@@ -558,12 +540,11 @@ async function setupTerritoryTree() {
         });
     }
 
-    // Modal para comuna de empresa (Input visible)
     if (inputLabelEmpresa && inputLabelEmpresa.dataset.bound !== 'true') {
         inputLabelEmpresa.dataset.bound = 'true';
         inputLabelEmpresa.addEventListener('click', () => {
             const esBloqueado = inputLabelEmpresa.readOnly && (
-                inputLabelEmpresa.style.cursor === 'not-allowed' || 
+                inputLabelEmpresa.style.cursor === 'not-allowed' ||
                 inputLabelEmpresa.style.backgroundColor === 'rgb(241, 245, 249)' ||
                 inputLabelEmpresa.style.backgroundColor === '#f1f5f9'
             );
@@ -576,47 +557,50 @@ async function setupTerritoryTree() {
     closeBtn.addEventListener('click', closeModal);
     if (closeX) closeX.addEventListener('click', closeModal);
 
-    // Búsqueda interactiva con auto-expansión
+    // FILTRADO FLUIDO TRAS TERMINAR DE ESCRIBIR (Debounce de 700ms)
     if (searchInput) {
         searchInput.addEventListener('input', () => {
-            const term = searchInput.value.toLowerCase().trim();
+            clearTimeout(searchDebounceTimer);
+            if (searchLoader) searchLoader.style.display = 'block';
 
-            tree.querySelectorAll('.tree-region').forEach(regNode => {
-                let matchRegion = regNode.querySelector('.tree-header span')?.textContent.toLowerCase().includes(term);
-                let provsConCoincidencia = 0;
+            // Esperar 400ms después de que el usuario deje de teclear
+            searchDebounceTimer = setTimeout(() => {
+                const term = searchInput.value.toLowerCase().trim();
 
-                regNode.querySelectorAll('.tree-province').forEach(provNode => {
-                    let matchProv = provNode.querySelector('.tree-header span')?.textContent.toLowerCase().includes(term);
-                    let comunasVisibles = 0;
+                // requestAnimationFrame garantiza que el filtrado ocurra sin bloquear el hilo visual
+                requestAnimationFrame(() => {
+                    tree.querySelectorAll('.tree-rubro').forEach(rubroNode => {
+                        const titleText = rubroNode.querySelector('.rubro-title')?.textContent.toLowerCase() || '';
+                        const matchRubroTitle = titleText.includes(term);
 
-                    provNode.querySelectorAll('.tree-item-comuna').forEach(comNode => {
-                        const visible = !term || comNode.textContent.toLowerCase().includes(term);
-                        comNode.style.display = visible ? 'flex' : 'none';
-                        if (visible) comunasVisibles++;
+                        let prodsCoincidentes = 0;
+                        rubroNode.querySelectorAll('.tree-item-prod').forEach(prodNode => {
+                            const desc = prodNode.querySelector('.prod-desc')?.textContent.toLowerCase() || '';
+                            const code = prodNode.querySelector('.prod-code')?.textContent.toLowerCase() || '';
+                            const matchProd = !term || desc.includes(term) || code.includes(term);
+
+                            prodNode.style.display = matchProd ? 'flex' : 'none';
+                            if (matchProd) prodsCoincidentes++;
+                        });
+
+                        const debeMostrarRubro = !term || matchRubroTitle || prodsCoincidentes > 0;
+                        rubroNode.style.display = debeMostrarRubro ? 'block' : 'none';
+
+                        const childrenContainer = rubroNode.querySelector('.tree-children');
+                        const toggleIcon = rubroNode.querySelector('.toggle-icon');
+
+                        if (term && debeMostrarRubro && prodsCoincidentes > 0) {
+                            if (childrenContainer) childrenContainer.style.display = 'block';
+                            if (toggleIcon) toggleIcon.style.transform = 'rotate(90deg)';
+                        } else if (!term) {
+                            if (childrenContainer) childrenContainer.style.display = 'none';
+                            if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
+                        }
                     });
 
-                    const mostrarProv = matchProv || comunasVisibles > 0;
-                    provNode.style.display = mostrarProv ? 'block' : 'none';
-                    if (mostrarProv) provsConCoincidencia++;
-
-                    const provChild = provNode.querySelector('.tree-children');
-                    const provIcon = provNode.querySelector('.toggle-icon');
-                    if (provChild) {
-                        provChild.style.display = (term && mostrarProv) ? 'block' : 'none';
-                        if (provIcon) provIcon.style.transform = (term && mostrarProv) ? 'rotate(90deg)' : 'rotate(0deg)';
-                    }
+                    if (searchLoader) searchLoader.style.display = 'none';
                 });
-
-                const mostrarRegion = matchRegion || provsConCoincidencia > 0;
-                regNode.style.display = mostrarRegion ? 'block' : 'none';
-
-                const regChild = regNode.querySelector(':scope > .tree-children');
-                const regIcon = regNode.querySelector(':scope > .tree-header .toggle-icon');
-                if (regChild) {
-                    regChild.style.display = (term && mostrarRegion) ? 'block' : 'none';
-                    if (regIcon) regIcon.style.transform = (term && mostrarRegion) ? 'rotate(90deg)' : 'rotate(0deg)';
-                }
-            });
+            }, 700);
         });
     }
 
@@ -626,7 +610,7 @@ async function setupTerritoryTree() {
             if (checkedRadio) {
                 const cod = String(checkedRadio.value).trim();
                 const nombre = checkedRadio.dataset.label || cod;
-                
+
                 const hiddenInput = document.getElementById('empresa-comuna');
                 const labelInput = document.getElementById('empresa-comuna-label');
                 if (hiddenInput) hiddenInput.value = cod;
@@ -641,6 +625,234 @@ async function setupTerritoryTree() {
             if (comunasManager) {
                 comunasManager.setItems(selected);
             }
+        }
+        actualizarPorcentajePerfil();
+        closeModal();
+    });
+}
+
+// ==========================================================================
+// ÁRBOL DE CATÁLOGO ONU (MODAL MULTI-SELECCIÓN JERÁRQUICO CON FILTRO FLUIDO)
+// ==========================================================================
+async function setupProductsTree() {
+    const openBtn = document.getElementById('btn-ajustar-productos');
+    const modal = document.getElementById('productos-modal');
+    const tree = document.getElementById('productos-tree');
+    const closeBtn = document.getElementById('btn-cerrar-productos');
+    const closeX = document.getElementById('btn-cerrar-productos-x');
+    const saveBtn = document.getElementById('btn-guardar-productos');
+    const searchInput = document.getElementById('productos-tree-search');
+    const searchLoader = document.getElementById('productos-search-loader');
+    const counter = document.getElementById('productos-counter');
+
+    if (!modal || !tree || !saveBtn) return;
+
+    let searchDebounceTimer = null;
+
+    function closeModal() {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+
+    function updateCounter() {
+        const total = tree.querySelectorAll('.prod-check:checked').length;
+        if (counter) counter.textContent = `${total} productos seleccionados`;
+    }
+
+    function updateParentState(rubroNode) {
+        const children = [...rubroNode.querySelectorAll('.tree-children input.prod-check')];
+        if (!children.length) return;
+
+        const checkedCount = children.filter(c => c.checked).length;
+        const parentCheck = rubroNode.querySelector('.tree-header input.rubro-check');
+        if (parentCheck) {
+            parentCheck.checked = checkedCount === children.length;
+            parentCheck.indeterminate = checkedCount > 0 && checkedCount < children.length;
+        }
+    }
+
+    function renderTree(data) {
+        const currentCodes = productosManager ? productosManager.getCodes() : [];
+        const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
+        let html = '';
+
+        (data.rubros || []).forEach(rubro => {
+            const rubroId = `rubro-onu-${String(rubro.codigo_rubro || rubro.nombre_rubro).replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const prods = rubro.productos || [];
+            let prodsHtml = '';
+
+            prods.forEach(p => {
+                const cod = String(p.codigo_producto).trim();
+                const isChecked = selectedSet.has(cod) ? 'checked' : '';
+
+                prodsHtml += `
+                    <div class="tree-item-prod" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #f1f5f9; background: #ffffff; margin-bottom: 4px; display: flex; align-items: center; transition: all 0.15s ease;">
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; width: 100%;">
+                            <input type="checkbox" class="prod-check" value="${cod}" data-label="${p.descripcion}" ${isChecked} style="accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0;">
+                            <span class="prod-desc" style="color: var(--dark-green); font-weight: 500; line-height: 1.3;">${p.descripcion}</span>
+                            <small class="prod-code" style="color: var(--muted-teal); font-size: 0.8rem; margin-left: auto; white-space: nowrap; font-family: monospace;">[${cod}]</small>
+                        </label>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="tree-node tree-rubro" style="margin-bottom: 10px; background: #ffffff; border-radius: 10px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 6px rgba(0,0,0,0.02); overflow: hidden;">
+                    <div class="tree-header tree-toggle-btn" data-target="${rubroId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.06); cursor: pointer; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--dark-green); font-size: 0.93rem;">
+                            <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease;"></i>
+                            <i class="fa-solid fa-folder" style="color: var(--soft-mint); font-size: 0.95rem;"></i>
+                            <span class="rubro-title">${rubro.nombre_rubro}</span>
+                            <span class="rubro-badge-count" style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600;">${prods.length}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
+                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; color: var(--dark-green);">
+                                <input type="checkbox" class="rubro-check" style="accent-color: var(--accent-green);">
+                                <span>Marcar Todo</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="${rubroId}" class="tree-children" style="display: none; padding: 10px 14px; background: #fafbfc; max-height: 320px; overflow-y: auto;">
+                        ${prodsHtml}
+                    </div>
+                </div>
+            `;
+        });
+
+        tree.innerHTML = html || '<p style="text-align: center; color: var(--muted-teal); padding: 2rem;">No se encontraron productos en el catálogo.</p>';
+
+        // Desplegar / Colapsar al hacer clic en el encabezado
+        tree.querySelectorAll('.tree-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.dataset.target;
+                const container = document.getElementById(targetId);
+                const icon = btn.querySelector('.toggle-icon');
+                if (!container) return;
+
+                const estaOculto = (container.style.display === 'none' || container.style.display === '');
+                container.style.display = estaOculto ? 'block' : 'none';
+                if (icon) {
+                    icon.style.transform = estaOculto ? 'rotate(90deg)' : 'rotate(0deg)';
+                }
+            });
+        });
+
+        // Cascada: Rubro -> Productos
+        tree.querySelectorAll('.tree-rubro').forEach(rubroNode => {
+            const check = rubroNode.querySelector('.tree-header input.rubro-check');
+            if (check) {
+                check.addEventListener('change', () => {
+                    rubroNode.querySelectorAll('.tree-children input.prod-check').forEach(c => {
+                        c.checked = check.checked;
+                    });
+                    updateCounter();
+                });
+            }
+        });
+
+        // Cascada: Producto -> Rubro
+        tree.querySelectorAll('.prod-check').forEach(check => {
+            check.addEventListener('change', () => {
+                const rubroNode = check.closest('.tree-rubro');
+                if (rubroNode) updateParentState(rubroNode);
+                updateCounter();
+            });
+        });
+
+        tree.querySelectorAll('.tree-rubro').forEach(updateParentState);
+        updateCounter();
+    }
+
+    // Apertura del modal
+    if (openBtn && openBtn.dataset.bound !== 'true') {
+        openBtn.dataset.bound = 'true';
+        openBtn.addEventListener('click', async () => {
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+            modal.style.zIndex = '99999';
+
+            if (searchInput) searchInput.value = '';
+
+            if (!productosData) {
+                tree.innerHTML = `
+                    <div style="text-align: center; color: var(--muted-teal); padding: 3rem;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.8rem; color: var(--accent-green); margin-bottom: 0.8rem; display: block;"></i>
+                        <span style="font-weight: 700; color: var(--dark-green);">Cargando catálogo completo de productos ONU...</span>
+                    </div>
+                `;
+
+                try {
+                    const resp = await fetch('/api/catalogos-preferencias/?tipo=productos_arbol');
+                    productosData = await resp.json();
+                    renderTree(productosData);
+                } catch (err) {
+                    console.error('[SmartBids] Error al cargar catálogo de productos:', err);
+                    tree.innerHTML = '<p style="color: #e53e3e; text-align: center; padding: 2rem;">Error al cargar el catálogo de productos.</p>';
+                }
+            } else {
+                renderTree(productosData);
+            }
+        });
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+    if (closeX) closeX.addEventListener('click', closeModal);
+
+    // FILTRADO EN TIEMPO REAL: Rápido, sin recargas y abre solo las carpetas que coinciden
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            if (searchLoader) searchLoader.style.display = 'block';
+
+            searchDebounceTimer = setTimeout(() => {
+                const term = searchInput.value.toLowerCase().trim();
+
+                tree.querySelectorAll('.tree-rubro').forEach(rubroNode => {
+                    const titleText = rubroNode.querySelector('.rubro-title')?.textContent.toLowerCase() || '';
+                    const matchRubroTitle = titleText.includes(term);
+
+                    let prodsCoincidentes = 0;
+                    rubroNode.querySelectorAll('.tree-item-prod').forEach(prodNode => {
+                        const desc = prodNode.querySelector('.prod-desc')?.textContent.toLowerCase() || '';
+                        const code = prodNode.querySelector('.prod-code')?.textContent.toLowerCase() || '';
+                        const matchProd = !term || desc.includes(term) || code.includes(term);
+
+                        prodNode.style.display = matchProd ? 'flex' : 'none';
+                        if (matchProd) prodsCoincidentes++;
+                    });
+
+                    // Mostrar el rubro si el título coincide o si alguno de sus productos coincide
+                    const debeMostrarRubro = !term || matchRubroTitle || prodsCoincidentes > 0;
+                    rubroNode.style.display = debeMostrarRubro ? 'block' : 'none';
+
+                    const childrenContainer = rubroNode.querySelector('.tree-children');
+                    const toggleIcon = rubroNode.querySelector('.toggle-icon');
+
+                    // Si se está buscando y hubo coincidencia, abrir la carpeta automáticamente
+                    if (term && debeMostrarRubro && prodsCoincidentes > 0) {
+                        if (childrenContainer) childrenContainer.style.display = 'block';
+                        if (toggleIcon) toggleIcon.style.transform = 'rotate(90deg)';
+                    } else if (!term) {
+                        if (childrenContainer) childrenContainer.style.display = 'none';
+                        if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
+                    }
+                });
+
+                if (searchLoader) searchLoader.style.display = 'none';
+            }, 120);
+        });
+    }
+
+    // Guardar selección
+    saveBtn.addEventListener('click', () => {
+        const checkedProds = [...tree.querySelectorAll('.prod-check:checked')];
+        const selected = checkedProds.map(p => ({
+            code: String(p.value).trim(),
+            label: `${p.dataset.label} (${p.value})`
+        }));
+
+        if (productosManager) {
+            productosManager.setItems(selected);
         }
         actualizarPorcentajePerfil();
         closeModal();
@@ -829,9 +1041,6 @@ function bloquearFormularioEmpresa() {
     }
 }
 
-// ==========================================================================
-// FUNCIONES AUXILIARES: GENERACIÓN DE INICIALES
-// ==========================================================================
 function actualizarInicialesSidebar() {
     const n1 = document.getElementById('profile-nombre1')?.value.trim() || '';
     const n2 = document.getElementById('profile-nombre2')?.value.trim() || '';
@@ -899,15 +1108,12 @@ export async function inicializarVistaPerfil(user) {
         ucomManager = new TagManager('chips-ucom', 'pref-ucom', 'Sin entidades específicas (Monitorea todo el Estado)');
     }
 
-    setupDropdownSearch('buscar-producto-input', 'producto', 'codigo_producto', 'descripcion', (code, label) => {
-        productosManager.add(code, label);
-    });
-
     setupDropdownSearch('buscar-ucom-input', 'unidad_compra', 'codigo_unidad_compra', 'ucom_descripcion', (code, label) => {
         ucomManager.add(code, label);
     });
 
     setupTerritoryTree();
+    setupProductsTree();
     setupPasswordFunctionality(user);
     setupLogoutButton();
 
@@ -1003,7 +1209,6 @@ export async function inicializarVistaPerfil(user) {
             const emailInput = document.getElementById('profile-email');
             if (emailInput) emailInput.value = user?.email || auth.currentUser?.email || '';
 
-            // Datos Personales
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
             setVal('profile-nombre1', n1);
             setVal('profile-nombre2', n2);
@@ -1011,7 +1216,6 @@ export async function inicializarVistaPerfil(user) {
             setVal('profile-apellido2', a2);
             setVal('profile-nombre-social', data.sus_nombre_social);
 
-            // Datos Empresa
             setVal('empresa-rut', emp.emp_rut);
             setVal('empresa-fantasia', emp.emp_fantasia || emp.emp_nombre_fantasia);
             setVal('empresa-razon-social', emp.emp_razon_social);
@@ -1019,7 +1223,7 @@ export async function inicializarVistaPerfil(user) {
             setVal('empresa-correo', emp.emp_contacto_correo);
             setVal('empresa-iniciales', emp.emp_iniciales);
             setVal('empresa-telefono', emp.emp_contacto_telefono);
-            
+
             const codComuna = emp.emp_codigo_comuna || '';
             const nomComuna = emp.emp_nombre_comuna || '';
             const tieneComunaPrevia = Boolean(codComuna);
@@ -1029,12 +1233,10 @@ export async function inicializarVistaPerfil(user) {
 
             setVal('empresa-direccion', emp.emp_direccion);
 
-            // Bloquear formulario si ya tiene empresa registrada
             if (emp.emp_rut && String(emp.emp_rut).trim() !== '') {
                 bloquearFormularioEmpresa();
             }
 
-            // Preferencias
             comunasManager.setItems(pref.comunas_detalle || []);
             productosManager.setItems(pref.productos_detalle || []);
             ucomManager.setItems(pref.ucom_detalle || []);
@@ -1048,7 +1250,6 @@ export async function inicializarVistaPerfil(user) {
         console.error('[SmartBids] Error al cargar perfil:', err);
     }
 
-    // Submit: Datos Personales
     const formDatos = document.getElementById('form-perfil-datos');
     if (formDatos && formDatos.dataset.bound !== 'true') {
         formDatos.dataset.bound = 'true';
@@ -1084,7 +1285,6 @@ export async function inicializarVistaPerfil(user) {
         };
     }
 
-    // Submit: Preferencias
     const formFiltros = document.getElementById('form-perfil-preferencias');
     if (formFiltros && formFiltros.dataset.bound !== 'true') {
         formFiltros.dataset.bound = 'true';
@@ -1170,7 +1370,7 @@ if (btnBuscarRut && inputRutEmpresa) {
                 setFieldState('empresa-razon-social', datos.emp_razon_social);
                 setFieldState('empresa-contacto-nombre', '');
                 setFieldState('empresa-direccion', datos.emp_direccion);
-                
+
                 const codCom = (datos.emp_codigo_comuna || '').trim();
                 const nomCom = (datos.emp_nombre_comuna || '').trim();
                 const tieneComunaOficial = Boolean(codCom);
@@ -1331,7 +1531,7 @@ auth.onAuthStateChanged((user) => {
     if (user) {
         localStorage.setItem('smartbids_uid', user.uid);
         document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
-        
+
         if (document.getElementById('form-perfil-preferencias')) {
             inicializarVistaPerfil(user);
         }

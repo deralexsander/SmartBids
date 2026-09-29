@@ -33,6 +33,62 @@ ORDEN_GEOGRAFICO_CHILE = {
     '12': 16, 'XII': 16,            # Región de Magallanes y de la Antártica Chilena
 }
 
+NOMBRES_SEGMENTOS_ONU = {
+    '10': 'Material Vivo Animal y Vegetal',
+    '11': 'Materiales de Minerales y Tejidos no Comestibles',
+    '12': 'Productos Químicos y Gases Químicos',
+    '13': 'Resina, Caucho y Espuma',
+    '14': 'Materiales y Productos de Papel',
+    '15': 'Combustibles, Lubricantes y Materiales Anticorrosivos',
+    '20': 'Maquinaria y Accesorios de Minería y Perforación',
+    '21': 'Maquinaria y Accesorios para Agricultura y Pesca',
+    '22': 'Maquinaria pesada de Construcción y Edificación',
+    '23': 'Maquinaria de Procesamiento Industrial',
+    '24': 'Empaque, Envases y Contenedores',
+    '25': 'Vehículos Comerciales, Militares y Privados',
+    '26': 'Sistemas de Potencia y Componentes Eléctricos',
+    '27': 'Herramientas y Maquinaria General',
+    '30': 'Estructuras, Edificación y Materiales de Construcción',
+    '31': 'Artículos de Fabricación y Componentes',
+    '32': 'Componentes Electrónicos',
+    '39': 'Iluminación y Componentes Eléctricos',
+    '40': 'Distribución y Acondicionamiento de Fluidos',
+    '41': 'Equipamiento de Laboratorio y Científico',
+    '42': 'Equipos y Suministros Médicos',
+    '43': 'Tecnología de la Información, Telecomunicaciones y Software',
+    '44': 'Equipos y Suministros de Oficina',
+    '45': 'Equipamiento para Artes, Imprenta y Fotografía',
+    '46': 'Seguridad, Vigilancia y Primeros Auxilios',
+    '47': 'Limpieza y Eliminación de Residuos',
+    '50': 'Alimentos, Bebidas y Tabaco',
+    '51': 'Medicamentos y Productos Farmacéuticos',
+    '52': 'Muebles, Mobiliario y Accesorios Domésticos',
+    '53': 'Ropa, Calzado y Equipaje',
+    '55': 'Publicaciones, Medios Impresos y Audiovisuales',
+    '56': 'Construcciones prefabricadas',
+    '60': 'Instrumentos Musicales, Juegos y Deportes',
+    '70': 'Servicios de Recursos Vivos (Agricultura y Pesca)',
+    '71': 'Servicios de Minería, Petróleo y Gas',
+    '72': 'Servicios de Construcción y Mantenimiento',
+    '73': 'Servicios de Producción y Fabricación Industrial',
+    '76': 'Servicios de Limpieza, Descontaminación y Residuos',
+    '77': 'Servicios de Medio Ambiente',
+    '78': 'Servicios de Transporte, Correo y Almacenamiento',
+    '80': 'Servicios de Gestión, Administración y Consultoría',
+    '81': 'Servicios Profesionales de Ingeniería e Investigación',
+    '82': 'Servicios Editoriales, Diseño y Gráficos',
+    '83': 'Servicios Públicos y de Obras Públicas',
+    '84': 'Servicios Financieros, Seguros y Contables',
+    '85': 'Servicios Sanitarios y de Salud Humana',
+    '86': 'Servicios Educativos y de Capacitación',
+    '90': 'Servicios de Viajes, Alojamiento y Banquetes',
+    '91': 'Servicios Personales y Domésticos',
+    '92': 'Servicios de Seguridad y Defensa',
+    '93': 'Servicios Políticos, Cívicos y Gubernamentales',
+    '94': 'Organizaciones y Clubes',
+    '95': 'Terrenos, Bienes Inmuebles y Estructuras',
+}
+
 
 @csrf_exempt
 def catalogos_preferencias(request):
@@ -42,7 +98,7 @@ def catalogos_preferencias(request):
     tipo = request.GET.get('tipo', '').strip()
     query = request.GET.get('q', '').strip()
     comuna_empresa = request.GET.get('comuna_empresa', '').strip()
-    
+
     try:
         limite = min(int(request.GET.get('limit', 40) or 40), 100)
     except ValueError:
@@ -59,17 +115,12 @@ def catalogos_preferencias(request):
             .order_by('nombre_comuna')
         )
 
-        # Identificar la región de la casa matriz de la empresa
         region_prioritaria = None
         if comuna_empresa:
             comuna_obj = Comuna.objects.select_related('codigo_provincia').filter(codigo_comuna=comuna_empresa).first()
             if comuna_obj and comuna_obj.codigo_provincia:
                 region_prioritaria = str(comuna_obj.codigo_provincia.codigo_region_id).strip()
 
-        # Criterio de ordenamiento:
-        # 1. Región de la casa matriz primero (0) vs otras (1)
-        # 2. Orden geográfico de norte a sur según el mapa
-        # 3. Nombre alfabético
         def ordenar_regiones(r):
             cod_str = str(r['codigo_region']).strip()
             es_matriz = 0 if (region_prioritaria and cod_str == region_prioritaria) else 1
@@ -86,14 +137,60 @@ def catalogos_preferencias(request):
             'comunas': comunas
         })
 
+    # Árbol jerárquico para el modal de Productos ONU
+    if tipo == 'productos_arbol':
+        try:
+            q_filtro = request.GET.get('q', '').strip()
+            query_base = Producto.objects.exclude(descripcion__isnull=True).exclude(descripcion__exact='')
+
+            if q_filtro:
+                # Búsqueda por término o código exacto/parcial
+                query_base = query_base.filter(
+                    Q(descripcion__icontains=q_filtro) | Q(codigo_producto__icontains=q_filtro)
+                )[:250]
+            else:
+                # Carga inicial completa
+                query_base = query_base.order_by('codigo_producto')
+
+            prods = list(query_base.values('codigo_producto', 'descripcion'))
+
+            rubros_map = {}
+            for p in prods:
+                cod = str(p['codigo_producto']).strip()
+                desc_raw = str(p['descripcion'] or '').replace('\r', ' ').replace('\n', ' ')
+                desc = re.sub(r'\s+', ' ', desc_raw).strip()
+
+                if not desc or desc in ['1°', '1a S', '1era', '1.1']:
+                    desc = f"Producto ONU {cod}"
+
+                seg_code = cod[:2] if len(cod) >= 2 else '00'
+                nombre_seg = NOMBRES_SEGMENTOS_ONU.get(seg_code, f"Segmento ONU {seg_code}")
+
+                if seg_code not in rubros_map:
+                    rubros_map[seg_code] = {
+                        'codigo_rubro': seg_code,
+                        'nombre_rubro': f"{seg_code} – {nombre_seg}",
+                        'productos': []
+                    }
+                rubros_map[seg_code]['productos'].append({
+                    'codigo_producto': cod,
+                    'descripcion': desc
+                })
+
+            rubros_list = sorted(list(rubros_map.values()), key=lambda r: r['codigo_rubro'])
+            return JsonResponse({'status': 'ok', 'rubros': rubros_list})
+        except Exception as e:
+            logger.error(f"[SmartBids] Error al generar árbol de productos: {str(e)}")
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
+
     if tipo == 'comuna':
         resultados = Comuna.objects.filter(nombre_comuna__icontains=query).values(
             'codigo_comuna', 'nombre_comuna'
         )[:limite]
     elif tipo == 'producto':
-        resultados = Producto.objects.filter(descripcion__icontains=query).values(
-            'codigo_producto', 'descripcion'
-        )[:limite]
+        resultados = Producto.objects.filter(
+            Q(descripcion__icontains=query) | Q(codigo_producto__icontains=query)
+        ).values('codigo_producto', 'descripcion')[:limite]
     elif tipo == 'unidad_compra':
         resultados = UnidadCompra.objects.filter(ucom_descripcion__icontains=query).values(
             'codigo_unidad_compra', 'ucom_descripcion'
@@ -150,7 +247,7 @@ def obtener_perfil_suscriptor(request):
             str(p['codigo_producto']).strip(): p['descripcion']
             for p in Producto.objects.filter(codigo_producto__in=raw_prods).values('codigo_producto', 'descripcion')
         }
-        productos_detalle = [{'code': cod, 'label': mapa_prods.get(cod, cod)} for cod in raw_prods]
+        productos_detalle = [{'code': cod, 'label': f"{mapa_prods.get(cod, cod)} ({cod})" if cod in mapa_prods else cod} for cod in raw_prods]
 
         raw_ucom = to_list(pref.pref_ucom) if pref else []
         ucom_ids = [int(x) for x in raw_ucom if str(x).isdigit()]
@@ -229,7 +326,7 @@ def actualizar_preferencias_suscriptor(request):
         comunas = [str(c).strip()[:5] for c in data.get('pref_comunas', []) if str(c).strip()]
         productos = [str(p).strip()[:20] for p in data.get('pref_productos', []) if str(p).strip()]
         tipo_lic = [str(t).strip()[:2] for t in data.get('pref_tipo_licitacion', []) if str(t).strip()]
-        
+
         ucom = []
         for u in data.get('pref_ucom', []):
             try:
@@ -280,11 +377,11 @@ def actualizar_perfil_suscriptor(request):
         suscriptor.sus_apellido1 = (data.get('sus_apellido1') or '').strip()
         suscriptor.sus_apellido2 = (data.get('sus_apellido2') or '').strip()
         suscriptor.sus_nombre_social = (data.get('sus_nombre_social') or '').strip()
-        
+
         partes = [suscriptor.sus_nombre1, suscriptor.sus_nombre2, suscriptor.sus_apellido1, suscriptor.sus_apellido2]
         iniciales_auto = "".join([p[0].upper() for p in partes if p])[:5]
         suscriptor.sus_iniciales = (data.get('sus_iniciales') or iniciales_auto).strip().upper()[:5]
-        
+
         suscriptor.fecha_actualizacion = timezone.now()
         suscriptor.save()
         return JsonResponse({
@@ -353,7 +450,7 @@ def buscar_empresa_por_rut(request):
             Q(prov_rut__iexact=rut_sin_puntos) |
             Q(prov_rut__icontains=rut_sin_puntos)
         )
-        
+
         if '-' in rut_sin_puntos:
             cuerpo = rut_sin_puntos.split('-')[0]
             if len(cuerpo) >= 5:
