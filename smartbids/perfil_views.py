@@ -13,6 +13,26 @@ from .models.procurement import UnidadCompra
 
 logger = logging.getLogger(__name__)
 
+# Mapeo oficial de orden geográfico Norte -> Sur de Chile
+ORDEN_GEOGRAFICO_CHILE = {
+    '15': 1, 'XV': 1,               # Región de Arica y Parinacota
+    '01': 2, '1': 2, 'I': 2,        # Región de Tarapacá
+    '02': 3, '2': 3, 'II': 3,       # Región de Antofagasta
+    '03': 4, '3': 4, 'III': 4,      # Región de Atacama
+    '04': 5, '4': 5, 'IV': 5,       # Región de Coquimbo
+    '05': 6, '5': 6, 'V': 6,        # Región de Valparaíso
+    '13': 7, 'RM': 7,               # Región Metropolitana de Santiago
+    '06': 8, '6': 8, 'VI': 8,       # Región del Libertador General Bernardo O'Higgins
+    '07': 9, '7': 9, 'VII': 9,      # Región del Maule
+    '16': 10, 'XVI': 10,            # Región de Ñuble
+    '08': 11, '8': 11, 'VIII': 11,  # Región del Biobío
+    '09': 12, '9': 12, 'IX': 12,    # Región de La Araucanía
+    '14': 13, 'XIV': 13,            # Región de Los Ríos
+    '10': 14, '10': 14, 'X': 14,    # Región de Los Lagos
+    '11': 15, 'XI': 15,             # Región de Aysén del General Carlos Ibáñez del Campo
+    '12': 16, 'XII': 16,            # Región de Magallanes y de la Antártica Chilena
+}
+
 
 @csrf_exempt
 def catalogos_preferencias(request):
@@ -21,6 +41,7 @@ def catalogos_preferencias(request):
 
     tipo = request.GET.get('tipo', '').strip()
     query = request.GET.get('q', '').strip()
+    comuna_empresa = request.GET.get('comuna_empresa', '').strip()
     
     try:
         limite = min(int(request.GET.get('limit', 40) or 40), 100)
@@ -28,10 +49,42 @@ def catalogos_preferencias(request):
         limite = 40
 
     if tipo == 'territorio':
-        regiones = list(Region.objects.values('codigo_region', 'nombre_region').order_by('codigo_region'))
-        provincias = list(Provincia.objects.values('codigo_provincia', 'nombre_provincia', 'codigo_region_id').order_by('nombre_provincia'))
-        comunas = list(Comuna.objects.values('codigo_comuna', 'nombre_comuna', 'codigo_provincia_id').order_by('nombre_comuna'))
-        return JsonResponse({'regiones': regiones, 'provincias': provincias, 'comunas': comunas})
+        regiones_query = list(Region.objects.values('codigo_region', 'nombre_region'))
+        provincias = list(
+            Provincia.objects.values('codigo_provincia', 'nombre_provincia', 'codigo_region_id')
+            .order_by('nombre_provincia')
+        )
+        comunas = list(
+            Comuna.objects.values('codigo_comuna', 'nombre_comuna', 'codigo_provincia_id')
+            .order_by('nombre_comuna')
+        )
+
+        # Identificar la región de la casa matriz de la empresa
+        region_prioritaria = None
+        if comuna_empresa:
+            comuna_obj = Comuna.objects.select_related('codigo_provincia').filter(codigo_comuna=comuna_empresa).first()
+            if comuna_obj and comuna_obj.codigo_provincia:
+                region_prioritaria = str(comuna_obj.codigo_provincia.codigo_region_id).strip()
+
+        # Criterio de ordenamiento:
+        # 1. Región de la casa matriz primero (0) vs otras (1)
+        # 2. Orden geográfico de norte a sur según el mapa
+        # 3. Nombre alfabético
+        def ordenar_regiones(r):
+            cod_str = str(r['codigo_region']).strip()
+            es_matriz = 0 if (region_prioritaria and cod_str == region_prioritaria) else 1
+            pos_geo = ORDEN_GEOGRAFICO_CHILE.get(cod_str, 99)
+            return (es_matriz, pos_geo, r['nombre_region'])
+
+        regiones_ordenadas = sorted(regiones_query, key=ordenar_regiones)
+
+        return JsonResponse({
+            'status': 'ok',
+            'region_prioritaria': region_prioritaria,
+            'regiones': regiones_ordenadas,
+            'provincias': provincias,
+            'comunas': comunas
+        })
 
     if tipo == 'comuna':
         resultados = Comuna.objects.filter(nombre_comuna__icontains=query).values(
@@ -107,7 +160,6 @@ def obtener_perfil_suscriptor(request):
         }
         ucom_detalle = [{'code': str(cod), 'label': mapa_ucom.get(str(cod), str(cod))} for cod in raw_ucom]
 
-        # Resolver nombre de la comuna de la empresa si existe
         nom_comuna_emp = ''
         cod_comuna_emp = ''
         if emp and emp.emp_codigo_comuna:
@@ -229,7 +281,6 @@ def actualizar_perfil_suscriptor(request):
         suscriptor.sus_apellido2 = (data.get('sus_apellido2') or '').strip()
         suscriptor.sus_nombre_social = (data.get('sus_nombre_social') or '').strip()
         
-        # Calcular automáticamente las iniciales en mayúsculas (máximo 5 caracteres)
         partes = [suscriptor.sus_nombre1, suscriptor.sus_nombre2, suscriptor.sus_apellido1, suscriptor.sus_apellido2]
         iniciales_auto = "".join([p[0].upper() for p in partes if p])[:5]
         suscriptor.sus_iniciales = (data.get('sus_iniciales') or iniciales_auto).strip().upper()[:5]

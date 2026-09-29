@@ -226,7 +226,7 @@ class TagManager {
 }
 
 // ==========================================================================
-// 3. AUTOCOMPLETADO Y ÁRBOL JERÁRQUICO
+// 3. AUTOCOMPLETADO Y ÁRBOL JERÁRQUICO COLAPSABLE
 // ==========================================================================
 function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSelect) {
     const input = document.getElementById(inputId);
@@ -356,57 +356,105 @@ async function setupTerritoryTree() {
                     const nameAttr = esModoEmpresa ? 'name="comuna_empresa_radio"' : '';
 
                     comsHtml += `
-                        <div class="tree-item-comuna" style="margin-left: 28px; padding: 3px 0;">
-                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                                <input type="${inputType}" ${nameAttr} class="comuna-check" value="${cod}" data-label="${c.nombre_comuna}" ${isChecked}>
-                                <span><strong>${c.nombre_comuna}</strong> <small style="color: var(--muted-teal);">(${cod})</small></span>
+                        <div class="tree-item-comuna" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #f1f5f9; background: #ffffff; transition: all 0.2s ease;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.88rem; width: 100%;">
+                                <input type="${inputType}" ${nameAttr} class="comuna-check" value="${cod}" data-label="${c.nombre_comuna}" ${isChecked} style="accent-color: var(--accent-green); cursor: pointer;">
+                                <span style="color: var(--dark-green); font-weight: 600;">${c.nombre_comuna}</span>
+                                <small style="color: var(--muted-teal); font-size: 0.78rem; margin-left: auto;">(${cod})</small>
                             </label>
                         </div>
                     `;
                 });
 
                 provsHtml += `
-                    <div class="tree-node tree-province" style="margin-left: 20px; margin-top: 4px;">
-                        <div class="tree-header" style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green);">
-                            <i class="fa-solid fa-folder" style="color: var(--soft-mint); font-size: 0.85rem;"></i>
-                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                ${!esModoEmpresa ? '<input type="checkbox" class="province-check">' : ''}
+                    <div class="tree-node tree-province" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
+                        <div class="tree-header tree-toggle-btn" data-target="prov-child-${provId}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green); font-size: 0.9rem;">
+                                <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.75rem; color: var(--muted-teal); transition: transform 0.2s ease;"></i>
+                                <i class="fa-solid fa-folder" style="color: var(--soft-mint); font-size: 0.85rem;"></i>
                                 <span>${prov.nombre_provincia}</span>
-                            </label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;" onclick="event.stopPropagation();">
+                                ${!esModoEmpresa ? `
+                                    <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--muted-teal);">
+                                        <input type="checkbox" class="province-check" style="accent-color: var(--accent-green);">
+                                        <span>Todas</span>
+                                    </label>` : ''}
+                            </div>
                         </div>
-                        <div class="tree-children" style="margin-top: 2px;">
-                            ${comsHtml}
+                        <div id="prov-child-${provId}" class="tree-children" style="display: none; padding: 8px; border-top: 1px dashed #e2e8f0; background: #ffffff;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px;">
+                                ${comsHtml}
+                            </div>
                         </div>
                     </div>
                 `;
             });
 
             html += `
-                <div class="tree-node tree-region" style="margin-bottom: 12px; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid #eaeaea;">
-                    <div class="tree-header" style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--dark-green); font-size: 0.96rem;">
-                        <i class="fa-solid fa-map" style="color: var(--accent-green); font-size: 0.9rem;"></i>
-                        <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                            ${!esModoEmpresa ? '<input type="checkbox" class="region-check">' : ''}
+                <div class="tree-node tree-region" style="margin-bottom: 12px; background: #ffffff; border-radius: 12px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 8px rgba(0,0,0,0.02); overflow: hidden;">
+                    <div class="tree-header tree-toggle-btn" data-target="reg-child-${regId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.05); cursor: pointer; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">
+                            <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease;"></i>
+                            <i class="fa-solid fa-map" style="color: var(--accent-green); font-size: 0.9rem;"></i>
                             <span>${reg.nombre_region}</span>
-                        </label>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
+                            ${!esModoEmpresa ? `
+                                <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700; color: var(--dark-green);">
+                                    <input type="checkbox" class="region-check" style="accent-color: var(--accent-green);">
+                                    <span>Seleccionar Región</span>
+                                </label>` : ''}
+                        </div>
                     </div>
-                    <div class="tree-children" style="margin-top: 4px;">
+                    <div id="reg-child-${regId}" class="tree-children" style="display: none; padding: 10px 12px; background: #ffffff;">
                         ${provsHtml}
                     </div>
                 </div>
             `;
         });
 
-        tree.innerHTML = html || '<p>No se encontraron divisiones territoriales.</p>';
+        tree.innerHTML = html || '<p style="text-align: center; color: var(--muted-teal);">No se encontraron divisiones territoriales.</p>';
 
+        // Eventos para expandir y colapsar al hacer clic en el encabezado
+        tree.querySelectorAll('.tree-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.dataset.target;
+                const container = document.getElementById(targetId);
+                const icon = btn.querySelector('.toggle-icon');
+                if (!container) return;
+
+                const estaOculto = (container.style.display === 'none' || container.style.display === '');
+                container.style.display = estaOculto ? 'block' : 'none';
+                if (icon) {
+                    icon.style.transform = estaOculto ? 'rotate(90deg)' : 'rotate(0deg)';
+                }
+            });
+        });
+
+        // Cascada de selección para filtros
         if (!esModoEmpresa) {
-            tree.querySelectorAll('.tree-region, .tree-province').forEach(node => {
-                const check = node.querySelector(':scope > .tree-header input[type="checkbox"]');
+            tree.querySelectorAll('.tree-region').forEach(regNode => {
+                const check = regNode.querySelector(':scope > .tree-header input.region-check');
                 if (check) {
                     check.addEventListener('change', () => {
-                        node.querySelectorAll('.tree-children input[type="checkbox"]').forEach(child => {
-                            child.checked = check.checked;
-                            child.indeterminate = false;
+                        regNode.querySelectorAll('.tree-children input[type="checkbox"]').forEach(c => {
+                            c.checked = check.checked;
+                            c.indeterminate = false;
+                        });
+                        tree.querySelectorAll('.tree-province').forEach(updateParentState);
+                        updateCounter();
+                    });
+                }
+            });
+
+            tree.querySelectorAll('.tree-province').forEach(provNode => {
+                const check = provNode.querySelector(':scope > .tree-header input.province-check');
+                if (check) {
+                    check.addEventListener('change', () => {
+                        provNode.querySelectorAll('.tree-children input[type="checkbox"]').forEach(c => {
+                            c.checked = check.checked;
+                            c.indeterminate = false;
                         });
                         tree.querySelectorAll('.tree-province').forEach(updateParentState);
                         tree.querySelectorAll('.tree-region').forEach(updateParentState);
@@ -426,11 +474,43 @@ async function setupTerritoryTree() {
             });
         });
 
+        // Hover estilizado en tarjetas de comuna
+        tree.querySelectorAll('.tree-item-comuna').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                el.style.borderColor = 'var(--accent-green)';
+                el.style.backgroundColor = 'rgba(30, 196, 152, 0.05)';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.borderColor = '#f1f5f9';
+                el.style.backgroundColor = '#ffffff';
+            });
+        });
+
         if (!esModoEmpresa) {
             tree.querySelectorAll('.tree-province').forEach(updateParentState);
             tree.querySelectorAll('.tree-region').forEach(updateParentState);
         }
         updateCounter();
+
+        // Si ya hay una comuna preseleccionada, desplegar automáticamente la ruta
+        if (esModoEmpresa && currentEmpresaCode) {
+            const radioSeleccionado = tree.querySelector(`.comuna-check[value="${currentEmpresaCode}"]`);
+            if (radioSeleccionado) {
+                const provChild = radioSeleccionado.closest('.tree-children');
+                if (provChild) {
+                    provChild.style.display = 'block';
+                    const provIcon = provChild.previousElementSibling?.querySelector('.toggle-icon');
+                    if (provIcon) provIcon.style.transform = 'rotate(90deg)';
+
+                    const regChild = provChild.closest('.tree-province')?.closest('.tree-children');
+                    if (regChild) {
+                        regChild.style.display = 'block';
+                        const regIcon = regChild.previousElementSibling?.querySelector('.toggle-icon');
+                        if (regIcon) regIcon.style.transform = 'rotate(90deg)';
+                    }
+                }
+            }
+        }
     }
 
     async function abrirModal(modo) {
@@ -440,7 +520,7 @@ async function setupTerritoryTree() {
         modal.style.zIndex = '99999';
 
         if (modalTitle) {
-            modalTitle.textContent = modo === 'empresa' ? 'Comuna Casa Matriz' : 'Cobertura Geográfica';
+            modalTitle.textContent = modo === 'empresa' ? 'Comuna Casa Matriz *' : 'Cobertura Geográfica';
         }
         if (modalDesc) {
             modalDesc.textContent = modo === 'empresa'
@@ -448,16 +528,17 @@ async function setupTerritoryTree() {
                 : 'Marca o desmarca regiones, provincias o comunas específicas para tus filtros.';
         }
 
-        if (!territoryData) {
-            try {
-                const resp = await fetch('/api/catalogos-preferencias/?tipo=territorio');
-                territoryData = await resp.json();
-                renderTree(territoryData);
-            } catch (err) {
-                tree.innerHTML = '<p style="color: #e53e3e;">Error al cargar datos territoriales.</p>';
-            }
-        } else {
+        // Obtener comuna actual de la empresa
+        const codComunaEmpresa = document.getElementById('empresa-comuna')?.value?.trim() || '';
+
+        try {
+            // Siempre consulta pasando la comuna de la empresa para priorizar su región
+            const resp = await fetch(`/api/catalogos-preferencias/?tipo=territorio&comuna_empresa=${encodeURIComponent(codComunaEmpresa)}`);
+            territoryData = await resp.json();
             renderTree(territoryData);
+        } catch (err) {
+            console.error('[SmartBids] Error al cargar datos de territorio:', err);
+            tree.innerHTML = '<p style="color: #e53e3e; text-align: center;">Error al cargar datos territoriales.</p>';
         }
     }
 
@@ -495,22 +576,46 @@ async function setupTerritoryTree() {
     closeBtn.addEventListener('click', closeModal);
     if (closeX) closeX.addEventListener('click', closeModal);
 
+    // Búsqueda interactiva con auto-expansión
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             const term = searchInput.value.toLowerCase().trim();
+
             tree.querySelectorAll('.tree-region').forEach(regNode => {
-                let matchRegion = false;
+                let matchRegion = regNode.querySelector('.tree-header span')?.textContent.toLowerCase().includes(term);
+                let provsConCoincidencia = 0;
+
                 regNode.querySelectorAll('.tree-province').forEach(provNode => {
-                    let matchProv = false;
+                    let matchProv = provNode.querySelector('.tree-header span')?.textContent.toLowerCase().includes(term);
+                    let comunasVisibles = 0;
+
                     provNode.querySelectorAll('.tree-item-comuna').forEach(comNode => {
-                        const visible = comNode.textContent.toLowerCase().includes(term);
-                        comNode.style.display = visible ? 'block' : 'none';
-                        if (visible) matchProv = true;
+                        const visible = !term || comNode.textContent.toLowerCase().includes(term);
+                        comNode.style.display = visible ? 'flex' : 'none';
+                        if (visible) comunasVisibles++;
                     });
-                    provNode.style.display = matchProv || provNode.textContent.toLowerCase().includes(term) ? 'block' : 'none';
-                    if (provNode.style.display === 'block') matchRegion = true;
+
+                    const mostrarProv = matchProv || comunasVisibles > 0;
+                    provNode.style.display = mostrarProv ? 'block' : 'none';
+                    if (mostrarProv) provsConCoincidencia++;
+
+                    const provChild = provNode.querySelector('.tree-children');
+                    const provIcon = provNode.querySelector('.toggle-icon');
+                    if (provChild) {
+                        provChild.style.display = (term && mostrarProv) ? 'block' : 'none';
+                        if (provIcon) provIcon.style.transform = (term && mostrarProv) ? 'rotate(90deg)' : 'rotate(0deg)';
+                    }
                 });
-                regNode.style.display = matchRegion || regNode.textContent.toLowerCase().includes(term) ? 'block' : 'none';
+
+                const mostrarRegion = matchRegion || provsConCoincidencia > 0;
+                regNode.style.display = mostrarRegion ? 'block' : 'none';
+
+                const regChild = regNode.querySelector(':scope > .tree-children');
+                const regIcon = regNode.querySelector(':scope > .tree-header .toggle-icon');
+                if (regChild) {
+                    regChild.style.display = (term && mostrarRegion) ? 'block' : 'none';
+                    if (regIcon) regIcon.style.transform = (term && mostrarRegion) ? 'rotate(90deg)' : 'rotate(0deg)';
+                }
             });
         });
     }
@@ -633,7 +738,6 @@ function setFieldState(elementId, value, forceEditable = false) {
         input.style.cursor = 'not-allowed';
         input.title = 'Dato registrado oficialmente en el sistema. No modificable.';
 
-        // Bloqueo estricto del botón cuando la comuna ya tiene dato oficial
         if (elementId === 'empresa-comuna-label' && btnComuna) {
             btnComuna.disabled = true;
             btnComuna.style.opacity = '0.5';
@@ -646,7 +750,6 @@ function setFieldState(elementId, value, forceEditable = false) {
         input.style.cursor = (elementId === 'empresa-comuna-label') ? 'pointer' : 'text';
         input.title = '';
 
-        // Se desbloquea si la empresa es nueva y no tiene comuna
         if (elementId === 'empresa-comuna-label' && btnComuna) {
             btnComuna.disabled = false;
             btnComuna.style.opacity = '1';
@@ -727,7 +830,7 @@ function bloquearFormularioEmpresa() {
 }
 
 // ==========================================================================
-// FUNCIÓN AUXILIAR: GENERAR INICIALES EN TIEMPO REAL (MÁX 5, EN MAYÚSCULAS)
+// FUNCIONES AUXILIARES: GENERACIÓN DE INICIALES
 // ==========================================================================
 function actualizarInicialesSidebar() {
     const n1 = document.getElementById('profile-nombre1')?.value.trim() || '';
@@ -746,6 +849,40 @@ function actualizarInicialesSidebar() {
         avatarInitials.textContent = iniciales || '--';
     }
     return iniciales;
+}
+
+function autogenerarInicialesEmpresa() {
+    const inputIniciales = document.getElementById('empresa-iniciales');
+    if (!inputIniciales) return;
+
+    if (inputIniciales.readOnly && inputIniciales.style.cursor === 'not-allowed') {
+        return;
+    }
+
+    const fantasia = document.getElementById('empresa-fantasia')?.value.trim() || '';
+    const razon = document.getElementById('empresa-razon-social')?.value.trim() || '';
+
+    const baseTexto = fantasia || razon;
+    if (!baseTexto) {
+        inputIniciales.value = '';
+        return;
+    }
+
+    const stopwords = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'y', 'e', 'en', 'por', 'para', 'spa', 'sa', 's.a.', 'limitada', 'ltda', 'eirl']);
+
+    const palabras = baseTexto
+        .split(/\s+/)
+        .map(p => p.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, ''))
+        .filter(p => p.length > 0 && !stopwords.has(p.toLowerCase()));
+
+    let siglas = '';
+    if (palabras.length > 0) {
+        siglas = palabras.map(p => p[0].toUpperCase()).join('').slice(0, 10);
+    } else {
+        siglas = baseTexto.slice(0, 3).toUpperCase();
+    }
+
+    inputIniciales.value = siglas;
 }
 
 // ==========================================================================
@@ -774,7 +911,6 @@ export async function inicializarVistaPerfil(user) {
     setupPasswordFunctionality(user);
     setupLogoutButton();
 
-    // Actualiza dinámicamente las iniciales al escribir nombres o apellidos
     ['profile-nombre1', 'profile-nombre2', 'profile-apellido1', 'profile-apellido2'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el.dataset.initBound !== 'true') {
@@ -785,6 +921,26 @@ export async function inicializarVistaPerfil(user) {
             });
         }
     });
+
+    ['empresa-fantasia', 'empresa-razon-social'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.dataset.siglasBound !== 'true') {
+            el.dataset.siglasBound = 'true';
+            el.addEventListener('input', () => {
+                autogenerarInicialesEmpresa();
+                actualizarPorcentajePerfil();
+            });
+        }
+    });
+
+    const inputEmpresaInic = document.getElementById('empresa-iniciales');
+    if (inputEmpresaInic && inputEmpresaInic.dataset.capsBound !== 'true') {
+        inputEmpresaInic.dataset.capsBound = 'true';
+        inputEmpresaInic.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+            actualizarPorcentajePerfil();
+        });
+    }
 
     ['form-perfil-datos', 'form-perfil-empresa', 'form-perfil-preferencias'].forEach(formId => {
         const f = document.getElementById(formId);
@@ -1015,7 +1171,6 @@ if (btnBuscarRut && inputRutEmpresa) {
                 setFieldState('empresa-contacto-nombre', '');
                 setFieldState('empresa-direccion', datos.emp_direccion);
                 
-                // Si la empresa ya tiene comuna registrada, queda bloqueada; si no tiene, queda editable
                 const codCom = (datos.emp_codigo_comuna || '').trim();
                 const nomCom = (datos.emp_nombre_comuna || '').trim();
                 const tieneComunaOficial = Boolean(codCom);
@@ -1026,7 +1181,13 @@ if (btnBuscarRut && inputRutEmpresa) {
 
                 setFieldState('empresa-correo', datos.emp_contacto_correo);
                 setFieldState('empresa-telefono', datos.emp_contacto_telefono);
-                setFieldState('empresa-iniciales', datos.emp_iniciales);
+
+                if (datos.emp_iniciales && datos.emp_iniciales.trim()) {
+                    setFieldState('empresa-iniciales', datos.emp_iniciales);
+                } else {
+                    setFieldState('empresa-iniciales', '', true);
+                    autogenerarInicialesEmpresa();
+                }
 
                 mostrarMensaje('Datos de empresa cargados con éxito.', 'exito');
             } else {
