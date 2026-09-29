@@ -21,7 +21,8 @@ let productosManager = null;
 let ucomManager = null;
 let territoryData = null;
 let productosData = null;
-let modoModalTerritorio = 'cobertura'; // 'cobertura' o 'empresa'
+let ucomData = null;
+let modoModalTerritorio = 'cobertura';
 
 // ==========================================================================
 // 1. CÁLCULO CENTRALIZADO Y SINCRONIZADO DE PROGRESO
@@ -101,7 +102,8 @@ export function calcularMetricasPerfil(dataObj = null) {
         const countComunas = comunasManager ? comunasManager.getCodes().length : 0;
         const countProductos = productosManager ? productosManager.getCodes().length : 0;
         const countUcom = ucomManager ? ucomManager.getCodes().length : 0;
-        const tieneProcedimiento = checkVal('pref-tipo-lic');
+        
+        const tieneProcedimiento = document.querySelectorAll('input[name="pref_tipo_lic_check"]:checked').length > 0;
         const tienePalabras = checkVal('pref-palabras');
 
         filtrosChecks = [
@@ -227,69 +229,8 @@ class TagManager {
 }
 
 // ==========================================================================
-// 3. AUTOCOMPLETADO Y ÁRBOLES JERÁRQUICOS
+// 3. ÁRBOLES JERÁRQUICOS (COBERTURA, PRODUCTOS ONU, UCOM)
 // ==========================================================================
-function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSelect) {
-    const input = document.getElementById(inputId);
-    if (!input || input.dataset.bound === 'true') return;
-    input.dataset.bound = 'true';
-
-    const resultsBox = document.createElement('div');
-    resultsBox.style.cssText = 'position: absolute; left: 0; right: 0; top: 100%; background: #fff; border: 1.5px solid var(--soft-mint); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: none; margin-top: 4px;';
-    input.parentElement.style.position = 'relative';
-    input.parentElement.appendChild(resultsBox);
-
-    let timer = null;
-    input.addEventListener('input', () => {
-        clearTimeout(timer);
-        const query = input.value.trim();
-        if (query.length < 2) {
-            resultsBox.style.display = 'none';
-            resultsBox.innerHTML = '';
-            return;
-        }
-
-        timer = setTimeout(async () => {
-            try {
-                const response = await fetch(`/api/catalogos-preferencias/?tipo=${catalogType}&q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-                const list = data.resultados || [];
-
-                resultsBox.innerHTML = '';
-                if (list.length === 0) {
-                    resultsBox.innerHTML = '<div style="padding: 10px; font-size: 0.85rem; color: var(--muted-teal);">Sin coincidencias.</div>';
-                } else {
-                    list.forEach(item => {
-                        const itemEl = document.createElement('div');
-                        itemEl.style.cssText = 'padding: 8px 12px; cursor: pointer; font-size: 0.88rem; border-bottom: 1px solid #f0f0f0; transition: background 0.15s;';
-                        itemEl.innerHTML = `<strong>${item[labelField]}</strong> <small style="color: var(--muted-teal);">(${item[codeField]})</small>`;
-
-                        itemEl.onmouseenter = () => itemEl.style.background = 'rgba(30, 196, 152, 0.08)';
-                        itemEl.onmouseleave = () => itemEl.style.background = 'transparent';
-
-                        itemEl.addEventListener('pointerdown', (e) => {
-                            e.preventDefault();
-                            onSelect(item[codeField], item[labelField]);
-                            input.value = '';
-                            resultsBox.style.display = 'none';
-                        });
-                        resultsBox.appendChild(itemEl);
-                    });
-                }
-                resultsBox.style.display = 'block';
-            } catch (error) {
-                console.error('[SmartBids] Error en autocompletado:', error);
-            }
-        }, 200);
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!input.contains(e.target) && !resultsBox.contains(e.target)) {
-            resultsBox.style.display = 'none';
-        }
-    });
-}
-
 async function setupTerritoryTree() {
     const openBtnCobertura = document.getElementById('btn-ajustar-cobertura');
     const openBtnEmpresa = document.getElementById('btn-seleccionar-comuna-empresa');
@@ -478,25 +419,6 @@ async function setupTerritoryTree() {
             tree.querySelectorAll('.tree-region').forEach(updateParentState);
         }
         updateCounter();
-
-        if (esModoEmpresa && currentEmpresaCode) {
-            const radioSeleccionado = tree.querySelector(`.comuna-check[value="${currentEmpresaCode}"]`);
-            if (radioSeleccionado) {
-                const provChild = radioSeleccionado.closest('.tree-children');
-                if (provChild) {
-                    provChild.style.display = 'block';
-                    const provIcon = provChild.previousElementSibling?.querySelector('.toggle-icon');
-                    if (provIcon) provIcon.style.transform = 'rotate(90deg)';
-
-                    const regChild = provChild.closest('.tree-province')?.closest('.tree-children');
-                    if (regChild) {
-                        regChild.style.display = 'block';
-                        const regIcon = regChild.previousElementSibling?.querySelector('.toggle-icon');
-                        if (regIcon) regIcon.style.transform = 'rotate(90deg)';
-                    }
-                }
-            }
-        }
     }
 
     async function abrirModal(modo) {
@@ -557,50 +479,23 @@ async function setupTerritoryTree() {
     closeBtn.addEventListener('click', closeModal);
     if (closeX) closeX.addEventListener('click', closeModal);
 
-    // FILTRADO FLUIDO TRAS TERMINAR DE ESCRIBIR (Debounce de 700ms)
     if (searchInput) {
         searchInput.addEventListener('input', () => {
-            clearTimeout(searchDebounceTimer);
-            if (searchLoader) searchLoader.style.display = 'block';
-
-            // Esperar 400ms después de que el usuario deje de teclear
-            searchDebounceTimer = setTimeout(() => {
-                const term = searchInput.value.toLowerCase().trim();
-
-                // requestAnimationFrame garantiza que el filtrado ocurra sin bloquear el hilo visual
-                requestAnimationFrame(() => {
-                    tree.querySelectorAll('.tree-rubro').forEach(rubroNode => {
-                        const titleText = rubroNode.querySelector('.rubro-title')?.textContent.toLowerCase() || '';
-                        const matchRubroTitle = titleText.includes(term);
-
-                        let prodsCoincidentes = 0;
-                        rubroNode.querySelectorAll('.tree-item-prod').forEach(prodNode => {
-                            const desc = prodNode.querySelector('.prod-desc')?.textContent.toLowerCase() || '';
-                            const code = prodNode.querySelector('.prod-code')?.textContent.toLowerCase() || '';
-                            const matchProd = !term || desc.includes(term) || code.includes(term);
-
-                            prodNode.style.display = matchProd ? 'flex' : 'none';
-                            if (matchProd) prodsCoincidentes++;
-                        });
-
-                        const debeMostrarRubro = !term || matchRubroTitle || prodsCoincidentes > 0;
-                        rubroNode.style.display = debeMostrarRubro ? 'block' : 'none';
-
-                        const childrenContainer = rubroNode.querySelector('.tree-children');
-                        const toggleIcon = rubroNode.querySelector('.toggle-icon');
-
-                        if (term && debeMostrarRubro && prodsCoincidentes > 0) {
-                            if (childrenContainer) childrenContainer.style.display = 'block';
-                            if (toggleIcon) toggleIcon.style.transform = 'rotate(90deg)';
-                        } else if (!term) {
-                            if (childrenContainer) childrenContainer.style.display = 'none';
-                            if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
-                        }
+            const term = searchInput.value.toLowerCase().trim();
+            tree.querySelectorAll('.tree-region').forEach(regNode => {
+                let matchRegion = false;
+                regNode.querySelectorAll('.tree-province').forEach(provNode => {
+                    let matchProv = false;
+                    provNode.querySelectorAll('.tree-item-comuna').forEach(comNode => {
+                        const visible = !term || comNode.textContent.toLowerCase().includes(term);
+                        comNode.style.display = visible ? 'block' : 'none';
+                        if (visible && term) matchProv = true;
                     });
-
-                    if (searchLoader) searchLoader.style.display = 'none';
+                    provNode.style.display = (!term || matchProv || provNode.textContent.toLowerCase().includes(term)) ? 'block' : 'none';
+                    if (provNode.style.display === 'block') matchRegion = true;
                 });
-            }, 700);
+                regNode.style.display = (!term || matchRegion || regNode.textContent.toLowerCase().includes(term)) ? 'block' : 'none';
+            });
         });
     }
 
@@ -631,9 +526,6 @@ async function setupTerritoryTree() {
     });
 }
 
-// ==========================================================================
-// ÁRBOL DE CATÁLOGO ONU (MODAL MULTI-SELECCIÓN JERÁRQUICO CON FILTRO FLUIDO)
-// ==========================================================================
 async function setupProductsTree() {
     const openBtn = document.getElementById('btn-ajustar-productos');
     const modal = document.getElementById('productos-modal');
@@ -721,7 +613,6 @@ async function setupProductsTree() {
 
         tree.innerHTML = html || '<p style="text-align: center; color: var(--muted-teal); padding: 2rem;">No se encontraron productos en el catálogo.</p>';
 
-        // Desplegar / Colapsar al hacer clic en el encabezado
         tree.querySelectorAll('.tree-toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.dataset.target;
@@ -737,7 +628,6 @@ async function setupProductsTree() {
             });
         });
 
-        // Cascada: Rubro -> Productos
         tree.querySelectorAll('.tree-rubro').forEach(rubroNode => {
             const check = rubroNode.querySelector('.tree-header input.rubro-check');
             if (check) {
@@ -750,7 +640,6 @@ async function setupProductsTree() {
             }
         });
 
-        // Cascada: Producto -> Rubro
         tree.querySelectorAll('.prod-check').forEach(check => {
             check.addEventListener('change', () => {
                 const rubroNode = check.closest('.tree-rubro');
@@ -763,7 +652,6 @@ async function setupProductsTree() {
         updateCounter();
     }
 
-    // Apertura del modal
     if (openBtn && openBtn.dataset.bound !== 'true') {
         openBtn.dataset.bound = 'true';
         openBtn.addEventListener('click', async () => {
@@ -798,7 +686,6 @@ async function setupProductsTree() {
     closeBtn.addEventListener('click', closeModal);
     if (closeX) closeX.addEventListener('click', closeModal);
 
-    // FILTRADO EN TIEMPO REAL: Rápido, sin recargas y abre solo las carpetas que coinciden
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             clearTimeout(searchDebounceTimer);
@@ -821,14 +708,12 @@ async function setupProductsTree() {
                         if (matchProd) prodsCoincidentes++;
                     });
 
-                    // Mostrar el rubro si el título coincide o si alguno de sus productos coincide
                     const debeMostrarRubro = !term || matchRubroTitle || prodsCoincidentes > 0;
                     rubroNode.style.display = debeMostrarRubro ? 'block' : 'none';
 
                     const childrenContainer = rubroNode.querySelector('.tree-children');
                     const toggleIcon = rubroNode.querySelector('.toggle-icon');
 
-                    // Si se está buscando y hubo coincidencia, abrir la carpeta automáticamente
                     if (term && debeMostrarRubro && prodsCoincidentes > 0) {
                         if (childrenContainer) childrenContainer.style.display = 'block';
                         if (toggleIcon) toggleIcon.style.transform = 'rotate(90deg)';
@@ -843,7 +728,6 @@ async function setupProductsTree() {
         });
     }
 
-    // Guardar selección
     saveBtn.addEventListener('click', () => {
         const checkedProds = [...tree.querySelectorAll('.prod-check:checked')];
         const selected = checkedProds.map(p => ({
@@ -853,6 +737,322 @@ async function setupProductsTree() {
 
         if (productosManager) {
             productosManager.setItems(selected);
+        }
+        actualizarPorcentajePerfil();
+        closeModal();
+    });
+}
+
+// ==========================================================================
+// ÁRBOL DE ENTIDADES PÚBLICAS Y UNIDADES DE COMPRA (UCOM) - CORREGIDO
+// ==========================================================================
+async function setupUcomTree() {
+    const openBtn = document.getElementById('btn-ajustar-ucom');
+    const modal = document.getElementById('ucom-modal');
+    const tree = document.getElementById('ucom-tree');
+    const closeBtn = document.getElementById('btn-cerrar-ucom');
+    const closeX = document.getElementById('btn-cerrar-ucom-x');
+    const saveBtn = document.getElementById('btn-guardar-ucom');
+    const searchInput = document.getElementById('ucom-tree-search');
+    const searchLoader = document.getElementById('ucom-search-loader');
+    const counter = document.getElementById('ucom-counter');
+
+    if (!modal || !tree || !saveBtn) return;
+
+    let debounceTimer = null;
+
+    function closeModal() {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+
+    function updateCounter() {
+        const total = tree.querySelectorAll('.ucom-check:checked').length;
+        if (counter) counter.textContent = `${total} unidades seleccionadas`;
+    }
+
+    // Sincroniza el checkbox padre según el estado de sus hijos
+    function updateParentState(node, childSelector, checkSelector) {
+        const children = [...node.querySelectorAll(childSelector)];
+        if (!children.length) return;
+
+        const checkedCount = children.filter(c => c.checked).length;
+        const parentCheck = node.querySelector(checkSelector);
+        if (parentCheck) {
+            parentCheck.checked = (checkedCount === children.length);
+            parentCheck.indeterminate = (checkedCount > 0 && checkedCount < children.length);
+        }
+    }
+
+    function renderTree(data) {
+        const currentCodes = ucomManager ? ucomManager.getCodes() : [];
+        const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
+        let html = '';
+
+        (data.sectores || []).forEach(sec => {
+            const secId = `sec-${String(sec.codigo_sector).replace(/[^a-zA-Z0-9]/g, '_')}`;
+            let orgsHtml = '';
+
+            (sec.organismos || []).forEach(org => {
+                const orgId = `org-${String(org.codigo_organismo).replace(/[^a-zA-Z0-9]/g, '_')}`;
+                let ucomsHtml = '';
+
+                (org.unidades || []).forEach(u => {
+                    const cod = String(u.codigo_ucom).trim();
+                    const isChecked = selectedSet.has(cod) ? 'checked' : '';
+
+                    ucomsHtml += `
+                        <div class="tree-item-ucom" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #f1f5f9; background: #ffffff; margin-bottom: 4px; display: flex; align-items: center; transition: all 0.15s ease;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; width: 100%; margin: 0;">
+                                <input type="checkbox" class="ucom-check" value="${cod}" data-label="${u.descripcion}" ${isChecked} style="accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0; width: 16px; height: 16px;">
+                                <span class="ucom-desc" style="color: var(--dark-green); font-weight: 500; line-height: 1.3;">${u.descripcion}</span>
+                                <small class="ucom-code" style="color: var(--muted-teal); font-size: 0.8rem; margin-left: auto; white-space: nowrap; font-family: monospace;">[${cod}]</small>
+                            </label>
+                        </div>
+                    `;
+                });
+
+                orgsHtml += `
+                    <div class="tree-node tree-organismo" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
+                        <div class="tree-header tree-toggle-btn" data-target="${orgId}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green); font-size: 0.9rem;">
+                                <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.75rem; color: var(--muted-teal); transition: transform 0.2s ease;"></i>
+                                <i class="fa-solid fa-building-columns" style="color: var(--muted-teal); font-size: 0.85rem;"></i>
+                                <span class="org-title">${org.nombre_organismo}</span>
+                                <span style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600;">${(org.unidades || []).length}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;" onclick="event.stopPropagation();">
+                                <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--muted-teal); margin: 0;">
+                                    <input type="checkbox" class="org-check" style="accent-color: var(--accent-green); cursor: pointer;">
+                                    <span>Todas</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="${orgId}" class="tree-children" style="display: none; padding: 8px; border-top: 1px dashed #e2e8f0; background: #ffffff;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                ${ucomsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="tree-node tree-sector" style="margin-bottom: 12px; background: #ffffff; border-radius: 12px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 8px rgba(0,0,0,0.02); overflow: hidden;">
+                    <div class="tree-header tree-toggle-btn" data-target="${secId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.05); cursor: pointer; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">
+                            <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease;"></i>
+                            <i class="fa-solid fa-landmark" style="color: var(--accent-green); font-size: 0.9rem;"></i>
+                            <span class="sec-title">${sec.nombre_sector}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
+                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700; color: var(--dark-green); margin: 0;">
+                                <input type="checkbox" class="sec-check" style="accent-color: var(--accent-green); cursor: pointer;">
+                                <span>Marcar Sector</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="${secId}" class="tree-children" style="display: none; padding: 10px 12px; background: #ffffff;">
+                        ${orgsHtml}
+                    </div>
+                </div>
+            `;
+        });
+
+        tree.innerHTML = html || '<p style="text-align: center; color: var(--muted-teal); padding: 2rem;">No se encontraron organismos o unidades.</p>';
+
+        // Acordeón / Despliegue de carpetas
+        tree.querySelectorAll('.tree-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.dataset.target;
+                const container = document.getElementById(targetId);
+                const icon = btn.querySelector('.toggle-icon');
+                if (!container) return;
+
+                const estaOculto = (container.style.display === 'none' || container.style.display === '');
+                container.style.display = estaOculto ? 'block' : 'none';
+                if (icon) {
+                    icon.style.transform = estaOculto ? 'rotate(90deg)' : 'rotate(0deg)';
+                }
+            });
+        });
+
+        // Casilla Marcar Sector -> afecta a todos sus organismos y unidades
+        tree.querySelectorAll('.tree-sector').forEach(secNode => {
+            const check = secNode.querySelector(':scope > .tree-header input.sec-check');
+            if (check) {
+                check.addEventListener('change', () => {
+                    secNode.querySelectorAll('.tree-children input[type="checkbox"]').forEach(c => {
+                        c.checked = check.checked;
+                        c.indeterminate = false;
+                    });
+                    updateCounter();
+                });
+            }
+        });
+
+        // Casilla "Todas" de un organismo -> afecta a sus unidades y actualiza al Sector
+        tree.querySelectorAll('.tree-organismo').forEach(orgNode => {
+            const check = orgNode.querySelector(':scope > .tree-header input.org-check');
+            if (check) {
+                check.addEventListener('change', () => {
+                    orgNode.querySelectorAll('.tree-children input.ucom-check').forEach(c => {
+                        c.checked = check.checked;
+                    });
+                    const secNode = orgNode.closest('.tree-sector');
+                    if (secNode) {
+                        updateParentState(secNode, '.tree-children input.ucom-check', ':scope > .tree-header input.sec-check');
+                    }
+                    updateCounter();
+                });
+            }
+        });
+
+        // Casilla de una unidad individual -> actualiza a su Organismo y a su Sector
+        tree.querySelectorAll('.ucom-check').forEach(check => {
+            check.addEventListener('change', () => {
+                const orgNode = check.closest('.tree-organismo');
+                if (orgNode) {
+                    updateParentState(orgNode, '.tree-children input.ucom-check', ':scope > .tree-header input.org-check');
+                }
+                const secNode = check.closest('.tree-sector');
+                if (secNode) {
+                    updateParentState(secNode, '.tree-children input.ucom-check', ':scope > .tree-header input.sec-check');
+                }
+                updateCounter();
+            });
+        });
+
+        // Sincronizar estados iniciales de casillas
+        tree.querySelectorAll('.tree-organismo').forEach(o => {
+            updateParentState(o, '.tree-children input.ucom-check', ':scope > .tree-header input.org-check');
+        });
+        tree.querySelectorAll('.tree-sector').forEach(s => {
+            updateParentState(s, '.tree-children input.ucom-check', ':scope > .tree-header input.sec-check');
+        });
+        updateCounter();
+    }
+
+    if (openBtn && openBtn.dataset.bound !== 'true') {
+        openBtn.dataset.bound = 'true';
+        openBtn.addEventListener('click', async () => {
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+            modal.style.zIndex = '99999';
+
+            if (searchInput) searchInput.value = '';
+
+            if (!ucomData) {
+                tree.innerHTML = `
+                    <div style="text-align: center; color: var(--muted-teal); padding: 3rem;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.8rem; color: var(--accent-green); margin-bottom: 0.8rem; display: block;"></i>
+                        <span style="font-weight: 700; color: var(--dark-green);">Cargando catálogo oficial de organismos y unidades...</span>
+                    </div>
+                `;
+
+                try {
+                    const resp = await fetch('/api/catalogos-preferencias/?tipo=ucom_arbol');
+                    const jsonRes = await resp.json();
+
+                    if (!resp.ok || jsonRes.status === 'error') {
+                        throw new Error(jsonRes.mensaje || `Error HTTP ${resp.status}`);
+                    }
+
+                    ucomData = jsonRes;
+                    renderTree(ucomData);
+                } catch (err) {
+                    console.error('[SmartBids] Error al cargar unidades de compra:', err);
+                    tree.innerHTML = `<p style="color: #e53e3e; text-align: center; padding: 2rem;">Error al cargar catálogo de unidades: ${err.message}</p>`;
+                }
+            } else {
+                renderTree(ucomData);
+            }
+        });
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+    if (closeX) closeX.addEventListener('click', closeModal);
+
+    // ======================================================================
+    // BUSCADOR EN VIVO INTELIGENTE (HERENCIA JERÁRQUICA)
+    // ======================================================================
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            if (searchLoader) searchLoader.style.display = 'block';
+
+            debounceTimer = setTimeout(() => {
+                const term = searchInput.value.toLowerCase().trim();
+
+                tree.querySelectorAll('.tree-sector').forEach(secNode => {
+                    const secTitle = secNode.querySelector('.sec-title')?.textContent.toLowerCase() || '';
+                    const matchSector = term && secTitle.includes(term);
+                    let secTieneHijosCoincidentes = false;
+
+                    secNode.querySelectorAll('.tree-organismo').forEach(orgNode => {
+                        const orgTitle = orgNode.querySelector('.org-title')?.textContent.toLowerCase() || '';
+                        const matchOrganismo = term && orgTitle.includes(term);
+
+                        let orgTieneUcomCoincidente = false;
+
+                        orgNode.querySelectorAll('.tree-item-ucom').forEach(uNode => {
+                            const desc = uNode.querySelector('.ucom-desc')?.textContent.toLowerCase() || '';
+                            const code = uNode.querySelector('.ucom-code')?.textContent.toLowerCase() || '';
+                            const matchUcom = !term || desc.includes(term) || code.includes(term);
+
+                            // Si coincide el Sector o el Organismo, se muestran TODAS sus unidades
+                            const visible = !term || matchSector || matchOrganismo || matchUcom;
+                            uNode.style.display = visible ? 'flex' : 'none';
+
+                            if (matchUcom && term) orgTieneUcomCoincidente = true;
+                        });
+
+                        const debeMostrarOrg = !term || matchSector || matchOrganismo || orgTieneUcomCoincidente;
+                        orgNode.style.display = debeMostrarOrg ? 'block' : 'none';
+
+                        if (debeMostrarOrg && term) secTieneHijosCoincidentes = true;
+
+                        // Desplegar automáticamente si hay búsqueda activa
+                        const orgChildren = orgNode.querySelector('.tree-children');
+                        const orgIcon = orgNode.querySelector('.toggle-icon');
+                        if (term && debeMostrarOrg) {
+                            if (orgChildren) orgChildren.style.display = 'block';
+                            if (orgIcon) orgIcon.style.transform = 'rotate(90deg)';
+                        } else if (!term) {
+                            if (orgChildren) orgChildren.style.display = 'none';
+                            if (orgIcon) orgIcon.style.transform = 'rotate(0deg)';
+                        }
+                    });
+
+                    const debeMostrarSector = !term || matchSector || secTieneHijosCoincidentes;
+                    secNode.style.display = debeMostrarSector ? 'block' : 'none';
+
+                    const secChildren = secNode.querySelector('.tree-children');
+                    const secIcon = secNode.querySelector('.toggle-icon');
+                    if (term && debeMostrarSector) {
+                        if (secChildren) secChildren.style.display = 'block';
+                        if (secIcon) secIcon.style.transform = 'rotate(90deg)';
+                    } else if (!term) {
+                        if (secChildren) secChildren.style.display = 'none';
+                        if (secIcon) secIcon.style.transform = 'rotate(0deg)';
+                    }
+                });
+
+                if (searchLoader) searchLoader.style.display = 'none';
+            }, 120);
+        });
+    }
+
+    // Botón "Aplicar Selección"
+    saveBtn.addEventListener('click', () => {
+        const checkedUcoms = [...tree.querySelectorAll('.ucom-check:checked')];
+        const selected = checkedUcoms.map(u => ({
+            code: String(u.value).trim(),
+            label: `${u.dataset.label} (${u.value})`
+        }));
+
+        if (ucomManager) {
+            ucomManager.setItems(selected);
         }
         actualizarPorcentajePerfil();
         closeModal();
@@ -1094,6 +1294,15 @@ function autogenerarInicialesEmpresa() {
     inputIniciales.value = siglas;
 }
 
+function sanitizarPalabraClave(texto) {
+    return (texto || '')
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter(w => w.length > 1);
+}
+
 // ==========================================================================
 // 6. INICIALIZADOR DE LA VISTA PERFIL
 // ==========================================================================
@@ -1108,12 +1317,9 @@ export async function inicializarVistaPerfil(user) {
         ucomManager = new TagManager('chips-ucom', 'pref-ucom', 'Sin entidades específicas (Monitorea todo el Estado)');
     }
 
-    setupDropdownSearch('buscar-ucom-input', 'unidad_compra', 'codigo_unidad_compra', 'ucom_descripcion', (code, label) => {
-        ucomManager.add(code, label);
-    });
-
     setupTerritoryTree();
     setupProductsTree();
+    setupUcomTree();
     setupPasswordFunctionality(user);
     setupLogoutButton();
 
@@ -1156,6 +1362,64 @@ export async function inicializarVistaPerfil(user) {
             f.addEventListener('change', actualizarPorcentajePerfil);
         }
     });
+
+    document.querySelectorAll('input[name="pref_tipo_lic_check"]').forEach(cb => {
+        cb.addEventListener('change', actualizarPorcentajePerfil);
+    });
+
+    // Sugeridor ortográfico reactivo
+    const inputPalabras = document.getElementById('pref-palabras');
+    const boxSugerencia = document.getElementById('palabras-sugerencia-box');
+    const txtSugerencia = document.getElementById('palabra-sugerida-texto');
+
+    if (inputPalabras && boxSugerencia && txtSugerencia && inputPalabras.dataset.suggestBound !== 'true') {
+        inputPalabras.dataset.suggestBound = 'true';
+        let debounceSugerencia = null;
+
+        inputPalabras.addEventListener('input', () => {
+            clearTimeout(debounceSugerencia);
+            const textoCompleto = inputPalabras.value;
+            const partes = textoCompleto.split(',');
+            const palabraActual = partes[partes.length - 1].trim();
+
+            if (palabraActual.length < 3) {
+                boxSugerencia.style.display = 'none';
+                return;
+            }
+
+            debounceSugerencia = setTimeout(async () => {
+                try {
+                    const resp = await fetch(`/api/catalogos-preferencias/?tipo=sugerir_palabra&q=${encodeURIComponent(palabraActual)}`);
+                    const data = await resp.json();
+
+                    if (data.status === 'ok' && data.sugerencia) {
+                        const sug = String(data.sugerencia).toLowerCase();
+                        if (sug !== palabraActual.toLowerCase()) {
+                            txtSugerencia.textContent = sug;
+                            boxSugerencia.style.display = 'block';
+                            return;
+                        }
+                    }
+                    boxSugerencia.style.display = 'none';
+                } catch (e) {
+                    console.error('[SmartBids] Error en sugeridor ortográfico:', e);
+                }
+            }, 250);
+        });
+
+        txtSugerencia.addEventListener('click', () => {
+            const sugWord = txtSugerencia.textContent.trim();
+            if (!sugWord) return;
+
+            const partes = inputPalabras.value.split(',');
+            partes[partes.length - 1] = ' ' + sugWord;
+            
+            inputPalabras.value = partes.map(p => p.trim()).filter(Boolean).join(', ') + ', ';
+            boxSugerencia.style.display = 'none';
+            inputPalabras.focus();
+            actualizarPorcentajePerfil();
+        });
+    }
 
     const targetUid = user?.uid || auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
     if (!targetUid) return;
@@ -1241,7 +1505,17 @@ export async function inicializarVistaPerfil(user) {
             productosManager.setItems(pref.productos_detalle || []);
             ucomManager.setItems(pref.ucom_detalle || []);
 
-            setVal('pref-tipo-lic', Array.isArray(pref.pref_tipo_licitacion) ? pref.pref_tipo_licitacion.join(', ') : (pref.pref_tipo_licitacion || ''));
+            const tiposRecibidos = Array.isArray(pref.pref_tipo_licitacion)
+                ? pref.pref_tipo_licitacion
+                : (typeof pref.pref_tipo_licitacion === 'string'
+                    ? pref.pref_tipo_licitacion.split(',').map(s => s.trim().toUpperCase())
+                    : []);
+            const tiposSet = new Set(tiposRecibidos.map(t => String(t).trim().toUpperCase()));
+
+            document.querySelectorAll('input[name="pref_tipo_lic_check"]').forEach(checkbox => {
+                checkbox.checked = tiposSet.has(checkbox.value.toUpperCase());
+            });
+
             setVal('pref-palabras', Array.isArray(pref.pref_palabras_claves) ? pref.pref_palabras_claves.join(', ') : (pref.pref_palabras_claves || ''));
 
             actualizarPorcentajePerfil();
@@ -1300,13 +1574,20 @@ export async function inicializarVistaPerfil(user) {
                 return hiddenEl && hiddenEl.value.trim() ? hiddenEl.value.split(',').map(s => s.trim()).filter(Boolean) : [];
             };
 
+            const tiposSeleccionados = Array.from(document.querySelectorAll('input[name="pref_tipo_lic_check"]:checked'))
+                .map(cb => cb.value);
+
+            const rawPalabras = document.getElementById('pref-palabras')?.value || '';
+            const tokens = rawPalabras.split(',').flatMap(p => sanitizarPalabraClave(p));
+            const palabrasLimpias = [...new Set(tokens)];
+
             const payload = {
                 uid: targetUid,
                 pref_comunas: getArrayOrHidden(comunasManager, 'pref-comunas'),
                 pref_productos: getArrayOrHidden(productosManager, 'pref-productos'),
-                pref_tipo_licitacion: document.getElementById('pref-tipo-lic').value.split(',').map(s => s.trim()).filter(Boolean),
+                pref_tipo_licitacion: tiposSeleccionados,
                 pref_ucom: getArrayOrHidden(ucomManager, 'pref-ucom'),
-                pref_palabras_claves: document.getElementById('pref-palabras').value.split(',').map(s => s.trim()).filter(Boolean)
+                pref_palabras_claves: palabrasLimpias
             };
 
             try {
@@ -1319,6 +1600,8 @@ export async function inicializarVistaPerfil(user) {
 
                 if (res.status === 'ok') {
                     mostrarMensaje(res.mensaje, 'exito');
+                    if (boxSugerencia) boxSugerencia.style.display = 'none';
+                    document.getElementById('pref-palabras').value = (res.palabras_sanitizadas || palabrasLimpias).join(', ');
                 } else {
                     mostrarMensaje(`No se pudo guardar: ${res.mensaje}`, 'error');
                 }
@@ -1654,3 +1937,26 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
         });
     }, 1200);
 }
+
+// ==========================================================================
+// 9. FUNCIÓN GLOBAL DE CONTROL DE PESTAÑAS
+// ==========================================================================
+export function cambiarPestana(event, tabId) {
+    document.querySelectorAll('.profile-menu-btn').forEach((btn) => {
+        btn.classList.remove('active');
+    });
+
+    document.querySelectorAll('.tab-content-panel').forEach((panel) => {
+        panel.classList.remove('active');
+    });
+
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
+
+    const target = document.getElementById(tabId);
+    if (target) {
+        target.classList.add('active');
+    }
+}
+window.cambiarPestana = cambiarPestana;
