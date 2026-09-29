@@ -50,7 +50,7 @@ let ucomData = null;
 let modoModalTerritorio = 'cobertura';
 
 // ==========================================================================
-// 1. CÁLCULO CENTRALIZADO Y SINCRONIZADO DE PROGRESO
+// 1. CÁLCULO DE PROGRESO DE PERFIL
 // ==========================================================================
 export function calcularMetricasPerfil(dataObj = null) {
     let suscriptorChecks = [];
@@ -259,7 +259,7 @@ class TagManager {
 }
 
 // ==========================================================================
-// 3. ÁRBOLES JERÁRQUICOS (COBERTURA, PRODUCTOS ONU, UCOM)
+// 3. ÁRBOLES JERÁRQUICOS (TERRITORIO, PRODUCTOS, UCOM)
 // ==========================================================================
 async function setupTerritoryTree() {
     const openBtnCobertura = document.getElementById('btn-ajustar-cobertura');
@@ -776,9 +776,6 @@ async function setupProductsTree() {
     });
 }
 
-// ==========================================================================
-// ÁRBOL DE ENTIDADES PÚBLICAS Y UNIDADES DE COMPRA (UCOM)
-// ==========================================================================
 async function setupUcomTree() {
     const openBtn = document.getElementById('btn-ajustar-ucom');
     const modal = document.getElementById('ucom-modal');
@@ -1160,7 +1157,7 @@ function setupLogoutButton() {
 }
 
 // ==========================================================================
-// 5. FUNCIONES DE APOYO PARA FORMULARIO DE EMPRESA
+// 5. BLOQUEO Y CONTROL DE ESTADOS DE FORMULARIO DE EMPRESA
 // ==========================================================================
 function setFieldState(elementId, value, forceEditable = false) {
     const input = document.getElementById(elementId);
@@ -1171,7 +1168,6 @@ function setFieldState(elementId, value, forceEditable = false) {
 
     const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
 
-    // El campo de iniciales SIEMPRE se mantiene como solo lectura (bloqueado)
     if (elementId === 'empresa-iniciales') {
         input.readOnly = true;
         input.style.backgroundColor = '#f1f5f9';
@@ -1184,7 +1180,7 @@ function setFieldState(elementId, value, forceEditable = false) {
         input.readOnly = true;
         input.style.backgroundColor = '#f1f5f9';
         input.style.cursor = 'not-allowed';
-        input.title = 'Dato registrado oficialmente en el sistema. No modificable.';
+        input.title = 'Dato consolidado en el sistema.';
 
         if (elementId === 'empresa-comuna-label' && btnComuna) {
             btnComuna.disabled = true;
@@ -1222,7 +1218,6 @@ function limpiarCamposEmpresa() {
         setFieldState(id, '', true);
     });
 
-    // Mantener iniciales vacías pero siempre bloqueadas
     setFieldState('empresa-iniciales', '');
 
     const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
@@ -1234,48 +1229,124 @@ function limpiarCamposEmpresa() {
     }
 }
 
-function bloquearFormularioEmpresa() {
-    const camposEmpresa = [
+// 🔒 FUNCIÓN CENTRALIZADA DE PERMISOS: Administrador edita campos modificables, Asociado solo lectura
+function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', yaVinculada = true) {
+    const camposTributariosFijos = [
         'empresa-rut',
         'empresa-fantasia',
         'empresa-razon-social',
+        'empresa-iniciales'
+    ];
+
+    const camposModificables = [
         'empresa-contacto-nombre',
         'empresa-correo',
-        'empresa-iniciales',
         'empresa-telefono',
-        'empresa-comuna',
         'empresa-comuna-label',
         'empresa-direccion'
     ];
 
-    camposEmpresa.forEach(id => {
+    // 1. Datos tributarios siempre quedan bloqueados
+    camposTributariosFijos.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.readOnly = true;
             el.style.backgroundColor = '#f1f5f9';
             el.style.cursor = 'not-allowed';
-            el.title = 'Información consolidada y registrada en el sistema.';
+            el.title = 'Dato tributario consolidado.';
         }
     });
 
-    const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
-    if (btnComuna) {
-        btnComuna.disabled = true;
-        btnComuna.style.opacity = '0.5';
-        btnComuna.style.cursor = 'not-allowed';
-        btnComuna.style.pointerEvents = 'none';
-    }
-
     const btnBuscar = document.getElementById('btn-buscar-rut-empresa');
-    if (btnBuscar) {
+    if (btnBuscar && yaVinculada) {
         btnBuscar.disabled = true;
         btnBuscar.style.opacity = '0.5';
         btnBuscar.style.cursor = 'not-allowed';
     }
 
+    const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
+    const inputComunaLabel = document.getElementById('empresa-comuna-label');
     const btnGuardar = document.getElementById('btn-guardar-empresa');
-    if (btnGuardar) {
-        btnGuardar.style.display = 'none';
+
+    if (esDueno) {
+        // 🟢 ADMINISTRADOR: Habilitar campos modificables
+        camposModificables.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && id !== 'empresa-comuna-label') {
+                el.readOnly = false;
+                el.style.backgroundColor = '#ffffff';
+                el.style.cursor = 'text';
+                el.title = 'Puedes actualizar esta información.';
+            }
+        });
+
+        // Selector territorial de comuna habilitado para el Administrador
+        if (btnComuna) {
+            btnComuna.disabled = false;
+            btnComuna.style.opacity = '1';
+            btnComuna.style.cursor = 'pointer';
+            btnComuna.style.pointerEvents = 'auto';
+        }
+        if (inputComunaLabel) {
+            inputComunaLabel.style.backgroundColor = '#ffffff';
+            inputComunaLabel.style.cursor = 'pointer';
+        }
+
+        // Botón visible para guardar cambios
+        if (btnGuardar) {
+            btnGuardar.style.display = 'inline-flex';
+            btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Cambios Empresa';
+            btnGuardar.className = 'btn btn-primary';
+        }
+
+    } else {
+        // 🟡 CUENTA ASOCIADA: Solo lectura total
+        camposModificables.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.readOnly = true;
+                el.style.backgroundColor = '#f1f5f9';
+                el.style.cursor = 'not-allowed';
+                el.title = 'Cuenta secundaria: Solo el administrador puede modificar la información.';
+            }
+        });
+
+        if (btnComuna) {
+            btnComuna.disabled = true;
+            btnComuna.style.opacity = '0.5';
+            btnComuna.style.cursor = 'not-allowed';
+            btnComuna.style.pointerEvents = 'none';
+        }
+        if (inputComunaLabel) {
+            inputComunaLabel.style.backgroundColor = '#f1f5f9';
+            inputComunaLabel.style.cursor = 'not-allowed';
+        }
+
+        // Si ya está vinculada, se oculta; si está buscando unirse, se muestra el botón de alianza
+        if (btnGuardar) {
+            if (!yaVinculada) {
+                btnGuardar.style.display = 'inline-flex';
+                btnGuardar.innerHTML = '<i class="fa-solid fa-link"></i> Vincularme a esta Empresa';
+                btnGuardar.className = 'btn btn-primary';
+            } else {
+                btnGuardar.style.display = 'none';
+            }
+        }
+    }
+
+    const badgeTributaria = document.querySelector('#tab-empresa .dash-badge');
+    if (badgeTributaria) {
+        if (!esDueno) {
+            badgeTributaria.textContent = 'Cuenta Asociada (Solo Lectura)';
+            badgeTributaria.style.background = '#fef3c7';
+            badgeTributaria.style.color = '#92400e';
+            badgeTributaria.title = `Administrado por: ${correoDueno || 'Titular de la empresa'}`;
+        } else {
+            badgeTributaria.textContent = 'Administrador de Empresa';
+            badgeTributaria.style.background = 'rgba(30, 196, 152, 0.15)';
+            badgeTributaria.style.color = 'var(--dark-green)';
+            badgeTributaria.title = 'Tienes permisos de edición para los campos modificables.';
+        }
     }
 }
 
@@ -1338,7 +1409,111 @@ function sanitizarPalabraClave(texto) {
 }
 
 // ==========================================================================
-// 6. INICIALIZADOR DE LA VISTA PERFIL
+// 6. EVALUACIÓN Y MODAL DE COMPLETITUD (< 90%)
+// ==========================================================================
+const KEY_OMITIR_MODAL = 'smartbids_omitir_modal_perfil_hasta';
+
+export async function evaluarYMostrarModalPerfil(datosPerfil) {
+    const modal = document.getElementById('modal-completar-perfil');
+    if (!modal) return;
+
+    const currentPath = window.location.pathname.toLowerCase();
+    const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
+    if (!esRutaObjetivo) return;
+
+    let UMBRAL_CONFIGURADO = 90;
+    let DIAS_CONFIGURADOS = 7;
+
+    try {
+        const respParam = await fetch('/api/parametros/alerta-perfil/');
+        if (respParam.ok) {
+            const resParam = await respParam.json();
+            if (resParam.status === 'ok' && resParam.datos) {
+                UMBRAL_CONFIGURADO = Number(resParam.datos.porcentaje_minimo) || 90;
+                DIAS_CONFIGURADOS = Number(resParam.datos.dias_reaparicion) || 7;
+            }
+        }
+    } catch (e) {
+        console.warn('[SmartBids] Parámetros no disponibles, usando respaldo.');
+    }
+
+    const txtUmbralReq = document.getElementById('modal-umbral-requerido-texto');
+    if (txtUmbralReq) {
+        txtUmbralReq.textContent = `${UMBRAL_CONFIGURADO}%`;
+    }
+
+    const omitidoHasta = localStorage.getItem(KEY_OMITIR_MODAL);
+    if (omitidoHasta && Date.now() < Number(omitidoHasta)) {
+        return;
+    }
+
+    let data = datosPerfil;
+    if (!data) {
+        const uid = localStorage.getItem('smartbids_uid') || auth.currentUser?.uid;
+        if (!uid) return;
+
+        try {
+            const respPerfil = await fetch('/api/obtener-perfil/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid })
+            });
+            if (respPerfil.ok) {
+                const resData = await respPerfil.json();
+                if (resData.status === 'ok') {
+                    data = resData.datos;
+                }
+            }
+        } catch (err) {
+            return;
+        }
+    }
+
+    if (!data) return;
+
+    const { porcentaje, faltantes } = calcularMetricasPerfil(data);
+    if (porcentaje >= UMBRAL_CONFIGURADO) return;
+
+    const txtPorcentaje = document.getElementById('modal-porcentaje-texto');
+    const barra = document.getElementById('modal-barra-relleno');
+    const listaUl = document.getElementById('lista-faltantes-perfil');
+
+    if (txtPorcentaje) txtPorcentaje.textContent = `${porcentaje}%`;
+    if (barra) {
+        barra.style.width = `${porcentaje}%`;
+        barra.style.backgroundColor = porcentaje < 40 ? '#e53e3e' : '#dd6b20';
+    }
+
+    if (listaUl) {
+        listaUl.innerHTML = faltantes.slice(0, 4).map(f => `<li>${f}</li>`).join('');
+        if (faltantes.length > 4) {
+            listaUl.innerHTML += `<li>Y ${faltantes.length - 4} dato(s) adicional(es)...</li>`;
+        }
+    }
+
+    const cerrarModal = (dias = DIAS_CONFIGURADOS) => {
+        const tiempoMilisegundos = dias * 24 * 60 * 60 * 1000;
+        localStorage.setItem(KEY_OMITIR_MODAL, String(Date.now() + tiempoMilisegundos));
+        modal.style.display = 'none';
+    };
+
+    const btnOmitir = document.getElementById('btn-omitir-completar-perfil');
+    const btnX = document.getElementById('btn-cerrar-x-perfil');
+
+    if (btnOmitir && !btnOmitir.dataset.bound) {
+        btnOmitir.dataset.bound = 'true';
+        btnOmitir.addEventListener('click', () => cerrarModal(DIAS_CONFIGURADOS));
+    }
+    if (btnX && !btnX.dataset.bound) {
+        btnX.dataset.bound = 'true';
+        btnX.addEventListener('click', () => cerrarModal(3));
+    }
+
+    modal.style.display = 'flex';
+}
+
+// ==========================================================================
+// 7. INICIALIZADOR DE LA VISTA
 // ==========================================================================
 export async function inicializarVistaPerfil(user) {
     if (!comunasManager) {
@@ -1379,7 +1554,6 @@ export async function inicializarVistaPerfil(user) {
         }
     });
 
-    // El campo de iniciales es permanentemente bloqueado
     const inputEmpresaInic = document.getElementById('empresa-iniciales');
     if (inputEmpresaInic) {
         inputEmpresaInic.readOnly = true;
@@ -1387,7 +1561,6 @@ export async function inicializarVistaPerfil(user) {
         inputEmpresaInic.style.cursor = 'not-allowed';
     }
 
-    // Escuchadores de modificación para activar alerta
     const fDatos = document.getElementById('form-perfil-datos');
     if (fDatos && fDatos.dataset.listenerAttached !== 'true') {
         fDatos.dataset.listenerAttached = 'true';
@@ -1428,61 +1601,6 @@ export async function inicializarVistaPerfil(user) {
         });
     });
 
-    // Sugeridor ortográfico reactivo
-    const inputPalabras = document.getElementById('pref-palabras');
-    const boxSugerencia = document.getElementById('palabras-sugerencia-box');
-    const txtSugerencia = document.getElementById('palabra-sugerida-texto');
-
-    if (inputPalabras && boxSugerencia && txtSugerencia && inputPalabras.dataset.suggestBound !== 'true') {
-        inputPalabras.dataset.suggestBound = 'true';
-        let debounceSugerencia = null;
-
-        inputPalabras.addEventListener('input', () => {
-            clearTimeout(debounceSugerencia);
-            const textoCompleto = inputPalabras.value;
-            const partes = textoCompleto.split(',');
-            const palabraActual = partes[partes.length - 1].trim();
-
-            if (palabraActual.length < 3) {
-                boxSugerencia.style.display = 'none';
-                return;
-            }
-
-            debounceSugerencia = setTimeout(async () => {
-                try {
-                    const resp = await fetch(`/api/catalogos-preferencias/?tipo=sugerir_palabra&q=${encodeURIComponent(palabraActual)}`);
-                    const data = await resp.json();
-
-                    if (data.status === 'ok' && data.sugerencia) {
-                        const sug = String(data.sugerencia).toLowerCase();
-                        if (sug !== palabraActual.toLowerCase()) {
-                            txtSugerencia.textContent = sug;
-                            boxSugerencia.style.display = 'block';
-                            return;
-                        }
-                    }
-                    boxSugerencia.style.display = 'none';
-                } catch (e) {
-                    console.error('[SmartBids] Error en sugeridor ortográfico:', e);
-                }
-            }, 250);
-        });
-
-        txtSugerencia.addEventListener('click', () => {
-            const sugWord = txtSugerencia.textContent.trim();
-            if (!sugWord) return;
-
-            const partes = inputPalabras.value.split(',');
-            partes[partes.length - 1] = ' ' + sugWord;
-            
-            inputPalabras.value = partes.map(p => p.trim()).filter(Boolean).join(', ') + ', ';
-            boxSugerencia.style.display = 'none';
-            inputPalabras.focus();
-            registrarCambio('filtros');
-            actualizarPorcentajePerfil();
-        });
-    }
-
     const targetUid = user?.uid || auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
     if (!targetUid) return;
 
@@ -1498,6 +1616,7 @@ export async function inicializarVistaPerfil(user) {
             const data = resData.datos;
             const emp = data.empresa || {};
             const pref = data.preferencias || {};
+            const asoc = data.asociacion || { es_dueno: true };
 
             const n1 = data.sus_nombre1 || '';
             const n2 = data.sus_nombre2 || '';
@@ -1549,20 +1668,17 @@ export async function inicializarVistaPerfil(user) {
             setVal('empresa-correo', emp.emp_contacto_correo);
             setVal('empresa-telefono', emp.emp_contacto_telefono);
 
-            // Cargar iniciales bloqueadas
             setFieldState('empresa-iniciales', emp.emp_iniciales);
 
             const codComuna = emp.emp_codigo_comuna || '';
             const nomComuna = emp.emp_nombre_comuna || '';
-            const tieneComunaPrevia = Boolean(codComuna);
-
-            setFieldState('empresa-comuna', codComuna, !tieneComunaPrevia);
-            setFieldState('empresa-comuna-label', nomComuna ? `${nomComuna} (${codComuna})` : (codComuna ? `Comuna ${codComuna}` : ''), !tieneComunaPrevia);
-
+            setVal('empresa-comuna', codComuna);
+            setVal('empresa-comuna-label', nomComuna ? `${nomComuna} (${codComuna})` : (codComuna ? `Comuna ${codComuna}` : ''));
             setVal('empresa-direccion', emp.emp_direccion);
 
+            // 🔒 APLICAR PERMISOS DINÁMICOS: Administrador edita modificables, Asociado solo lectura
             if (emp.emp_rut && String(emp.emp_rut).trim() !== '') {
-                bloquearFormularioEmpresa();
+                configurarPermisosFormularioEmpresa(asoc.es_dueno, asoc.correo_dueno, true);
             }
 
             comunasManager.setItems(pref.comunas_detalle || []);
@@ -1674,7 +1790,6 @@ export async function inicializarVistaPerfil(user) {
                 if (res.status === 'ok') {
                     limpiarCambio('filtros');
                     mostrarMensaje(res.mensaje, 'exito');
-                    if (boxSugerencia) boxSugerencia.style.display = 'none';
                     document.getElementById('pref-palabras').value = (res.palabras_sanitizadas || palabrasLimpias).join(', ');
                 } else {
                     mostrarMensaje(`No se pudo guardar: ${res.mensaje}`, 'error');
@@ -1691,7 +1806,7 @@ export async function inicializarVistaPerfil(user) {
 }
 
 // ==========================================================================
-// 7. EVENTOS DE EMPRESA Y MODAL DE CONFIRMACIÓN
+// 8. EVENTOS DE EMPRESA Y MODAL DE CONFIRMACIÓN
 // ==========================================================================
 const btnBuscarRut = document.getElementById('btn-buscar-rut-empresa');
 const inputRutEmpresa = document.getElementById('empresa-rut');
@@ -1719,13 +1834,10 @@ if (btnBuscarRut && inputRutEmpresa) {
                 const datos = res.datos;
 
                 inputRutEmpresa.value = datos.emp_rut || rutValor;
-                inputRutEmpresa.readOnly = false;
-                inputRutEmpresa.style.backgroundColor = '#ffffff';
-                inputRutEmpresa.style.cursor = 'text';
 
                 setFieldState('empresa-fantasia', datos.emp_nombre_fantasia);
                 setFieldState('empresa-razon-social', datos.emp_razon_social);
-                setFieldState('empresa-contacto-nombre', '');
+                setFieldState('empresa-contacto-nombre', datos.emp_contacto_nombre || '');
                 setFieldState('empresa-direccion', datos.emp_direccion);
 
                 const codCom = (datos.emp_codigo_comuna || '').trim();
@@ -1746,10 +1858,26 @@ if (btnBuscarRut && inputRutEmpresa) {
                     autogenerarInicialesEmpresa();
                 }
 
-                registrarCambio('empresa');
-                mostrarMensaje('Datos de empresa cargados con éxito.', 'exito');
+                // Si la empresa ya está registrada en la base de datos por otra cuenta:
+                if (res.ya_registrada) {
+                    configurarPermisosFormularioEmpresa(false, res.correo_dueno, false);
+                    mostrarMensaje(`Empresa existente encontrada. Puedes vincularte a ella con el botón inferior.`, 'alerta');
+                } else {
+                    const btnGuardar = document.getElementById('btn-guardar-empresa');
+                    if (btnGuardar) {
+                        btnGuardar.style.display = 'inline-flex';
+                        btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                    }
+                    registrarCambio('empresa');
+                    mostrarMensaje('Datos de empresa cargados con éxito.', 'exito');
+                }
             } else {
                 limpiarCamposEmpresa();
+                const btnGuardar = document.getElementById('btn-guardar-empresa');
+                if (btnGuardar) {
+                    btnGuardar.style.display = 'inline-flex';
+                    btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                }
                 registrarCambio('empresa');
                 mostrarMensaje(
                     res.mensaje || 'Empresa no encontrada en los registros. Puedes ingresar los datos manualmente.',
@@ -1869,8 +1997,9 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
 
             if (res.status === 'ok') {
                 limpiarCambio('empresa');
-                mostrarMensaje(res.mensaje || 'Empresa guardada con éxito.', 'exito');
-                bloquearFormularioEmpresa();
+                mostrarMensaje(res.mensaje || 'Empresa guardada y vinculada con éxito.', 'exito');
+                // Aplica permisos tras guardar
+                configurarPermisosFormularioEmpresa(res.es_dueno !== false, '', true);
             } else {
                 mostrarMensaje(res.mensaje || 'Error al guardar la empresa.', 'error');
             }
@@ -1885,7 +2014,7 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
 }
 
 // ==========================================================================
-// 8. ESCUCHA DE SESIÓN Y MODAL DE COMPLETITUD
+// 9. ESCUCHA DE SESIÓN
 // ==========================================================================
 auth.onAuthStateChanged((user) => {
     if (user) {
@@ -1895,131 +2024,14 @@ auth.onAuthStateChanged((user) => {
         if (document.getElementById('form-perfil-preferencias')) {
             inicializarVistaPerfil(user);
         }
-
-        const currentPath = window.location.pathname.toLowerCase();
-        if (currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard')) {
-            evaluarYMostrarModalPerfil();
-        }
     }
 });
 
-const KEY_OMITIR_MODAL = 'smartbids_omitir_modal_perfil_hasta';
-
-export async function evaluarYMostrarModalPerfil(datosPerfil) {
-    const modal = document.getElementById('modal-completar-perfil');
-    if (!modal) return;
-
-    const currentPath = window.location.pathname.toLowerCase();
-    const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
-    if (!esRutaObjetivo) return;
-
-    let UMBRAL_CONFIGURADO = 90;
-    let DIAS_CONFIGURADOS = 7;
-
-    try {
-        const respParam = await fetch('/api/parametros/alerta-perfil/');
-        const resParam = await respParam.json();
-        if (resParam.status === 'ok' && resParam.datos) {
-            UMBRAL_CONFIGURADO = Number(resParam.datos.porcentaje_minimo) || 90;
-            DIAS_CONFIGURADOS = Number(resParam.datos.dias_reaparicion) || 7;
-        }
-    } catch (e) {
-        console.warn('[SmartBids] No se pudieron obtener los parámetros globales de BD, usando respaldo.');
-    }
-
-    const txtUmbralReq = document.getElementById('modal-umbral-requerido-texto');
-    if (txtUmbralReq) {
-        txtUmbralReq.textContent = `${UMBRAL_CONFIGURADO}%`;
-    }
-
-    const omitidoHasta = localStorage.getItem(KEY_OMITIR_MODAL);
-    if (omitidoHasta && Date.now() < Number(omitidoHasta)) {
-        return;
-    }
-
-    let data = datosPerfil;
-    if (!data) {
-        const uid = localStorage.getItem('smartbids_uid') || auth.currentUser?.uid;
-        if (!uid) return;
-
-        try {
-            const respPerfil = await fetch('/api/obtener-perfil/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uid })
-            });
-            const resData = await respPerfil.json();
-            if (resData.status === 'ok') {
-                data = resData.datos;
-            }
-        } catch (err) {
-            console.error('[SmartBids] Error al recuperar perfil para modal:', err);
-            return;
-        }
-    }
-
-    if (!data) return;
-
-    const { porcentaje, faltantes } = calcularMetricasPerfil(data);
-
-    if (porcentaje >= UMBRAL_CONFIGURADO) return;
-
-    const txtPorcentaje = document.getElementById('modal-porcentaje-texto');
-    const barra = document.getElementById('modal-barra-relleno');
-    const listaUl = document.getElementById('lista-faltantes-perfil');
-
-    if (txtPorcentaje) txtPorcentaje.textContent = `${porcentaje}%`;
-    if (barra) {
-        barra.style.width = `${porcentaje}%`;
-        barra.style.backgroundColor = porcentaje < 40 ? '#e53e3e' : '#dd6b20';
-    }
-
-    if (listaUl) {
-        listaUl.innerHTML = faltantes.slice(0, 4).map(f => `<li>${f}</li>`).join('');
-        if (faltantes.length > 4) {
-            listaUl.innerHTML += `<li>Y ${faltantes.length - 4} dato(s) adicional(es)...</li>`;
-        }
-    }
-
-    const cerrarModal = (dias = DIAS_CONFIGURADOS) => {
-        const tiempoMilisegundos = dias * 24 * 60 * 60 * 1000;
-        localStorage.setItem(KEY_OMITIR_MODAL, String(Date.now() + tiempoMilisegundos));
-
-        modal.classList.remove('active');
-        modal.classList.add('closing');
-        setTimeout(() => {
-            modal.classList.remove('closing');
-            modal.style.display = 'none';
-        }, 450);
-    };
-
-    const btnOmitir = document.getElementById('btn-omitir-completar-perfil');
-    const btnX = document.getElementById('btn-cerrar-x-perfil');
-
-    if (btnOmitir && !btnOmitir.dataset.bound) {
-        btnOmitir.dataset.bound = 'true';
-        btnOmitir.addEventListener('click', () => cerrarModal(DIAS_CONFIGURADOS));
-    }
-
-    if (btnX && !btnX.dataset.bound) {
-        btnX.dataset.bound = 'true';
-        btnX.addEventListener('click', () => cerrarModal(Math.max(1, Math.round(DIAS_CONFIGURADOS / 2))));
-    }
-
-    setTimeout(() => {
-        modal.style.display = 'flex';
-        modal.classList.remove('closing');
-        requestAnimationFrame(() => {
-            modal.classList.add('active');
-        });
-    }, 1200);
-}
-
 // ==========================================================================
-// 9. GESTIÓN DEL MODAL DE CONFIRMACIÓN DE SALIDA (ESTILO SISTEMA)
+// 10. GESTIÓN DEL MODAL DE SALIDA DE PESTAÑAS
 // ==========================================================================
 let pestanaDestinoPendiente = null;
-let accionSalidaPendiente = null; // 'tab' o 'logout'
+let accionSalidaPendiente = null;
 
 function abrirModalSalidaPestana(tipoAccion, nombreSeccion, targetTabId = null) {
     const modal = document.getElementById('modal-confirmar-salida-pestana');
@@ -2052,7 +2064,6 @@ function cerrarModalSalidaPestana() {
     }, 350);
 }
 
-// Eventos de los botones del modal de salida
 document.addEventListener('DOMContentLoaded', () => {
     const btnGuardarModal = document.getElementById('btn-guardar-cambios-pestana');
     const btnDescartarModal = document.getElementById('btn-descartar-cambios-pestana');
@@ -2065,7 +2076,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const pestanaActiva = document.querySelector('.tab-content-panel.active');
             const idActivo = pestanaActiva ? pestanaActiva.id : '';
 
-            // Guarda la pestaña activa actual
             if (idActivo === 'tab-info') {
                 const f = document.getElementById('form-perfil-datos');
                 if (f) f.requestSubmit();
@@ -2077,7 +2087,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (f) f.requestSubmit();
             }
 
-            // Si la acción era cambiar de pestaña, cambia después de enviar
             if (accionSalidaPendiente === 'tab' && pestanaDestinoPendiente) {
                 setTimeout(() => {
                     aplicarCambioPestanaDirecto(pestanaDestinoPendiente);
@@ -2094,7 +2103,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const pestanaActiva = document.querySelector('.tab-content-panel.active');
             const idActivo = pestanaActiva ? pestanaActiva.id : '';
 
-            // Descartar cambios de la pestaña activa
             if (idActivo === 'tab-info') limpiarCambio('info');
             if (idActivo === 'tab-empresa') limpiarCambio('empresa');
             if (idActivo === 'tab-filtros') limpiarCambio('filtros');
@@ -2133,7 +2141,7 @@ function aplicarCambioPestanaDirecto(tabId) {
 }
 
 // ==========================================================================
-// 10. FUNCIÓN GLOBAL DE CONTROL DE PESTAÑAS (USA EL MODAL EN LUGAR DE CHROME)
+// 11. FUNCIÓN GLOBAL DE CONTROL DE PESTAÑAS
 // ==========================================================================
 export function cambiarPestana(event, tabId) {
     const pestanaActiva = document.querySelector('.tab-content-panel.active');
@@ -2155,7 +2163,6 @@ export function cambiarPestana(event, tabId) {
         }
 
         if (hayCambiosEnPestanaActual) {
-            // Abre el modal visual estilizado en lugar del alert nativo del navegador
             abrirModalSalidaPestana('tab', nombreSeccion, tabId);
             return;
         }

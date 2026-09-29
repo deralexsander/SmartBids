@@ -114,7 +114,6 @@ def catalogos_preferencias(request):
     except ValueError:
         limite = 40
 
-    # 1. SUGERIDOR ORTOGRÁFICO
     if tipo == 'sugerir_palabra':
         palabra_raw = query.strip()
         palabra_limpia = normalizar_cadena_simple(palabra_raw)
@@ -143,7 +142,6 @@ def catalogos_preferencias(request):
 
         return JsonResponse({'status': 'ok', 'sugerencia': sugerencia})
 
-    # 2. ÁRBOL TERRITORIO
     if tipo == 'territorio':
         regiones_query = list(Region.objects.values('codigo_region', 'nombre_region'))
         provincias = list(
@@ -177,7 +175,6 @@ def catalogos_preferencias(request):
             'comunas': comunas
         })
 
-    # 3. ÁRBOL PRODUCTOS ONU
     if tipo == 'productos_arbol':
         try:
             q_filtro = request.GET.get('q', '').strip()
@@ -221,12 +218,10 @@ def catalogos_preferencias(request):
             logger.error(f"[SmartBids] Error al generar árbol de productos: {str(e)}")
             return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
 
-    # 4. ÁRBOL UNIDADES DE COMPRA: SECTOR -> ORGANISMO -> UCOM (SEGURO Y ROBUSTO)
     if tipo == 'ucom_arbol':
         try:
             q_filtro = request.GET.get('q', '').strip()
 
-            # Leer unidades de compra con campos dinámicos
             ucom_cols = [f.name for f in UnidadCompra._meta.concrete_fields]
             campo_org_ucom = None
             for c in ['codigo_organismo', 'codigo_organismo_id', 'org_codigo', 'ucom_codigo_organismo']:
@@ -246,7 +241,6 @@ def catalogos_preferencias(request):
 
             ucom_list = list(ucom_qs.values(*campos_ucom))
 
-            # Leer Organismos
             org_cols = [f.name for f in Organismo._meta.concrete_fields]
             campo_sec_org = None
             for c in ['org_codigo_sector', 'org_codigo_sector_id', 'codigo_sector', 'codigo_sector_id']:
@@ -269,14 +263,12 @@ def catalogos_preferencias(request):
                     'codigo_sector': sec_val_str
                 }
 
-            # Leer Sectores
             sec_map = {}
             for s in Sector.objects.values('codigo_sector', 'nombre_sector'):
                 sec_map[str(s['codigo_sector']).strip()] = (s.get('nombre_sector') or '').strip()
 
             sectores_dict = {}
 
-            # Si no hay unidades o vienen sueltas, cargar organismos maestros
             if not ucom_list:
                 for org_id, org_info in org_map.items():
                     sec_key = org_info['codigo_sector']
@@ -347,31 +339,7 @@ def catalogos_preferencias(request):
             logger.error(f"[SmartBids] Error al generar árbol de unidades de compra: {str(e)}")
             return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
 
-    # Respaldos catalogos
-    if tipo == 'comuna':
-        resultados = Comuna.objects.filter(nombre_comuna__icontains=query).values(
-            'codigo_comuna', 'nombre_comuna'
-        )[:limite]
-    elif tipo == 'producto':
-        resultados = Producto.objects.filter(
-            Q(descripcion__icontains=query) | Q(codigo_producto__icontains=query)
-        ).values('codigo_producto', 'descripcion')[:limite]
-    elif tipo == 'unidad_compra':
-        resultados = UnidadCompra.objects.filter(ucom_descripcion__icontains=query).values(
-            'codigo_unidad_compra', 'ucom_descripcion'
-        )[:limite]
-    elif tipo == 'organismo':
-        resultados = Organismo.objects.filter(org_nombre__icontains=query).values(
-            'codigo_organismo', 'org_nombre', 'org_codigo_sector_id'
-        )[:limite]
-    elif tipo == 'sector':
-        resultados = Sector.objects.filter(nombre_sector__icontains=query).values(
-            'codigo_sector', 'nombre_sector'
-        )[:limite]
-    else:
-        return JsonResponse({'status': 'error', 'mensaje': 'Catálogo no válido.'}, status=400)
-
-    return JsonResponse({'resultados': list(resultados)})
+    return JsonResponse({'resultados': []})
 
 
 @csrf_exempt
@@ -392,6 +360,21 @@ def obtener_perfil_suscriptor(request):
 
         pref = Preferencia.objects.filter(id_suscriptor=suscriptor).first()
         emp = suscriptor.sus_rut_empresa
+
+        # ---------------------------------------------------------
+        # DETERMINAR SI ES CUENTA DUEÑA (ADMINISTRADOR) O ASOCIADA
+        # ---------------------------------------------------------
+        es_dueno = True
+        correo_dueno = ''
+        if emp and emp.emp_rut:
+            primer_suscriptor = Suscriptor.objects.filter(sus_rut_empresa=emp).order_by('fecha_registro').first()
+            if primer_suscriptor:
+                if primer_suscriptor.id_suscriptor != suscriptor.id_suscriptor:
+                    es_dueno = False
+                    correo_dueno = emp.emp_contacto_correo
+                else:
+                    es_dueno = True
+                    correo_dueno = emp.emp_contacto_correo
 
         def to_list(val):
             if isinstance(val, list):
@@ -446,6 +429,10 @@ def obtener_perfil_suscriptor(request):
                 'token_sesion': getattr(suscriptor, 'token_sesion', '') or '',
                 'fecha_registro': suscriptor.fecha_registro.isoformat() if suscriptor.fecha_registro else None,
                 'fecha_actualizacion': suscriptor.fecha_actualizacion.isoformat() if suscriptor.fecha_actualizacion else None,
+                'asociacion': {
+                    'es_dueno': es_dueno,
+                    'correo_dueno': correo_dueno
+                },
                 'empresa': {
                     'emp_rut': emp.emp_rut if emp else '',
                     'emp_fantasia': emp.emp_nombre_fantasia if emp else '',
@@ -588,6 +575,22 @@ def actualizar_empresa_suscriptor(request):
         if not rut:
             return JsonResponse({'status': 'error', 'mensaje': 'El RUT es obligatorio.'}, status=400)
 
+        empresa_existente = Empresa.objects.filter(emp_rut=rut).first()
+
+        # Si la empresa ya existe, validar si es cuenta asociada (no dueña)
+        if empresa_existente:
+            primer_suscriptor = Suscriptor.objects.filter(sus_rut_empresa=empresa_existente).order_by('fecha_registro').first()
+            if primer_suscriptor and primer_suscriptor.id_suscriptor != suscriptor.id_suscriptor:
+                # La cuenta secundaria solo se vincula a la empresa existente sin alterar sus datos
+                suscriptor.sus_rut_empresa = empresa_existente
+                suscriptor.save(update_fields=['sus_rut_empresa'])
+                return JsonResponse({
+                    'status': 'ok',
+                    'es_dueno': False,
+                    'mensaje': f'Te has vinculado a la empresa. Administrada por {empresa_existente.emp_contacto_correo}. Solo lectura.'
+                })
+
+        # Si es el primer usuario o la cuenta administradora oficial, guarda y actualiza los campos permitidos
         empresa, _ = Empresa.objects.update_or_create(
             emp_rut=rut,
             defaults={
@@ -604,7 +607,11 @@ def actualizar_empresa_suscriptor(request):
 
         suscriptor.sus_rut_empresa = empresa
         suscriptor.save(update_fields=['sus_rut_empresa'])
-        return JsonResponse({'status': 'ok', 'mensaje': 'Datos de la empresa actualizados correctamente.'})
+        return JsonResponse({
+            'status': 'ok',
+            'es_dueno': True,
+            'mensaje': 'Datos de la empresa actualizados correctamente.'
+        })
     except Exception as e:
         logger.error(f"[SmartBids] Error al actualizar empresa: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': f'Error al actualizar empresa: {str(e)}'}, status=500)
@@ -624,6 +631,34 @@ def buscar_empresa_por_rut(request):
 
         rut_sin_puntos = rut_raw.replace('.', '').strip()
 
+        # 1. Comprobar si ya existe en la tabla core.empresa
+        emp_existente = Empresa.objects.filter(emp_rut__iexact=rut_raw).first() or \
+                        Empresa.objects.filter(emp_rut__iexact=rut_sin_puntos).first()
+
+        if emp_existente:
+            cod_c = getattr(emp_existente, 'emp_codigo_comuna_id', getattr(emp_existente, 'emp_codigo_comuna', '')) or ''
+            com_obj = Comuna.objects.filter(codigo_comuna=cod_c).first()
+
+            return JsonResponse({
+                'status': 'ok',
+                'ya_registrada': True,
+                'correo_dueno': emp_existente.emp_contacto_correo,
+                'datos': {
+                    'emp_rut': emp_existente.emp_rut,
+                    'emp_razon_social': emp_existente.emp_razon_social,
+                    'emp_nombre_fantasia': emp_existente.emp_nombre_fantasia,
+                    'emp_direccion': emp_existente.emp_direccion,
+                    'emp_codigo_comuna': cod_c,
+                    'emp_nombre_comuna': com_obj.nombre_comuna if com_obj else '',
+                    'emp_contacto_nombre': emp_existente.emp_contacto_nombre,
+                    'emp_contacto_correo': emp_existente.emp_contacto_correo,
+                    'emp_contacto_telefono': emp_existente.emp_contacto_telefono,
+                    'emp_iniciales': emp_existente.emp_iniciales
+                },
+                'mensaje': 'Empresa existente encontrada en la base de datos.'
+            })
+
+        # 2. Búsqueda de respaldo en catálogo de Proveedores
         filtro = (
             Q(prov_rut__iexact=rut_raw) |
             Q(prov_rut__iexact=rut_sin_puntos) |
@@ -663,6 +698,7 @@ def buscar_empresa_por_rut(request):
 
         return JsonResponse({
             'status': 'ok',
+            'ya_registrada': False,
             'datos': datos_empresa,
             'mensaje': 'Datos de la empresa obtenidos con éxito.'
         })
