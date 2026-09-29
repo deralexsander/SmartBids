@@ -107,6 +107,15 @@ def obtener_perfil_suscriptor(request):
         }
         ucom_detalle = [{'code': str(cod), 'label': mapa_ucom.get(str(cod), str(cod))} for cod in raw_ucom]
 
+        # Resolver nombre de la comuna de la empresa si existe
+        nom_comuna_emp = ''
+        cod_comuna_emp = ''
+        if emp and emp.emp_codigo_comuna:
+            cod_comuna_emp = getattr(emp, 'emp_codigo_comuna_id', getattr(emp, 'emp_codigo_comuna', '')) or ''
+            comuna_obj = Comuna.objects.filter(codigo_comuna=cod_comuna_emp).first()
+            if comuna_obj:
+                nom_comuna_emp = comuna_obj.nombre_comuna
+
         return JsonResponse({
             'status': 'ok',
             'datos': {
@@ -131,7 +140,8 @@ def obtener_perfil_suscriptor(request):
                     'emp_contacto_correo': emp.emp_contacto_correo if emp else '',
                     'emp_iniciales': emp.emp_iniciales if emp else '',
                     'emp_contacto_telefono': emp.emp_contacto_telefono if emp else '',
-                    'emp_codigo_comuna': getattr(emp, 'emp_codigo_comuna_id', getattr(emp, 'emp_codigo_comuna', '')) if emp else '',
+                    'emp_codigo_comuna': cod_comuna_emp,
+                    'emp_nombre_comuna': nom_comuna_emp,
                     'emp_direccion': emp.emp_direccion if emp else '',
                 } if emp else {},
                 'preferencias': {
@@ -150,7 +160,6 @@ def obtener_perfil_suscriptor(request):
 
 @csrf_exempt
 def actualizar_preferencias_suscriptor(request):
-    """Guarda los códigos de las preferencias en core.preferencia en PostgreSQL."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
 
@@ -220,14 +229,18 @@ def actualizar_perfil_suscriptor(request):
         suscriptor.sus_apellido2 = (data.get('sus_apellido2') or '').strip()
         suscriptor.sus_nombre_social = (data.get('sus_nombre_social') or '').strip()
         
-        iniciales = (data.get('sus_iniciales') or '').strip()
-        if not iniciales and suscriptor.sus_nombre1 and suscriptor.sus_apellido1:
-            iniciales = (suscriptor.sus_nombre1[0] + suscriptor.sus_apellido1[0]).upper()
-        suscriptor.sus_iniciales = iniciales[:5]
+        # Calcular automáticamente las iniciales en mayúsculas (máximo 5 caracteres)
+        partes = [suscriptor.sus_nombre1, suscriptor.sus_nombre2, suscriptor.sus_apellido1, suscriptor.sus_apellido2]
+        iniciales_auto = "".join([p[0].upper() for p in partes if p])[:5]
+        suscriptor.sus_iniciales = (data.get('sus_iniciales') or iniciales_auto).strip().upper()[:5]
         
         suscriptor.fecha_actualizacion = timezone.now()
         suscriptor.save()
-        return JsonResponse({'status': 'ok', 'mensaje': 'Datos del suscriptor actualizados con éxito.'})
+        return JsonResponse({
+            'status': 'ok',
+            'mensaje': 'Datos del suscriptor actualizados con éxito.',
+            'sus_iniciales': suscriptor.sus_iniciales
+        })
     except Exception as e:
         return JsonResponse({'status': 'error', 'mensaje': f'Error al actualizar: {str(e)}'}, status=500)
 
@@ -272,10 +285,6 @@ def actualizar_empresa_suscriptor(request):
 
 @csrf_exempt
 def buscar_empresa_por_rut(request):
-    """
-    Busca la empresa en catalog.proveedor por RUT considerando formatos
-    con o sin puntos y con o sin guion.
-    """
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
 
@@ -308,8 +317,10 @@ def buscar_empresa_por_rut(request):
             })
 
         codigo_comuna = ''
+        nombre_comuna = ''
         if proveedor.prov_codigo_comuna:
             codigo_comuna = getattr(proveedor.prov_codigo_comuna, 'codigo_comuna', '') or ''
+            nombre_comuna = getattr(proveedor.prov_codigo_comuna, 'nombre_comuna', '') or ''
 
         datos_empresa = {
             'emp_rut': proveedor.prov_rut or rut_raw,
@@ -317,6 +328,7 @@ def buscar_empresa_por_rut(request):
             'emp_nombre_fantasia': (proveedor.prov_nombre or '').strip(),
             'emp_direccion': (proveedor.prov_direccion or '').strip(),
             'emp_codigo_comuna': codigo_comuna,
+            'emp_nombre_comuna': nombre_comuna,
             'emp_contacto_correo': '',
             'emp_contacto_telefono': '',
             'emp_iniciales': ''

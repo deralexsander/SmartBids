@@ -188,8 +188,17 @@
                             <input type="tel" class="form-input" id="empresa-telefono" name="emp_contacto_telefono" placeholder="+56 9 ...">
                         </div>
                         <div class="form-item">
-                            <label for="empresa-comuna">Código Comuna Casa Matriz</label>
-                            <input type="text" class="form-input" id="empresa-comuna" name="emp_codigo_comuna" placeholder="Ej: 05101">
+                            <label for="empresa-comuna-label">Comuna Casa Matriz *</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <!-- Input descriptivo visible (Código + Nombre) -->
+                                <input type="text" class="form-input" id="empresa-comuna-label" placeholder="Selecciona una comuna..." readonly style="background-color: #f8fafc; cursor: pointer;">
+                                <!-- Input oculto con el código que se enviará al backend -->
+                                <input type="hidden" id="empresa-comuna" name="emp_codigo_comuna">
+                                
+                                <button type="button" class="btn btn-outline" id="btn-seleccionar-comuna-empresa" style="padding: 0.6rem 0.9rem;" title="Abrir selector de comuna">
+                                    <i class="fa-solid fa-map-location-dot"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="form-item grid-full">
                             <label for="empresa-direccion">Dirección Casa Matriz</label>

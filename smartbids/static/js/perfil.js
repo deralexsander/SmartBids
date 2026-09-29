@@ -20,9 +20,10 @@ let comunasManager = null;
 let productosManager = null;
 let ucomManager = null;
 let territoryData = null;
+let modoModalTerritorio = 'cobertura'; // 'cobertura' o 'empresa'
 
 // ==========================================================================
-// 1. CÁLCULO CENTRALIZADO Y SINCRONIZADO (14 ÍTEMS EXACTOS)
+// 1. CÁLCULO CENTRALIZADO Y SINCRONIZADO DE PROGRESO
 // ==========================================================================
 export function calcularMetricasPerfil(dataObj = null) {
     let suscriptorChecks = [];
@@ -42,7 +43,6 @@ export function calcularMetricasPerfil(dataObj = null) {
         suscriptorChecks = [checkSus1, checkSus2, checkSocial, checkInic];
 
         if (!checkSus1 || !checkSus2) faltantes.push('Nombres y apellidos del suscriptor');
-        if (!checkInic) faltantes.push('Iniciales del suscriptor');
 
         const checkRut = Boolean(emp.emp_rut?.trim());
         const checkFantasia = Boolean((emp.emp_fantasia || emp.emp_nombre_fantasia)?.trim());
@@ -79,12 +79,13 @@ export function calcularMetricasPerfil(dataObj = null) {
 
     } else {
         const checkVal = (id) => Boolean(document.getElementById(id)?.value?.trim());
+        const avatarInitials = document.getElementById('profile-initials')?.textContent?.replace('--', '').trim();
 
         suscriptorChecks = [
             checkVal('profile-nombre1'),
             checkVal('profile-apellido1'),
             checkVal('profile-nombre-social') || checkVal('profile-nombre2') || checkVal('profile-apellido2'),
-            checkVal('profile-iniciales')
+            Boolean(avatarInitials)
         ];
 
         empresaChecks = [
@@ -225,7 +226,7 @@ class TagManager {
 }
 
 // ==========================================================================
-// 3. AUTOCOMPLETADO Y ÁRBOL
+// 3. AUTOCOMPLETADO Y ÁRBOL JERÁRQUICO
 // ==========================================================================
 function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSelect) {
     const input = document.getElementById(inputId);
@@ -289,7 +290,9 @@ function setupDropdownSearch(inputId, catalogType, codeField, labelField, onSele
 }
 
 async function setupTerritoryTree() {
-    const openBtn = document.getElementById('btn-ajustar-cobertura');
+    const openBtnCobertura = document.getElementById('btn-ajustar-cobertura');
+    const openBtnEmpresa = document.getElementById('btn-seleccionar-comuna-empresa');
+    const inputLabelEmpresa = document.getElementById('empresa-comuna-label');
     const modal = document.getElementById('territory-modal');
     const tree = document.getElementById('territory-tree');
     const closeBtn = document.getElementById('btn-cerrar-cobertura');
@@ -297,10 +300,10 @@ async function setupTerritoryTree() {
     const saveBtn = document.getElementById('btn-guardar-cobertura');
     const searchInput = document.getElementById('territory-tree-search');
     const counter = document.getElementById('territory-counter');
+    const modalTitle = document.getElementById('territory-modal-title');
+    const modalDesc = document.getElementById('territory-modal-desc');
 
-    if (!openBtn || !modal || !tree || !saveBtn) return;
-    if (openBtn.dataset.bound === 'true') return;
-    openBtn.dataset.bound = 'true';
+    if (!modal || !tree || !saveBtn) return;
 
     function closeModal() {
         modal.classList.remove('active');
@@ -309,10 +312,15 @@ async function setupTerritoryTree() {
 
     function updateCounter() {
         const total = tree.querySelectorAll('.comuna-check:checked').length;
-        if (counter) counter.textContent = `${total} comunas seleccionadas`;
+        if (counter) {
+            counter.textContent = (modoModalTerritorio === 'empresa')
+                ? (total > 0 ? '1 comuna seleccionada' : 'Selecciona 1 comuna')
+                : `${total} comunas seleccionadas`;
+        }
     }
 
     function updateParentState(node) {
+        if (modoModalTerritorio === 'empresa') return;
         const children = [...node.querySelectorAll(':scope > .tree-children input[type="checkbox"]')];
         if (!children.length) return;
 
@@ -325,9 +333,11 @@ async function setupTerritoryTree() {
     }
 
     function renderTree(data) {
+        const esModoEmpresa = (modoModalTerritorio === 'empresa');
+        const currentEmpresaCode = document.getElementById('empresa-comuna')?.value?.trim();
         const currentCodes = comunasManager ? comunasManager.getCodes() : [];
-        const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
-        
+        const selectedSet = new Set(esModoEmpresa ? [currentEmpresaCode] : currentCodes.map(c => String(c).trim()));
+
         let html = '';
         (data.regiones || []).forEach(reg => {
             const regId = String(reg.codigo_region).trim();
@@ -342,11 +352,14 @@ async function setupTerritoryTree() {
                 coms.forEach(c => {
                     const cod = String(c.codigo_comuna).trim();
                     const isChecked = selectedSet.has(cod) ? 'checked' : '';
+                    const inputType = esModoEmpresa ? 'radio' : 'checkbox';
+                    const nameAttr = esModoEmpresa ? 'name="comuna_empresa_radio"' : '';
+
                     comsHtml += `
-                        <div class="tree-item-comuna" style="margin-left: 28px; padding: 2px 0;">
+                        <div class="tree-item-comuna" style="margin-left: 28px; padding: 3px 0;">
                             <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                                <input type="checkbox" class="comuna-check" value="${cod}" data-label="${c.nombre_comuna}" ${isChecked}>
-                                <span>${c.nombre_comuna}</span>
+                                <input type="${inputType}" ${nameAttr} class="comuna-check" value="${cod}" data-label="${c.nombre_comuna}" ${isChecked}>
+                                <span><strong>${c.nombre_comuna}</strong> <small style="color: var(--muted-teal);">(${cod})</small></span>
                             </label>
                         </div>
                     `;
@@ -357,7 +370,7 @@ async function setupTerritoryTree() {
                         <div class="tree-header" style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green);">
                             <i class="fa-solid fa-folder" style="color: var(--soft-mint); font-size: 0.85rem;"></i>
                             <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                <input type="checkbox" class="province-check">
+                                ${!esModoEmpresa ? '<input type="checkbox" class="province-check">' : ''}
                                 <span>${prov.nombre_provincia}</span>
                             </label>
                         </div>
@@ -373,7 +386,7 @@ async function setupTerritoryTree() {
                     <div class="tree-header" style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--dark-green); font-size: 0.96rem;">
                         <i class="fa-solid fa-map" style="color: var(--accent-green); font-size: 0.9rem;"></i>
                         <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                            <input type="checkbox" class="region-check">
+                            ${!esModoEmpresa ? '<input type="checkbox" class="region-check">' : ''}
                             <span>${reg.nombre_region}</span>
                         </label>
                     </div>
@@ -386,36 +399,54 @@ async function setupTerritoryTree() {
 
         tree.innerHTML = html || '<p>No se encontraron divisiones territoriales.</p>';
 
-        tree.querySelectorAll('.tree-region, .tree-province').forEach(node => {
-            const check = node.querySelector(':scope > .tree-header input[type="checkbox"]');
-            check.addEventListener('change', () => {
-                node.querySelectorAll('.tree-children input[type="checkbox"]').forEach(child => {
-                    child.checked = check.checked;
-                    child.indeterminate = false;
-                });
-                tree.querySelectorAll('.tree-province').forEach(updateParentState);
-                tree.querySelectorAll('.tree-region').forEach(updateParentState);
-                updateCounter();
+        if (!esModoEmpresa) {
+            tree.querySelectorAll('.tree-region, .tree-province').forEach(node => {
+                const check = node.querySelector(':scope > .tree-header input[type="checkbox"]');
+                if (check) {
+                    check.addEventListener('change', () => {
+                        node.querySelectorAll('.tree-children input[type="checkbox"]').forEach(child => {
+                            child.checked = check.checked;
+                            child.indeterminate = false;
+                        });
+                        tree.querySelectorAll('.tree-province').forEach(updateParentState);
+                        tree.querySelectorAll('.tree-region').forEach(updateParentState);
+                        updateCounter();
+                    });
+                }
             });
-        });
+        }
 
         tree.querySelectorAll('.comuna-check').forEach(check => {
             check.addEventListener('change', () => {
-                tree.querySelectorAll('.tree-province').forEach(updateParentState);
-                tree.querySelectorAll('.tree-region').forEach(updateParentState);
+                if (!esModoEmpresa) {
+                    tree.querySelectorAll('.tree-province').forEach(updateParentState);
+                    tree.querySelectorAll('.tree-region').forEach(updateParentState);
+                }
                 updateCounter();
             });
         });
 
-        tree.querySelectorAll('.tree-province').forEach(updateParentState);
-        tree.querySelectorAll('.tree-region').forEach(updateParentState);
+        if (!esModoEmpresa) {
+            tree.querySelectorAll('.tree-province').forEach(updateParentState);
+            tree.querySelectorAll('.tree-region').forEach(updateParentState);
+        }
         updateCounter();
     }
 
-    openBtn.addEventListener('click', async () => {
+    async function abrirModal(modo) {
+        modoModalTerritorio = modo;
         modal.classList.add('active');
         modal.style.display = 'flex';
         modal.style.zIndex = '99999';
+
+        if (modalTitle) {
+            modalTitle.textContent = modo === 'empresa' ? 'Comuna Casa Matriz' : 'Cobertura Geográfica';
+        }
+        if (modalDesc) {
+            modalDesc.textContent = modo === 'empresa'
+                ? 'Navega en el árbol territorial y selecciona la comuna donde opera la casa matriz de la empresa.'
+                : 'Marca o desmarca regiones, provincias o comunas específicas para tus filtros.';
+        }
 
         if (!territoryData) {
             try {
@@ -428,7 +459,38 @@ async function setupTerritoryTree() {
         } else {
             renderTree(territoryData);
         }
-    });
+    }
+
+    // Modal para filtros de licitación
+    if (openBtnCobertura && openBtnCobertura.dataset.bound !== 'true') {
+        openBtnCobertura.dataset.bound = 'true';
+        openBtnCobertura.addEventListener('click', () => abrirModal('cobertura'));
+    }
+
+    // Modal para comuna de empresa (Botón Mapa)
+    if (openBtnEmpresa && openBtnEmpresa.dataset.bound !== 'true') {
+        openBtnEmpresa.dataset.bound = 'true';
+        openBtnEmpresa.addEventListener('click', () => {
+            if (!openBtnEmpresa.disabled && openBtnEmpresa.style.cursor !== 'not-allowed') {
+                abrirModal('empresa');
+            }
+        });
+    }
+
+    // Modal para comuna de empresa (Input visible)
+    if (inputLabelEmpresa && inputLabelEmpresa.dataset.bound !== 'true') {
+        inputLabelEmpresa.dataset.bound = 'true';
+        inputLabelEmpresa.addEventListener('click', () => {
+            const esBloqueado = inputLabelEmpresa.readOnly && (
+                inputLabelEmpresa.style.cursor === 'not-allowed' || 
+                inputLabelEmpresa.style.backgroundColor === 'rgb(241, 245, 249)' ||
+                inputLabelEmpresa.style.backgroundColor === '#f1f5f9'
+            );
+            if (!esBloqueado) {
+                abrirModal('empresa');
+            }
+        });
+    }
 
     closeBtn.addEventListener('click', closeModal);
     if (closeX) closeX.addEventListener('click', closeModal);
@@ -454,14 +516,28 @@ async function setupTerritoryTree() {
     }
 
     saveBtn.addEventListener('click', () => {
-        const checkedComunas = [...tree.querySelectorAll('.comuna-check:checked')];
-        const selected = checkedComunas.map(c => ({
-            code: String(c.value).trim(),
-            label: c.dataset.label || c.value
-        }));
-        if (comunasManager) {
-            comunasManager.setItems(selected);
+        if (modoModalTerritorio === 'empresa') {
+            const checkedRadio = tree.querySelector('.comuna-check:checked');
+            if (checkedRadio) {
+                const cod = String(checkedRadio.value).trim();
+                const nombre = checkedRadio.dataset.label || cod;
+                
+                const hiddenInput = document.getElementById('empresa-comuna');
+                const labelInput = document.getElementById('empresa-comuna-label');
+                if (hiddenInput) hiddenInput.value = cod;
+                if (labelInput) labelInput.value = `${nombre} (${cod})`;
+            }
+        } else {
+            const checkedComunas = [...tree.querySelectorAll('.comuna-check:checked')];
+            const selected = checkedComunas.map(c => ({
+                code: String(c.value).trim(),
+                label: c.dataset.label || c.value
+            }));
+            if (comunasManager) {
+                comunasManager.setItems(selected);
+            }
         }
+        actualizarPorcentajePerfil();
         closeModal();
     });
 }
@@ -549,16 +625,34 @@ function setFieldState(elementId, value, forceEditable = false) {
     const tieneValor = value !== null && value !== undefined && String(value).trim() !== '';
     input.value = tieneValor ? String(value).trim() : '';
 
+    const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
+
     if (tieneValor && !forceEditable) {
         input.readOnly = true;
         input.style.backgroundColor = '#f1f5f9';
         input.style.cursor = 'not-allowed';
         input.title = 'Dato registrado oficialmente en el sistema. No modificable.';
+
+        // Bloqueo estricto del botón cuando la comuna ya tiene dato oficial
+        if (elementId === 'empresa-comuna-label' && btnComuna) {
+            btnComuna.disabled = true;
+            btnComuna.style.opacity = '0.5';
+            btnComuna.style.cursor = 'not-allowed';
+            btnComuna.style.pointerEvents = 'none';
+        }
     } else {
-        input.readOnly = false;
+        input.readOnly = (elementId === 'empresa-comuna-label');
         input.style.backgroundColor = '#ffffff';
-        input.style.cursor = 'text';
+        input.style.cursor = (elementId === 'empresa-comuna-label') ? 'pointer' : 'text';
         input.title = '';
+
+        // Se desbloquea si la empresa es nueva y no tiene comuna
+        if (elementId === 'empresa-comuna-label' && btnComuna) {
+            btnComuna.disabled = false;
+            btnComuna.style.opacity = '1';
+            btnComuna.style.cursor = 'pointer';
+            btnComuna.style.pointerEvents = 'auto';
+        }
     }
 }
 
@@ -571,11 +665,20 @@ function limpiarCamposEmpresa() {
         'empresa-iniciales',
         'empresa-telefono',
         'empresa-comuna',
+        'empresa-comuna-label',
         'empresa-direccion'
     ];
     campos.forEach(id => {
         setFieldState(id, '', true);
     });
+
+    const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
+    if (btnComuna) {
+        btnComuna.disabled = false;
+        btnComuna.style.opacity = '1';
+        btnComuna.style.cursor = 'pointer';
+        btnComuna.style.pointerEvents = 'auto';
+    }
 }
 
 function bloquearFormularioEmpresa() {
@@ -588,6 +691,7 @@ function bloquearFormularioEmpresa() {
         'empresa-iniciales',
         'empresa-telefono',
         'empresa-comuna',
+        'empresa-comuna-label',
         'empresa-direccion'
     ];
 
@@ -600,6 +704,14 @@ function bloquearFormularioEmpresa() {
             el.title = 'Información consolidada y registrada en el sistema.';
         }
     });
+
+    const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
+    if (btnComuna) {
+        btnComuna.disabled = true;
+        btnComuna.style.opacity = '0.5';
+        btnComuna.style.cursor = 'not-allowed';
+        btnComuna.style.pointerEvents = 'none';
+    }
 
     const btnBuscar = document.getElementById('btn-buscar-rut-empresa');
     if (btnBuscar) {
@@ -615,7 +727,7 @@ function bloquearFormularioEmpresa() {
 }
 
 // ==========================================================================
-// FUNCIÓN AUXILIAR: ACTUALIZAR INICIALES EN BARRA LATERAL (MÁX 5, EN MAYÚSCULAS)
+// FUNCIÓN AUXILIAR: GENERAR INICIALES EN TIEMPO REAL (MÁX 5, EN MAYÚSCULAS)
 // ==========================================================================
 function actualizarInicialesSidebar() {
     const n1 = document.getElementById('profile-nombre1')?.value.trim() || '';
@@ -662,7 +774,7 @@ export async function inicializarVistaPerfil(user) {
     setupPasswordFunctionality(user);
     setupLogoutButton();
 
-    // Al escribir en nombres o apellidos, se actualiza el avatar lateral dinámicamente
+    // Actualiza dinámicamente las iniciales al escribir nombres o apellidos
     ['profile-nombre1', 'profile-nombre2', 'profile-apellido1', 'profile-apellido2'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el.dataset.initBound !== 'true') {
@@ -735,7 +847,7 @@ export async function inicializarVistaPerfil(user) {
             const emailInput = document.getElementById('profile-email');
             if (emailInput) emailInput.value = user?.email || auth.currentUser?.email || '';
 
-            // Llenado de Datos Personales
+            // Datos Personales
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
             setVal('profile-nombre1', n1);
             setVal('profile-nombre2', n2);
@@ -751,9 +863,17 @@ export async function inicializarVistaPerfil(user) {
             setVal('empresa-correo', emp.emp_contacto_correo);
             setVal('empresa-iniciales', emp.emp_iniciales);
             setVal('empresa-telefono', emp.emp_contacto_telefono);
-            setVal('empresa-comuna', emp.emp_codigo_comuna);
+            
+            const codComuna = emp.emp_codigo_comuna || '';
+            const nomComuna = emp.emp_nombre_comuna || '';
+            const tieneComunaPrevia = Boolean(codComuna);
+
+            setFieldState('empresa-comuna', codComuna, !tieneComunaPrevia);
+            setFieldState('empresa-comuna-label', nomComuna ? `${nomComuna} (${codComuna})` : (codComuna ? `Comuna ${codComuna}` : ''), !tieneComunaPrevia);
+
             setVal('empresa-direccion', emp.emp_direccion);
 
+            // Bloquear formulario si ya tiene empresa registrada
             if (emp.emp_rut && String(emp.emp_rut).trim() !== '') {
                 bloquearFormularioEmpresa();
             }
@@ -772,7 +892,7 @@ export async function inicializarVistaPerfil(user) {
         console.error('[SmartBids] Error al cargar perfil:', err);
     }
 
-    // Submit: Datos Personales (Genera las iniciales automáticamente al guardar)
+    // Submit: Datos Personales
     const formDatos = document.getElementById('form-perfil-datos');
     if (formDatos && formDatos.dataset.bound !== 'true') {
         formDatos.dataset.bound = 'true';
@@ -894,7 +1014,16 @@ if (btnBuscarRut && inputRutEmpresa) {
                 setFieldState('empresa-razon-social', datos.emp_razon_social);
                 setFieldState('empresa-contacto-nombre', '');
                 setFieldState('empresa-direccion', datos.emp_direccion);
-                setFieldState('empresa-comuna', datos.emp_codigo_comuna);
+                
+                // Si la empresa ya tiene comuna registrada, queda bloqueada; si no tiene, queda editable
+                const codCom = (datos.emp_codigo_comuna || '').trim();
+                const nomCom = (datos.emp_nombre_comuna || '').trim();
+                const tieneComunaOficial = Boolean(codCom);
+                const textoComuna = nomCom ? `${nomCom} (${codCom})` : (codCom ? `Comuna ${codCom}` : '');
+
+                setFieldState('empresa-comuna', codCom, !tieneComunaOficial);
+                setFieldState('empresa-comuna-label', textoComuna, !tieneComunaOficial);
+
                 setFieldState('empresa-correo', datos.emp_contacto_correo);
                 setFieldState('empresa-telefono', datos.emp_contacto_telefono);
                 setFieldState('empresa-iniciales', datos.emp_iniciales);
@@ -908,9 +1037,7 @@ if (btnBuscarRut && inputRutEmpresa) {
                 );
             }
 
-            if (typeof actualizarPorcentajePerfil === 'function') {
-                actualizarPorcentajePerfil();
-            }
+            actualizarPorcentajePerfil();
         } catch (error) {
             console.error('[SmartBids] Error al consultar RUT:', error);
             mostrarMensaje('Error de conexión al consultar el RUT.', 'error');
@@ -979,9 +1106,10 @@ if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
         const razonSocial = document.getElementById('empresa-razon-social')?.value.trim();
         const fantasia = document.getElementById('empresa-fantasia')?.value.trim();
         const correo = document.getElementById('empresa-correo')?.value.trim();
+        const comuna = document.getElementById('empresa-comuna')?.value.trim();
 
-        if (!rut || !razonSocial || !fantasia || !correo) {
-            mostrarMensaje('Por favor completa todos los campos obligatorios de la empresa (*).', 'error');
+        if (!rut || !razonSocial || !fantasia || !correo || !comuna) {
+            mostrarMensaje('Por favor completa todos los campos obligatorios de la empresa (*) incluyendo la Comuna Casa Matriz.', 'error');
             return;
         }
 
@@ -1026,9 +1154,7 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
                 mostrarMensaje(res.mensaje || 'Error al guardar la empresa.', 'error');
             }
 
-            if (typeof actualizarPorcentajePerfil === 'function') {
-                actualizarPorcentajePerfil();
-            }
+            actualizarPorcentajePerfil();
         } catch (err) {
             mostrarMensaje('Error de conexión al guardar los datos de empresa.', 'error');
         } finally {
