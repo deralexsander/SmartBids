@@ -10,101 +10,107 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
 
-[📖 Ver Guía Completa de Instalación y Comandos Git (readme.txt)](./readme.txt)
+[📖 Consultar Guía Completa de Instalación y Comandos Git (readme.txt)](./readme.txt)
 
 </div>
 
 ---
 
-## 📌 Vista General de la Plataforma
+## 📌 1. Plataforma y Propuesta de Valor
 
-SmartBids automatiza el monitoreo de licitaciones públicas en Chile, aplicando modelos de Machine Learning (XGBoost / Scikit-Learn) para predecir probabilidades de éxito según bases técnicas y datos históricos.
+SmartBids transforma millones de datos abiertos de Mercado Público en oportunidades estratégicas para proveedores y MiPyMEs, automatizando el monitoreo y estimando la probabilidad de adjudicación mediante modelos de Machine Learning.
 
-![Hero Section](docs/img/01-hero-landing.png)
-*Vista principal con scoring predictivo de adjudicación y métricas de mercado.*
+### Portada y Estimación de Éxito
+![Hero Section SmartBids](docs/img/01-hero-landing.png)
+*Vista principal: Propuesta de valor, métricas de transacciones analizadas (+19,3 M USD) y tarjeta interactiva de adjudicación con modelo predictivo XGBoost.*
+
+| Propuesta de Valor MiPyME | Búsqueda Avanzada y Perfilamiento |
+| :---: | :---: |
+| ![Propuesta de Valor](docs/img/02-propuesta-valor.png) | ![Búsqueda y Perfilamiento](docs/img/03-busqueda-perfilamiento.png) |
+| *Inteligencia comercial, automatización de hitos y toma de decisiones basadas en datos.* | *Filtrado inteligente por rubro, catálogo de productos y concordancia porcentual.* |
+
+| Modelos Predictivos (Scikit-Learn / XGBoost) | Beneficios Tangibles de Mercado |
+| :---: | :---: |
+| ![Modelos Predictivos](docs/img/04-modelos-predictivos.png) | ![Beneficios Tangibles](docs/img/05-beneficios-tangibles.png) |
+| *Algoritmos entrenados con histórico de compras públicas para cálculo de factibilidad.* | *Reducción de hasta un 80% en tiempo de búsqueda y seguimiento de hitos críticos.* |
 
 ---
 
-## 📸 Recorrido Visual de Módulos
+## 📊 2. Analítica de Mercado y Seguimiento de Licitaciones
 
-### 1. Inteligencia de Mercado y Licitaciones
-| Dashboard Analítico | Mis Licitaciones Sincronizadas |
+| Dashboard Analítico de Mercado | Seguimiento Dinámico de Oportunidades |
 | :---: | :---: |
 | ![Dashboard Analítico](docs/img/18-dashboard-analitico.png) | ![Mis Licitaciones](docs/img/19-mis-licitaciones-oportunidades.png) |
-| *Métricas trimestrales, competencia y productos top* | *Oportunidades de compra filtradas según perfil* |
+| *Métricas del último trimestre: montos transados, volumen mensual por categoría y productos más demandados.* | *Listado de procesos públicos filtrados automáticamente en base al perfil del proveedor.* |
 
 ---
 
-### 2. Autenticación y Verificación en Dos Pasos (2FA)
-| Acceso / Inicio de Sesión | Validación de Seguridad OTP (6 dígitos) |
-| :---: | :---: |
-| ![Iniciar Sesión](docs/img/09-iniciar-sesion.png) | ![Modal OTP](docs/img/14-modal-verificacion-otp.png) |
-| *Formulario de ingreso al panel* | *Modal interactivo para verificación en 2 pasos* |
+## 🔔 3. Mensajería y Alertas Globales en Tiempo Real
 
-| Código Transaccional por Correo | Registro de Nuevas MiPyMEs |
+El sistema cuenta con un motor de notificaciones en vivo que sincroniza advertencias operativas y confirmaciones de carga directamente en la cabecera de la interfaz.
+
+| Demostración en Tiempo Real | Consola de Administración de Alertas |
 | :---: | :---: |
-| ![Correo OTP](docs/img/15-email-codigo-autenticacion.png) | ![Registro](docs/img/10-crear-cuenta.png) |
-| *Notificación transaccional con vigencia de 10 min* | *Alta de cuenta y credenciales corporativas* |
+| ![Demostración de Alertas](docs/img/demo-mensajeria-alertas.gif) | ![Panel de Mensajería](docs/img/Captura%20de%20pantalla%202026-10-03%20a%20la(s)%201.25.59%20p.m..jpg) |
+| *Notificaciones superiores animadas con barra de tiempo regresiva.* | *Gestión de estados, prioridad (éxito/alerta) y redacción de anuncios.* |
 
 ---
 
-### 3. Perfilamiento Empresarial y Filtros de Búsqueda
+## 🔐 4. Autenticación, Seguridad y Doble Factor (2FA)
+
+La plataforma integra validación de dos pasos para resguardar la identidad corporativa y cumplir con auditorías de seguridad.
+
+| Iniciar Sesión en SmartBids | Registro de Nuevas Cuentas |
+| :---: | :---: |
+| ![Iniciar Sesión](docs/img/09-iniciar-sesion.png) | ![Crear Cuenta](docs/img/10-crear-cuenta.png) |
+| *Acceso seguro con validación de credenciales.* | *Formulario de inscripción corporativa con confirmación de clave.* |
+
+| Verificación de Seguridad OTP (6 dígitos) | Correo Transaccional de Autenticación |
+| :---: | :---: |
+| ![Modal OTP](docs/img/14-modal-verificacion-otp.png) | ![Email con Código OTP](docs/img/15-email-codigo-autenticacion.png) |
+| *Modal flotante de doble factor para validar inicio de sesión.* | *Código de seguridad enviado por email con caducidad de 10 minutos.* |
+
+---
+
+## 👤 5. Administración del Suscriptor, Empresa y Filtros
+
 | Información del Suscriptor | Datos de la Empresa (Tributaria) |
 | :---: | :---: |
 | ![Datos Personales](docs/img/11-perfil-datos-personales.png) | ![Datos Empresa](docs/img/12-perfil-datos-empresa.png) |
-| *Gestión de usuario y estado de calibración* | *RUT de empresa, razón social y contacto comercial* |
+| *Gestión de nombres, apodo, correo y porcentaje de calibración.* | *Razón social, RUT, dirección comercial y canales de notificación.* |
 
-| Calibración de Mercado (Catálogo ONU) | Seguridad y Cambio de Clave |
+| Filtros de Mercado (Catálogo ONU) | Seguridad y Cambio de Clave |
 | :---: | :---: |
-| ![Filtros Mercado](docs/img/13-filtros-mercado-licitaciones.png) | ![Seguridad](docs/img/17-seguridad-cambiar-clave.png) |
-| *Segmentación por territorio, códigos ONU y entidades* | *Actualización de credenciales y auditoría de sesión* |
+| ![Filtros de Mercado](docs/img/13-filtros-mercado-licitaciones.png) | ![Cambiar Contraseña](docs/img/17-seguridad-cambiar-clave.png) |
+| *Filtro por territorio, códigos ONU y organismos compradores.* | *Módulo de actualización y robustecimiento de contraseñas.* |
+
+### Calibración Activa del Perfil
+![Modal Completar Perfil](docs/img/16-modal-completar-perfil.png)
+*Asistente inteligente que orienta al usuario para alcanzar el 90% de completitud necesario para calibrar el algoritmo.*
 
 ---
 
-### 4. Sistema Dinámico de Alertas y Notificaciones Globales
-| Panel de Administración de Alertas | Demostración en Vivo |
-| :---: | :---: |
-| ![Administración de Mensajería](docs/img/Captura%20de%20pantalla%202026-10-03%20a%20la(s)%201.25.59%20p.m..jpg) | ![Demo Alertas](docs/img/demo-mensajeria-alertas.gif) |
-| *Consola administrativa para avisos en tiempo real* | *Notificaciones flotantes con temporizador regresivo* |
+## 🛡️ 6. Marco Normativo y Privacidad
 
----
-
-<details>
-<summary><strong>🔍 Ver más vistas: Propuesta de Valor, Modelos de IA y Marco Normativo (Clic para desplegar)</strong></summary>
-
-<br>
-
-#### Propuesta de Valor y Módulos
-| Pilares de la Solución | Búsqueda Avanzada y Perfilamiento |
-| :---: | :---: |
-| ![Propuesta de Valor](docs/img/02-propuesta-valor.png) | ![Búsqueda](docs/img/03-busqueda-perfilamiento.png) |
-
-#### Modelos Predictivos y Beneficios Comerciales
-| Motor Predictivo (XGBoost) | Beneficios Cuantificables |
-| :---: | :---: |
-| ![Modelos Predictivos](docs/img/04-modelos-predictivos.png) | ![Beneficios](docs/img/05-beneficios-tangibles.png) |
-
-#### Marco Legal, Privacidad y Ciberseguridad
-| Términos del Servicio | Política de Privacidad (Ley N° 19.628) | Seguridad Empresarial |
+| Términos del Servicio | Política de Privacidad (Ley N° 19.628) | Seguridad Empresarial y Cifrado |
 | :---: | :---: | :---: |
-| ![Términos](docs/img/06-terminos-del-servicio.png) | ![Privacidad](docs/img/07-politica-de-privacidad.png) | ![Seguridad 2FA](docs/img/08-seguridad-2fa.png) |
-
-</details>
+| ![Términos del Servicio](docs/img/06-terminos-del-servicio.png) | ![Política de Privacidad](docs/img/07-politica-de-privacidad.png) | ![Seguridad 2FA](docs/img/08-seguridad-2fa.png) |
+| *Alcance informativo y predictivo de los modelos.* | *Cifrado de extremo a extremo SSL/TLS de 256 bits.* | *Hash seguro de claves y monitoreo de anomalías.* |
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
-* **Backend:** Python 3.10+, Django, WhiteNoise, Gunicorn[cite: 7, 43].
-* **Machine Learning & Datos:** Scikit-Learn, XGBoost, Pandas[cite: 10].
-* **Frontend:** HTML5, CSS3 modular, JavaScript ES6+, FontAwesome[cite: 7, 31].
-* **Autenticación & Real-time:** Firebase Authentication (2FA/OTP), Cloud Firestore[cite: 13, 23, 38].
-* **Base de Datos Relacional:** PostgreSQL.
+* **Backend:** Python 3.10+, Django, WhiteNoise, Gunicorn[cite: 7].
+* **Inteligencia Artificial & Datos:** Scikit-Learn, XGBoost, Pandas[cite: 7, 10].
+* **Frontend:** HTML5, CSS3, JavaScript modular (ES6+)[cite: 7, 31].
+* **Autenticación & Real-time:** Firebase Authentication (2FA/OTP), Cloud Firestore[cite: 7, 13, 23].
+* **Base de Datos:** PostgreSQL[cite: 7].
 
 ---
 
-## ⚙️ Instalación y Despliegue Local
+## ⚙️ Instalación y Configuración del Proyecto
 
-Toda la guía paso a paso para ejecutar el entorno en **Ubuntu / Debian**, **macOS** o **Windows**, junto a la sincronización de ramas con Git, se encuentra disponible en:
+Todos los comandos para levantar el entorno virtual en **Ubuntu/Debian**, **macOS** y **Windows**, así como las instrucciones de sincronización de ramas Git, se conservan de forma íntegra en el archivo del repositorio:
 
-👉 **[Consultar la Guía de Instalación Detallada (readme.txt)](./readme.txt)**
+👉 **[Ver Guía Paso a Paso de Instalación (readme.txt)](./readme.txt)**[cite: 7]
