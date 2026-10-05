@@ -69,7 +69,7 @@
         <!-- Contenido Principal -->
         <main class="profile-main-content">
 
-            <!-- Banner Dinámico: Barra de Porcentaje con Semáforo (Rojo / Amarillo / Verde) -->
+            <!-- Banner Dinámico: Barra de Porcentaje con Semáforo -->
             <div class="dashboard-card" style="padding: 1.4rem 1.6rem; border-radius: 16px; margin-bottom: 1.5rem; background: var(--white); border: 1.5px solid var(--soft-mint); box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.8rem;">
                     <div>
@@ -84,13 +84,12 @@
                     </div>
                 </div>
 
-                <!-- Pista y Relleno de Barra -->
                 <div style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 20px; overflow: hidden; position: relative;">
                     <div id="profile-progress-fill" style="width: 0%; height: 100%; background-color: #e53e3e; border-radius: 20px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;"></div>
                 </div>
             </div>
 
-            <!-- 1. Datos Personales (core.suscriptor) -->
+            <!-- 1. Datos Personales -->
             <div id="tab-info" class="dashboard-card tab-content-panel active">
                 <div class="dashboard-header">
                     <div class="dash-title">
@@ -112,11 +111,11 @@
                             <input type="text" class="form-input" id="profile-nombre2" name="sus_nombre2">
                         </div>
                         <div class="form-item">
-                            <label for="profile-apellido1">Apellido Paterno *</label>
+                            <label for="profile-apellido1">Apellido 1 *</label>
                             <input type="text" class="form-input" id="profile-apellido1" name="sus_apellido1" required>
                         </div>
                         <div class="form-item">
-                            <label for="profile-apellido2">Apellido Materno</label>
+                            <label for="profile-apellido2">Apellido 2</label>
                             <input type="text" class="form-input" id="profile-apellido2" name="sus_apellido2">
                         </div>
                         <div class="form-item">
@@ -124,10 +123,6 @@
                             <input type="text" class="form-input" id="profile-nombre-social" name="sus_nombre_social">
                         </div>
                         <div class="form-item">
-                            <label for="profile-iniciales">Iniciales</label>
-                            <input type="text" class="form-input" id="profile-iniciales" name="sus_iniciales" maxlength="5">
-                        </div>
-                        <div class="form-item grid-full">
                             <label for="profile-email">Correo Electrónico</label>
                             <input type="email" class="form-input" id="profile-email" readonly>
                         </div>
@@ -141,7 +136,7 @@
                 </form>
             </div>
 
-            <!-- 2. Información de Empresa (core.empresa) -->
+            <!-- 2. Información de Empresa -->
             <div id="tab-empresa" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
@@ -153,7 +148,6 @@
 
                 <form id="form-perfil-empresa">
                     <div class="profile-form-grid">
-                        <!-- RUT con botón de búsqueda integrado -->
                         <div class="form-item grid-full">
                             <label for="empresa-rut">RUT Empresa *</label>
                             <div style="display: flex; gap: 0.75rem;">
@@ -173,7 +167,6 @@
                             <input type="text" class="form-input" id="empresa-razon-social" name="emp_razon_social" placeholder="Razón legal completa" required>
                         </div>
                         
-                        <!-- Campo que faltaba en la interfaz -->
                         <div class="form-item">
                             <label for="empresa-contacto-nombre">Nombre de Contacto / Encargado</label>
                             <input type="text" class="form-input" id="empresa-contacto-nombre" name="emp_contacto_nombre" placeholder="Ej: Juan Pérez">
@@ -183,19 +176,29 @@
                             <label for="empresa-correo">Correo Notificaciones *</label>
                             <input type="email" class="form-input" id="empresa-correo" name="emp_contacto_correo" placeholder="alertas@empresa.cl" required>
                         </div>
+                        
+                        <!-- SIGLAS / INICIALES BLOQUEADAS (SOLO LECTURA) -->
                         <div class="form-item">
                             <label for="empresa-iniciales">Siglas / Iniciales</label>
-                            <input type="text" class="form-input" id="empresa-iniciales" name="emp_iniciales" maxlength="20" placeholder="Ej: SB">
+                            <input type="text" class="form-input" id="empresa-iniciales" name="emp_iniciales" maxlength="20" readonly style="background-color: #f1f5f9; cursor: not-allowed; text-transform: uppercase;" title="Iniciales generadas automáticamente a partir de la Razón Social o Nombre Fantasía.">
                         </div>
+
                         <div class="form-item">
                             <label for="empresa-telefono">Teléfono Empresa</label>
                             <input type="tel" class="form-input" id="empresa-telefono" name="emp_contacto_telefono" placeholder="+56 9 ...">
                         </div>
                         <div class="form-item">
-                            <label for="empresa-comuna">Código Comuna Casa Matriz</label>
-                            <input type="text" class="form-input" id="empresa-comuna" name="emp_codigo_comuna" placeholder="Ej: 05101">
+                            <label for="empresa-comuna-label">Comuna Casa Matriz *</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" class="form-input" id="empresa-comuna-label" placeholder="Selecciona una comuna..." readonly style="background-color: #f8fafc; cursor: pointer;">
+                                <input type="hidden" id="empresa-comuna" name="emp_codigo_comuna">
+                                
+                                <button type="button" class="btn btn-outline" id="btn-seleccionar-comuna-empresa" style="padding: 0.6rem 0.9rem;" title="Abrir selector de comuna">
+                                    <i class="fa-solid fa-map-location-dot"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="form-item grid-full">
+                        <div class="form-item">
                             <label for="empresa-direccion">Dirección Casa Matriz</label>
                             <input type="text" class="form-input" id="empresa-direccion" name="emp_direccion" placeholder="Calle, número, oficina">
                         </div>
@@ -209,7 +212,7 @@
                 </form>
             </div>
 
-            <!-- Modal de Confirmación para Guardar Empresa -->
+            <!-- Modal de Confirmación Guardar Empresa -->
             <div id="modal-confirmar-empresa" class="modal-2fa-overlay" style="display: none;">
                 <div class="modal-2fa-card" style="max-width: 480px; text-align: center;">
                     <div style="width: 55px; height: 55px; border-radius: 50%; background: rgba(30, 196, 152, 0.15); color: var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1.2rem;">
@@ -222,7 +225,6 @@
                         Verifica que los antecedentes tributarios ingresados sean correctos:
                     </p>
 
-                    <!-- Resumen de antecedentes -->
                     <div style="background: var(--light-bg); border: 1px solid var(--soft-mint); border-radius: 10px; padding: 1rem; text-align: left; font-size: 0.88rem; margin-bottom: 1.2rem; color: var(--dark-green); line-height: 1.6;">
                         <div><strong>• RUT:</strong> <span id="modal-confirm-rut">--</span></div>
                         <div><strong>• Razón Social:</strong> <span id="modal-confirm-razon">--</span></div>
@@ -244,7 +246,7 @@
                 </div>
             </div>
 
-            <!-- 3. Filtros de Licitación (core.preferencia) -->
+            <!-- 3. Filtros de Licitación -->
             <div id="tab-filtros" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
@@ -268,7 +270,6 @@
                                 </button>
                             </div>
                             
-                            <!-- Contenedor Chips Comunas -->
                             <div id="chips-comunas" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg);">
                                 <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin comunas seleccionadas (Aplica cobertura nacional)</span>
                             </div>
@@ -277,13 +278,13 @@
 
                         <!-- Eje 2: Catálogo y Productos ONU -->
                         <div class="stat-mini-card" style="border-left: 4px solid var(--dark-green); padding: 1.4rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                            <div style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-boxes-stacked" style="color: var(--dark-green);"></i> 2. Catálogo de Bienes y Servicios (ONU)
-                            </div>
-                            
-                            <div class="form-item" style="margin-bottom: 0.8rem; position: relative;">
-                                <label for="buscar-producto-input">Buscar y Agregar Producto por Código o Descripción:</label>
-                                <input type="text" id="buscar-producto-input" class="form-input" placeholder="Escribe al menos 2 letras (ej: Servidores, Computadores, Vehículos...)">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <div style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-boxes-stacked" style="color: var(--dark-green);"></i> 2. Catálogo de Bienes y Servicios (ONU)
+                                </div>
+                                <button type="button" id="btn-ajustar-productos" class="btn btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-folder-tree"></i> Explorar Catálogo ONU
+                                </button>
                             </div>
 
                             <div id="chips-productos" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg); margin-bottom: 0.8rem;">
@@ -291,27 +292,88 @@
                             </div>
                             <input type="hidden" id="pref-productos" name="pref_productos">
 
-                            <div class="profile-form-grid" style="margin-top: 0.8rem;">
-                                <div class="form-item">
-                                    <label for="pref-tipo-lic">Tipo de Procedimiento (Separados por coma)</label>
-                                    <input type="text" id="pref-tipo-lic" class="form-input" placeholder="Ej: L1, LE, LP, LR">
+                            <!-- Checkboxes de Tipo de Procedimiento -->
+                            <div class="form-item grid-full">
+                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--dark-green); margin-bottom: 0.4rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-list-check" style="color: var(--accent-green);"></i> Tipo de Procedimiento (Selección múltiple)
+                                </label>
+
+                                <div id="contenedor-tipo-licitacion" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="L1" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
+                                        <div style="line-height: 1.2;">
+                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">L1</strong>
+                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">Menor a 100 UTM</small>
+                                        </div>
+                                    </label>
+
+                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="LE" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
+                                        <div style="line-height: 1.2;">
+                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">LE</strong>
+                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">100 a 1.000 UTM</small>
+                                        </div>
+                                    </label>
+
+                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="LP" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
+                                        <div style="line-height: 1.2;">
+                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">LP</strong>
+                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">1.000 a 5.000 UTM</small>
+                                        </div>
+                                    </label>
+
+                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="LR" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
+                                        <div style="line-height: 1.2;">
+                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">LR</strong>
+                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">Mayor a 5.000 UTM</small>
+                                        </div>
+                                    </label>
+
+                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="CM" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
+                                        <div style="line-height: 1.2;">
+                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">CM</strong>
+                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">Convenio Marco</small>
+                                        </div>
+                                    </label>
+
+                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="B2" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
+                                        <div style="line-height: 1.2;">
+                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">B2</strong>
+                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">Compra Ágil</small>
+                                        </div>
+                                    </label>
                                 </div>
-                                <div class="form-item">
-                                    <label for="pref-palabras">Palabras Clave (Separadas por coma)</label>
+
+                                <!-- Sugeridor de Palabras Clave -->
+                                <div class="form-item grid-full" style="margin-top: 0.8rem; position: relative;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                        <label for="pref-palabras" style="margin: 0;">Palabras Clave (Separadas por coma)</label>
+                                        <small style="color: var(--muted-teal); font-size: 0.76rem; font-weight: 600;">(Se guardan en minúsculas y sin signos)</small>
+                                    </div>
                                     <input type="text" id="pref-palabras" class="form-input" placeholder="Ej: Mantención, Cloud, Seguridad">
+
+                                    <div id="palabras-sugerencia-box" style="display: none; margin-top: 6px; font-size: 0.84rem; color: var(--dark-green); background: rgba(30, 196, 152, 0.08); border: 1.5px solid var(--accent-green); padding: 7px 12px; border-radius: 8px;">
+                                        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-green); margin-right: 6px;"></i>
+                                        ¿Quisiste decir <strong id="palabra-sugerida-texto" style="color: var(--dark-green); text-decoration: underline; cursor: pointer; font-weight: 800;"></strong>?
+                                        <span style="font-size: 0.76rem; color: var(--muted-teal); margin-left: 8px;">(Haz clic para corregir)</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Eje 3: Entidades Públicas y Unidades de Compra -->
                         <div class="stat-mini-card" style="border-left: 4px solid var(--muted-teal); padding: 1.4rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                            <div style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-landmark" style="color: var(--muted-teal);"></i> 3. Entidades Públicas y Unidades de Compra
-                            </div>
-
-                            <div class="form-item" style="margin-bottom: 0.8rem; position: relative;">
-                                <label for="buscar-ucom-input">Buscar y Agregar Unidad de Compra u Organismo:</label>
-                                <input type="text" id="buscar-ucom-input" class="form-input" placeholder="Escribe el nombre de la institución (ej: Municipalidad, Hospital, Subsecretaría...)">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <div style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-landmark" style="color: var(--muted-teal);"></i> 3. Entidades Públicas y Unidades de Compra
+                                </div>
+                                <button type="button" id="btn-ajustar-ucom" class="btn btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-sitemap"></i> Explorar Organismos y Unidades
+                                </button>
                             </div>
 
                             <div id="chips-ucom" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg);">
@@ -408,7 +470,39 @@
     </div>
 </div>
 
-<!-- Modal Jerárquico de Cobertura Geográfica ("Tipo Árbol de Windows") -->
+<!-- ========================================================================== -->
+<!-- MODAL DE CONFIRMACIÓN DE CAMBIOS PENDIENTES AL CAMBIAR PESTAÑA / SALIR      -->
+<!-- ========================================================================== -->
+<div id="modal-confirmar-salida-pestana" class="modal-2fa-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="modal-2fa-card" style="max-width: 480px; text-align: center;">
+        <div style="width: 55px; height: 55px; border-radius: 50%; background: rgba(229, 62, 62, 0.12); color: #e53e3e; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1.2rem;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+
+        <h3 class="modal-2fa-title" style="color: var(--dark-green); font-size: 1.3rem;">¿Guardar los cambios realizados?</h3>
+        
+        <p class="modal-2fa-desc" style="margin-bottom: 1.2rem; font-size: 0.92rem; color: var(--gray-text); line-height: 1.5;">
+            Tienes modificaciones sin guardar en: <br><strong id="modal-nombre-seccion-cambios" style="color: var(--dark-green);">--</strong>.
+        </p>
+
+        <p style="font-size: 0.84rem; color: var(--muted-teal); margin-bottom: 1.6rem;">
+            Si cambias de sección sin guardar, tus modificaciones se descartarán.
+        </p>
+
+        <div style="display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap;">
+            <button type="button" id="btn-descartar-cambios-pestana" class="btn btn-outline" style="padding: 0.65rem 1.4rem; font-size: 0.88rem; border-color: #cbd5e1; color: #64748b;">
+                Descartar y Cambiar
+            </button>
+            <button type="button" id="btn-guardar-cambios-pestana" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-size: 0.88rem;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================== -->
+<!-- MODAL 1: Cobertura Geográfica (Árbol Territorial)                         -->
+<!-- ========================================================================== -->
 <div id="territory-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="territory-modal-title" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
     <div class="modal-2fa-card" style="max-width: 760px; width: 92%; max-height: 88vh; background: var(--white); border-radius: 16px; padding: 1.8rem; box-shadow: 0 15px 35px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
         
@@ -420,16 +514,14 @@
             <button type="button" id="btn-cerrar-x" style="border: none; background: none; font-size: 1.4rem; color: var(--gray-text); cursor: pointer;">&times;</button>
         </div>
 
-        <p style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 0.8rem;">
-            Marca o desmarca regiones, provincias o comunas específicas. Al marcar una provincia o región, se seleccionarán automáticamente todas sus comunas subordinadas.
+        <p id="territory-modal-desc" style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 0.8rem;">
+            Marca o desmarca regiones, provincias o comunas específicas.
         </p>
 
-        <!-- Filtro Rápido del Árbol -->
         <div style="margin-bottom: 0.8rem;">
             <input type="text" id="territory-tree-search" class="form-input" placeholder="🔍 Filtrar por nombre de región, provincia o comuna..." style="padding: 0.6rem 1rem; font-size: 0.9rem;">
         </div>
 
-        <!-- Contenedor del Árbol -->
         <div id="territory-tree" style="flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid var(--border-color); border-radius: 10px; background: #fafafa; font-size: 0.92rem;">
             <div style="text-align: center; color: var(--muted-teal); padding: 2rem;">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
@@ -437,7 +529,6 @@
             </div>
         </div>
 
-        <!-- Barra Inferior de Confirmación -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
             <span id="territory-counter" style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">0 comunas seleccionadas</span>
             <div style="display: flex; gap: 0.8rem;">
@@ -451,5 +542,93 @@
     </div>
 </div>
 
-<script type="module" src="{% static 'js/perfil.js' %}"></script>
+<!-- ========================================================================== -->
+<!-- MODAL 2: Catálogo y Productos ONU (Árbol de Productos)                    -->
+<!-- ========================================================================== -->
+<div id="productos-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="productos-modal-title" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="modal-2fa-card" style="max-width: 760px; width: 92%; max-height: 88vh; background: var(--white); border-radius: 16px; padding: 1.8rem; box-shadow: 0 15px 35px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-boxes-stacked" style="color: var(--accent-green); font-size: 1.3rem;"></i>
+                <h3 id="productos-modal-title" style="margin: 0; color: var(--dark-green); font-size: 1.25rem;">Catálogo de Bienes y Servicios (ONU)</h3>
+            </div>
+            <button type="button" id="btn-cerrar-productos-x" style="border: none; background: none; font-size: 1.4rem; color: var(--gray-text); cursor: pointer;">&times;</button>
+        </div>
+
+        <p style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 0.8rem;">
+            Marca o desmarca rubros o productos específicos del catálogo de las Naciones Unidas (ONU). Al marcar un rubro se seleccionarán todos sus productos dependientes.
+        </p>
+
+        <div style="margin-bottom: 0.8rem; position: relative; display: flex; align-items: center;">
+            <input type="text" id="productos-tree-search" class="form-input" placeholder="🔍 Filtrar por código o descripción del producto..." style="padding: 0.65rem 2.5rem 0.65rem 1rem; font-size: 0.9rem; width: 100%;">
+            <div id="productos-search-loader" style="position: absolute; right: 14px; display: none; color: var(--accent-green); font-size: 1rem;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </div>
+        </div>
+
+        <div id="productos-tree" style="flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid var(--border-color); border-radius: 10px; background: #fafafa; font-size: 0.92rem;">
+            <div style="text-align: center; color: var(--muted-teal); padding: 2rem;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+                Cargando catálogo de productos ONU...
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <span id="productos-counter" style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">0 productos seleccionados</span>
+            <div style="display: flex; gap: 0.8rem;">
+                <button type="button" id="btn-cerrar-productos" class="btn btn-outline" style="padding: 0.55rem 1.2rem;">Cancelar</button>
+                <button type="button" id="btn-guardar-productos" class="btn btn-primary" style="padding: 0.55rem 1.4rem;">
+                    <i class="fa-solid fa-check"></i> Aplicar Selección
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ========================================================================== -->
+<!-- MODAL 3: Entidades Públicas y Unidades de Compra (Árbol UCOM)             -->
+<!-- ========================================================================== -->
+<div id="ucom-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="ucom-modal-title" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="modal-2fa-card" style="max-width: 800px; width: 92%; max-height: 88vh; background: var(--white); border-radius: 16px; padding: 1.8rem; box-shadow: 0 15px 35px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-sitemap" style="color: var(--muted-teal); font-size: 1.3rem;"></i>
+                <h3 id="ucom-modal-title" style="margin: 0; color: var(--dark-green); font-size: 1.25rem;">Entidades Públicas y Unidades de Compra</h3>
+            </div>
+            <button type="button" id="btn-cerrar-ucom-x" style="border: none; background: none; font-size: 1.4rem; color: var(--gray-text); cursor: pointer;">&times;</button>
+        </div>
+
+        <p style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 0.8rem;">
+            Explora las instituciones del Estado organizadas jerárquicamente por Sector y Organismo. Puedes marcar un Sector o una Institución completa, o seleccionar Unidades de Compra individuales.
+        </p>
+
+        <div style="margin-bottom: 0.8rem; position: relative; display: flex; align-items: center;">
+            <input type="text" id="ucom-tree-search" class="form-input" placeholder="🔍 Filtrar por nombre de sector, organismo o unidad de compra..." style="padding: 0.65rem 2.5rem 0.65rem 1rem; font-size: 0.9rem; width: 100%;">
+            <div id="ucom-search-loader" style="position: absolute; right: 14px; display: none; color: var(--accent-green); font-size: 1rem;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </div>
+        </div>
+
+        <div id="ucom-tree" style="flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid var(--border-color); border-radius: 10px; background: #fafafa; font-size: 0.92rem;">
+            <div style="text-align: center; color: var(--muted-teal); padding: 2rem;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+                Cargando entidades públicas y unidades de compra...
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <span id="ucom-counter" style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">0 unidades seleccionadas</span>
+            <div style="display: flex; gap: 0.8rem;">
+                <button type="button" id="btn-cerrar-ucom" class="btn btn-outline" style="padding: 0.55rem 1.2rem;">Cancelar</button>
+                <button type="button" id="btn-guardar-ucom" class="btn btn-primary" style="padding: 0.55rem 1.4rem;">
+                    <i class="fa-solid fa-check"></i> Aplicar Selección
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
 {% endblock %}
