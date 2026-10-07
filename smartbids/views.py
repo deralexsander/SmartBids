@@ -16,6 +16,6 @@ from .perfil_views import (
 )
 from .mensajeria_views import (
     listar_crear_mensajes, detalle_mensaje, obtener_alertas_activas,
-    parametro_alerta_perfil, administrar_info_contacto,
+    parametro_alerta_perfil, administrar_info_contacto, enviar_consulta_contacto,
 )
 from .firebase_policy_views import politica_contrasenas_firebase, usuarios_firebase

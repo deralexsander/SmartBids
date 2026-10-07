@@ -241,6 +241,72 @@
         </div>
     </section>
 
+    <section class="features" id="contacto" aria-labelledby="contacto-title">
+        <div class="feature-row" style="margin-bottom: 0; align-items: start;">
+            <div class="feature-text">
+                <span class="section-subtitle">Contacto SmartBids</span>
+                <h3 id="contacto-title">Hablemos de tu proyecto</h3>
+                <p>Cuéntanos qué necesitas. Nuestro equipo puede orientarte sobre la plataforma, una consulta comercial o soporte técnico.</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-comments"></i> Consultas comerciales y demostraciones</li>
+                    <li><i class="fa-solid fa-life-ring"></i> Ayuda para usar SmartBids</li>
+                    <li><i class="fa-solid fa-lightbulb"></i> Ideas e integraciones para tu equipo</li>
+                </ul>
+                <div class="stat-mini-card" style="display: inline-block; margin-top: 0.5rem;">
+                    <label>También puedes escribirnos</label>
+                    <a href="mailto:{{ contacto_email }}" style="display: block; color: var(--dark-green); font-size: 1rem; font-weight: 700; text-decoration: none;">{{ contacto_email }}</a>
+                </div>
+            </div>
+
+            <div class="dashboard-card" style="padding: 1.8rem;">
+                <div class="dashboard-header" style="margin-bottom: 1.2rem;">
+                    <div>
+                        <h3 class="dash-title" style="font-size: 1.35rem; margin: 0;">Conversemos</h3>
+                        <p style="color: var(--gray-text); margin: 0.3rem 0 0; font-size: 0.9rem;">Completa tus datos y envíanos tu consulta.</p>
+                    </div>
+                    <i class="fa-regular fa-paper-plane" aria-hidden="true" style="color: var(--accent-green); font-size: 1.3rem;"></i>
+                </div>
+
+                <form id="contact-form" novalidate>
+                    {% csrf_token %}
+                    <div class="profile-form-grid" style="margin-top: 0;">
+                        <div class="form-item">
+                            <label for="contact-name">Nombre *</label>
+                            <input class="form-input" type="text" id="contact-name" name="name" maxlength="100" autocomplete="name" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="contact-email">Correo *</label>
+                            <input class="form-input" type="email" id="contact-email" name="email" maxlength="254" autocomplete="email" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="contact-phone">Teléfono</label>
+                            <input class="form-input" type="tel" id="contact-phone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel">
+                        </div>
+                        <div class="form-item">
+                            <label for="contact-topic">Tema *</label>
+                            <select class="form-input" id="contact-topic" name="topic" required>
+                                <option value="">Selecciona un tema</option>
+                                <option value="Consulta comercial">Consulta comercial</option>
+                                <option value="Soporte SmartBids">Soporte SmartBids</option>
+                                <option value="Integraciones">Integraciones</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-item grid-full">
+                            <label for="contact-message">¿Cómo podemos ayudarte? *</label>
+                            <textarea class="form-input" id="contact-message" name="message" rows="5" minlength="20" maxlength="3000" required style="resize: vertical; font-family: inherit;"></textarea>
+                        </div>
+                    </div>
+                    <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="display: none;">
+                    <p id="contact-feedback" role="status" aria-live="polite" style="min-height: 1.4rem; margin: 0.8rem 0; font-size: 0.9rem;"></p>
+                    <button type="submit" class="btn btn-primary" id="contact-submit">
+                        <i class="fa-regular fa-paper-plane"></i> Enviar consulta
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
 
 
 
@@ -249,4 +315,8 @@
 
 {% block footer %}
     {% include 'smartbids/includes/footer.html' %}
+{% endblock %}
+
+{% block scripts %}
+    <script type="module" src="{% static 'js/contacto.js' %}"></script>
 {% endblock %}
