@@ -1266,6 +1266,8 @@ function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', y
 
     const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
     const inputComunaLabel = document.getElementById('empresa-comuna-label');
+    const codigoComunaGuardado = document.getElementById('empresa-comuna')?.value?.trim();
+    const comunaBloqueada = Boolean(codigoComunaGuardado);
     const btnGuardar = document.getElementById('btn-guardar-empresa');
 
     if (esDueno) {
@@ -1280,16 +1282,19 @@ function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', y
             }
         });
 
-        // Selector territorial de comuna habilitado para el Administrador
+        // La comuna solo se puede elegir antes de que la empresa quede registrada con ella.
         if (btnComuna) {
-            btnComuna.disabled = false;
-            btnComuna.style.opacity = '1';
-            btnComuna.style.cursor = 'pointer';
-            btnComuna.style.pointerEvents = 'auto';
+            btnComuna.disabled = comunaBloqueada;
+            btnComuna.style.opacity = comunaBloqueada ? '0.5' : '1';
+            btnComuna.style.cursor = comunaBloqueada ? 'not-allowed' : 'pointer';
+            btnComuna.style.pointerEvents = comunaBloqueada ? 'none' : 'auto';
         }
         if (inputComunaLabel) {
-            inputComunaLabel.style.backgroundColor = '#ffffff';
-            inputComunaLabel.style.cursor = 'pointer';
+            inputComunaLabel.style.backgroundColor = comunaBloqueada ? '#f1f5f9' : '#ffffff';
+            inputComunaLabel.style.cursor = comunaBloqueada ? 'not-allowed' : 'pointer';
+            inputComunaLabel.title = comunaBloqueada
+                ? 'La comuna queda bloqueada una vez registrada para la empresa.'
+                : 'Selecciona la comuna de casa matriz antes de guardar la empresa.';
         }
 
         // Botón visible para guardar cambios
@@ -1662,6 +1667,10 @@ export async function inicializarVistaPerfil(user) {
             setVal('profile-nombre-social', data.sus_nombre_social);
 
             setVal('empresa-rut', emp.emp_rut);
+            const rutEmpresaInput = document.getElementById('empresa-rut');
+            if (rutEmpresaInput && emp.emp_rut) {
+                rutEmpresaInput.value = formatearRutChileno(emp.emp_rut, true);
+            }
             setVal('empresa-fantasia', emp.emp_fantasia || emp.emp_nombre_fantasia);
             setVal('empresa-razon-social', emp.emp_razon_social);
             setVal('empresa-contacto-nombre', emp.emp_contacto_nombre);
@@ -1811,11 +1820,51 @@ export async function inicializarVistaPerfil(user) {
 const btnBuscarRut = document.getElementById('btn-buscar-rut-empresa');
 const inputRutEmpresa = document.getElementById('empresa-rut');
 
+function formatearRutChileno(valor, completo = false) {
+    const texto = String(valor || '');
+    const rut = texto.replace(/[^0-9k]/gi, '').toUpperCase();
+    if (!rut) return '';
+
+    const separarVerificador = rut.length > 8 || completo || texto.includes('-') || /k/i.test(texto);
+    const cuerpo = separarVerificador ? rut.slice(0, -1) : rut;
+    const verificador = separarVerificador ? rut.slice(-1) : '';
+    const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    return separarVerificador ? `${cuerpoFormateado}-${verificador}` : cuerpoFormateado;
+}
+
+function rutChilenoValido(valor) {
+    const rut = String(valor || '').replace(/[^0-9k]/gi, '').toUpperCase();
+    if (!/^\d{7,8}[0-9K]$/.test(rut)) return false;
+
+    const digitos = rut.slice(0, -1);
+    let suma = 0;
+    let factor = 2;
+    for (let index = digitos.length - 1; index >= 0; index -= 1) {
+        suma += Number(digitos[index]) * factor;
+        factor = factor === 7 ? 2 : factor + 1;
+    }
+
+    const resultado = 11 - (suma % 11);
+    const verificador = resultado === 11 ? '0' : resultado === 10 ? 'K' : String(resultado);
+    return rut.endsWith(verificador);
+}
+
+if (inputRutEmpresa) {
+    inputRutEmpresa.addEventListener('input', () => {
+        inputRutEmpresa.value = formatearRutChileno(inputRutEmpresa.value);
+    });
+    inputRutEmpresa.addEventListener('blur', () => {
+        inputRutEmpresa.value = formatearRutChileno(inputRutEmpresa.value, true);
+    });
+}
+
 if (btnBuscarRut && inputRutEmpresa) {
     const ejecutarBusqueda = async () => {
-        const rutValor = inputRutEmpresa.value.trim();
-        if (!rutValor) {
-            mostrarMensaje('Ingresa un RUT para buscar la empresa.', 'error');
+        const rutValor = formatearRutChileno(inputRutEmpresa.value, true);
+        inputRutEmpresa.value = rutValor;
+        if (!rutChilenoValido(rutValor)) {
+            mostrarMensaje('Ingresa un RUT chileno válido con puntos, guion y dígito verificador.', 'error');
             return;
         }
 
@@ -1833,7 +1882,7 @@ if (btnBuscarRut && inputRutEmpresa) {
             if (res.status === 'ok' && res.datos) {
                 const datos = res.datos;
 
-                inputRutEmpresa.value = datos.emp_rut || rutValor;
+                inputRutEmpresa.value = formatearRutChileno(datos.emp_rut || rutValor, true);
 
                 setFieldState('empresa-fantasia', datos.emp_nombre_fantasia);
                 setFieldState('empresa-razon-social', datos.emp_razon_social);
@@ -1943,6 +1992,16 @@ if (btnCancelarEmpresa && !btnCancelarEmpresa.dataset.bound) {
 }
 
 const formEmpresa = document.getElementById('form-perfil-empresa');
+const inputTelefonoEmpresa = document.getElementById('empresa-telefono');
+
+if (inputTelefonoEmpresa) {
+    inputTelefonoEmpresa.addEventListener('input', () => {
+        inputTelefonoEmpresa.value = inputTelefonoEmpresa.value
+            .replace(/[^0-9+() .-]/g, '')
+            .replace(/(?!^)\+/g, '')
+            .slice(0, 20);
+    });
+}
 
 if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
     formEmpresa.dataset.bound = 'true';
@@ -1955,13 +2014,24 @@ if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
         const fantasia = document.getElementById('empresa-fantasia')?.value.trim();
         const correo = document.getElementById('empresa-correo')?.value.trim();
         const comuna = document.getElementById('empresa-comuna')?.value.trim();
+        const telefono = inputTelefonoEmpresa?.value.trim() || '';
 
-        if (!rut || !razonSocial || !fantasia || !correo || !comuna) {
+        const rutFormateado = formatearRutChileno(rut, true);
+        if (!rutChilenoValido(rutFormateado)) {
+            mostrarMensaje('El RUT no es válido. Revisa el formato y el dígito verificador.', 'error');
+            return;
+        }
+        if (telefono && (telefono.length > 20 || !/^\+?[0-9() .-]{7,20}$/.test(telefono))) {
+            mostrarMensaje('El teléfono debe tener entre 7 y 20 caracteres y usar solo números, espacios y + ( ) . -.', 'error');
+            return;
+        }
+        if (!razonSocial || !fantasia || !correo || !comuna) {
             mostrarMensaje('Por favor completa todos los campos obligatorios de la empresa (*) incluyendo la Comuna Casa Matriz.', 'error');
             return;
         }
 
-        abrirModalConfirmEmpresa(rut, razonSocial, fantasia);
+        document.getElementById('empresa-rut').value = rutFormateado;
+        abrirModalConfirmEmpresa(rutFormateado, razonSocial, fantasia);
     };
 }
 
@@ -1982,7 +2052,7 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     uid: targetUid,
-                    emp_rut: document.getElementById('empresa-rut')?.value.trim() || '',
+                    emp_rut: formatearRutChileno(document.getElementById('empresa-rut')?.value, true),
                     emp_nombre_fantasia: document.getElementById('empresa-fantasia')?.value.trim() || '',
                     emp_razon_social: document.getElementById('empresa-razon-social')?.value.trim() || '',
                     emp_contacto_nombre: document.getElementById('empresa-contacto-nombre')?.value.trim() || '',

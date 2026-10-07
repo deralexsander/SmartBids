@@ -57,15 +57,35 @@ def registrar_prospecto(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
         uid = data.get('uid')
+        nombre = data.get('sus_nombre1')
+        apellido = data.get('sus_apellido1')
 
         if not uid:
             return JsonResponse({'status': 'error', 'mensaje': 'El UID es obligatorio.'}, status=400)
-
-        # Evitar duplicados por UID de Firebase
-        if Suscriptor.objects.filter(firebase_uid=uid).exists():
-            return JsonResponse({'status': 'ok', 'mensaje': 'El suscriptor ya existe.'})
+        if not isinstance(nombre, str) or not nombre.strip():
+            return JsonResponse({'status': 'error', 'mensaje': 'El nombre es obligatorio.'}, status=400)
+        if not isinstance(apellido, str) or not apellido.strip():
+            return JsonResponse({'status': 'error', 'mensaje': 'El apellido es obligatorio.'}, status=400)
+        if len(nombre.strip()) > 100 or len(apellido.strip()) > 100:
+            return JsonResponse({'status': 'error', 'mensaje': 'El nombre y el apellido no pueden superar los 100 caracteres.'}, status=400)
 
         ahora = timezone.now()
+
+        # Completar los nombres de cuentas creadas antes de que el registro los solicitara.
+        suscriptor_existente = Suscriptor.objects.filter(firebase_uid=uid).first()
+        if suscriptor_existente:
+            campos_actualizados = []
+            if not (suscriptor_existente.sus_nombre1 or '').strip():
+                suscriptor_existente.sus_nombre1 = nombre.strip()
+                campos_actualizados.append('sus_nombre1')
+            if not (suscriptor_existente.sus_apellido1 or '').strip():
+                suscriptor_existente.sus_apellido1 = apellido.strip()
+                campos_actualizados.append('sus_apellido1')
+            if campos_actualizados:
+                suscriptor_existente.fecha_actualizacion = ahora
+                campos_actualizados.append('fecha_actualizacion')
+                suscriptor_existente.save(update_fields=campos_actualizados)
+            return JsonResponse({'status': 'ok', 'mensaje': 'Los datos del suscriptor están guardados.'})
 
         # Obtener o asignar la instancia de EstadoSuscriptor (ejemplo: ID 2 = Habilitado)
         estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=2).first()
@@ -75,8 +95,8 @@ def registrar_prospecto(request):
             fecha_registro=ahora,
             fecha_actualizacion=ahora,
             codigo_estado=estado_instancia, # <--- Usar la instancia asignada
-            sus_nombre1='',
-            sus_apellido1=''
+            sus_nombre1=nombre.strip(),
+            sus_apellido1=apellido.strip()
         )
 
         return JsonResponse({'status': 'ok', 'mensaje': 'Suscriptor habilitado registrado con éxito.'}, status=201)

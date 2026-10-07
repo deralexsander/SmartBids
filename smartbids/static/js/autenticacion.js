@@ -9,7 +9,6 @@ import {
 import { firebaseConfig, auth } from './firebase-config.js';
 import { AuthState } from './auth-state.js';
 import {
-    setupPasswordToggles,
     setButtonLoading,
     generateSessionId,
     SessionManager,
@@ -23,8 +22,6 @@ import {
     MENSAJES
 } from './mensaje.js';
 
-setupPasswordToggles();
-
 const mensajeFlash = sessionStorage.getItem('flash_message');
 if (mensajeFlash) {
     try {
@@ -35,7 +32,6 @@ if (mensajeFlash) {
     }
     sessionStorage.removeItem('flash_message');
 }
-
 
 let pendingEmail = null;
 let pendingPassword = null;
@@ -78,22 +74,59 @@ function iniciarCooldownReenvio() {
     }, 1000);
 }
 
-// Control de navegación entre los 6 inputs OTP
+// Función auxiliar para auto-enviar si se completaron los 6 dígitos
+function verificarSiEstaCompletoYEnviar() {
+    const codigoIngresado = Array.from(otpInputs).map(input => input.value.trim()).join('');
+    if (codigoIngresado.length === otpInputs.length && btnVerificarOtp && !btnVerificarOtp.disabled) {
+        btnVerificarOtp.click();
+    }
+}
+
+// Control de navegación, pegado y envío automático en los inputs OTP
 otpInputs.forEach((input, index) => {
+    // 1. Al pegar los dígitos (Ctrl+V / Pegar del menú)
+    input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const textoPegado = (e.clipboardData || window.clipboardData).getData('text').trim();
+        const digitos = textoPegado.replace(/\D/g, ''); // Deja solo números
+
+        if (!digitos) return;
+
+        // Distribuye un dígito por cada casillero
+        digitos.split('').slice(0, otpInputs.length).forEach((char, i) => {
+            if (otpInputs[i]) {
+                otpInputs[i].value = char;
+            }
+        });
+
+        // Lleva el foco al casillero correspondiente
+        const siguienteFoco = Math.min(digitos.length, otpInputs.length) - 1;
+        if (siguienteFoco >= 0) {
+            otpInputs[Math.min(siguienteFoco + 1, otpInputs.length - 1)].focus();
+        }
+
+        // Si se pegaron los 6 dígitos completos, presiona el botón automáticamente
+        verificarSiEstaCompletoYEnviar();
+    });
+
+    // 2. Al escribir dígito por dígito
     input.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '');
         if (e.target.value.length === 1 && index < otpInputs.length - 1) {
             otpInputs[index + 1].focus();
         }
+
+        // Si se llenó la última casilla o ya están todos completos, dispara la validación
+        verificarSiEstaCompletoYEnviar();
     });
 
+    // 3. Retroceso al borrar con Backspace
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Backspace' && !input.value && index > 0) {
             otpInputs[index - 1].focus();
         }
     });
 });
-
-
 
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
@@ -316,7 +349,6 @@ if (forgotPasswordLink) {
         forgotPasswordLink.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando...`;
 
         try {
-            // Se actualiza la llamada utilizando la apiKey obtenida dinámicamente desde la configuración
             const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseConfig.apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -360,13 +392,20 @@ if (registerForm) {
         e.preventDefault();
         limpiarMensaje();
 
+        const firstName = document.getElementById('register-first-name').value.trim();
+        const lastName = document.getElementById('register-last-name').value.trim();
         const email = document.getElementById('email').value.trim();
         const emailConfirm = document.getElementById('email-confirm').value.trim();
         const password = document.getElementById('password').value;
         const passwordConfirm = document.getElementById('password-confirm').value;
 
-        if (!email || !emailConfirm || !password || !passwordConfirm) {
+        if (!firstName || !lastName || !email || !emailConfirm || !password || !passwordConfirm) {
             mostrarMensaje(MENSAJES.validacion.camposRequeridos, 'error');
+            return;
+        }
+
+        if (firstName.length > 100 || lastName.length > 100) {
+            mostrarMensaje('El nombre y el apellido no pueden superar los 100 caracteres.', 'error');
             return;
         }
 
@@ -383,30 +422,30 @@ if (registerForm) {
         const submitBtn = registerForm.querySelector('button[type="submit"]');
         setButtonLoading(submitBtn, true, 'Registrando...');
 
-        // Instancia aislada para registrar en background sin alterar la sesión local
         const secondaryApp = initializeApp(firebaseConfig, `SecondaryApp_${Date.now()}`);
         const secondaryAuth = getAuth(secondaryApp);
 
         try {
-            // 1. Crear la cuenta en Firebase Authentication
             const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
             const user = userCredential.user;
 
-            // 2. Guardar en PostgreSQL conectando el UID (Estado 2 = Habilitado)
             const resDb = await fetch('/api/registrar-prospecto/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uid: user.uid })
+                body: JSON.stringify({
+                    uid: user.uid,
+                    sus_nombre1: firstName,
+                    sus_apellido1: lastName
+                })
             });
 
-            if (!resDb.ok) {
-                console.warn('[SmartBids] Error al persistir el suscriptor en PostgreSQL.');
+            const resultadoDb = await resDb.json();
+            if (!resDb.ok || resultadoDb.status !== 'ok') {
+                throw new Error(resultadoDb.mensaje || 'No se pudieron guardar tus datos en PostgreSQL.');
             }
 
-            // 3. Correo de verificación de Firebase Auth
             await sendEmailVerification(user);
 
-            // 4. Enviar correo de bienvenida mediante el servidor SMTP Django
             try {
                 await fetch('/api/enviar-correo-bienvenida/', {
                     method: 'POST',
@@ -417,7 +456,6 @@ if (registerForm) {
                 console.warn('[SmartBids] No se pudo enviar correo de bienvenida:', mailErr);
             }
 
-            // 5. Mensaje temporal y redirección a ingreso
             sessionStorage.setItem('flash_message', JSON.stringify({
                 texto: MENSAJES.auth.registroExitoso,
                 tipo: 'exito'
@@ -427,11 +465,12 @@ if (registerForm) {
         } catch (error) {
             setButtonLoading(submitBtn, false);
             console.error('Error durante el registro:', error);
-            mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
+            mostrarMensaje(
+                error.code ? getFriendlyErrorMessage(error.code, error.message) : (error.message || 'No se pudieron guardar tus datos.'),
+                'error'
+            );
         } finally {
             await deleteApp(secondaryApp);
         }
     });
 }
-
-

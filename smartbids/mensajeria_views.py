@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models.config import ParametroGlobal
+from .models.config import InfoContacto, ParametroGlobal
 from .models import Mensajeria, Suscriptor
 
 def _usuario_es_administrador(request):
@@ -23,6 +23,57 @@ def _respuesta_acceso_denegado():
         'status': 'error',
         'mensaje': 'Acceso denegado: se requieren permisos de administrador.'
     }, status=403)
+
+
+@csrf_exempt
+def administrar_info_contacto(request):
+    if not _usuario_es_administrador(request):
+        return _respuesta_acceso_denegado()
+
+    if request.method == 'GET':
+        info = InfoContacto.objects.first()
+        return JsonResponse({
+            'contacto_texto': info.contacto_texto or '' if info else '',
+            'empresas_enlaces': info.empresas_enlaces or [] if info else [],
+        })
+
+    if request.method != 'PATCH':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        contacto_texto = data.get('contacto_texto', '')
+        empresas = data.get('empresas_enlaces', [])
+        if not isinstance(contacto_texto, str) or not isinstance(empresas, list):
+            return JsonResponse({'status': 'error', 'mensaje': 'Datos de contacto no válidos.'}, status=400)
+
+        empresas_validas = []
+        for empresa in empresas:
+            if not isinstance(empresa, dict):
+                return JsonResponse({'status': 'error', 'mensaje': 'Formato de empresa no válido.'}, status=400)
+            nombre = empresa.get('nombre', '')
+            url = empresa.get('url', '')
+            target = empresa.get('target', '_blank')
+            if not all(isinstance(valor, str) for valor in (nombre, url, target)):
+                return JsonResponse({'status': 'error', 'mensaje': 'Los campos de empresa deben ser texto.'}, status=400)
+            if nombre.strip() or url.strip():
+                empresas_validas.append({
+                    'nombre': nombre.strip(),
+                    'url': url.strip(),
+                    'target': target if target in ('_blank', '_self') else '_blank',
+                })
+
+        info = InfoContacto.objects.first()
+        if info is None:
+            info = InfoContacto()
+        info.contacto_texto = contacto_texto.strip()
+        info.empresas_enlaces = empresas_validas
+        info.save()
+        return JsonResponse({'status': 'ok', 'mensaje': 'Información institucional actualizada.'})
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido.'}, status=400)
+    except Exception as error:
+        return JsonResponse({'status': 'error', 'mensaje': str(error)}, status=500)
 
 
 

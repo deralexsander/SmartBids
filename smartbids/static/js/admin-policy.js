@@ -273,3 +273,147 @@ if (formConfig) {
         }
     });
 }
+
+
+// =========================================================================
+// INFORMACIÓN INSTITUCIONAL Y ENLACES DEL FOOTER
+// =========================================================================
+const infoContactoModal = document.getElementById('info-contacto-modal');
+const btnAbrirInfoContacto = document.getElementById('btn-abrir-info-contacto');
+const btnCerrarInfoContacto = document.getElementById('btn-cerrar-info-contacto');
+const btnCerrarInfoContactoX = document.getElementById('btn-cerrar-info-contacto-x');
+const infoContactoForm = document.getElementById('info-contacto-form');
+const inputContactoTexto = document.getElementById('input-contacto-texto');
+const empresasContainer = document.getElementById('contenedor-empresas-dinamicas');
+const btnAgregarEmpresa = document.getElementById('btn-agregar-empresa-item');
+const infoContactoFeedback = document.getElementById('info-contacto-feedback');
+const saveInfoContactoButton = document.getElementById('btn-guardar-info-contacto');
+
+function setInfoContactoFeedback(text, isError = false) {
+    if (!infoContactoFeedback) return;
+    infoContactoFeedback.textContent = text;
+    infoContactoFeedback.style.color = isError ? '#c53030' : 'var(--dark-green)';
+}
+
+function renderEmpresaItem(empresa = {}) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 0.6rem; align-items: center;';
+
+    const nombre = document.createElement('input');
+    nombre.type = 'text';
+    nombre.className = 'form-input info-empresa-nombre';
+    nombre.placeholder = 'Nombre';
+    nombre.setAttribute('aria-label', 'Nombre de la empresa');
+    nombre.value = typeof empresa.nombre === 'string' ? empresa.nombre : '';
+    nombre.style.cssText = 'width: 100%; min-width: 0;';
+
+    const url = document.createElement('input');
+    url.type = 'url';
+    url.className = 'form-input info-empresa-url';
+    url.placeholder = 'https://ejemplo.cl';
+    url.setAttribute('aria-label', 'Enlace de la empresa');
+    url.value = typeof empresa.url === 'string' ? empresa.url : '';
+    url.style.cssText = 'width: 100%; min-width: 0;';
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-outline info-empresa-eliminar';
+    removeButton.setAttribute('aria-label', 'Eliminar empresa');
+    removeButton.title = 'Eliminar empresa';
+    removeButton.style.cssText = 'padding: 0.55rem 0.7rem;';
+    removeButton.innerHTML = '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>';
+
+    row.append(nombre, url, removeButton);
+    empresasContainer?.appendChild(row);
+}
+
+function closeInfoContactoModal() {
+    infoContactoModal?.classList.remove('active');
+    setInfoContactoFeedback('');
+}
+
+async function loadInfoContacto() {
+    setInfoContactoFeedback('Cargando información...');
+    try {
+        const response = await fetch('/api/administracion/info-contacto/', {
+            headers: adminHeaders()
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || 'No se pudo cargar la información.');
+
+        inputContactoTexto.value = data.contacto_texto || '';
+        empresasContainer.replaceChildren();
+        (Array.isArray(data.empresas_enlaces) ? data.empresas_enlaces : []).forEach(renderEmpresaItem);
+        setInfoContactoFeedback('');
+    } catch (error) {
+        setInfoContactoFeedback(error.message || 'Error de conexión con el servidor.', true);
+    }
+}
+
+btnAbrirInfoContacto?.addEventListener('click', () => {
+    infoContactoModal?.classList.add('active');
+    loadInfoContacto();
+});
+
+btnCerrarInfoContacto?.addEventListener('click', closeInfoContactoModal);
+btnCerrarInfoContactoX?.addEventListener('click', closeInfoContactoModal);
+btnAgregarEmpresa?.addEventListener('click', () => renderEmpresaItem());
+
+empresasContainer?.addEventListener('click', (event) => {
+    if (event.target.closest('.info-empresa-eliminar')) {
+        event.target.closest('.info-empresa-eliminar').parentElement.remove();
+    }
+});
+
+infoContactoModal?.addEventListener('click', (event) => {
+    if (event.target === infoContactoModal) closeInfoContactoModal();
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && infoContactoModal?.classList.contains('active')) {
+        closeInfoContactoModal();
+    }
+});
+
+infoContactoForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!saveInfoContactoButton || !empresasContainer) return;
+
+    const originalButtonContent = saveInfoContactoButton.innerHTML;
+    const empresas = [...empresasContainer.querySelectorAll('.info-empresa-nombre')].map((nombreInput) => {
+        const row = nombreInput.parentElement;
+        return {
+            nombre: nombreInput.value.trim(),
+            url: row.querySelector('.info-empresa-url').value.trim(),
+            target: '_blank'
+        };
+    }).filter((empresa) => empresa.nombre || empresa.url);
+
+    saveInfoContactoButton.disabled = true;
+    saveInfoContactoButton.textContent = 'Guardando...';
+    setInfoContactoFeedback('Guardando cambios...');
+
+    try {
+        const response = await fetch('/api/administracion/info-contacto/', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...adminHeaders()
+            },
+            body: JSON.stringify({
+                contacto_texto: inputContactoTexto.value,
+                empresas_enlaces: empresas
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || 'No se pudieron guardar los cambios.');
+
+        setInfoContactoFeedback('Información actualizada correctamente.');
+        setTimeout(closeInfoContactoModal, 900);
+    } catch (error) {
+        setInfoContactoFeedback(error.message || 'Error al guardar la información.', true);
+    } finally {
+        saveInfoContactoButton.disabled = false;
+        saveInfoContactoButton.innerHTML = originalButtonContent;
+    }
+});

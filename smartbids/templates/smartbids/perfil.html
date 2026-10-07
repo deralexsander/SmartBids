@@ -151,7 +151,7 @@
                         <div class="form-item grid-full">
                             <label for="empresa-rut">RUT Empresa *</label>
                             <div style="display: flex; gap: 0.75rem;">
-                                <input type="text" class="form-input" id="empresa-rut" name="emp_rut" placeholder="76.xxx.xxx-k" required style="flex: 1;">
+                                <input type="text" class="form-input" id="empresa-rut" name="emp_rut" placeholder="76.123.456-K" maxlength="12" pattern="[0-9]{1,2}[.][0-9]{3}[.][0-9]{3}-[0-9Kk]" title="Ingresa un RUT válido, por ejemplo 76.123.456-K." autocomplete="off" required style="flex: 1;">
                                 <button type="button" class="btn btn-outline" id="btn-buscar-rut-empresa" style="white-space: nowrap; padding: 0.6rem 1.2rem;">
                                     <i class="fa-solid fa-magnifying-glass"></i> Buscar por RUT
                                 </button>
@@ -185,7 +185,7 @@
 
                         <div class="form-item">
                             <label for="empresa-telefono">Teléfono Empresa</label>
-                            <input type="tel" class="form-input" id="empresa-telefono" name="emp_contacto_telefono" placeholder="+56 9 ...">
+                            <input type="tel" class="form-input" id="empresa-telefono" name="emp_contacto_telefono" placeholder="+56 9 1234 5678" maxlength="20" pattern="[+]?[0-9() .-]{7,20}" title="Usa solo números, espacios y los símbolos + ( ) . -. Máximo 20 caracteres." inputmode="tel" autocomplete="tel">
                         </div>
                         <div class="form-item">
                             <label for="empresa-comuna-label">Comuna Casa Matriz *</label>

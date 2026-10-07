@@ -17,19 +17,31 @@
         <form id="register-form" novalidate>
             {% csrf_token %}
             <div class="form-inline" style="margin-bottom: 1rem;">
-                <input type="email" id="email" name="email" placeholder="Correo electrónico">
+                <label for="register-first-name" class="sr-only">Nombre</label>
+                <input type="text" id="register-first-name" name="first_name" placeholder="Nombre" maxlength="100" autocomplete="given-name" required>
             </div>
             <div class="form-inline" style="margin-bottom: 1rem;">
-                <input type="email" id="email-confirm" name="email_confirm" placeholder="Confirmar correo">
+                <label for="register-last-name" class="sr-only">Apellido</label>
+                <input type="text" id="register-last-name" name="last_name" placeholder="Apellido" maxlength="100" autocomplete="family-name" required>
+            </div>
+            <div class="form-inline" style="margin-bottom: 1rem;">
+                <label for="email" class="sr-only">Correo electrónico</label>
+                <input type="email" id="email" name="email" placeholder="Correo electrónico" maxlength="254" autocomplete="email" required>
+            </div>
+            <div class="form-inline" style="margin-bottom: 1rem;">
+                <label for="email-confirm" class="sr-only">Confirmar correo electrónico</label>
+                <input type="email" id="email-confirm" name="email_confirm" placeholder="Confirmar correo" maxlength="254" autocomplete="off" required>
             </div>
             <div class="form-inline" style="margin-bottom: 1rem; position: relative;">
-                <input type="password" id="password" name="password" placeholder="Contraseña">
+                <label for="password" class="sr-only">Contraseña</label>
+                <input type="password" id="password" name="password" placeholder="Contraseña" autocomplete="new-password" required>
                 <button type="button" id="toggle-password" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); border:none; background:none; cursor:pointer; color: var(--dark-green); font-size:1.1rem;">
                     <i class="fa-solid fa-eye" id="toggle-password-icon"></i>
                 </button>
             </div>
             <div class="form-inline" style="margin-bottom: 1.25rem; position: relative;">
-                <input type="password" id="password-confirm" name="password_confirm" placeholder="Confirmar contraseña">
+                <label for="password-confirm" class="sr-only">Confirmar contraseña</label>
+                <input type="password" id="password-confirm" name="password_confirm" placeholder="Confirmar contraseña" autocomplete="new-password" required>
                 <button type="button" id="toggle-password-confirm" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); border:none; background:none; cursor:pointer; color: var(--dark-green); font-size:1.1rem;">
                     <i class="fa-solid fa-eye" id="toggle-password-confirm-icon"></i>
                 </button>

@@ -58,6 +58,19 @@
                     </div>
                 </div>
             </button>
+
+            <!-- 4. Información Institucional -->
+            <button type="button" id="btn-abrir-info-contacto" class="dashboard-card" style="border: 1px solid var(--border-color); text-align: left; cursor: pointer; color: inherit; transition: transform 0.2s ease; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="prop-icon" style="margin: 0; width: 50px; height: 50px; font-size: 1.3rem;">
+                        <i class="fa-solid fa-address-card"></i>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--dark-green); font-size: 1.15rem; font-weight: 700; margin-bottom: 2px;">Información Institucional</h4>
+                        <p style="color: var(--gray-text); font-size: 0.85rem; margin: 0;">Contacto y enlaces del pie de página.</p>
+                    </div>
+                </div>
+            </button>
         </div>
 
         <!-- Modal: Configuración de Alerta de Completitud de Perfil -->
@@ -162,6 +175,67 @@
                 </table>
             </div>
 
+        </div>
+
+        <!-- MODAL: EDICIÓN DE INFORMACIÓN DE CONTACTO Y EMPRESAS            -->
+        <div id="info-contacto-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="info-contacto-title">
+            <div class="dashboard-card" style="width: min(680px, 94%); max-height: 88vh; overflow-y: auto; padding: 2.2rem; border-radius: 20px; box-shadow: 0 24px 60px rgba(17, 99, 78, 0.18); border: 1px solid var(--border-color); background: var(--white); text-align: left;">
+                
+                <div class="dashboard-header" style="align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                    <div>
+                        <h2 id="info-contacto-title" style="font-size: 1.4rem; color: var(--dark-green); font-weight: 800; margin: 0;">
+                            Información Institucional y Footer
+                        </h2>
+                        <p style="font-size: 0.88rem; color: var(--gray-text); margin: 4px 0 0 0;">
+                            Modifica el texto libre de contacto y gestiona las empresas y enlaces que se mostrarán en el pie de página.
+                        </p>
+                    </div>
+                    <button type="button" id="btn-cerrar-info-contacto-x" aria-label="Cerrar modal" style="background: none; border: none; font-size: 1.4rem; color: var(--muted-teal); cursor: pointer; padding: 4px;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <form id="info-contacto-form">
+                    {% csrf_token %}
+                    <!-- Sección 1: Bloque de texto libre -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label for="input-contacto-texto" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--dark-green); text-transform: uppercase; margin-bottom: 0.4rem;">
+                            Bloque de Contacto (Texto libre)
+                        </label>
+                        <textarea id="input-contacto-texto" class="form-input" rows="4" placeholder="Ej:&#10;Agua Santa 1400&#10;Viña del Mar&#10;Mobile: +56 9 6595 6863&#10;Email: contacto@chileavanza.cl" style="width: 100%; resize: vertical; font-family: inherit; font-size: 0.88rem; line-height: 1.5; padding: 0.75rem;"></textarea>
+                        <span style="font-size: 0.8rem; color: var(--gray-text); display: block; margin-top: 4px;">
+                            Cada salto de línea creará un elemento en la sección de contacto del footer.
+                        </span>
+                    </div>
+
+                    <!-- Sección 2: Lista Dinámica de Empresas -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                            <label style="font-size: 0.85rem; font-weight: 700; color: var(--dark-green); text-transform: uppercase; margin: 0;">
+                                Empresas y Enlaces
+                            </label>
+                            <button type="button" id="btn-agregar-empresa-item" class="btn btn-outline" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">
+                                <i class="fa-solid fa-plus"></i> Añadir Empresa
+                            </button>
+                        </div>
+
+                        <div id="contenedor-empresas-dinamicas" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 240px; overflow-y: auto; padding-right: 4px;">
+                            <!-- Se renderizan los inputs de empresa dinámicamente con JS -->
+                        </div>
+                    </div>
+
+                    <p id="info-contacto-feedback" style="min-height: 1.2rem; font-size: 0.88rem; font-weight: 600; margin-bottom: 1.2rem; text-align: center;"></p>
+
+                    <div class="dashboard-header" style="justify-content: flex-end; gap: 0.8rem; border-top: 1px solid var(--border-color); padding-top: 1.2rem; margin-bottom: 0;">
+                        <button type="button" id="btn-cerrar-info-contacto" class="btn btn-outline" style="padding: 0.6rem 1.4rem;">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btn-guardar-info-contacto" class="btn btn-primary" style="padding: 0.6rem 1.6rem;">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </section>
