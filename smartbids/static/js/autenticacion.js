@@ -3,7 +3,6 @@ import {
     getAuth,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    sendEmailVerification,
     signOut
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { firebaseConfig, auth } from './firebase-config.js';
@@ -443,16 +442,19 @@ if (registerForm) {
                 throw new Error(resultadoDb.mensaje || 'No se pudieron guardar tus datos en PostgreSQL.');
             }
 
-            await sendEmailVerification(user);
-
             try {
-                await fetch('/api/enviar-correo-bienvenida/', {
+                const response = await fetch('/api/enviar-correo-bienvenida/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user.email })
+                    body: JSON.stringify({ idToken: await user.getIdToken() })
                 });
+                const resultadoCorreo = await response.json();
+                if (!response.ok || resultadoCorreo.status !== 'ok') {
+                    throw new Error(resultadoCorreo.mensaje || 'No se pudo enviar el correo de activación.');
+                }
             } catch (mailErr) {
-                console.warn('[SmartBids] No se pudo enviar correo de bienvenida:', mailErr);
+                console.error('[SmartBids] No se pudo enviar correo de bienvenida y activación:', mailErr);
+                throw mailErr;
             }
 
             sessionStorage.setItem('flash_message', JSON.stringify({
