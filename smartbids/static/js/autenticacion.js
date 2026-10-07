@@ -177,8 +177,6 @@ if (loginForm) {
 
             await signOut(auth);
 
-            AuthState.isSubmittingAuth = false;
-            setButtonLoading(submitBtn, false);
             abrirModal2FA();
             iniciarCooldownReenvio();
 
@@ -190,6 +188,7 @@ if (loginForm) {
                 console.error('[SmartBids] ❌ Error en inicio de sesión:', error);
                 mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
             }
+        } finally {
             AuthState.isSubmittingAuth = false;
             setButtonLoading(submitBtn, false);
         }
