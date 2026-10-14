@@ -1,0 +1,46 @@
+/* ===== Hero y secciones legales ===== */
+
+.info__hero {
+    padding-top: 150px;
+    padding-bottom: 60px;
+}
+
+.info__section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.info__accent {
+    color: var(--accent-green);
+}
+
+.info__section--privacy {
+    background-color: var(--white);
+}
+
+/* ===== Tarjeta de seguridad ===== */
+
+.info__security-card {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 12px;
+}
+
+.info__security-icon {
+    font-size: 2.2rem;
+    color: var(--accent-green);
+    margin-bottom: 0.5rem;
+}
+
+.info__security-title {
+    color: var(--dark-green);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
+}
+
+.info__security-description {
+    font-size: 0.88rem;
+    color: var(--gray-text);
+    margin-bottom: 0;
+}

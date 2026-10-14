@@ -1,9 +1,14 @@
 from .page_views import (
     home, login_view, register_view, perfil_view, mensajeria_view,
-    administracion_general_view,
+    administracion_general_view, exportar_dashboard_view,
     handler404_view, informacion_view, dashboard_view,
 )
-from .licitaciones_views import mis_licitaciones_view
+from .licitaciones_views import mis_licitaciones_view, exportar_licitaciones_view
+from .tracking_views import (
+    detalle_licitacion_view,
+    notificaciones_licitacion_view,
+    seguimiento_licitacion_view,
+)
 from .auth_views import (
     registrar_prospecto, enviar_codigo_login, validar_codigo_login,
     verificar_sesion_activa, enviar_correo_bienvenida,

@@ -21,3 +21,8 @@ export function cambiarPestana(event, tabId) {
 }
 
 window.cambiarPestana = cambiarPestana;
+
+document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-profile-tab]');
+    if (button) window.cambiarPestana(event, button.dataset.profileTab);
+});

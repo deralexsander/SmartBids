@@ -1,0 +1,138 @@
+{% extends 'smartbids/base.html' %}
+{% load montos %}
+
+{% block nombrePag %}
+<title>{{ licitacion.lic_nombre|default:licitacion.lic_codigo }} - SmartBids</title>
+{% endblock %}
+
+{% block contenido %}
+<section class="lic-detalle__page">
+    <div class="lic-detalle__container">
+        <div id="seguimiento-feedback" role="status" aria-live="polite" hidden class="lic-detalle__feedback"></div>
+        <a href="{{ return_to }}" class="lic-detalle__back-link">
+            <i class="fa-solid fa-arrow-left"></i> Volver a licitaciones
+        </a>
+
+        <article class="dashboard-card lic-detalle__summary-card">
+            <div class="lic-detalle__summary-header">
+                <div class="lic-detalle__identity">
+                    <div class="lic-detalle__badges">
+                        <span class="dash-badge">{{ licitacion.lic_codigo }}</span>
+                        <span class="dash-badge">{{ licitacion.lic_tipo_licitacion|default:"Tipo no informado" }}</span>
+                        <span class="dash-badge{% if estado == 'cerrada' %} licitacion-state-badge--closed{% endif %}">{{ estado_label }}</span>
+                    </div>
+                    <h1 class="lic-detalle__title">
+                        {{ licitacion.lic_nombre|default:"Licitación sin nombre" }}
+                    </h1>
+                    <p class="lic-detalle__organization">
+                        <i class="fa-solid fa-building"></i>
+                        {{ licitacion.lic_codigo_ucom.ucom_descripcion|default:"Unidad de compra no informada" }}
+                    </p>
+                </div>
+                <div class="lic-detalle__header-actions">
+                    {% if suscriptor_activo %}
+                    {% if seguimiento_activo or estado != 'cerrada' %}
+                    <form method="post" action="{% url 'seguimiento_licitacion' licitacion.lic_codigo %}" data-seguimiento-form>
+                        {% csrf_token %}
+                        <input type="hidden" name="return_to" value="{{ return_to }}">
+                        {% if return_solo_seguidas %}<input type="hidden" name="solo_seguidas" value="{{ return_solo_seguidas }}">{% endif %}
+                        {% if return_estado %}<input type="hidden" name="estado" value="{{ return_estado }}">{% endif %}
+                        {% if seguimiento_activo %}
+                            <input type="hidden" name="accion" value="dejar">
+                            <button class="btn btn-outline" type="submit" data-seguir-label="Seguir proceso" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-primary"><i class="fa-solid fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Dejar de seguir</span></button>
+                        {% else %}
+                            <input type="hidden" name="accion" value="seguir">
+                            <button class="btn btn-primary" type="submit" data-seguir-label="Seguir proceso" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-primary"><i class="fa-regular fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Seguir proceso</span></button>
+                        {% endif %}
+                    </form>
+                    {% endif %}
+                    {% elif estado != 'cerrada' %}
+                    <a href="{% url 'ingreso' %}" class="btn btn-primary">Inicia sesión para seguir</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="lic-detalle__facts">
+                <div class="dashboard-card lic-detalle__fact-card">
+                    <small class="lic-detalle__fact-label">Presupuesto</small>
+                    <div class="lic-detalle__budget-value">{% if licitacion.lic_presupuesto %}{{ licitacion.lic_moneda|default:"$" }} {{ licitacion.lic_presupuesto|miles_chilenos }}{% else %}No informado{% endif %}</div>
+                </div>
+                <div class="dashboard-card lic-detalle__fact-card lic-detalle__fact-card--publication">
+                    <small class="lic-detalle__fact-label">Publicación</small>
+                    <div class="lic-detalle__fact-value">{{ licitacion.lic_fecha_public|default:"No informada" }}</div>
+                </div>
+                <div class="dashboard-card licitacion-close-card{% if estado == 'cerrada' %} licitacion-close-card--closed{% endif %}">
+                    <small class="lic-detalle__fact-label">Cierre</small>
+                    <div class="licitacion-close-date{% if estado == 'cerrada' %} licitacion-close-date--closed{% endif %}">{{ licitacion.lic_fecha_cierre|default:"No informado" }}</div>
+                </div>
+                <div class="dashboard-card lic-detalle__fact-card">
+                    <small class="lic-detalle__fact-label">Productos / ítems</small>
+                    <div class="lic-detalle__fact-value">{{ licitacion.lic_items_cantidad|default:"No informado" }}</div>
+                </div>
+            </div>
+        </article>
+
+        <div class="lic-detalle__content-grid">
+            <section class="dashboard-card lic-detalle__panel">
+                <h2 class="lic-detalle__section-title"><i class="fa-solid fa-align-left lic-detalle__icon"></i> Descripción del proceso</h2>
+                {% if licitacion.lic_descripcion %}
+                    <p class="lic-detalle__description">{{ licitacion.lic_descripcion }}</p>
+                {% elif licitacion.lic_texto %}
+                    <p class="lic-detalle__description">{{ licitacion.lic_texto }}</p>
+                {% else %}
+                    <p class="lic-detalle__empty-message">El proceso no incluye una descripción en los datos disponibles.</p>
+                {% endif %}
+            </section>
+
+            <section class="dashboard-card lic-detalle__panel">
+                <h2 class="lic-detalle__section-title"><i class="fa-solid fa-timeline lic-detalle__icon"></i> Historial del proceso</h2>
+                <ol class="lic-detalle__milestones">
+                    {% for hito in hitos %}
+                    <li class="licitacion-hito{% if hito.completado %} licitacion-hito--completed{% else %} licitacion-hito--pending{% endif %}">
+                        <strong>{{ hito.nombre }}</strong><br>
+                        <small>{{ hito.fecha }}</small>
+                        {% if hito.estado == estado %}<span class="dash-badge">Estado actual</span>{% endif %}
+                    </li>
+                    {% empty %}
+                    <li class="lic-detalle__empty-message">Sin hitos con fechas registradas.</li>
+                    {% endfor %}
+                </ol>
+            </section>
+        </div>
+
+        <div class="lic-detalle__related-grids">
+            <section class="dashboard-card lic-detalle__panel">
+                <h2 class="lic-detalle__section-title"><i class="fa-solid fa-file-lines lic-detalle__icon"></i> Documentos</h2>
+                {% for documento in documentos %}
+                    <p><a href="{{ documento.url }}" target="_blank" rel="noopener noreferrer">{{ documento.titulo }}</a>
+                        {% if documento.fecha_publicacion %}<small> · {{ documento.fecha_publicacion|date:"d-m-Y" }}</small>{% endif %}
+                    </p>
+                {% empty %}
+                    <p class="lic-detalle__empty-message">Aún no hay documentos asociados en SmartBids.</p>
+                {% endfor %}
+            </section>
+
+            <section class="dashboard-card lic-detalle__panel">
+                <h2 class="lic-detalle__section-title"><i class="fa-solid fa-circle-question lic-detalle__icon"></i> Preguntas y respuestas</h2>
+                {% for item in preguntas %}
+                    <div class="lic-detalle__question">
+                        <strong>Pregunta</strong><p>{{ item.pregunta }}</p>
+                        <strong>Respuesta</strong><p>{{ item.respuesta|default:"Pendiente de respuesta" }}</p>
+                        {% if item.fecha_pregunta %}<small>{{ item.fecha_pregunta|date:"d-m-Y H:i" }}</small>{% endif %}
+                    </div>
+                {% empty %}
+                    <p class="lic-detalle__empty-message">Aún no hay preguntas o respuestas asociadas en SmartBids.</p>
+                {% endfor %}
+            </section>
+        </div>
+
+        {% if url_externa %}
+        <p class="lic-detalle__external-link-wrap">
+            <a href="{{ url_externa }}" target="_blank" rel="noopener noreferrer" class="lic-detalle__external-link">
+                Consultar ficha oficial en Mercado Público <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+        </p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

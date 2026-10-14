@@ -11,56 +11,56 @@
 
         <!-- Barra Lateral -->
         <aside class="profile-sidebar">
-            <div class="dashboard-card" style="text-align: center;">
+            <div class="dashboard-card perfil__sidebar-card">
                 
                 <!-- Avatar Adaptable -->
-                <div class="prediction-box" style="width: 100%; border-radius: 12px; margin: 0 0 1.2rem 0; padding: 1.4rem 1rem; box-sizing: border-box; justify-content: center; position: relative; min-height: 80px; box-shadow: 0 4px 14px rgba(17, 99, 78, 0.15);">
-                    <span id="profile-initials" style="font-size: 2rem; font-weight: 800; letter-spacing: 2px; color: var(--white); text-transform: uppercase;">--</span>
-                    <div class="status-indicator" title="Usuario activo" style="right: 8px; bottom: 8px;"></div>
+                <div class="prediction-box perfil__avatar">
+                    <span id="profile-initials" class="perfil__avatar-initials">--</span>
+                    <div class="status-indicator perfil__avatar-status" title="Usuario activo"></div>
                 </div>
 
-                <h3 id="profile-fullname-header" style="color: var(--dark-green); font-size: 1.35rem; font-weight: 800; margin-bottom: 2px;">
+                <h3 id="profile-fullname-header" class="perfil__user-name">
                     Cargando...
                 </h3>
-                <p id="profile-social-header" style="color: var(--muted-teal); font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem;">
+                <p id="profile-social-header" class="perfil__user-handle">
                     @suscriptor
                 </p>
 
-                <div class="dash-badge" style="display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase;">
+                <div class="dash-badge perfil__role-badge">
                     <i class="fa-solid fa-shield-halved"></i> Estado: <span id="profile-role-badge">--</span>
                 </div>
 
                 <ul class="profile-menu">
                     <li>
-                        <button type="button" class="profile-menu-btn active" onclick="cambiarPestana(event, 'tab-info')">
+                        <button type="button" class="profile-menu-btn active" data-profile-tab="tab-info">
                             <i class="fa-solid fa-id-card"></i> Datos Personales
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-empresa')">
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-empresa">
                             <i class="fa-solid fa-building"></i> Datos Empresa
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-filtros')">
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-filtros">
                             <i class="fa-solid fa-sliders"></i> Filtros de Licitación
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-seguridad')">
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-seguridad">
                             <i class="fa-solid fa-lock"></i> Seguridad y Clave
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-sesiones')">
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-sesiones">
                             <i class="fa-solid fa-circle-info"></i> Sesión y Auditoría
                         </button>
                     </li>
                 </ul>
 
-                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);">
+                <hr class="perfil__sidebar-divider">
 
-                <button id="logout-button" type="button" class="btn btn-outline" style="width: 100%; border-color: #e53e3e; color: #e53e3e;">
+                <button id="logout-button" type="button" class="btn btn-outline perfil__logout-button">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
                 </button>
             </div>
@@ -70,22 +70,22 @@
         <main class="profile-main-content">
 
             <!-- Banner Dinámico: Barra de Porcentaje con Semáforo -->
-            <div class="dashboard-card" style="padding: 1.4rem 1.6rem; border-radius: 16px; margin-bottom: 1.5rem; background: var(--white); border: 1.5px solid var(--soft-mint); box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.8rem;">
+            <div class="dashboard-card perfil__progress-card">
+                <div class="perfil__progress-header">
                     <div>
-                        <h5 style="color: var(--dark-green); font-size: 1.15rem; font-weight: 800; margin: 0;">Panel de Administración y Preferencias</h5>
-                        <p id="profile-progress-status" style="font-size: 0.88rem; color: var(--muted-teal); margin: 3px 0 0 0; font-weight: 600;">
+                        <h5 class="perfil__progress-title">Panel de Administración y Preferencias</h5>
+                        <p id="profile-progress-status" class="perfil__progress-status">
                             Calculando completitud del perfil...
                         </p>
                     </div>
-                    <div style="display: flex; align-items: baseline; gap: 5px;">
-                        <span id="profile-progress-number" style="font-size: 2.1rem; font-weight: 800; color: #e53e3e; line-height: 1;">0%</span>
-                        <small style="font-weight: 700; color: var(--muted-teal); font-size: 0.85rem;">completado</small>
+                    <div class="perfil__progress-summary">
+                        <span id="profile-progress-number" class="perfil__progress-number">0%</span>
+                        <small class="perfil__progress-label">completado</small>
                     </div>
                 </div>
 
-                <div style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 20px; overflow: hidden; position: relative;">
-                    <div id="profile-progress-fill" style="width: 0%; height: 100%; background-color: #e53e3e; border-radius: 20px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;"></div>
+                <div class="perfil__progress-track">
+                    <div id="profile-progress-fill" class="perfil__progress-fill"></div>
                 </div>
             </div>
 
@@ -93,10 +93,10 @@
             <div id="tab-info" class="dashboard-card tab-content-panel active">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-id-card" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-id-card perfil__section-icon"></i>
                         Información del Suscriptor
                     </div>
-                    <span id="profile-id-suscriptor" style="display: none;">--</span>
+                    <span id="profile-id-suscriptor" class="perfil__subscriber-id">--</span>
                     <span class="dash-badge">Perfil Verificado</span>
                 </div>
 
@@ -128,7 +128,7 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                    <div class="perfil__personal-form-actions">
                         <button type="submit" class="btn btn-primary">
                             <i class="fa-solid fa-floppy-disk"></i> Guardar Datos Personales
                         </button>
@@ -140,7 +140,7 @@
             <div id="tab-empresa" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-building" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-building perfil__section-icon"></i>
                         Información de la Empresa
                     </div>
                     <span class="dash-badge">Tributaria</span>
@@ -150,9 +150,9 @@
                     <div class="profile-form-grid">
                         <div class="form-item grid-full">
                             <label for="empresa-rut">RUT Empresa *</label>
-                            <div style="display: flex; gap: 0.75rem;">
-                                <input type="text" class="form-input" id="empresa-rut" name="emp_rut" placeholder="76.123.456-K" maxlength="12" pattern="[0-9]{1,2}[.][0-9]{3}[.][0-9]{3}-[0-9Kk]" title="Ingresa un RUT válido, por ejemplo 76.123.456-K." autocomplete="off" required style="flex: 1;">
-                                <button type="button" class="btn btn-outline" id="btn-buscar-rut-empresa" style="white-space: nowrap; padding: 0.6rem 1.2rem;">
+                            <div class="perfil__rut-lookup">
+                                <input type="text" class="form-input perfil__rut-input" id="empresa-rut" name="emp_rut" placeholder="76.123.456-K" maxlength="12" pattern="[0-9]{1,2}[.][0-9]{3}[.][0-9]{3}-[0-9Kk]" title="Ingresa un RUT válido, por ejemplo 76.123.456-K." autocomplete="off" required>
+                                <button type="button" class="btn btn-outline perfil__rut-lookup-button" id="btn-buscar-rut-empresa">
                                     <i class="fa-solid fa-magnifying-glass"></i> Buscar por RUT
                                 </button>
                             </div>
@@ -180,7 +180,7 @@
                         <!-- SIGLAS / INICIALES BLOQUEADAS (SOLO LECTURA) -->
                         <div class="form-item">
                             <label for="empresa-iniciales">Siglas / Iniciales</label>
-                            <input type="text" class="form-input" id="empresa-iniciales" name="emp_iniciales" maxlength="20" readonly style="background-color: #f1f5f9; cursor: not-allowed; text-transform: uppercase;" title="Iniciales generadas automáticamente a partir de la Razón Social o Nombre Fantasía.">
+                            <input type="text" class="form-input perfil__company-initials" id="empresa-iniciales" name="emp_iniciales" maxlength="20" readonly title="Iniciales generadas automáticamente a partir de la Razón Social o Nombre Fantasía.">
                         </div>
 
                         <div class="form-item">
@@ -189,11 +189,11 @@
                         </div>
                         <div class="form-item">
                             <label for="empresa-comuna-label">Comuna Casa Matriz *</label>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <input type="text" class="form-input" id="empresa-comuna-label" placeholder="Selecciona una comuna..." readonly style="background-color: #f8fafc; cursor: pointer;">
+                            <div class="perfil__commune-field">
+                                <input type="text" class="form-input perfil__commune-input" id="empresa-comuna-label" placeholder="Selecciona una comuna..." readonly>
                                 <input type="hidden" id="empresa-comuna" name="emp_codigo_comuna">
                                 
-                                <button type="button" class="btn btn-outline" id="btn-seleccionar-comuna-empresa" style="padding: 0.6rem 0.9rem;" title="Abrir selector de comuna">
+                                <button type="button" class="btn btn-outline perfil__commune-picker-button" id="btn-seleccionar-comuna-empresa" title="Abrir selector de comuna">
                                     <i class="fa-solid fa-map-location-dot"></i>
                                 </button>
                             </div>
@@ -204,7 +204,7 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
+                    <div class="perfil__form-actions">
                         <button type="submit" class="btn btn-primary" id="btn-guardar-empresa">
                             <i class="fa-solid fa-floppy-disk"></i> Guardar Empresa
                         </button>
@@ -213,33 +213,33 @@
             </div>
 
             <!-- Modal de Confirmación Guardar Empresa -->
-            <div id="modal-confirmar-empresa" class="modal-2fa-overlay" style="display: none;">
-                <div class="modal-2fa-card" style="max-width: 480px; text-align: center;">
-                    <div style="width: 55px; height: 55px; border-radius: 50%; background: rgba(30, 196, 152, 0.15); color: var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1.2rem;">
+            <div id="modal-confirmar-empresa" class="modal-2fa-overlay perfil__company-dialog-overlay">
+                <div class="modal-2fa-card perfil__dialog-card">
+                    <div class="perfil__dialog-indicator perfil__dialog-icon">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
 
-                    <h3 class="modal-2fa-title" style="color: var(--dark-green); font-size: 1.3rem;">Confirmar Datos de Empresa</h3>
+                    <h3 class="modal-2fa-title perfil__dialog-title">Confirmar Datos de Empresa</h3>
                     
-                    <p class="modal-2fa-desc" style="margin-bottom: 1rem;">
+                    <p class="modal-2fa-desc perfil__dialog-description">
                         Verifica que los antecedentes tributarios ingresados sean correctos:
                     </p>
 
-                    <div style="background: var(--light-bg); border: 1px solid var(--soft-mint); border-radius: 10px; padding: 1rem; text-align: left; font-size: 0.88rem; margin-bottom: 1.2rem; color: var(--dark-green); line-height: 1.6;">
+                    <div class="perfil__company-summary">
                         <div><strong>• RUT:</strong> <span id="modal-confirm-rut">--</span></div>
                         <div><strong>• Razón Social:</strong> <span id="modal-confirm-razon">--</span></div>
                         <div><strong>• Nombre Comercial:</strong> <span id="modal-confirm-fantasia">--</span></div>
                     </div>
 
-                    <p style="font-size: 0.82rem; color: var(--gray-text); margin-bottom: 1.5rem;">
-                        <i class="fa-solid fa-circle-info" style="color: var(--muted-teal);"></i> Una vez guardados, los datos quedarán registrados y protegidos contra modificaciones.
+                    <p class="perfil__dialog-note">
+                        <i class="fa-solid fa-circle-info perfil__dialog-note-icon"></i> Una vez guardados, los datos quedarán registrados y protegidos contra modificaciones.
                     </p>
 
-                    <div style="display: flex; gap: 0.8rem; justify-content: center;">
-                        <button type="button" id="btn-cancelar-modal-empresa" class="btn btn-outline" style="padding: 0.6rem 1.4rem;">
+                    <div class="perfil__company-dialog-actions">
+                        <button type="button" id="btn-cancelar-modal-empresa" class="btn btn-outline perfil__company-review-button">
                             Revisar o Cambiar
                         </button>
-                        <button type="button" id="btn-aceptar-modal-empresa" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">
+                        <button type="button" id="btn-aceptar-modal-empresa" class="btn btn-primary perfil__company-confirm-button">
                             <i class="fa-solid fa-check"></i> Confirmar y Guardar
                         </button>
                     </div>
@@ -250,142 +250,142 @@
             <div id="tab-filtros" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-sliders" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-sliders perfil__section-icon"></i>
                         Filtros de Búsqueda y Mercado
                     </div>
                     <span class="dash-badge">Selección No Lineal</span>
                 </div>
 
                 <form id="form-perfil-preferencias">
-                    <div style="display: flex; flex-direction: column; gap: 1.4rem; margin-bottom: 1.5rem;">
+                    <div class="perfil__preference-sections">
                         
                         <!-- Eje 1: Cobertura Territorial -->
-                        <div class="stat-mini-card" style="border-left: 4px solid var(--accent-green); padding: 1.4rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
-                                <div style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-map-location-dot" style="color: var(--accent-green);"></i> 1. Cobertura Territorial
+                        <div class="stat-mini-card perfil__territory-card">
+                            <div class="perfil__preference-header">
+                                <div class="perfil__preference-title">
+                                    <i class="fa-solid fa-map-location-dot perfil__section-icon"></i> 1. Cobertura Territorial
                                 </div>
-                                <button type="button" id="btn-ajustar-cobertura" class="btn btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                                <button type="button" id="btn-ajustar-cobertura" class="btn btn-outline perfil__preference-action">
                                     <i class="fa-solid fa-diagram-project"></i> Explorar Árbol Geográfico
                                 </button>
                             </div>
                             
-                            <div id="chips-comunas" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg);">
-                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin comunas seleccionadas (Aplica cobertura nacional)</span>
+                            <div id="chips-comunas" class="perfil__selection-chips">
+                                <span class="perfil__selection-placeholder">Sin comunas seleccionadas (Aplica cobertura nacional)</span>
                             </div>
                             <input type="hidden" id="pref-comunas" name="pref_comunas">
                         </div>
 
                         <!-- Eje 2: Catálogo y Productos ONU -->
-                        <div class="stat-mini-card" style="border-left: 4px solid var(--dark-green); padding: 1.4rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
-                                <div style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-boxes-stacked" style="color: var(--dark-green);"></i> 2. Catálogo de Bienes y Servicios (ONU)
+                        <div class="stat-mini-card perfil__products-card">
+                            <div class="perfil__preference-header">
+                                <div class="perfil__preference-title">
+                                    <i class="fa-solid fa-boxes-stacked perfil__products-heading-icon"></i> 2. Catálogo de Bienes y Servicios (ONU)
                                 </div>
-                                <button type="button" id="btn-ajustar-productos" class="btn btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                                <button type="button" id="btn-ajustar-productos" class="btn btn-outline perfil__preference-action">
                                     <i class="fa-solid fa-folder-tree"></i> Explorar Catálogo ONU
                                 </button>
                             </div>
 
-                            <div id="chips-productos" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg); margin-bottom: 0.8rem;">
-                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin filtros de productos (Aplica a todos los rubros)</span>
+                            <div id="chips-productos" class="perfil__selection-chips perfil__product-chips">
+                                <span class="perfil__selection-placeholder">Sin filtros de productos (Aplica a todos los rubros)</span>
                             </div>
                             <input type="hidden" id="pref-productos" name="pref_productos">
 
                             <!-- Checkboxes de Tipo de Procedimiento -->
                             <div class="form-item grid-full">
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--dark-green); margin-bottom: 0.4rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;">
-                                    <i class="fa-solid fa-list-check" style="color: var(--accent-green);"></i> Tipo de Procedimiento (Selección múltiple)
+                                <label class="perfil__tender-type-label">
+                                    <i class="fa-solid fa-list-check perfil__section-icon"></i> Tipo de Procedimiento (Selección múltiple)
                                 </label>
 
-                                <div id="contenedor-tipo-licitacion" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="L1" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
-                                        <div style="line-height: 1.2;">
-                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">L1</strong>
-                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">Menor a 100 UTM</small>
+                                <div id="contenedor-tipo-licitacion" class="perfil__tender-type-grid">
+                                    <label class="perfil__tender-type-option">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="L1" class="perfil__tender-type-checkbox">
+                                        <div class="perfil__tender-type-details">
+                                            <strong class="perfil__tender-type-name">L1</strong>
+                                            <small class="perfil__tender-type-limit">Menor a 100 UTM</small>
                                         </div>
                                     </label>
 
-                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="LE" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
-                                        <div style="line-height: 1.2;">
-                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">LE</strong>
-                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">100 a 1.000 UTM</small>
+                                    <label class="perfil__tender-type-option">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="LE" class="perfil__tender-type-checkbox">
+                                        <div class="perfil__tender-type-details">
+                                            <strong class="perfil__tender-type-name">LE</strong>
+                                            <small class="perfil__tender-type-limit">100 a 1.000 UTM</small>
                                         </div>
                                     </label>
 
-                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="LP" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
-                                        <div style="line-height: 1.2;">
-                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">LP</strong>
-                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">1.000 a 5.000 UTM</small>
+                                    <label class="perfil__tender-type-option">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="LP" class="perfil__tender-type-checkbox">
+                                        <div class="perfil__tender-type-details">
+                                            <strong class="perfil__tender-type-name">LP</strong>
+                                            <small class="perfil__tender-type-limit">1.000 a 5.000 UTM</small>
                                         </div>
                                     </label>
 
-                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="LR" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
-                                        <div style="line-height: 1.2;">
-                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">LR</strong>
-                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">Mayor a 5.000 UTM</small>
+                                    <label class="perfil__tender-type-option">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="LR" class="perfil__tender-type-checkbox">
+                                        <div class="perfil__tender-type-details">
+                                            <strong class="perfil__tender-type-name">LR</strong>
+                                            <small class="perfil__tender-type-limit">Mayor a 5.000 UTM</small>
                                         </div>
                                     </label>
 
-                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="CM" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
-                                        <div style="line-height: 1.2;">
-                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">CM</strong>
-                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">Convenio Marco</small>
+                                    <label class="perfil__tender-type-option">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="CM" class="perfil__tender-type-checkbox">
+                                        <div class="perfil__tender-type-details">
+                                            <strong class="perfil__tender-type-name">CM</strong>
+                                            <small class="perfil__tender-type-limit">Convenio Marco</small>
                                         </div>
                                     </label>
 
-                                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: 1.5px solid var(--soft-mint); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="B2" style="accent-color: var(--accent-green); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0;">
-                                        <div style="line-height: 1.2;">
-                                            <strong style="color: var(--dark-green); font-size: 0.88rem; display: block;">B2</strong>
-                                            <small style="color: var(--muted-teal); font-size: 0.78rem;">Compra Ágil</small>
+                                    <label class="perfil__tender-type-option">
+                                        <input type="checkbox" name="pref_tipo_lic_check" value="B2" class="perfil__tender-type-checkbox">
+                                        <div class="perfil__tender-type-details">
+                                            <strong class="perfil__tender-type-name">B2</strong>
+                                            <small class="perfil__tender-type-limit">Compra Ágil</small>
                                         </div>
                                     </label>
                                 </div>
 
                                 <!-- Sugeridor de Palabras Clave -->
-                                <div class="form-item grid-full" style="margin-top: 0.8rem; position: relative;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                        <label for="pref-palabras" style="margin: 0;">Palabras Clave (Separadas por coma)</label>
-                                        <small style="color: var(--muted-teal); font-size: 0.76rem; font-weight: 600;">(Se guardan en minúsculas y sin signos)</small>
+                                <div class="form-item grid-full perfil__keyword-field">
+                                    <div class="perfil__keyword-header">
+                                        <label for="pref-palabras" class="perfil__keyword-label">Palabras Clave (Separadas por coma)</label>
+                                        <small class="perfil__keyword-hint">(Se guardan en minúsculas y sin signos)</small>
                                     </div>
                                     <input type="text" id="pref-palabras" class="form-input" placeholder="Ej: Mantención, Cloud, Seguridad">
 
-                                    <div id="palabras-sugerencia-box" style="display: none; margin-top: 6px; font-size: 0.84rem; color: var(--dark-green); background: rgba(30, 196, 152, 0.08); border: 1.5px solid var(--accent-green); padding: 7px 12px; border-radius: 8px;">
-                                        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-green); margin-right: 6px;"></i>
-                                        ¿Quisiste decir <strong id="palabra-sugerida-texto" style="color: var(--dark-green); text-decoration: underline; cursor: pointer; font-weight: 800;"></strong>?
-                                        <span style="font-size: 0.76rem; color: var(--muted-teal); margin-left: 8px;">(Haz clic para corregir)</span>
+                                    <div id="palabras-sugerencia-box" class="perfil__suggestion">
+                                        <i class="fa-solid fa-wand-magic-sparkles perfil__suggestion-icon"></i>
+                                        ¿Quisiste decir <strong id="palabra-sugerida-texto" class="perfil__suggestion-text"></strong>?
+                                        <span class="perfil__suggestion-hint">(Haz clic para corregir)</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Eje 3: Entidades Públicas y Unidades de Compra -->
-                        <div class="stat-mini-card" style="border-left: 4px solid var(--muted-teal); padding: 1.4rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
-                                <div style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-landmark" style="color: var(--muted-teal);"></i> 3. Entidades Públicas y Unidades de Compra
+                        <div class="stat-mini-card perfil__entities-card">
+                            <div class="perfil__preference-header">
+                                <div class="perfil__preference-title">
+                                    <i class="fa-solid fa-landmark perfil__entity-icon"></i> 3. Entidades Públicas y Unidades de Compra
                                 </div>
-                                <button type="button" id="btn-ajustar-ucom" class="btn btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                                <button type="button" id="btn-ajustar-ucom" class="btn btn-outline perfil__preference-action">
                                     <i class="fa-solid fa-sitemap"></i> Explorar Organismos y Unidades
                                 </button>
                             </div>
 
-                            <div id="chips-ucom" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; padding: 8px; border: 1.5px dashed var(--soft-mint); border-radius: 10px; background: var(--light-bg);">
-                                <span style="color: var(--muted-teal); font-size: 0.85rem; padding: 4px;">Sin entidades específicas (Monitorea todo el Estado)</span>
+                            <div id="chips-ucom" class="perfil__selection-chips">
+                                <span class="perfil__selection-placeholder">Sin entidades específicas (Monitorea todo el Estado)</span>
                             </div>
                             <input type="hidden" id="pref-ucom" name="pref_ucom">
                         </div>
 
                     </div>
 
-                    <div style="display: flex; justify-content: flex-end;">
-                        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.8rem;">
+                    <div class="perfil__form-footer">
+                        <button type="submit" class="btn btn-primary perfil__submit-button">
                             <i class="fa-solid fa-floppy-disk"></i> Guardar Filtros de Licitación
                         </button>
                     </div>
@@ -396,7 +396,7 @@
             <div id="tab-seguridad" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-shield-halved" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-shield-halved perfil__section-icon"></i>
                         Cambiar Contraseña
                     </div>
                 </div>
@@ -417,7 +417,7 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
+                    <div class="perfil__form-actions">
                         <button type="submit" class="btn btn-primary">
                             <i class="fa-solid fa-key"></i> Actualizar Clave
                         </button>
@@ -429,25 +429,25 @@
             <div id="tab-sesiones" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-circle-info" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-circle-info perfil__section-icon"></i>
                         Auditoría y Estado de Conexión
                     </div>
                 </div>
 
-                <div class="stat-grid" style="margin-top: 0.5rem;">
+                <div class="stat-grid perfil__audit-stats">
                     <div class="stat-mini-card">
                         <label>Fecha de Registro</label>
-                        <div id="profile-created-at" style="color: var(--dark-green); font-weight: 700;">--</div>
+                        <div id="profile-created-at" class="perfil__audit-value">--</div>
                     </div>
                     <div class="stat-mini-card">
                         <label>Última Actualización</label>
-                        <div id="profile-last-login" style="color: var(--dark-green); font-weight: 700;">--</div>
+                        <div id="profile-last-login" class="perfil__audit-value">--</div>
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.2rem;">
+                <div class="perfil__audit-fields">
                     <div class="form-item">
-                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase;">
+                        <label class="perfil__audit-label">
                             Identificador de Usuario (Firebase UID)
                         </label>
                         <div class="token-display-box">
@@ -456,11 +456,11 @@
                     </div>
 
                     <div class="form-item">
-                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase;">
+                        <label class="perfil__audit-label">
                             Token de Sesión Local
                         </label>
-                        <div class="token-display-box" style="border-left: 3px solid var(--accent-green);">
-                            <span id="profile-token-id" style="color: var(--accent-green);">--</span>
+                        <div class="token-display-box perfil__token-box">
+                            <span id="profile-token-id" class="perfil__token-value">--</span>
                         </div>
                     </div>
                 </div>
@@ -473,27 +473,27 @@
 <!-- ========================================================================== -->
 <!-- MODAL DE CONFIRMACIÓN DE CAMBIOS PENDIENTES AL CAMBIAR PESTAÑA / SALIR      -->
 <!-- ========================================================================== -->
-<div id="modal-confirmar-salida-pestana" class="modal-2fa-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div class="modal-2fa-card" style="max-width: 480px; text-align: center;">
-        <div style="width: 55px; height: 55px; border-radius: 50%; background: rgba(229, 62, 62, 0.12); color: #e53e3e; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1.2rem;">
+<div id="modal-confirmar-salida-pestana" class="modal-2fa-overlay perfil__exit-dialog-overlay">
+    <div class="modal-2fa-card perfil__dialog-card">
+        <div class="perfil__dialog-indicator perfil__exit-dialog-icon">
             <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
 
-        <h3 class="modal-2fa-title" style="color: var(--dark-green); font-size: 1.3rem;">¿Guardar los cambios realizados?</h3>
+        <h3 class="modal-2fa-title perfil__dialog-title">¿Guardar los cambios realizados?</h3>
         
-        <p class="modal-2fa-desc" style="margin-bottom: 1.2rem; font-size: 0.92rem; color: var(--gray-text); line-height: 1.5;">
-            Tienes modificaciones sin guardar en: <br><strong id="modal-nombre-seccion-cambios" style="color: var(--dark-green);">--</strong>.
+        <p class="modal-2fa-desc perfil__exit-dialog-description">
+            Tienes modificaciones sin guardar en: <br><strong id="modal-nombre-seccion-cambios" class="perfil__section-name">--</strong>.
         </p>
 
-        <p style="font-size: 0.84rem; color: var(--muted-teal); margin-bottom: 1.6rem;">
+        <p class="perfil__exit-dialog-warning">
             Si cambias de sección sin guardar, tus modificaciones se descartarán.
         </p>
 
-        <div style="display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap;">
-            <button type="button" id="btn-descartar-cambios-pestana" class="btn btn-outline" style="padding: 0.65rem 1.4rem; font-size: 0.88rem; border-color: #cbd5e1; color: #64748b;">
+        <div class="perfil__exit-dialog-actions">
+            <button type="button" id="btn-descartar-cambios-pestana" class="btn btn-outline perfil__exit-dialog-button">
                 Descartar y Cambiar
             </button>
-            <button type="button" id="btn-guardar-cambios-pestana" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-size: 0.88rem;">
+            <button type="button" id="btn-guardar-cambios-pestana" class="btn btn-primary perfil__exit-dialog-save-button">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
             </button>
         </div>
@@ -503,37 +503,37 @@
 <!-- ========================================================================== -->
 <!-- MODAL 1: Cobertura Geográfica (Árbol Territorial)                         -->
 <!-- ========================================================================== -->
-<div id="territory-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="territory-modal-title" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div class="modal-2fa-card" style="max-width: 760px; width: 92%; max-height: 88vh; background: var(--white); border-radius: 16px; padding: 1.8rem; box-shadow: 0 15px 35px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+<div id="territory-modal" class="modal-2fa-overlay perfil__territory-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="territory-modal-title">
+    <div class="modal-2fa-card perfil__selector-dialog-card perfil__territory-dialog-card">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-folder-tree" style="color: var(--accent-green); font-size: 1.3rem;"></i>
-                <h3 id="territory-modal-title" style="margin: 0; color: var(--dark-green); font-size: 1.25rem;">Cobertura Geográfica</h3>
+        <div class="perfil__dialog-header">
+            <div class="perfil__dialog-heading">
+                <i class="fa-solid fa-folder-tree perfil__dialog-heading-icon"></i>
+                <h3 id="territory-modal-title" class="perfil__dialog-heading-title">Cobertura Geográfica</h3>
             </div>
-            <button type="button" id="btn-cerrar-x" style="border: none; background: none; font-size: 1.4rem; color: var(--gray-text); cursor: pointer;">&times;</button>
+            <button type="button" id="btn-cerrar-x" class="perfil__dialog-close">&times;</button>
         </div>
 
-        <p id="territory-modal-desc" style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 0.8rem;">
+        <p id="territory-modal-desc" class="perfil__dialog-help">
             Marca o desmarca regiones, provincias o comunas específicas.
         </p>
 
-        <div style="margin-bottom: 0.8rem;">
-            <input type="text" id="territory-tree-search" class="form-input" placeholder="🔍 Filtrar por nombre de región, provincia o comuna..." style="padding: 0.6rem 1rem; font-size: 0.9rem;">
+        <div class="perfil__dialog-search-field perfil__tree-search-field">
+            <input type="text" id="territory-tree-search" class="form-input perfil__tree-search-input" placeholder="🔍 Filtrar por nombre de región, provincia o comuna...">
         </div>
 
-        <div id="territory-tree" style="flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid var(--border-color); border-radius: 10px; background: #fafafa; font-size: 0.92rem;">
-            <div style="text-align: center; color: var(--muted-teal); padding: 2rem;">
-                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+        <div id="territory-tree" class="perfil__tree-panel">
+            <div class="perfil__tree-loading">
+                <i class="fa-solid fa-spinner fa-spin perfil__tree-loading-icon"></i>
                 Cargando divisiones territoriales...
             </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-            <span id="territory-counter" style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">0 comunas seleccionadas</span>
-            <div style="display: flex; gap: 0.8rem;">
-                <button type="button" id="btn-cerrar-cobertura" class="btn btn-outline" style="padding: 0.55rem 1.2rem;">Cancelar</button>
-                <button type="button" id="btn-guardar-cobertura" class="btn btn-primary" style="padding: 0.55rem 1.4rem;">
+        <div class="perfil__tree-footer">
+            <span id="territory-counter" class="perfil__tree-selection-count">0 comunas seleccionadas</span>
+            <div class="perfil__tree-actions">
+                <button type="button" id="btn-cerrar-cobertura" class="btn btn-outline perfil__tree-button">Cancelar</button>
+                <button type="button" id="btn-guardar-cobertura" class="btn btn-primary perfil__tree-apply-button">
                     <i class="fa-solid fa-check"></i> Aplicar Selección
                 </button>
             </div>
@@ -545,40 +545,40 @@
 <!-- ========================================================================== -->
 <!-- MODAL 2: Catálogo y Productos ONU (Árbol de Productos)                    -->
 <!-- ========================================================================== -->
-<div id="productos-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="productos-modal-title" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div class="modal-2fa-card" style="max-width: 760px; width: 92%; max-height: 88vh; background: var(--white); border-radius: 16px; padding: 1.8rem; box-shadow: 0 15px 35px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+<div id="productos-modal" class="modal-2fa-overlay perfil__selection-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="productos-modal-title">
+    <div class="modal-2fa-card perfil__selector-dialog-card perfil__catalog-dialog-card">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-boxes-stacked" style="color: var(--accent-green); font-size: 1.3rem;"></i>
-                <h3 id="productos-modal-title" style="margin: 0; color: var(--dark-green); font-size: 1.25rem;">Catálogo de Bienes y Servicios (ONU)</h3>
+        <div class="perfil__dialog-header">
+            <div class="perfil__dialog-heading">
+                <i class="fa-solid fa-boxes-stacked perfil__dialog-heading-icon"></i>
+                <h3 id="productos-modal-title" class="perfil__dialog-heading-title">Catálogo de Bienes y Servicios (ONU)</h3>
             </div>
-            <button type="button" id="btn-cerrar-productos-x" style="border: none; background: none; font-size: 1.4rem; color: var(--gray-text); cursor: pointer;">&times;</button>
+            <button type="button" id="btn-cerrar-productos-x" class="perfil__dialog-close">&times;</button>
         </div>
 
-        <p style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 0.8rem;">
+        <p class="perfil__dialog-help">
             Marca o desmarca rubros o productos específicos del catálogo de las Naciones Unidas (ONU). Al marcar un rubro se seleccionarán todos sus productos dependientes.
         </p>
 
-        <div style="margin-bottom: 0.8rem; position: relative; display: flex; align-items: center;">
-            <input type="text" id="productos-tree-search" class="form-input" placeholder="🔍 Filtrar por código o descripción del producto..." style="padding: 0.65rem 2.5rem 0.65rem 1rem; font-size: 0.9rem; width: 100%;">
-            <div id="productos-search-loader" style="position: absolute; right: 14px; display: none; color: var(--accent-green); font-size: 1rem;">
+        <div class="perfil__dialog-search-field perfil__selection-search-field">
+            <input type="text" id="productos-tree-search" class="form-input perfil__selection-search-input" placeholder="🔍 Filtrar por código o descripción del producto...">
+            <div id="productos-search-loader" class="perfil__selection-search-loading">
                 <i class="fa-solid fa-circle-notch fa-spin"></i>
             </div>
         </div>
 
-        <div id="productos-tree" style="flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid var(--border-color); border-radius: 10px; background: #fafafa; font-size: 0.92rem;">
-            <div style="text-align: center; color: var(--muted-teal); padding: 2rem;">
-                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+        <div id="productos-tree" class="perfil__tree-panel">
+            <div class="perfil__tree-loading">
+                <i class="fa-solid fa-spinner fa-spin perfil__tree-loading-icon"></i>
                 Cargando catálogo de productos ONU...
             </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-            <span id="productos-counter" style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">0 productos seleccionados</span>
-            <div style="display: flex; gap: 0.8rem;">
-                <button type="button" id="btn-cerrar-productos" class="btn btn-outline" style="padding: 0.55rem 1.2rem;">Cancelar</button>
-                <button type="button" id="btn-guardar-productos" class="btn btn-primary" style="padding: 0.55rem 1.4rem;">
+        <div class="perfil__tree-footer">
+            <span id="productos-counter" class="perfil__tree-selection-count">0 productos seleccionados</span>
+            <div class="perfil__tree-actions">
+                <button type="button" id="btn-cerrar-productos" class="btn btn-outline perfil__tree-button">Cancelar</button>
+                <button type="button" id="btn-guardar-productos" class="btn btn-primary perfil__tree-apply-button">
                     <i class="fa-solid fa-check"></i> Aplicar Selección
                 </button>
             </div>
@@ -590,40 +590,40 @@
 <!-- ========================================================================== -->
 <!-- MODAL 3: Entidades Públicas y Unidades de Compra (Árbol UCOM)             -->
 <!-- ========================================================================== -->
-<div id="ucom-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="ucom-modal-title" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div class="modal-2fa-card" style="max-width: 800px; width: 92%; max-height: 88vh; background: var(--white); border-radius: 16px; padding: 1.8rem; box-shadow: 0 15px 35px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+<div id="ucom-modal" class="modal-2fa-overlay perfil__selection-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="ucom-modal-title">
+    <div class="modal-2fa-card perfil__selector-dialog-card perfil__entities-dialog-card">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-sitemap" style="color: var(--muted-teal); font-size: 1.3rem;"></i>
-                <h3 id="ucom-modal-title" style="margin: 0; color: var(--dark-green); font-size: 1.25rem;">Entidades Públicas y Unidades de Compra</h3>
+        <div class="perfil__dialog-header">
+            <div class="perfil__dialog-heading">
+                <i class="fa-solid fa-sitemap perfil__entities-dialog-icon"></i>
+                <h3 id="ucom-modal-title" class="perfil__dialog-heading-title">Entidades Públicas y Unidades de Compra</h3>
             </div>
-            <button type="button" id="btn-cerrar-ucom-x" style="border: none; background: none; font-size: 1.4rem; color: var(--gray-text); cursor: pointer;">&times;</button>
+            <button type="button" id="btn-cerrar-ucom-x" class="perfil__dialog-close">&times;</button>
         </div>
 
-        <p style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 0.8rem;">
+        <p class="perfil__dialog-help">
             Explora las instituciones del Estado organizadas jerárquicamente por Sector y Organismo. Puedes marcar un Sector o una Institución completa, o seleccionar Unidades de Compra individuales.
         </p>
 
-        <div style="margin-bottom: 0.8rem; position: relative; display: flex; align-items: center;">
-            <input type="text" id="ucom-tree-search" class="form-input" placeholder="🔍 Filtrar por nombre de sector, organismo o unidad de compra..." style="padding: 0.65rem 2.5rem 0.65rem 1rem; font-size: 0.9rem; width: 100%;">
-            <div id="ucom-search-loader" style="position: absolute; right: 14px; display: none; color: var(--accent-green); font-size: 1rem;">
+        <div class="perfil__dialog-search-field perfil__selection-search-field">
+            <input type="text" id="ucom-tree-search" class="form-input perfil__selection-search-input" placeholder="🔍 Filtrar por nombre de sector, organismo o unidad de compra...">
+            <div id="ucom-search-loader" class="perfil__selection-search-loading">
                 <i class="fa-solid fa-circle-notch fa-spin"></i>
             </div>
         </div>
 
-        <div id="ucom-tree" style="flex: 1; overflow-y: auto; padding: 1rem; border: 1px solid var(--border-color); border-radius: 10px; background: #fafafa; font-size: 0.92rem;">
-            <div style="text-align: center; color: var(--muted-teal); padding: 2rem;">
-                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+        <div id="ucom-tree" class="perfil__tree-panel">
+            <div class="perfil__tree-loading">
+                <i class="fa-solid fa-spinner fa-spin perfil__tree-loading-icon"></i>
                 Cargando entidades públicas y unidades de compra...
             </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-            <span id="ucom-counter" style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">0 unidades seleccionadas</span>
-            <div style="display: flex; gap: 0.8rem;">
-                <button type="button" id="btn-cerrar-ucom" class="btn btn-outline" style="padding: 0.55rem 1.2rem;">Cancelar</button>
-                <button type="button" id="btn-guardar-ucom" class="btn btn-primary" style="padding: 0.55rem 1.4rem;">
+        <div class="perfil__tree-footer">
+            <span id="ucom-counter" class="perfil__tree-selection-count">0 unidades seleccionadas</span>
+            <div class="perfil__tree-actions">
+                <button type="button" id="btn-cerrar-ucom" class="btn btn-outline perfil__tree-button">Cancelar</button>
+                <button type="button" id="btn-guardar-ucom" class="btn btn-primary perfil__tree-apply-button">
                     <i class="fa-solid fa-check"></i> Aplicar Selección
                 </button>
             </div>

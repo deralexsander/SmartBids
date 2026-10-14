@@ -1,0 +1,483 @@
+/* ===== Contenedor de la página ===== */
+.mis-lic__page {
+    padding-top: 130px;
+    padding-bottom: 60px;
+    min-height: 100vh;
+    background-color: var(--light-bg);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mis-lic__container {
+    width: 100%;
+    padding: 0 3%;
+    box-sizing: border-box;
+}
+
+/* ===== Encabezado principal ===== */
+.mis-lic__hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.mis-lic__hero-badge {
+    margin-bottom: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mis-lic__title {
+    font-size: 2.3rem;
+    color: var(--dark-green);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0.4rem 0 0.2rem;
+}
+
+.mis-lic__intro {
+    color: var(--gray-text);
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* ===== Filtros y acciones ===== */
+.mis-lic__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.mis-lic__follow-filters {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    gap: .4rem;
+    flex-wrap: nowrap;
+    padding: .4rem;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+}
+
+.mis-lic__filter-link {
+    min-height: 42px;
+    padding: .55rem 1rem;
+    border-radius: 10px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.mis-lic__toolbar-actions {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    margin-left: auto;
+    padding: .4rem;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+}
+
+.mis-lic__toolbar-link {
+    min-height: 42px;
+    padding: 0.6rem 1rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.mis-lic__search-form {
+    display: flex;
+    gap: .8rem;
+    flex-wrap: wrap;
+    align-items: end;
+    padding: 1rem 1.3rem;
+    margin-bottom: 1.5rem;
+}
+
+.mis-lic__filter-label {
+    display: grid;
+    gap: .35rem;
+    color: var(--muted-teal);
+    font-weight: 700;
+    font-size: .85rem;
+}
+
+.mis-lic__filter-label--search {
+    flex: 1 1 260px;
+}
+
+.mis-lic__filter-label--state {
+    flex: 1 1 190px;
+}
+
+.mis-lic__filter-label--type {
+    flex: 1 1 170px;
+}
+
+.mis-lic__filter-input {
+    width: 100%;
+    padding: .65rem;
+    color: var(--dark-green);
+    background: var(--white);
+    border: 1px solid var(--soft-mint);
+    border-radius: 8px;
+}
+
+.mis-lic__filter-actions {
+    display: flex;
+    gap: .5rem;
+}
+
+.mis-lic__filter-submit {
+    padding: .65rem 1rem;
+}
+
+.mis-lic__filter-clear {
+    padding: .65rem 1rem;
+    text-decoration: none;
+}
+
+/* ===== Indicadores de licitaciones ===== */
+.mis-lic__metrics-card {
+    padding: 1.2rem 1.8rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.mis-lic__metrics {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 820px;
+    width: 100%;
+    gap: 1.5rem;
+}
+
+.mis-lic__metric {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex: 1;
+}
+
+.mis-lic__metric--divided {
+    border-right: 1px solid var(--border-color);
+    padding-right: 1.2rem;
+}
+
+.mis-lic__metric-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+    background: var(--light-bg);
+    flex-shrink: 0;
+    box-shadow: none;
+    margin: 0;
+    border: 1px solid var(--border-color);
+}
+
+.mis-lic__metric-icon--primary {
+    color: var(--accent-green);
+}
+
+.mis-lic__metric-icon--muted {
+    color: var(--muted-teal);
+}
+
+.mis-lic__metric-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted-teal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+
+.mis-lic__metric-value {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    line-height: 1.1;
+}
+
+.mis-lic__metric-value--accent {
+    color: var(--accent-green);
+}
+
+.mis-lic__metric-value--urgent {
+    color: #e53e3e;
+}
+
+.mis-lic__metric-caption {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.mis-lic__metric-unit {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted-teal);
+}
+
+.mis-lic__metric-unit--urgent {
+    color: #e53e3e;
+}
+
+/* ===== Encabezado de resultados ===== */
+.mis-lic__section-header {
+    margin-bottom: 1.2rem;
+}
+
+.mis-lic__section-title {
+    font-size: 1.2rem;
+}
+
+.mis-lic__icon {
+    color: var(--accent-green);
+}
+
+.mis-lic__feedback {
+    margin-bottom: 1rem;
+    padding: .75rem 1rem;
+    color: var(--dark-green);
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+/* ===== Tarjetas de licitación ===== */
+.mis-lic__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    width: 100%;
+}
+
+.mis-lic__card {
+    padding: 1.4rem 1.8rem;
+    border-left: 5px solid var(--accent-green);
+    margin-bottom: 0;
+}
+
+.mis-lic__card-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.mis-lic__card-main {
+    flex: 1;
+    min-width: 300px;
+}
+
+.mis-lic__card-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.mis-lic__code {
+    font-weight: 800;
+    color: var(--dark-green);
+    font-size: 1rem;
+}
+
+.mis-lic__type-badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+}
+
+.mis-lic__organization {
+    font-size: 0.85rem;
+    color: var(--muted-teal);
+    font-weight: 700;
+}
+
+.mis-lic__card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    line-height: 1.35;
+    margin-bottom: 8px;
+}
+
+.mis-lic__description-details {
+    cursor: pointer;
+    font-size: 0.86rem;
+    color: var(--gray-text);
+    margin-top: 4px;
+}
+
+.mis-lic__description-summary {
+    color: var(--muted-teal);
+    font-weight: 700;
+    outline: none;
+    user-select: none;
+}
+
+.mis-lic__description-icon {
+    margin-right: 4px;
+    font-size: 0.78rem;
+}
+
+.mis-lic__description {
+    margin-top: 8px;
+    padding: 10px 14px;
+    background-color: var(--light-bg);
+    border-radius: 8px;
+    line-height: 1.5;
+    border-left: 3px solid var(--soft-mint);
+}
+
+.mis-lic__metadata {
+    display: flex;
+    gap: 1.4rem;
+    margin-top: 12px;
+    font-size: 0.82rem;
+    color: var(--muted-teal);
+    flex-wrap: wrap;
+}
+
+.mis-lic__card-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    min-width: 250px;
+    gap: 1rem;
+    align-self: stretch;
+}
+
+.mis-lic__budget {
+    text-align: right;
+}
+
+.mis-lic__budget-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--muted-teal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+}
+
+.mis-lic__budget-value {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--accent-green);
+    line-height: 1.1;
+    margin-top: 2px;
+}
+
+.mis-lic__closing-date {
+    color: var(--gray-text);
+    font-size: 0.8rem;
+    display: block;
+    margin-top: 4px;
+}
+
+.mis-lic__card-buttons {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.mis-lic__follow-button {
+    padding: 0.5rem .8rem;
+    font-size: .82rem;
+}
+
+.mis-lic__detail-link {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+/* ===== Estado vacío ===== */
+.mis-lic__empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted-teal);
+}
+
+.mis-lic__empty-icon {
+    font-size: 2.2rem;
+    margin-bottom: 0.8rem;
+    display: block;
+}
+
+/* ===== Paginación ===== */
+.mis-lic__pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.mis-lic__pagination-summary {
+    font-size: 0.88rem;
+    color: var(--muted-teal);
+    font-weight: 600;
+}
+
+.mis-lic__pagination-controls {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.mis-lic__pagination-link {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.82rem;
+    text-decoration: none;
+}
+
+.mis-lic__pagination-disabled {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.82rem;
+    opacity: 0.5;
+}
+
+.mis-lic__pagination-current {
+    padding: 0 0.5rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    font-size: 0.9rem;
+}
+
+.licitacion-state-badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+}
+
+.licitacion-state-badge--closed {
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: #e53e3e;
+}

@@ -43,7 +43,7 @@
             <div class="dashboard-card">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-magnifying-glass-chart" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-magnifying-glass-chart home__preview-icon"></i>
                         Licitación #7382-21-LR24
                     </div>
                     <span class="dash-badge">Alta Coincidencia</span>
@@ -96,7 +96,7 @@
     </section>
 
     <section class="features" id="funcionalidades">
-        <div class="section-header" style="text-align: center; margin-bottom: 5rem;">
+        <div class="section-header home__features-heading">
             <span class="section-subtitle">Módulos de la Plataforma</span>
             <h2 class="section-title">Todo lo que necesitas para dominar Mercado Público</h2>
         </div>
@@ -145,10 +145,10 @@
             </div>
             <div class="feature-graphic">
                 <div class="graphic-mockup">
-                    <div style="background: var(--white); padding: 1.2rem; border-radius: 12px; text-align: center;">
-                        <i class="fa-solid fa-bell" style="font-size: 2rem; color: var(--accent-green); margin-bottom: 0.5rem;"></i>
-                        <h6 style="color: var(--dark-green); font-weight: 700;">Alerta de Hito Próximo</h6>
-                        <p style="font-size: 0.85rem; color: var(--gray-text); margin-bottom: 0;">Faltan 24 hrs para el cierre de preguntas en Licitación #5021</p>
+                    <div class="home__milestone-alert">
+                        <i class="fa-solid fa-bell home__milestone-icon"></i>
+                        <h6 class="home__milestone-title">Alerta de Hito Próximo</h6>
+                        <p class="home__milestone-description">Faltan 24 hrs para el cierre de preguntas en Licitación #5021</p>
                     </div>
                 </div>
             </div>
@@ -167,11 +167,11 @@
             </div>
             <div class="feature-graphic">
                 <div class="graphic-mockup">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; height: 120px; padding: 1rem; background: var(--white); border-radius: 12px;">
-                        <div style="width: 20%; background: var(--soft-mint); height: 40%; border-radius: 6px;"></div>
-                        <div style="width: 20%; background: var(--muted-teal); height: 75%; border-radius: 6px;"></div>
-                        <div style="width: 20%; background: var(--accent-green); height: 100%; border-radius: 6px;"></div>
-                        <div style="width: 20%; background: var(--dark-green); height: 60%; border-radius: 6px;"></div>
+                    <div class="home__analytics-chart">
+                        <div class="home__chart-bar--first"></div>
+                        <div class="home__chart-bar--second"></div>
+                        <div class="home__chart-bar--third"></div>
+                        <div class="home__chart-bar--fourth"></div>
                     </div>
                 </div>
             </div>
@@ -242,7 +242,7 @@
     </section>
 
     <section class="features" id="contacto" aria-labelledby="contacto-title">
-        <div class="feature-row" style="margin-bottom: 0; align-items: start;">
+        <div class="feature-row home__contact-row">
             <div class="feature-text">
                 <span class="section-subtitle">Contacto SmartBids</span>
                 <h3 id="contacto-title">Hablemos de tu proyecto</h3>
@@ -252,24 +252,24 @@
                     <li><i class="fa-solid fa-life-ring"></i> Ayuda para usar SmartBids</li>
                     <li><i class="fa-solid fa-lightbulb"></i> Ideas e integraciones para tu equipo</li>
                 </ul>
-                <div class="stat-mini-card" style="display: inline-block; margin-top: 0.5rem;">
+                <div class="stat-mini-card home__contact-email-card">
                     <label>También puedes escribirnos</label>
-                    <a href="mailto:{{ contacto_email }}" style="display: block; color: var(--dark-green); font-size: 1rem; font-weight: 700; text-decoration: none;">{{ contacto_email }}</a>
+                    <a href="mailto:{{ contacto_email }}" class="home__contact-email">{{ contacto_email }}</a>
                 </div>
             </div>
 
-            <div class="dashboard-card" style="padding: 1.8rem;">
-                <div class="dashboard-header" style="margin-bottom: 1.2rem;">
+            <div class="dashboard-card home__contact-card">
+                <div class="dashboard-header home__contact-header">
                     <div>
-                        <h3 class="dash-title" style="font-size: 1.35rem; margin: 0;">Conversemos</h3>
-                        <p style="color: var(--gray-text); margin: 0.3rem 0 0; font-size: 0.9rem;">Completa tus datos y envíanos tu consulta.</p>
+                        <h3 class="dash-title home__contact-title">Conversemos</h3>
+                        <p class="home__contact-description">Completa tus datos y envíanos tu consulta.</p>
                     </div>
-                    <i class="fa-regular fa-paper-plane" aria-hidden="true" style="color: var(--accent-green); font-size: 1.3rem;"></i>
+                    <i class="fa-regular fa-paper-plane home__contact-send-icon" aria-hidden="true"></i>
                 </div>
 
                 <form id="contact-form" novalidate>
                     {% csrf_token %}
-                    <div class="profile-form-grid" style="margin-top: 0;">
+                    <div class="profile-form-grid home__contact-form-grid">
                         <div class="form-item">
                             <label for="contact-name">Nombre *</label>
                             <input class="form-input" type="text" id="contact-name" name="name" maxlength="100" autocomplete="name" required>
@@ -294,11 +294,11 @@
                         </div>
                         <div class="form-item grid-full">
                             <label for="contact-message">¿Cómo podemos ayudarte? *</label>
-                            <textarea class="form-input" id="contact-message" name="message" rows="5" minlength="20" maxlength="3000" required style="resize: vertical; font-family: inherit;"></textarea>
+                            <textarea class="form-input home__contact-message" id="contact-message" name="message" rows="5" minlength="20" maxlength="3000" required></textarea>
                         </div>
                     </div>
-                    <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="display: none;">
-                    <p id="contact-feedback" role="status" aria-live="polite" style="min-height: 1.4rem; margin: 0.8rem 0; font-size: 0.9rem;"></p>
+                    <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="home__contact-honeypot">
+                    <p id="contact-feedback" role="status" aria-live="polite" class="home__contact-feedback"></p>
                     <button type="submit" class="btn btn-primary" id="contact-submit">
                         <i class="fa-regular fa-paper-plane"></i> Enviar consulta
                     </button>
@@ -315,8 +315,4 @@
 
 {% block footer %}
     {% include 'smartbids/includes/footer.html' %}
-{% endblock %}
-
-{% block scripts %}
-    <script type="module" src="{% static 'js/contacto.js' %}"></script>
 {% endblock %}

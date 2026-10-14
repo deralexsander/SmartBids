@@ -12,8 +12,13 @@ urlpatterns = [
     path('404/', views.handler404_view, name='handler404'),
     path('informacion/', views.informacion_view, name='informacion'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard/exportar/', views.exportar_dashboard_view, name='exportar_dashboard'),
     path('mis-licitaciones/', views.mis_licitaciones_view, name='mis_licitaciones'),
+    path('mis-licitaciones/exportar/', views.exportar_licitaciones_view, name='exportar_licitaciones'),
+    path('licitaciones/<str:codigo>/', views.detalle_licitacion_view, name='detalle_licitacion'),
+    path('licitaciones/<str:codigo>/seguimiento/', views.seguimiento_licitacion_view, name='seguimiento_licitacion'),
 
+    path('api/licitaciones/notificaciones/', views.notificaciones_licitacion_view, name='api_notificaciones_licitaciones'),
     path('api/alertas-activas/', views.obtener_alertas_activas, name='api_alertas_activas'),
     path('api/mensajeria/', views.listar_crear_mensajes, name='api_mensajeria'),
     path('api/mensajeria/<int:id>/', views.detalle_mensaje, name='api_detalle_mensaje'),
