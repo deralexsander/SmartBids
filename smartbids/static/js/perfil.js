@@ -1420,7 +1420,10 @@ const KEY_OMITIR_MODAL = 'smartbids_omitir_modal_perfil_hasta';
 
 export async function evaluarYMostrarModalPerfil(datosPerfil) {
     const modal = document.getElementById('modal-completar-perfil');
-    if (!modal) return;
+    if (!modal) {
+        console.warn('[SmartBids] Contenedor modal-completar-perfil no hallado en el DOM.');
+        return;
+    }
 
     const currentPath = window.location.pathname.toLowerCase();
     const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
@@ -1439,7 +1442,7 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
             }
         }
     } catch (e) {
-        console.warn('[SmartBids] Parámetros no disponibles, usando respaldo.');
+        console.warn('[SmartBids] Parámetros no disponibles, usando respaldo local.');
     }
 
     const txtUmbralReq = document.getElementById('modal-umbral-requerido-texto');
@@ -1447,8 +1450,10 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
         txtUmbralReq.textContent = `${UMBRAL_CONFIGURADO}%`;
     }
 
+    // Verificar si el usuario omitió recientemente el aviso
     const omitidoHasta = localStorage.getItem(KEY_OMITIR_MODAL);
     if (omitidoHasta && Date.now() < Number(omitidoHasta)) {
+        console.info('[SmartBids] Modal de perfil pospuesto por omisión previa.');
         return;
     }
 
@@ -1470,6 +1475,7 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
                 }
             }
         } catch (err) {
+            console.error('[SmartBids] Error consultando perfil para modal:', err);
             return;
         }
     }
@@ -1477,7 +1483,10 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
     if (!data) return;
 
     const { porcentaje, faltantes } = calcularMetricasPerfil(data);
-    if (porcentaje >= UMBRAL_CONFIGURADO) return;
+
+    if (porcentaje >= UMBRAL_CONFIGURADO) {
+        return;
+    }
 
     const txtPorcentaje = document.getElementById('modal-porcentaje-texto');
     const barra = document.getElementById('modal-barra-relleno');
@@ -1499,7 +1508,10 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
     const cerrarModal = (dias = DIAS_CONFIGURADOS) => {
         const tiempoMilisegundos = dias * 24 * 60 * 60 * 1000;
         localStorage.setItem(KEY_OMITIR_MODAL, String(Date.now() + tiempoMilisegundos));
-        modal.style.display = 'none';
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 200);
     };
 
     const btnOmitir = document.getElementById('btn-omitir-completar-perfil');
@@ -1514,7 +1526,12 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
         btnX.addEventListener('click', () => cerrarModal(3));
     }
 
+    // Despliegue asegurando tanto display como la clase active y z-index
     modal.style.display = 'flex';
+    modal.style.zIndex = '99999';
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
 }
 
 // ==========================================================================

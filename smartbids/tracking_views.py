@@ -179,25 +179,29 @@ def seguimiento_licitacion_view(request, codigo):
 
 
 def _sincronizar_seguimientos(suscriptor):
+    """
+    Sincroniza los estados de las licitaciones seguidas por el usuario.
+    Se eliminó el borrado automático para preservar el historial.
+    """
     ahora = timezone.now()
-    vencimiento = ahora - timedelta(days=30)
     with transaction.atomic():
-        SeguimientoLicitacion.objects.filter(
-            usuario=suscriptor,
-            seguimiento_activo=False,
-            dejado_de_seguir_en__lte=vencimiento,
-        ).delete()
+        # Obtenemos solo los seguimientos activos para actualizar su estado
         seguimientos = (
             SeguimientoLicitacion.objects.select_for_update()
             .filter(usuario=suscriptor, seguimiento_activo=True)
             .select_related('licitacion')
         )
+        
+        notificaciones_a_crear = []
+        
         for seguimiento in seguimientos:
             estado_nuevo, _ = estado_licitacion(seguimiento.licitacion, ahora)
             cambios = []
+            
+            # 1. Detectar cambio de estado y preparar notificación
             if estado_nuevo != seguimiento.estado_actual:
                 estado_anterior = seguimiento.estado_actual
-                NotificacionLicitacion.objects.create(
+                notificaciones_a_crear.append(NotificacionLicitacion(
                     usuario=suscriptor,
                     licitacion=seguimiento.licitacion,
                     seguimiento=seguimiento,
@@ -207,22 +211,25 @@ def _sincronizar_seguimientos(suscriptor):
                         f"{seguimiento.licitacion.lic_nombre or seguimiento.licitacion.lic_codigo}: "
                         f"{ESTADOS_LICITACION[estado_anterior]} → {ESTADOS_LICITACION[estado_nuevo]}."
                     ),
-                )
+                ))
                 seguimiento.estado_actual = estado_nuevo
                 cambios.append('estado_actual')
+            
+            # 2. Gestionar fecha de cierre si aplica
             if estado_nuevo == 'cerrada' and seguimiento.cerrada_en is None:
                 seguimiento.cerrada_en = _instante_cierre(seguimiento.licitacion)
                 cambios.append('cerrada_en')
             elif estado_nuevo != 'cerrada' and seguimiento.cerrada_en is not None:
                 seguimiento.cerrada_en = None
                 cambios.append('cerrada_en')
+            
+            # 3. Guardar solo si hubo cambios reales
             if cambios:
                 seguimiento.save(update_fields=(*cambios, 'actualizado_en'))
-        SeguimientoLicitacion.objects.filter(
-            usuario=suscriptor,
-            estado_actual='cerrada',
-            cerrada_en__lte=vencimiento,
-        ).delete()
+        
+        # Inserción masiva de notificaciones (más eficiente)
+        if notificaciones_a_crear:
+            NotificacionLicitacion.objects.bulk_create(notificaciones_a_crear)
 
 
 def _instante_cierre(licitacion):
