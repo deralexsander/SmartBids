@@ -2,13 +2,17 @@ import secrets
 import json
 import logging
 import hashlib
+import os
 from datetime import timedelta
 from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.core.cache import cache
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.html import escape
 from django.utils import timezone
+import firebase_admin
+from firebase_admin import auth as firebase_auth, credentials
 
 
 from .models import Suscriptor, Mensajeria, Empresa, Preferencia, EstadoSuscriptor
@@ -20,6 +24,23 @@ CODIGOS_OTP_TEMPORALES = {}
 OTP_EXPIRACION_SEGUNDOS = 600
 OTP_REENVIO_SEGUNDOS = 60
 OTP_MAXIMOS_POR_HORA = 5
+
+
+def _firebase_admin_app():
+    app_name = 'smartbids-auth'
+    try:
+        return firebase_admin.get_app(app_name)
+    except ValueError:
+        service_account_json = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if not service_account_json:
+            raise RuntimeError('GOOGLE_SERVICE_ACCOUNT_JSON no está configurado.')
+
+        credential = credentials.Certificate(json.loads(service_account_json))
+        return firebase_admin.initialize_app(
+            credential,
+            {'projectId': settings.FIREBASE_CONFIG.get('projectId')},
+            name=app_name,
+        )
 
 
 def _identificador_cliente(request, email):
@@ -57,15 +78,35 @@ def registrar_prospecto(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
         uid = data.get('uid')
+        nombre = data.get('sus_nombre1')
+        apellido = data.get('sus_apellido1')
 
         if not uid:
             return JsonResponse({'status': 'error', 'mensaje': 'El UID es obligatorio.'}, status=400)
-
-        # Evitar duplicados por UID de Firebase
-        if Suscriptor.objects.filter(firebase_uid=uid).exists():
-            return JsonResponse({'status': 'ok', 'mensaje': 'El suscriptor ya existe.'})
+        if not isinstance(nombre, str) or not nombre.strip():
+            return JsonResponse({'status': 'error', 'mensaje': 'El nombre es obligatorio.'}, status=400)
+        if not isinstance(apellido, str) or not apellido.strip():
+            return JsonResponse({'status': 'error', 'mensaje': 'El apellido es obligatorio.'}, status=400)
+        if len(nombre.strip()) > 100 or len(apellido.strip()) > 100:
+            return JsonResponse({'status': 'error', 'mensaje': 'El nombre y el apellido no pueden superar los 100 caracteres.'}, status=400)
 
         ahora = timezone.now()
+
+        # Completar los nombres de cuentas creadas antes de que el registro los solicitara.
+        suscriptor_existente = Suscriptor.objects.filter(firebase_uid=uid).first()
+        if suscriptor_existente:
+            campos_actualizados = []
+            if not (suscriptor_existente.sus_nombre1 or '').strip():
+                suscriptor_existente.sus_nombre1 = nombre.strip()
+                campos_actualizados.append('sus_nombre1')
+            if not (suscriptor_existente.sus_apellido1 or '').strip():
+                suscriptor_existente.sus_apellido1 = apellido.strip()
+                campos_actualizados.append('sus_apellido1')
+            if campos_actualizados:
+                suscriptor_existente.fecha_actualizacion = ahora
+                campos_actualizados.append('fecha_actualizacion')
+                suscriptor_existente.save(update_fields=campos_actualizados)
+            return JsonResponse({'status': 'ok', 'mensaje': 'Los datos del suscriptor están guardados.'})
 
         # Obtener o asignar la instancia de EstadoSuscriptor (ejemplo: ID 2 = Habilitado)
         estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=2).first()
@@ -75,8 +116,8 @@ def registrar_prospecto(request):
             fecha_registro=ahora,
             fecha_actualizacion=ahora,
             codigo_estado=estado_instancia, # <--- Usar la instancia asignada
-            sus_nombre1='',
-            sus_apellido1=''
+            sus_nombre1=nombre.strip(),
+            sus_apellido1=apellido.strip()
         )
 
         return JsonResponse({'status': 'ok', 'mensaje': 'Suscriptor habilitado registrado con éxito.'}, status=201)
@@ -259,16 +300,28 @@ def enviar_correo_bienvenida(request):
 
     try:
         data = json.loads(request.body.decode('utf-8'))
-        email_destinatario = data.get('email')
+        id_token = data.get('idToken')
 
-        if not email_destinatario:
-            return JsonResponse({'status': 'error', 'mensaje': 'El correo electrónico es requerido.'}, status=400)
+        if not id_token:
+            return JsonResponse({'status': 'error', 'mensaje': 'El token de autenticación es requerido.'}, status=400)
 
-        asunto = '🚀 ¡Bienvenido a SmartBids! Comienza a ganar licitaciones'
+        app = _firebase_admin_app()
+        claims = firebase_auth.verify_id_token(id_token, app=app)
+        email_destinatario = claims.get('email')
+        if not email_destinatario or claims.get('email_verified'):
+            return JsonResponse({'status': 'error', 'mensaje': 'La cuenta no requiere activación.'}, status=400)
+
+        enlace_activacion = firebase_auth.generate_email_verification_link(
+            email_destinatario,
+            app=app,
+        )
+
+        asunto = 'Activa tu cuenta SmartBids y comienza a ganar licitaciones'
         mensaje_plano = (
             f'¡Hola!\n\n'
-            f'Te damos la bienvenida a SmartBids. Tu cuenta ({email_destinatario}) '
-            f'ha sido registrada exitosamente. Por favor verifica tu correo para comenzar.'
+            f'Te damos la bienvenida a SmartBids. Activa tu cuenta ({email_destinatario}) '
+            f'abriendo este enlace:\n{enlace_activacion}\n\n'
+            f'Una vez activada, podrás comenzar a usar la plataforma.'
         )
 
         html_mensaje = f"""
@@ -294,15 +347,15 @@ def enviar_correo_bienvenida(request):
         <body>
             <div class="card">
                 <div class="header">
-                    <h1>¡Bienvenido a SmartBids! 🚀</h1>
-                    <p>Inteligencia y datos para tus licitaciones</p>
+                    <h1>¡Bienvenido a SmartBids!</h1>
+                    <p>Activa tu cuenta para comenzar</p>
                 </div>
                 <div class="body">
                     <p style="font-size: 16px; line-height: 1.6;">
                         ¡Hola! Estamos felices de darte la bienvenida a nuestra plataforma de analítica y monitoreo de compras públicas.
                     </p>
                     <div class="user-badge">
-                        👤 Cuenta registrada: <span>{email_destinatario}</span>
+                        👤 Cuenta registrada: <span>{escape(email_destinatario)}</span>
                     </div>
                     <div class="features">
                         <strong style="color: #11634e; display: block; margin-bottom: 8px;">¿Qué puedes hacer en SmartBids?</strong>
@@ -312,8 +365,13 @@ def enviar_correo_bienvenida(request):
                             <li>⚡ <strong>Optimizar</strong> tus ofertas y tomar decisiones basadas en datos.</li>
                         </ul>
                     </div>
+                    <div style="text-align: center; margin: 28px 0;">
+                        <a href="{escape(enlace_activacion)}" style="display: inline-block; background: #11634e; color: #ffffff; text-decoration: none; font-weight: 700; padding: 14px 24px; border-radius: 6px;">
+                            Activar mi cuenta
+                        </a>
+                    </div>
                     <div class="alert-box">
-                        🔔 <strong>Paso indispensable:</strong> Recuerda hacer clic en el enlace de activación que enviamos a tu correo para habilitar tu acceso completo.
+                        🔔 <strong>Activa tu cuenta:</strong> usa el botón de este correo para verificar tu dirección y habilitar el acceso a SmartBids.
                     </div>
                     <p style="font-size: 14px; color: #718096; margin-top: 25px;">
                         Saludos cordiales,<br>
@@ -337,7 +395,7 @@ def enviar_correo_bienvenida(request):
             fail_silently=False,
         )
 
-        return JsonResponse({'status': 'ok', 'mensaje': 'Correo de bienvenida enviado exitosamente.'}, status=200)
+        return JsonResponse({'status': 'ok', 'mensaje': 'Correo de bienvenida y activación enviado exitosamente.'}, status=200)
 
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'mensaje': 'Cuerpo de la petición JSON inválido.'}, status=400)

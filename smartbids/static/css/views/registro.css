@@ -1,0 +1,64 @@
+/* ===== Registro ===== */
+
+.auth__field {
+    margin-bottom: 1rem;
+}
+
+.auth__field--password {
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.auth__password-toggle {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--dark-green);
+    font-size: 1.1rem;
+}
+
+.auth__field--password-confirm {
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.auth__submit--registration {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.auth__feedback {
+    margin-top: 1.5rem;
+}
+
+.auth__actions--registration {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* ===== Inicio de sesión ===== */
+
+.auth__field--login-password {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.auth__submit {
+    margin-bottom: 1.5rem;
+}
+
+.auth__actions--login {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+}

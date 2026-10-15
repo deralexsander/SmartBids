@@ -1,0 +1,139 @@
+.home__preview-icon {
+    color: var(--accent-green);
+}
+
+/* ===== Encabezado de funcionalidades ===== */
+
+.home__features-heading {
+    text-align: center;
+    margin-bottom: 5rem;
+}
+
+/* ===== Alerta de hito ===== */
+
+.home__milestone-alert {
+    background: var(--white);
+    padding: 1.2rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.home__milestone-icon {
+    font-size: 2rem;
+    color: var(--accent-green);
+    margin-bottom: 0.5rem;
+}
+
+.home__milestone-title {
+    color: var(--dark-green);
+    font-weight: 700;
+}
+
+.home__milestone-description {
+    font-size: 0.85rem;
+    color: var(--gray-text);
+    margin-bottom: 0;
+}
+
+/* ===== Gráfico de analítica ===== */
+
+.home__analytics-chart {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 120px;
+    padding: 1rem;
+    background: var(--white);
+    border-radius: 12px;
+}
+
+.home__chart-bar--first {
+    width: 20%;
+    background: var(--soft-mint);
+    height: 40%;
+    border-radius: 6px;
+}
+
+.home__chart-bar--second {
+    width: 20%;
+    background: var(--muted-teal);
+    height: 75%;
+    border-radius: 6px;
+}
+
+.home__chart-bar--third {
+    width: 20%;
+    background: var(--accent-green);
+    height: 100%;
+    border-radius: 6px;
+}
+
+.home__chart-bar--fourth {
+    width: 20%;
+    background: var(--dark-green);
+    height: 60%;
+    border-radius: 6px;
+}
+
+/* ===== Sección de contacto ===== */
+
+.home__contact-row {
+    margin-bottom: 0;
+    align-items: start;
+}
+
+.home__contact-email-card {
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.home__contact-email {
+    display: block;
+    color: var(--dark-green);
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.home__contact-card {
+    padding: 1.8rem;
+}
+
+.home__contact-header {
+    margin-bottom: 1.2rem;
+}
+
+.home__contact-title {
+    font-size: 1.35rem;
+    margin: 0;
+}
+
+.home__contact-description {
+    color: var(--gray-text);
+    margin: 0.3rem 0 0;
+    font-size: 0.9rem;
+}
+
+.home__contact-send-icon {
+    color: var(--accent-green);
+    font-size: 1.3rem;
+}
+
+.home__contact-form-grid {
+    margin-top: 0;
+}
+
+.home__contact-message {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.home__contact-honeypot {
+    display: none;
+}
+
+.home__contact-feedback {
+    min-height: 1.4rem;
+    margin: 0.8rem 0;
+    font-size: 0.9rem;
+}

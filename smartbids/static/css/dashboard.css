@@ -1,0 +1,377 @@
+/* ===== Encabezado y filtros ===== */
+
+.dashboard__page {
+    padding-top: 130px;
+    padding-bottom: 60px;
+    min-height: 100vh;
+    background-color: var(--light-bg);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dashboard__container {
+    width: 100%;
+    padding: 0 3%;
+    box-sizing: border-box;
+}
+
+.dashboard__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard__title {
+    font-size: 2.3rem;
+    color: var(--dark-green);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0.4rem 0 0.2rem;
+}
+
+.dashboard__actions {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.dashboard__period-form {
+    display: flex;
+    gap: .6rem;
+    align-items: center;
+}
+
+.dashboard__period-select {
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: 1.5px solid var(--soft-mint);
+    background: var(--white);
+    color: var(--dark-green);
+    font-weight: 700;
+}
+
+.dashboard__period-submit {
+    padding: 0.6rem 1rem;
+}
+
+.dashboard__export-link {
+    padding: 0.6rem 1.2rem;
+    text-decoration: none;
+}
+
+/* ===== Indicadores clave ===== */
+
+.dashboard__metrics-card {
+    padding: 1.2rem 1.8rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dashboard__metrics-list {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 820px;
+    width: 100%;
+    gap: 1.5rem;
+}
+
+.dashboard__metric {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex: 1;
+    border-right: 1px solid var(--border-color);
+    padding-right: 1.2rem;
+}
+
+.dashboard__metric-icon--amount {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+    background: rgba(30, 196, 152, 0.12);
+    color: var(--accent-green);
+    flex-shrink: 0;
+    box-shadow: none;
+    margin: 0;
+    border: 1px solid rgba(30, 196, 152, 0.25);
+}
+
+.dashboard__metric-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted-teal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+
+.dashboard__metric-value {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    line-height: 1.1;
+}
+
+.dashboard__metric-icon--evaluated {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+    background: rgba(17, 99, 78, 0.12);
+    color: var(--dark-green);
+    flex-shrink: 0;
+    box-shadow: none;
+    margin: 0;
+    border: 1px solid rgba(17, 99, 78, 0.25);
+}
+
+.dashboard__metric-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.dashboard__metric-unit {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted-teal);
+}
+
+.dashboard__metric-icon--competitors {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+    flex-shrink: 0;
+    box-shadow: none;
+    margin: 0;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.dashboard__metric-value--competitors {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #3b82f6;
+    line-height: 1.1;
+}
+
+.dashboard__metric--award-rate {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex: 1;
+}
+
+.dashboard__metric-icon--award-rate {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+    background: rgba(92, 150, 136, 0.15);
+    color: var(--muted-teal);
+    flex-shrink: 0;
+    box-shadow: none;
+    margin: 0;
+    border: 1px solid rgba(92, 150, 136, 0.25);
+}
+
+.dashboard__metric-value--award-rate {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--accent-green);
+    line-height: 1.1;
+}
+
+/* ===== Navegación de vistas ===== */
+
+.dashboard__tabs {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.tab-dash-btn {
+    padding: 0.65rem 1.2rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--gray-text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+}
+
+.tab-dash-btn:hover {
+    background: rgba(30, 196, 152, 0.08);
+    color: var(--dark-green);
+}
+
+.tab-dash-btn.active {
+    background: var(--dark-green);
+    color: var(--white);
+}
+
+.dashboard__view--inactive {
+    display: none;
+}
+
+/* ===== Demanda de productos ===== */
+
+.dashboard__product-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard__card {
+    padding: 1.5rem;
+}
+
+.dashboard__card-header {
+    margin-bottom: 1rem;
+}
+
+.dashboard__card-title {
+    font-size: 1.1rem;
+}
+
+.dashboard__card-icon {
+    color: var(--accent-green);
+}
+
+.dashboard__product-chart {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+
+.dashboard__icon--negative {
+    color: #ef4444;
+}
+
+.dashboard__product-ranking {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.dashboard__product-stat {
+    margin: 0;
+    padding: 0.8rem 1rem;
+}
+
+.dashboard__stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.dashboard__product-count {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--dark-green);
+}
+
+.dashboard__change--positive {
+    color: var(--accent-green);
+    font-weight: 700;
+}
+
+.dashboard__change--neutral {
+    color: var(--muted-teal);
+    font-weight: 700;
+}
+
+.dashboard__change--negative {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+/* ===== Análisis de competencia ===== */
+
+.dashboard__competitor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard__table-card {
+    padding: 1.5rem;
+    overflow-x: auto;
+}
+
+.dashboard__competitor-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    text-align: left;
+}
+
+.dashboard__table-header-row {
+    border-bottom: 2px solid var(--border-color);
+    color: var(--dark-green);
+    font-weight: 800;
+}
+
+.dashboard__table-heading {
+    padding: 0.6rem 0.4rem;
+}
+
+.dashboard__table-body {
+    color: var(--gray-text);
+}
+
+.dashboard__table-row {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dashboard__company-name {
+    padding: 0.8rem 0.4rem;
+    font-weight: 700;
+    color: var(--dark-green);
+}
+
+.dashboard__table-data {
+    padding: 0.8rem 0.4rem;
+}
+
+.dashboard__win-rate {
+    padding: 0.8rem 0.4rem;
+    font-weight: 700;
+    color: var(--accent-green);
+}
+
+/* ===== Organismos compradores ===== */
+
+.dashboard__buyer-chart {
+    position: relative;
+    height: 260px;
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .dashboard__product-grid,
+    .dashboard__competitor-grid {
+        grid-template-columns: 1fr !important;
+    }
+}

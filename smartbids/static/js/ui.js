@@ -39,7 +39,8 @@ export function setupPasswordToggles() {
         const input = document.getElementById(inputId);
         const icon = document.getElementById(iconId);
 
-        if (btn && input && icon) {
+        if (btn && input && icon && btn.dataset.passwordToggleBound !== 'true') {
+            btn.dataset.passwordToggleBound = 'true';
             btn.addEventListener('click', () => {
                 const isHidden = input.type === 'password';
                 input.type = isHidden ? 'text' : 'password';
@@ -54,4 +55,10 @@ export function setupPasswordToggles() {
     bindToggle('toggle-profile-current-pass', 'profile-current-pass', 'toggle-profile-current-icon');
     bindToggle('toggle-profile-new-pass', 'profile-new-pass', 'toggle-profile-new-icon');
     bindToggle('toggle-profile-confirm-pass', 'profile-confirm-pass', 'toggle-profile-confirm-icon');
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupPasswordToggles, { once: true });
+} else {
+    setupPasswordToggles();
 }

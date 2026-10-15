@@ -1,10 +1,78 @@
 import json
+import logging
+import re
+from django.core.exceptions import ValidationError
+from django.core.mail import EmailMessage
+from django.core.validators import validate_email
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models.config import ParametroGlobal
+from .models.config import InfoContacto, ParametroGlobal
 from .models import Mensajeria, Suscriptor
+from .context_processors import EMAIL_CONTACTO_RESPALDO, extraer_correo_contacto
+
+logger = logging.getLogger(__name__)
+
+
+def enviar_consulta_contacto(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    correo_destino = EMAIL_CONTACTO_RESPALDO
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        if data.get('website'):
+            return JsonResponse({'status': 'ok', 'mensaje': 'Consulta recibida.'})
+
+        nombre = data.get('name', '').strip() if isinstance(data.get('name'), str) else ''
+        correo = data.get('email', '').strip() if isinstance(data.get('email'), str) else ''
+        telefono = data.get('phone', '').strip() if isinstance(data.get('phone'), str) else ''
+        tema = data.get('topic', '').strip() if isinstance(data.get('topic'), str) else ''
+        mensaje = data.get('message', '').strip() if isinstance(data.get('message'), str) else ''
+
+        if not nombre or len(nombre) > 100:
+            return JsonResponse({'status': 'error', 'mensaje': 'Ingresa tu nombre (máximo 100 caracteres).'}, status=400)
+        if len(correo) > 254:
+            return JsonResponse({'status': 'error', 'mensaje': 'El correo supera el largo permitido.'}, status=400)
+        try:
+            validate_email(correo)
+        except ValidationError:
+            return JsonResponse({'status': 'error', 'mensaje': 'Ingresa un correo válido.'}, status=400)
+        if telefono and (len(telefono) > 20 or not re.fullmatch(r'[+0-9() .-]+', telefono)):
+            return JsonResponse({'status': 'error', 'mensaje': 'El teléfono contiene caracteres no permitidos o supera 20 caracteres.'}, status=400)
+        if tema not in {'Consulta comercial', 'Soporte SmartBids', 'Integraciones', 'Otro'}:
+            return JsonResponse({'status': 'error', 'mensaje': 'Selecciona un tema para tu consulta.'}, status=400)
+        if len(mensaje) < 20 or len(mensaje) > 3000:
+            return JsonResponse({'status': 'error', 'mensaje': 'La consulta debe tener entre 20 y 3000 caracteres.'}, status=400)
+
+        info_contacto = InfoContacto.objects.first()
+        correo_destino = extraer_correo_contacto(info_contacto.contacto_texto if info_contacto else '')
+        cuerpo = '\n'.join([
+            f'Nombre: {nombre}',
+            f'Correo: {correo}',
+            f'Teléfono: {telefono or "No informado"}',
+            f'Tema: {tema}',
+            '',
+            mensaje,
+        ])
+        email = EmailMessage(
+            subject=f'Nueva consulta SmartBids: {tema}',
+            body=cuerpo,
+            to=[correo_destino],
+            reply_to=[correo],
+        )
+        email.send(fail_silently=False)
+        return JsonResponse({'status': 'ok', 'mensaje': 'Tu consulta fue enviada. Gracias por escribirnos.'})
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'mensaje': 'No se pudo leer el formulario enviado.'}, status=400)
+    except Exception:
+        logger.exception('[SmartBids] No se pudo enviar una consulta desde el formulario de contacto.')
+        return JsonResponse({
+            'status': 'error',
+            'mensaje': f'No se pudo enviar la consulta en este momento. Escríbenos a {correo_destino}.'
+        }, status=503)
+
 
 def _usuario_es_administrador(request):
     uid = request.headers.get('X-Firebase-UID')
@@ -23,6 +91,57 @@ def _respuesta_acceso_denegado():
         'status': 'error',
         'mensaje': 'Acceso denegado: se requieren permisos de administrador.'
     }, status=403)
+
+
+@csrf_exempt
+def administrar_info_contacto(request):
+    if not _usuario_es_administrador(request):
+        return _respuesta_acceso_denegado()
+
+    if request.method == 'GET':
+        info = InfoContacto.objects.first()
+        return JsonResponse({
+            'contacto_texto': info.contacto_texto or '' if info else '',
+            'empresas_enlaces': info.empresas_enlaces or [] if info else [],
+        })
+
+    if request.method != 'PATCH':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        contacto_texto = data.get('contacto_texto', '')
+        empresas = data.get('empresas_enlaces', [])
+        if not isinstance(contacto_texto, str) or not isinstance(empresas, list):
+            return JsonResponse({'status': 'error', 'mensaje': 'Datos de contacto no válidos.'}, status=400)
+
+        empresas_validas = []
+        for empresa in empresas:
+            if not isinstance(empresa, dict):
+                return JsonResponse({'status': 'error', 'mensaje': 'Formato de empresa no válido.'}, status=400)
+            nombre = empresa.get('nombre', '')
+            url = empresa.get('url', '')
+            target = empresa.get('target', '_blank')
+            if not all(isinstance(valor, str) for valor in (nombre, url, target)):
+                return JsonResponse({'status': 'error', 'mensaje': 'Los campos de empresa deben ser texto.'}, status=400)
+            if nombre.strip() or url.strip():
+                empresas_validas.append({
+                    'nombre': nombre.strip(),
+                    'url': url.strip(),
+                    'target': target if target in ('_blank', '_self') else '_blank',
+                })
+
+        info = InfoContacto.objects.first()
+        if info is None:
+            info = InfoContacto()
+        info.contacto_texto = contacto_texto.strip()
+        info.empresas_enlaces = empresas_validas
+        info.save()
+        return JsonResponse({'status': 'ok', 'mensaje': 'Información institucional actualizada.'})
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido.'}, status=400)
+    except Exception as error:
+        return JsonResponse({'status': 'error', 'mensaje': str(error)}, status=500)
 
 
 

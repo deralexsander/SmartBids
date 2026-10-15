@@ -6,14 +6,53 @@ import unicodedata
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from django.db import DatabaseError
-from django.db.models import Q
+from django.db import DataError, DatabaseError
+from django.db.models import Q, Value
+from django.db.models.functions import Replace, Upper
 
 from .models import Suscriptor, Empresa, Preferencia, EstadoSuscriptor
 from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor
 from .models.procurement import UnidadCompra
 
 logger = logging.getLogger(__name__)
+
+
+def _normalizar_rut(rut):
+    return re.sub(r'[^0-9K]', '', str(rut or '').upper())
+
+
+def _formatear_rut(rut):
+    normalizado = _normalizar_rut(rut)
+    if len(normalizado) not in (8, 9) or not normalizado[:-1].isdigit():
+        return ''
+    cuerpo = normalizado[:-1]
+    verificador = normalizado[-1]
+    suma = 0
+    factor = 2
+    for digito in reversed(cuerpo):
+        suma += int(digito) * factor
+        factor = 2 if factor == 7 else factor + 1
+    resultado = 11 - (suma % 11)
+    verificador_esperado = '0' if resultado == 11 else 'K' if resultado == 10 else str(resultado)
+    if verificador != verificador_esperado:
+        return ''
+
+    cuerpo_formateado = re.sub(r'\B(?=(\d{3})+(?!\d))', '.', cuerpo)
+    return f'{cuerpo_formateado}-{verificador}'
+
+
+def _buscar_empresa_por_rut(rut):
+    rut_normalizado = _normalizar_rut(rut)
+    rut_db_normalizado = Replace(
+        Replace(
+            Replace(Upper('emp_rut'), Value('.'), Value('')),
+            Value('-'), Value('')
+        ),
+        Value(' '), Value('')
+    )
+    return Empresa.objects.annotate(
+        rut_normalizado=rut_db_normalizado
+    ).filter(rut_normalizado__iexact=rut_normalizado).first()
 
 ORDEN_GEOGRAFICO_CHILE = {
     '15': 1, 'XV': 1,
@@ -571,11 +610,22 @@ def actualizar_empresa_suscriptor(request):
         if not suscriptor:
             return JsonResponse({'status': 'error', 'mensaje': 'Suscriptor no encontrado.'}, status=404)
 
-        rut = (data.get('emp_rut') or '').strip()
+        rut = _formatear_rut(data.get('emp_rut'))
         if not rut:
-            return JsonResponse({'status': 'error', 'mensaje': 'El RUT es obligatorio.'}, status=400)
+            return JsonResponse({'status': 'error', 'mensaje': 'El RUT no es válido. Revisa su longitud y dígito verificador.'}, status=400)
 
-        empresa_existente = Empresa.objects.filter(emp_rut=rut).first()
+        telefono = (data.get('emp_contacto_telefono') or '').strip()
+        if telefono and (
+            len(telefono) > 20 or
+            len(telefono) < 7 or
+            not re.fullmatch(r'\+?[0-9() .-]+', telefono)
+        ):
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'El teléfono debe tener entre 7 y 20 caracteres y usar solo números, espacios y + ( ) . -.'
+            }, status=400)
+
+        empresa_existente = _buscar_empresa_por_rut(rut)
 
         # Si la empresa ya existe, validar si es cuenta asociada (no dueña)
         if empresa_existente:
@@ -590,9 +640,17 @@ def actualizar_empresa_suscriptor(request):
                     'mensaje': f'Te has vinculado a la empresa. Administrada por {empresa_existente.emp_contacto_correo}. Solo lectura.'
                 })
 
+        codigo_comuna = (data.get('emp_codigo_comuna') or '').strip()
+        comuna_guardada = str(empresa_existente.emp_codigo_comuna_id or '').strip() if empresa_existente else ''
+        if comuna_guardada and codigo_comuna != comuna_guardada:
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'La comuna de una empresa registrada no se puede modificar.'
+            }, status=400)
+
         # Si es el primer usuario o la cuenta administradora oficial, guarda y actualiza los campos permitidos
         empresa, _ = Empresa.objects.update_or_create(
-            emp_rut=rut,
+            emp_rut=empresa_existente.emp_rut if empresa_existente else rut,
             defaults={
                 'emp_razon_social': (data.get('emp_razon_social') or '').strip(),
                 'emp_nombre_fantasia': (data.get('emp_nombre_fantasia') or '').strip(),
@@ -600,8 +658,8 @@ def actualizar_empresa_suscriptor(request):
                 'emp_iniciales': (data.get('emp_iniciales') or '').strip(),
                 'emp_contacto_correo': (data.get('emp_contacto_correo') or '').strip(),
                 'emp_direccion': (data.get('emp_direccion') or '').strip(),
-                'emp_codigo_comuna_id': (data.get('emp_codigo_comuna') or '').strip() or None,
-                'emp_contacto_telefono': (data.get('emp_contacto_telefono') or '').strip(),
+                'emp_codigo_comuna_id': comuna_guardada or codigo_comuna or None,
+                'emp_contacto_telefono': telefono,
             }
         )
 
@@ -612,6 +670,12 @@ def actualizar_empresa_suscriptor(request):
             'es_dueno': True,
             'mensaje': 'Datos de la empresa actualizados correctamente.'
         })
+    except DataError:
+        logger.warning('[SmartBids] Se rechazaron datos que exceden el tamaño de las columnas de empresa.')
+        return JsonResponse({
+            'status': 'error',
+            'mensaje': 'El RUT o teléfono supera el largo permitido. Verifica el formato del RUT y que el teléfono no exceda 20 caracteres.'
+        }, status=400)
     except Exception as e:
         logger.error(f"[SmartBids] Error al actualizar empresa: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': f'Error al actualizar empresa: {str(e)}'}, status=500)
@@ -624,16 +688,15 @@ def buscar_empresa_por_rut(request):
 
     try:
         data = json.loads(request.body.decode('utf-8'))
-        rut_raw = (data.get('rut') or '').strip()
+        rut_raw = _formatear_rut(data.get('rut'))
 
         if not rut_raw:
-            return JsonResponse({'status': 'error', 'mensaje': 'Debe ingresar un RUT.'}, status=400)
+            return JsonResponse({'status': 'error', 'mensaje': 'Debe ingresar un RUT válido con su dígito verificador.'}, status=400)
 
-        rut_sin_puntos = rut_raw.replace('.', '').strip()
+        rut_normalizado = _normalizar_rut(rut_raw)
 
         # 1. Comprobar si ya existe en la tabla core.empresa
-        emp_existente = Empresa.objects.filter(emp_rut__iexact=rut_raw).first() or \
-                        Empresa.objects.filter(emp_rut__iexact=rut_sin_puntos).first()
+        emp_existente = _buscar_empresa_por_rut(rut_raw)
 
         if emp_existente:
             cod_c = getattr(emp_existente, 'emp_codigo_comuna_id', getattr(emp_existente, 'emp_codigo_comuna', '')) or ''
@@ -661,14 +724,13 @@ def buscar_empresa_por_rut(request):
         # 2. Búsqueda de respaldo en catálogo de Proveedores
         filtro = (
             Q(prov_rut__iexact=rut_raw) |
-            Q(prov_rut__iexact=rut_sin_puntos) |
-            Q(prov_rut__icontains=rut_sin_puntos)
+            Q(prov_rut__iexact=rut_normalizado) |
+            Q(prov_rut__icontains=rut_normalizado)
         )
 
-        if '-' in rut_sin_puntos:
-            cuerpo = rut_sin_puntos.split('-')[0]
-            if len(cuerpo) >= 5:
-                filtro |= Q(prov_rut__icontains=cuerpo)
+        cuerpo = rut_normalizado[:-1]
+        if len(cuerpo) >= 5:
+            filtro |= Q(prov_rut__icontains=cuerpo)
 
         proveedor = Proveedor.objects.filter(filtro).first()
 
