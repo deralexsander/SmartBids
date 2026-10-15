@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'smartbids',
     'django.contrib.humanize',
+    'django.contrib.postgres'
 ]
 
 
