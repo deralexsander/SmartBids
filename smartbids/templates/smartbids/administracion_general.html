@@ -1,0 +1,394 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Gestión de Usuarios</title>
+{% endblock %}
+
+{% block contenido %}
+<section id="admin-general-page" class="value-prop admin__page">
+    <div class="admin__container">
+        
+        <!-- Encabezado de la página -->
+        <div class="section-header admin__page-header">
+            <span class="section-subtitle">Panel de Control</span>
+            <h1 class="section-title admin__page-title">Gestión de Usuarios y Accesos</h1>
+            <p class="section-desc admin__page-description">
+                Supervisa el directorio centralizado, audita los accesos a la plataforma y gestiona roles en tiempo real.
+            </p>
+        </div>
+
+        <!-- Acciones Rápidas Superiores (3 Tarjetas en cuadrícula simétrica) -->
+        <div class="stat-grid admin__quick-actions">
+            <!-- 1. Mensajería y Alertas -->
+            <a href="{% url 'mensajeria' %}" class="dashboard-card admin__quick-action-link">
+                <div class="admin__quick-action-content">
+                    <div class="prop-icon admin__quick-action-icon">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+                    <div>
+                        <h4 class="admin__quick-action-title">Mensajería y Alertas</h4>
+                        <p class="admin__quick-action-description">Avisos globales y notificaciones.</p>
+                    </div>
+                </div>
+            </a>
+
+            <!-- 2. Política de Seguridad -->
+            <button type="button" id="btn-abrir-politica-password" class="dashboard-card admin__quick-action-button">
+                <div class="admin__quick-action-content">
+                    <div class="prop-icon admin__quick-action-icon">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+                    <div>
+                        <h4 class="admin__quick-action-title">Política de Seguridad</h4>
+                        <p class="admin__quick-action-description">Reglas y complejidad de claves.</p>
+                    </div>
+                </div>
+            </button>
+
+            <!-- 3. Alerta de Perfil -->
+            <button type="button" id="btn-abrir-config-perfil" class="dashboard-card admin__quick-action-button">
+                <div class="admin__quick-action-content">
+                    <div class="prop-icon admin__quick-action-icon">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div>
+                        <h4 class="admin__quick-action-title">Alerta de Perfil</h4>
+                        <p class="admin__quick-action-description">Umbral (%) y días de reaparición.</p>
+                    </div>
+                </div>
+            </button>
+
+            <!-- 4. Información Institucional -->
+            <button type="button" id="btn-abrir-info-contacto" class="dashboard-card admin__quick-action-button">
+                <div class="admin__quick-action-content">
+                    <div class="prop-icon admin__quick-action-icon">
+                        <i class="fa-solid fa-address-card"></i>
+                    </div>
+                    <div>
+                        <h4 class="admin__quick-action-title">Información Institucional</h4>
+                        <p class="admin__quick-action-description">Contacto y enlaces del pie de página.</p>
+                    </div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Modal: Configuración de Alerta de Completitud de Perfil -->
+        <div id="config-perfil-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="config-perfil-title">
+            <div class="dashboard-card admin__profile-modal">
+                
+                <div class="dashboard-header admin__modal-header">
+                    <div>
+                        <h2 id="config-perfil-title" class="admin__modal-title">
+                            Configuración de Alerta de Perfil
+                        </h2>
+                        <p class="admin__modal-description">
+                            Define cuándo debe dispararse el modal de recordatorio y cada cuántos días reaparecerá tras omitirlo.
+                        </p>
+                    </div>
+                    <button type="button" id="btn-cerrar-config-perfil-x" aria-label="Cerrar modal" class="admin__modal-close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <form id="config-perfil-form">
+                    <div class="admin__profile-field">
+                        <label for="input-cfg-umbral" class="admin__form-label">
+                            Porcentaje mínimo requerido (%)
+                        </label>
+                        <div class="admin__inline-field">
+                            <input type="number" id="input-cfg-umbral" min="10" max="100" class="form-input admin__profile-number-input" placeholder="Ej: 90" required>
+                            <span class="admin__field-help">Si el usuario tiene menos de este valor, se muestra el aviso.</span>
+                        </div>
+                    </div>
+
+                    <div class="admin__form-section">
+                        <label for="input-cfg-dias" class="admin__form-label">
+                            Frecuencia de reaparición al omitir (días)
+                        </label>
+                        <div class="admin__inline-field">
+                            <input type="number" id="input-cfg-dias" min="1" max="90" class="form-input admin__profile-number-input" placeholder="Ej: 7" required>
+                            <span class="admin__field-help">Días de espera antes de volver a consultar al usuario.</span>
+                        </div>
+                    </div>
+
+                    <p id="config-perfil-feedback" class="admin__profile-feedback"></p>
+
+                    <div class="dashboard-header admin__modal-actions">
+                        <button type="button" id="btn-cerrar-config-perfil" class="btn btn-outline admin__modal-cancel-button">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary admin__modal-submit-button">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Ajustes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Módulo Principal: Directorio de Usuarios -->
+        <div id="admin-users-section" class="dashboard-card admin__users-panel">
+            
+            <!-- Barra superior: Título, Métricas y Buscador -->
+            <div class="dashboard-header admin__users-header">
+                <div>
+                    <div class="dash-title admin__users-title">
+                        <i class="fa-solid fa-users-gear admin__users-title-icon"></i> Directorio de Usuarios
+                    </div>
+                    <p class="admin__users-description">
+                        Sincronización activa con Firebase Authentication y base de datos
+                    </p>
+                </div>
+
+                <div class="form-inline admin__users-search-form">
+                    <div class="admin__search-field">
+                        <i class="fa-solid fa-magnifying-glass admin__search-icon"></i>
+                        <input type="search" id="admin-users-search" class="form-input admin__search-input" placeholder="Buscar por correo, UID o rol..." aria-label="Buscar usuarios">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback de mensajes dinámicos -->
+            <p id="admin-users-message" class="otp-feedback-msg admin__users-feedback" role="status"></p>
+
+            <!-- Tabla de Usuarios con separación holgada y scroll horizontal -->
+            <div class="admin__users-table-wrapper">
+                <table class="admin__users-table">
+                    <thead>
+                        <tr class="admin__users-table-header">
+                            <th class="admin__users-table-user-column">Usuario / Correo</th>
+                            <th class="admin__users-table-date-column">Registro</th>
+                            <th class="admin__users-table-date-column">Último Acceso</th>
+                            <th class="admin__users-table-uid-column">UID</th>
+                            <th class="admin__users-table-role-column">Rol / Estado</th>
+                            <th class="admin__users-table-action-column">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-body" class="admin__users-table-body">
+                        <tr>
+                            <td colspan="6" class="admin__users-table-empty-state">
+                                <i class="fa-solid fa-circle-notch fa-spin admin__users-table-loading-icon"></i>
+                                Cargando usuarios registrados...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- MODAL: EDICIÓN DE INFORMACIÓN DE CONTACTO Y EMPRESAS            -->
+        <div id="info-contacto-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="info-contacto-title">
+            <div class="dashboard-card admin__contact-modal">
+                
+                <div class="dashboard-header admin__modal-header">
+                    <div>
+                        <h2 id="info-contacto-title" class="admin__modal-title">
+                            Información Institucional y Footer
+                        </h2>
+                        <p class="admin__modal-description">
+                            Modifica el texto libre de contacto y gestiona las empresas y enlaces que se mostrarán en el pie de página.
+                        </p>
+                    </div>
+                    <button type="button" id="btn-cerrar-info-contacto-x" aria-label="Cerrar modal" class="admin__modal-close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <form id="info-contacto-form">
+                    {% csrf_token %}
+                    <!-- Sección 1: Bloque de texto libre -->
+                    <div class="admin__form-section">
+                        <label for="input-contacto-texto" class="admin__form-label">
+                            Bloque de Contacto (Texto libre)
+                        </label>
+                        <textarea id="input-contacto-texto" class="form-input admin__contact-textarea" rows="4" placeholder="Ej:&#10;Agua Santa 1400&#10;Viña del Mar&#10;Mobile: +56 9 6595 6863&#10;Email: contacto@chileavanza.cl"></textarea>
+                        <span class="admin__contact-help">
+                            Cada salto de línea creará un elemento en la sección de contacto del footer.
+                        </span>
+                    </div>
+
+                    <!-- Sección 2: Lista Dinámica de Empresas -->
+                    <div class="admin__form-section">
+                        <div class="admin__contact-section-header">
+                            <label class="admin__contact-section-label">
+                                Empresas y Enlaces
+                            </label>
+                            <button type="button" id="btn-agregar-empresa-item" class="btn btn-outline admin__contact-add-button">
+                                <i class="fa-solid fa-plus"></i> Añadir Empresa
+                            </button>
+                        </div>
+
+                        <div id="contenedor-empresas-dinamicas" class="admin__company-list">
+                            <!-- Se renderizan los inputs de empresa dinámicamente con JS -->
+                        </div>
+                    </div>
+
+                    <p id="info-contacto-feedback" class="admin__modal-feedback"></p>
+
+                    <div class="dashboard-header admin__modal-actions">
+                        <button type="button" id="btn-cerrar-info-contacto" class="btn btn-outline admin__modal-cancel-button">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btn-guardar-info-contacto" class="btn btn-primary admin__modal-submit-button">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal: Confirmar eliminación de usuario -->
+<div id="delete-user-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-user-title">
+    <div class="modal-2fa-card">
+        <h3 id="delete-user-title">Eliminar usuario</h3>
+        <p>Esta acción eliminará la cuenta de Firebase Authentication y el registro asociado en PostgreSQL.</p>
+        <p id="delete-user-email" class="otp-feedback-msg"></p>
+        <div class="modal-2fa-actions">
+            <button type="button" id="btn-confirm-delete-user" class="btn btn-primary">Sí, eliminar</button>
+            <button type="button" id="btn-cancel-delete-user" class="btn btn-outline">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmar cambio de rol/estado -->
+<div id="change-role-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="change-role-title">
+    <div class="modal-2fa-card">
+        <h3 id="change-role-title">Confirmar cambio de estado</h3>
+        <p>¿Deseas cambiar el estado de este usuario?</p>
+        <p id="change-role-user" class="otp-feedback-msg"></p>
+        <p class="admin__change-role-summary">Nuevo estado: <span id="change-role-value"></span></p>
+        <div class="modal-2fa-actions">
+            <button type="button" id="btn-confirm-change-role" class="btn btn-primary">Sí, cambiar</button>
+            <button type="button" id="btn-cancel-change-role" class="btn btn-outline">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Política de contraseñas -->
+<div id="password-policy-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="password-policy-title">
+    <div class="dashboard-card admin__policy-modal">
+        
+        <div class="dashboard-header admin__modal-header">
+            <div>
+                <h2 id="password-policy-title" class="admin__policy-modal-title">
+                    Política de contraseñas
+                </h2>
+                <p class="admin__policy-modal-description">
+                    Aplica requisitos de complejidad a las cuentas que usan correo electrónico y contraseña.
+                </p>
+            </div>
+            <button type="button" id="btn-cerrar-politica-password-x" aria-label="Cerrar modal" class="admin__policy-modal-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="password-policy-form" novalidate>
+            <div class="admin__policy-section">
+                <label class="admin__policy-mode-label">
+                    Modo de aplicación forzosa
+                </label>
+                <p class="admin__policy-mode-help">
+                    Define el comportamiento de validación al registrar usuarios.
+                </p>
+
+                <div class="stat-grid admin__policy-settings-grid">
+                    <label class="admin__policy-mode-option">
+                        <input type="radio" name="enforcementMode" id="mode-enforce" value="ENFORCE" class="admin__policy-mode-input">
+                        <div>
+                            <span class="admin__policy-mode-title">Exigir aplicación</span>
+                            <span class="admin__policy-mode-description">
+                                Los intentos de registro fallarán hasta que el usuario cumpla con los requisitos.
+                            </span>
+                        </div>
+                    </label>
+
+                    <label class="admin__policy-mode-option">
+                        <input type="radio" name="enforcementMode" id="mode-off" value="OFF" checked class="admin__policy-mode-input">
+                        <div>
+                            <span class="admin__policy-mode-title">Notificar aplicación</span>
+                            <span class="admin__policy-mode-description">
+                                Permite registrarse aunque falten criterios, devolviendo avisos informativos.
+                            </span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="admin__form-section">
+                <label class="admin__policy-section-label">
+                    Requisitos de caracteres
+                </label>
+
+                <div class="admin__policy-requirements-grid">
+                    <label class="admin__policy-requirement">
+                        <input type="checkbox" id="password-policy-uppercase" class="admin__policy-checkbox">
+                        Mayúsculas
+                    </label>
+
+                    <label class="admin__policy-requirement">
+                        <input type="checkbox" id="password-policy-lowercase" class="admin__policy-checkbox">
+                        Minúsculas
+                    </label>
+
+                    <label class="admin__policy-requirement">
+                        <input type="checkbox" id="password-policy-special" class="admin__policy-checkbox">
+                        Especiales
+                    </label>
+
+                    <label class="admin__policy-requirement">
+                        <input type="checkbox" id="password-policy-numeric" class="admin__policy-checkbox">
+                        Números
+                    </label>
+                </div>
+
+                <label class="admin__policy-upgrade-option">
+                    <input type="checkbox" id="password-policy-force-upgrade" class="admin__policy-checkbox">
+                    Forzar actualización al iniciar sesión
+                </label>
+            </div>
+
+            <div class="admin__form-section">
+                <label class="admin__policy-section-label">
+                    Límites de longitud
+                </label>
+
+                <div class="stat-grid admin__policy-settings-grid">
+                    <div>
+                        <label for="password-policy-min-length" class="admin__policy-length-label">
+                            Longitud mínima (6 a 30)
+                        </label>
+                        <input type="number" id="password-policy-min-length" min="6" max="30" class="form-input admin__policy-length-input">
+                        <span id="min-length-error" class="admin__validation-error">
+                            Debe ser entre 6 y 30.
+                        </span>
+                    </div>
+
+                    <div>
+                        <label for="password-policy-max-length" class="admin__policy-length-label">
+                            Longitud máxima (6 a 4096)
+                        </label>
+                        <input type="number" id="password-policy-max-length" min="6" max="4096" class="form-input admin__policy-length-input">
+                        <span id="max-length-error" class="admin__validation-error">
+                            Debe ser entre 6 y 4096.
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <p id="password-policy-feedback" class="admin__modal-feedback"></p>
+
+            <div class="dashboard-header admin__modal-actions">
+                <button type="button" id="btn-cerrar-politica-password" class="btn btn-outline admin__modal-cancel-button">
+                    Descartar
+                </button>
+                <button type="submit" id="btn-guardar-politica" class="btn btn-primary admin__modal-submit-button">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar política
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

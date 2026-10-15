@@ -6,46 +6,46 @@
 {% endblock %}
 
 {% block contenido %}
-<section style="padding: 130px 5% 60px; min-height: 100vh; background-color: var(--light-bg);">
+<section class="mensajeria">
     
-    <div style="margin-bottom: 2.5rem;">
-        <h1 style="font-size: 2.4rem; color: var(--dark-green); font-weight: 800; letter-spacing: -0.5px; margin-top: 0.5rem;">
+    <div class="mensajeria__header">
+        <h1 class="mensajeria__title">
             Administración de <span>Mensajería y Alertas</span>
         </h1>
     </div>
 
-    <div class="feature-row" style="margin-bottom: 0; align-items: start; gap: 3rem;">
+    <div class="feature-row mensajeria__layout">
         
-        <div style="flex: 1;">
+        <div class="mensajeria__form">
 
             <form id="form-mensajeria">
                 <input type="hidden" id="msg-id" value="">
 
-                <div style="margin-bottom: 1.4rem;">
-                    <label for="msg-asunto" style="display: block; font-weight: 700; color: var(--dark-green); margin-bottom: 0.5rem; font-size: 0.92rem;">
+                <div class="mensajeria__field">
+                    <label for="msg-asunto" class="mensajeria__label">
                         Asunto de la alerta:
                     </label>
-                    <div class="form-inline" style="max-width: 100%; margin: 0;">
-                        <input type="text" id="msg-asunto" placeholder="Ej: Modo de Prueba" required style="width: 100%;">
+                    <div class="form-inline mensajeria__input-wrap">
+                        <input type="text" id="msg-asunto" placeholder="Ej: Modo de Prueba" required class="mensajeria__input">
                     </div>
                 </div>
 
-                <div style="margin-bottom: 1.4rem;">
-                    <label for="msg-cuerpo" style="display: block; font-weight: 700; color: var(--dark-green); margin-bottom: 0.5rem; font-size: 0.92rem;">
+                <div class="mensajeria__field">
+                    <label for="msg-cuerpo" class="mensajeria__label">
                         Mensaje / Detalle:
                     </label>
-                    <div class="form-inline" style="max-width: 100%; margin: 0;">
-                        <textarea id="msg-cuerpo" rows="4" placeholder="Ingresa el contenido del aviso..." required style="flex: 1; padding: 1rem 1.4rem; border-radius: 12px; border: 1.5px solid var(--soft-mint); font-size: 1rem; outline: none; font-family: inherit; resize: vertical; background: var(--white);"></textarea>
+                    <div class="form-inline mensajeria__input-wrap">
+                        <textarea id="msg-cuerpo" rows="4" placeholder="Ingresa el contenido del aviso..." required class="mensajeria__textarea"></textarea>
                     </div>
                 </div>
 
-                <div class="stat-grid" style="margin-bottom: 1.8rem;">
+                <div class="stat-grid mensajeria__settings-grid">
                     <div>
-                        <label for="msg-estado" style="display: block; font-weight: 700; color: var(--dark-green); margin-bottom: 0.5rem; font-size: 0.92rem;">
+                        <label for="msg-estado" class="mensajeria__label">
                             Estado manual:
                         </label>
-                        <div class="form-inline" style="max-width: 100%; margin: 0;">
-                            <select id="msg-estado" style="flex: 1; padding: 0.85rem 1rem; border-radius: 12px; border: 1.5px solid var(--soft-mint); font-size: 0.95rem; outline: none; background-color: var(--white); color: var(--gray-text); font-weight: 600;">
+                        <div class="form-inline mensajeria__input-wrap">
+                            <select id="msg-estado" class="mensajeria__select">
                                 <option value="activo" selected>Activo (Habilitado)</option>
                                 <option value="inactivo">Inactivo (Deshabilitado)</option>
                             </select>
@@ -53,11 +53,11 @@
                     </div>
 
                     <div>
-                        <label for="msg-tipo" style="display: block; font-weight: 700; color: var(--dark-green); margin-bottom: 0.5rem; font-size: 0.92rem;">
+                        <label for="msg-tipo" class="mensajeria__label">
                             Tipo de alerta:
                         </label>
-                        <div class="form-inline" style="max-width: 100%; margin: 0;">
-                            <select id="msg-tipo" style="flex: 1; padding: 0.85rem 1rem; border-radius: 12px; border: 1.5px solid var(--soft-mint); font-size: 0.95rem; outline: none; background-color: var(--white); color: var(--gray-text); font-weight: 600;">
+                        <div class="form-inline mensajeria__input-wrap">
+                            <select id="msg-tipo" class="mensajeria__select">
                                 <option value="alerta">Alerta (Amarillo / Naranja)</option>
                                 <option value="precaucion">Precaución (Rojo)</option>
                                 <option value="exito">Éxito (Verde)</option>
@@ -66,26 +66,26 @@
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div class="mensajeria__actions">
                     <button type="submit" id="btn-guardar-mensaje" class="btn btn-primary">
                         Guardar Alerta
                     </button>
                     <button type="button" id="btn-cancelar-edicion" class="btn btn-outline">
                         Cancelar
                     </button>
-                    <span id="mensaje-status-feedback" class="dash-badge" style="display: none;"></span>
+                    <span id="mensaje-status-feedback" class="dash-badge mensajeria__feedback--hidden"></span>
                 </div>
             </form>
         </div>
 
-        <div style="flex: 1; position: sticky; top: 120px;">
-            <div class="dashboard-header" style="margin-bottom: 1.5rem;">
-                <div class="dash-title" style="font-size: 1.25rem;">
+        <div class="mensajeria__alerts-panel">
+            <div class="dashboard-header mensajeria__alerts-header">
+                <div class="dash-title mensajeria__alerts-title">
                     Alertas Registradas
                 </div>
             </div>
 
-            <div id="lista-alertas-admin" class="graphic-mockup" style="background: transparent; border: none; padding: 0; box-shadow: none; max-height: 520px; overflow-y: auto; overflow-x: hidden; padding-right: 6px;">
+            <div id="lista-alertas-admin" class="graphic-mockup mensajeria__alert-list">
                 <div class="mockup-item">
                     <div class="mockup-info">
                         <h6>Cargando alertas...</h6>

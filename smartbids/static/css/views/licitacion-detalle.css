@@ -1,0 +1,198 @@
+/* ===== Contenedor de la página ===== */
+.lic-detalle__page {
+    padding: 130px 3% 60px;
+    min-height: 100vh;
+    background: var(--light-bg);
+}
+
+.lic-detalle__container {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+/* ===== Seguimiento y navegación ===== */
+.lic-detalle__feedback {
+    margin: .75rem 0;
+    padding: .75rem 1rem;
+    color: var(--dark-green);
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.lic-detalle__back-link {
+    color: var(--muted-teal);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* ===== Resumen de licitación ===== */
+.lic-detalle__summary-card {
+    padding: 2rem;
+    margin-top: 1rem;
+    border-top: 5px solid var(--accent-green);
+}
+
+.lic-detalle__summary-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.lic-detalle__identity {
+    flex: 1;
+    min-width: 260px;
+}
+
+.lic-detalle__badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .65rem;
+    margin-bottom: .8rem;
+}
+
+.lic-detalle__title {
+    color: var(--dark-green);
+    font-size: 2rem;
+    line-height: 1.25;
+    margin: 0 0 .8rem;
+}
+
+.lic-detalle__organization {
+    color: var(--muted-teal);
+    margin: 0;
+}
+
+.lic-detalle__header-actions {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.lic-detalle__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1rem;
+    margin-top: 1.8rem;
+}
+
+.lic-detalle__fact-card {
+    padding: 1rem;
+    background: var(--light-bg);
+}
+
+.lic-detalle__fact-card--publication {
+    border-top: 3px solid var(--accent-green);
+}
+
+.lic-detalle__fact-label {
+    display: block;
+    color: var(--muted-teal);
+    font-weight: 700;
+}
+
+.lic-detalle__budget-value {
+    font-weight: 800;
+    color: var(--dark-green);
+    font-size: 1.2rem;
+}
+
+.lic-detalle__fact-value {
+    font-weight: 800;
+    color: var(--dark-green);
+    font-size: 1.05rem;
+}
+
+.licitacion-close-card {
+    padding: 1rem;
+    background: var(--light-bg);
+    border-top: 3px solid var(--accent-green);
+}
+
+.licitacion-close-card--closed {
+    border-top-color: #e53e3e;
+}
+
+.licitacion-close-date {
+    font-weight: 800;
+    color: var(--dark-green);
+    font-size: 1.05rem;
+}
+
+.licitacion-close-date--closed {
+    color: #e53e3e;
+}
+
+/* ===== Descripción e historial ===== */
+.lic-detalle__content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+    gap: 1.2rem;
+    margin-top: 1.2rem;
+}
+
+.lic-detalle__panel {
+    padding: 1.6rem;
+}
+
+.lic-detalle__section-title {
+    color: var(--dark-green);
+    margin-top: 0;
+}
+
+.lic-detalle__icon {
+    color: var(--accent-green);
+}
+
+.lic-detalle__description {
+    white-space: pre-line;
+    line-height: 1.7;
+    color: var(--gray-text);
+}
+
+.lic-detalle__empty-message {
+    color: var(--gray-text);
+}
+
+.lic-detalle__milestones {
+    padding-left: 1.3rem;
+    margin-bottom: 0;
+}
+
+.licitacion-hito {
+    padding: 0 0 0.9rem 0.3rem;
+}
+
+.licitacion-hito--completed {
+    color: var(--dark-green);
+}
+
+.licitacion-hito--pending {
+    color: var(--gray-text);
+}
+
+/* ===== Documentos y preguntas ===== */
+.lic-detalle__related-grids {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1.2rem;
+}
+
+.lic-detalle__question {
+    padding: .8rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* ===== Enlace oficial ===== */
+.lic-detalle__external-link-wrap {
+    margin-top: 1.2rem;
+    text-align: right;
+}
+
+.lic-detalle__external-link {
+    color: var(--muted-teal);
+}

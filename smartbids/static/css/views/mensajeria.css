@@ -1,0 +1,118 @@
+/* ===== Estructura y encabezado ===== */
+
+.mensajeria {
+    padding: 130px 5% 60px;
+    min-height: 100vh;
+    background-color: var(--light-bg);
+}
+
+.mensajeria__header {
+    margin-bottom: 2.5rem;
+}
+
+.mensajeria__title {
+    font-size: 2.4rem;
+    color: var(--dark-green);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-top: 0.5rem;
+}
+
+.mensajeria__layout {
+    margin-bottom: 0;
+    align-items: start;
+    gap: 3rem;
+}
+
+/* ===== Formulario de alertas ===== */
+
+.mensajeria__form {
+    flex: 1;
+}
+
+.mensajeria__field {
+    margin-bottom: 1.4rem;
+}
+
+.mensajeria__label {
+    display: block;
+    font-weight: 700;
+    color: var(--dark-green);
+    margin-bottom: 0.5rem;
+    font-size: 0.92rem;
+}
+
+.mensajeria__input-wrap {
+    max-width: 100%;
+    margin: 0;
+}
+
+.mensajeria__input {
+    width: 100%;
+}
+
+.mensajeria__textarea {
+    flex: 1;
+    padding: 1rem 1.4rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--soft-mint);
+    font-size: 1rem;
+    outline: none;
+    font-family: inherit;
+    resize: vertical;
+    background: var(--white);
+}
+
+.mensajeria__settings-grid {
+    margin-bottom: 1.8rem;
+}
+
+.mensajeria__select {
+    flex: 1;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--soft-mint);
+    font-size: 0.95rem;
+    outline: none;
+    background-color: var(--white);
+    color: var(--gray-text);
+    font-weight: 600;
+}
+
+.mensajeria__actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.mensajeria__feedback--hidden {
+    display: none;
+}
+
+/* ===== Listado de alertas ===== */
+
+.mensajeria__alerts-panel {
+    flex: 1;
+    position: sticky;
+    top: 120px;
+}
+
+.mensajeria__alerts-header {
+    margin-bottom: 1.5rem;
+}
+
+.mensajeria__alerts-title {
+    font-size: 1.25rem;
+}
+
+.mensajeria__alert-list {
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    max-height: 520px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 6px;
+}

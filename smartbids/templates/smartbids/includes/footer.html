@@ -2,28 +2,49 @@
 <footer>
     <div class="footer-grid">
         <div class="footer-brand">
-            <a href="{% url 'home' %}" class="logo" style="margin-bottom: 1rem;">
+            <a href="{% url 'home' %}" class="logo site-footer__brand-link">
                 <img src="{% static 'media/isotipo smartbids.png' %}" alt="SmartBids Icon" class="logo-icon">
-                <div class="logo-text" style="color: var(--white);">Smart<span style="color: var(--accent-green);">Bids</span></div>
+                <div class="logo-text site-footer__brand-text">Smart<span class="site-footer__brand-accent">Bids</span></div>
             </a>
             <p>Plataforma SaaS de inteligencia para licitaciones públicas en Chile. Desarrollada para potenciar el crecimiento de las MiPyMEs.</p>
         </div>
+        
+        <!-- Contacto dinámico desde PostgreSQL -->
         <div class="footer-col">
             <h5>Contacto</h5>
             <ul>
-                <li><a>Agua Santa 1400</a></li>
-                <li><a>2520000 Viña del Mar</a></li>
-                <li><a>Mobile: +56 9 6595 6863</a></li>
-                <li><a>Email: contacto@chileavanza.cl</a></li>
+                {% if footer_contacto_lineas %}
+                    {% for linea in footer_contacto_lineas %}
+                        <li><a>{{ linea }}</a></li>
+                    {% endfor %}
+                {% else %}
+                    <li><a>Agua Santa 1400</a></li>
+                    <li><a>2520000 Viña del Mar</a></li>
+                    <li><a>Mobile: +56 9 6595 6863</a></li>
+                    <li><a>Email: contacto@chileavanza.cl</a></li>
+                {% endif %}
             </ul>
         </div>
+        
+        <!-- Empresas y URLs dinámicas desde PostgreSQL (JSONB) -->
         <div class="footer-col">
             <h5>Empresa</h5>
             <ul>
-                <li><a href="https://chileavanza.cl/" target="_blank" rel="noopener noreferrer">ChileAvanza</a></li>
-                <li><a href="#">Prisma Team</a></li>
+                {% if footer_empresas %}
+                    {% for emp in footer_empresas %}
+                        <li>
+                            <a href="{{ emp.url|default:'#' }}" target="{{ emp.target|default:'_blank' }}" rel="noopener noreferrer">
+                                {{ emp.nombre }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li><a href="https://chileavanza.cl/" target="_blank" rel="noopener noreferrer">ChileAvanza</a></li>
+                    <li><a href="https://sites.google.com/chileavanza.cl/prisma/inicio">Prisma Team</a></li>
+                {% endif %}
             </ul>
         </div>
+        
         <div class="footer-col">
             <h5>Legal</h5>
             <ul>

@@ -5,7 +5,7 @@ export const MENSAJES = {
     auth: {
         loginExitoso: 'Ingreso exitoso.',
         emailNoVerificado: 'Por favor verifica tu correo electrónico antes de ingresar.',
-        registroExitoso: 'Registro exitoso. Se ha enviado un correo de verificación a tu email.',
+        registroExitoso: 'Registro exitoso. Revisa tu correo de bienvenida para activar tu cuenta.',
         resetPasswordEnviado: 'Se ha enviado un correo para restablecer tu contraseña.',
         resetPasswordSinEmail: 'Ingresa tu correo en el campo superior para recuperar tu contraseña.',
         resetPasswordError: 'No se pudo enviar el correo de recuperación. Inténtalo más tarde.',

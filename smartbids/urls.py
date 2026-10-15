@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import obtener_alertas_activas
+
 urlpatterns = [
     path('', views.home, name='home'),
     path('home', views.home, name='home'),
@@ -8,15 +8,20 @@ urlpatterns = [
     path('registro/', views.register_view, name='registro'),
     path('perfil/', views.perfil_view, name='perfil'),
     path('mensajeria/', views.mensajeria_view, name='mensajeria'),
+    path('administracion-general/', views.administracion_general_view, name='administracion_general'),
     path('404/', views.handler404_view, name='handler404'),
     path('informacion/', views.informacion_view, name='informacion'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard/exportar/', views.exportar_dashboard_view, name='exportar_dashboard'),
     path('mis-licitaciones/', views.mis_licitaciones_view, name='mis_licitaciones'),
+    path('mis-licitaciones/exportar/', views.exportar_licitaciones_view, name='exportar_licitaciones'),
+    path('licitaciones/<str:codigo>/', views.detalle_licitacion_view, name='detalle_licitacion'),
+    path('licitaciones/<str:codigo>/seguimiento/', views.seguimiento_licitacion_view, name='seguimiento_licitacion'),
 
-    path('api/alertas-activas/', obtener_alertas_activas, name='alertas_activas'),
+    path('api/licitaciones/notificaciones/', views.notificaciones_licitacion_view, name='api_notificaciones_licitaciones'),
+    path('api/alertas-activas/', views.obtener_alertas_activas, name='api_alertas_activas'),
     path('api/mensajeria/', views.listar_crear_mensajes, name='api_mensajeria'),
     path('api/mensajeria/<int:id>/', views.detalle_mensaje, name='api_detalle_mensaje'),
-    path('api/alertas-activas/', views.obtener_alertas_activas, name='api_alertas_activas'),
     path('api/enviar-correo-bienvenida/', views.enviar_correo_bienvenida, name='enviar_correo_bienvenida'),
     path('api/enviar-codigo-login/', views.enviar_codigo_login, name='enviar_codigo_login'),
     path('api/enviar-correo-cambio-password/', views.enviar_correo_cambio_password, name='enviar_correo_cambio_password'),
@@ -27,5 +32,11 @@ urlpatterns = [
     path('api/actualizar-perfil/', views.actualizar_perfil_suscriptor, name='actualizar_perfil'),
     path('api/actualizar-empresa/', views.actualizar_empresa_suscriptor, name='actualizar_empresa'),
     path('api/actualizar-preferencias/', views.actualizar_preferencias_suscriptor, name='actualizar_preferencias'),
-
+    path('api/catalogos-preferencias/', views.catalogos_preferencias, name='catalogos_preferencias'),
+    path('api/firebase/politica-contrasenas/', views.politica_contrasenas_firebase, name='politica_contrasenas_firebase'),
+    path('api/parametros/alerta-perfil/', views.parametro_alerta_perfil, name='api_parametro_alerta_perfil'),
+    path('api/administracion/info-contacto/', views.administrar_info_contacto, name='api_info_contacto'),
+    path('api/contacto/', views.enviar_consulta_contacto, name='api_contacto'),
+    path('api/buscar-empresa-rut/', views.buscar_empresa_por_rut, name='buscar_empresa_rut'),
+    path('api/firebase/usuarios/', views.usuarios_firebase, name='usuarios_firebase'),
 ]
