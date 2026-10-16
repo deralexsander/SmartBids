@@ -11,7 +11,7 @@
     {% elif request.resolver_match.url_name == 'ingreso' or request.resolver_match.url_name == 'registro' %}
     <link rel="stylesheet" href="{% static 'css/views/registro.css' %}">
     {% elif request.resolver_match.url_name == 'perfil' %}
-    <link rel="stylesheet" href="{% static 'css/views/perfil.css' %}">
+    <link rel="stylesheet" href="{% static 'css/views/perfil.css' %}?v={% now 'U' %}">
     {% elif request.resolver_match.url_name == 'mensajeria' %}
     <link rel="stylesheet" href="{% static 'css/views/mensajeria.css' %}">
     {% elif request.resolver_match.url_name == 'administracion_general' %}

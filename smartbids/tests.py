@@ -64,3 +64,12 @@ class FormatoMontosTests(SimpleTestCase):
 
     def test_redondea_montos_sin_decimales(self):
         self.assertEqual(miles_chilenos('125000000.50'), '125.000.001')
+
+
+class PreferenciasTests(SimpleTestCase):
+    def test_normalizar_cadena_simple(self):
+        from .perfil_views import normalizar_cadena_simple
+        self.assertEqual(normalizar_cadena_simple("Mantención"), "mantencion")
+        self.assertEqual(normalizar_cadena_simple("¡Cloud & Seguridad!"), "cloud seguridad")
+        self.assertEqual(normalizar_cadena_simple(""), "")
+

@@ -18,6 +18,7 @@ from .perfil_views import (
     obtener_perfil_suscriptor, actualizar_empresa_suscriptor,
     actualizar_preferencias_suscriptor, actualizar_perfil_suscriptor,
     catalogos_preferencias, buscar_empresa_por_rut,
+    desvincular_empresa_suscriptor,
 )
 from .mensajeria_views import (
     listar_crear_mensajes, detalle_mensaje, obtener_alertas_activas,

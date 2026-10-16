@@ -257,6 +257,50 @@
     padding: 0.6rem 1.5rem;
 }
 
+.perfil__dialog-indicator--danger {
+    background: rgba(229, 62, 62, 0.14);
+    color: #e53e3e;
+}
+
+.perfil__btn-danger {
+    background: #e53e3e;
+    color: #ffffff;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(229, 62, 62, 0.3);
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.perfil__btn-danger:hover {
+    background: #c53030;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(229, 62, 62, 0.4);
+}
+
+.perfil__unlink-button {
+    border: 2px solid #e53e3e !important;
+    color: #e53e3e !important;
+    background: transparent !important;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.perfil__unlink-button:hover {
+    background: #e53e3e !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(229, 62, 62, 0.3);
+}
+
 /* ===== Filtros de licitación ===== */
 .perfil__entity-icon {
     color: var(--muted-teal);
@@ -303,12 +347,34 @@
 .perfil__selection-chips {
     display: flex;
     flex-wrap: wrap;
+    align-content: flex-start;
     gap: 6px;
     min-height: 44px;
-    padding: 8px;
+    max-height: 125px; /* Límite para mostrar hasta 3 líneas; el resto se desplaza con barra */
+    overflow-y: auto;
+    padding: 8px 10px 8px 8px;
     border: 1.5px dashed var(--soft-mint);
     border-radius: 10px;
     background: var(--light-bg);
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted-teal) transparent;
+}
+
+.perfil__selection-chips::-webkit-scrollbar {
+    width: 6px;
+}
+
+.perfil__selection-chips::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.perfil__selection-chips::-webkit-scrollbar-thumb {
+    background: var(--muted-teal);
+    border-radius: 4px;
+}
+
+.perfil__selection-chips::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-green);
 }
 
 .perfil__selection-placeholder {
@@ -410,13 +476,22 @@
 
 .perfil__suggestion {
     display: none;
-    margin-top: 6px;
-    font-size: 0.84rem;
+    margin-top: 8px;
+    font-size: 0.86rem;
     color: var(--dark-green);
     background: rgba(30, 196, 152, 0.08);
     border: 1.5px solid var(--accent-green);
-    padding: 7px 12px;
+    padding: 8px 14px;
     border-radius: 8px;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.perfil__suggestion:hover {
+    background: rgba(30, 196, 152, 0.16);
+    border-color: var(--dark-green);
 }
 
 .perfil__suggestion-icon {

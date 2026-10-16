@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/obtener-perfil/', views.obtener_perfil_suscriptor, name='obtener_perfil'),
     path('api/actualizar-perfil/', views.actualizar_perfil_suscriptor, name='actualizar_perfil'),
     path('api/actualizar-empresa/', views.actualizar_empresa_suscriptor, name='actualizar_empresa'),
+    path('api/desvincular-empresa/', views.desvincular_empresa_suscriptor, name='desvincular_empresa'),
     path('api/actualizar-preferencias/', views.actualizar_preferencias_suscriptor, name='actualizar_preferencias'),
     path('api/catalogos-preferencias/', views.catalogos_preferencias, name='catalogos_preferencias'),
     path('api/firebase/politica-contrasenas/', views.politica_contrasenas_firebase, name='politica_contrasenas_firebase'),

@@ -102,6 +102,12 @@ def registrar_prospecto(request):
             if not (suscriptor_existente.sus_apellido1 or '').strip():
                 suscriptor_existente.sus_apellido1 = apellido.strip()
                 campos_actualizados.append('sus_apellido1')
+            if not (suscriptor_existente.sus_iniciales or '').strip():
+                partes = [suscriptor_existente.sus_nombre1, suscriptor_existente.sus_apellido1]
+                inic = "".join([p[0].upper() for p in partes if p])[:5]
+                if inic:
+                    suscriptor_existente.sus_iniciales = inic
+                    campos_actualizados.append('sus_iniciales')
             if campos_actualizados:
                 suscriptor_existente.fecha_actualizacion = ahora
                 campos_actualizados.append('fecha_actualizacion')
@@ -111,13 +117,17 @@ def registrar_prospecto(request):
         # Obtener o asignar la instancia de EstadoSuscriptor (ejemplo: ID 2 = Habilitado)
         estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=2).first()
 
+        partes = [nombre.strip(), apellido.strip()]
+        iniciales_auto = "".join([p[0].upper() for p in partes if p])[:5]
+
         Suscriptor.objects.create(
             firebase_uid=uid,
             fecha_registro=ahora,
             fecha_actualizacion=ahora,
             codigo_estado=estado_instancia, # <--- Usar la instancia asignada
             sus_nombre1=nombre.strip(),
-            sus_apellido1=apellido.strip()
+            sus_apellido1=apellido.strip(),
+            sus_iniciales=iniciales_auto
         )
 
         return JsonResponse({'status': 'ok', 'mensaje': 'Suscriptor habilitado registrado con éxito.'}, status=201)

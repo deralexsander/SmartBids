@@ -452,6 +452,15 @@ def obtener_perfil_suscriptor(request):
             if comuna_obj:
                 nom_comuna_emp = comuna_obj.nombre_comuna
 
+        # Sincronizar iniciales si existen nombres pero falta la columna sus_iniciales
+        inic = (suscriptor.sus_iniciales or '').strip()
+        if not inic and (suscriptor.sus_nombre1 or suscriptor.sus_apellido1):
+            partes = [suscriptor.sus_nombre1, suscriptor.sus_nombre2, suscriptor.sus_apellido1, suscriptor.sus_apellido2]
+            inic = "".join([p[0].upper() for p in partes if p])[:5]
+            if inic:
+                suscriptor.sus_iniciales = inic
+                suscriptor.save(update_fields=['sus_iniciales'])
+
         return JsonResponse({
             'status': 'ok',
             'datos': {
@@ -462,7 +471,7 @@ def obtener_perfil_suscriptor(request):
                 'sus_apellido1': suscriptor.sus_apellido1 or '',
                 'sus_apellido2': suscriptor.sus_apellido2 or '',
                 'sus_nombre_social': suscriptor.sus_nombre_social or '',
-                'sus_iniciales': suscriptor.sus_iniciales or '',
+                'sus_iniciales': suscriptor.sus_iniciales or inic or '',
                 'codigo_estado': suscriptor.codigo_estado_id if suscriptor.codigo_estado else None,
                 'nombre_estado': suscriptor.codigo_estado.nombre_estado if suscriptor.codigo_estado else 'Activo',
                 'token_sesion': getattr(suscriptor, 'token_sesion', '') or '',
@@ -514,48 +523,57 @@ def actualizar_preferencias_suscriptor(request):
         if not suscriptor:
             return JsonResponse({'status': 'error', 'mensaje': 'Suscriptor no encontrado.'}, status=404)
 
-        comunas = [str(c).strip()[:5] for c in data.get('pref_comunas', []) if str(c).strip()]
-        productos = [str(p).strip()[:20] for p in data.get('pref_productos', []) if str(p).strip()]
-        tipo_lic = [str(t).strip()[:2] for t in data.get('pref_tipo_licitacion', []) if str(t).strip()]
-
-        ucom = []
-        for u in data.get('pref_ucom', []):
-            try:
-                ucom.append(int(u))
-            except (ValueError, TypeError):
-                continue
-
-        palabras_recibidas = data.get('pref_palabras_claves', [])
-        if isinstance(palabras_recibidas, str):
-            palabras_recibidas = palabras_recibidas.split(',')
-
-        palabras_limpias = []
-        palabras_set = set()
-        for w in palabras_recibidas:
-            token = normalizar_cadena_simple(str(w))
-            if token and len(token) > 1:
-                for item in token.split():
-                    item = item[:50].strip()
-                    if len(item) > 1 and item not in palabras_set:
-                        palabras_set.add(item)
-                        palabras_limpias.append(item)
-
         pref, _ = Preferencia.objects.get_or_create(id_suscriptor=suscriptor)
-        pref.pref_comunas = comunas
-        pref.pref_productos = productos
-        pref.pref_tipo_licitacion = tipo_lic
-        pref.pref_ucom = ucom
-        pref.pref_palabras_claves = palabras_limpias
+
+        if 'pref_comunas' in data:
+            pref.pref_comunas = [str(c).strip()[:5] for c in data.get('pref_comunas', []) if str(c).strip()]
+
+        if 'pref_productos' in data:
+            pref.pref_productos = [str(p).strip()[:20] for p in data.get('pref_productos', []) if str(p).strip()]
+
+        if 'pref_tipo_licitacion' in data:
+            pref.pref_tipo_licitacion = [str(t).strip()[:2] for t in data.get('pref_tipo_licitacion', []) if str(t).strip()]
+
+        if 'pref_ucom' in data:
+            ucom = []
+            for u in data.get('pref_ucom', []):
+                try:
+                    ucom.append(int(u))
+                except (ValueError, TypeError):
+                    continue
+            pref.pref_ucom = ucom
+
+        palabras_limpias = None
+        if 'pref_palabras_claves' in data:
+            palabras_recibidas = data.get('pref_palabras_claves', [])
+            if isinstance(palabras_recibidas, str):
+                palabras_recibidas = palabras_recibidas.split(',')
+
+            palabras_limpias = []
+            palabras_set = set()
+            for w in palabras_recibidas:
+                token = normalizar_cadena_simple(str(w))
+                if token and len(token) > 1:
+                    for item in token.split():
+                        item = item[:50].strip()
+                        if len(item) > 1 and item not in palabras_set:
+                            palabras_set.add(item)
+                            palabras_limpias.append(item)
+            pref.pref_palabras_claves = palabras_limpias
+
         pref.save()
 
         suscriptor.fecha_actualizacion = timezone.now()
         suscriptor.save(update_fields=['fecha_actualizacion'])
 
-        return JsonResponse({
+        response_payload = {
             'status': 'ok',
-            'mensaje': 'Preferencias guardadas con éxito.',
-            'palabras_sanitizadas': palabras_limpias
-        })
+            'mensaje': 'Preferencias guardadas con éxito.'
+        }
+        if palabras_limpias is not None:
+            response_payload['palabras_sanitizadas'] = palabras_limpias
+
+        return JsonResponse(response_payload)
 
     except DatabaseError as db_err:
         logger.error(f"[SmartBids] Error de PostgreSQL al guardar preferencias: {str(db_err)}")
@@ -768,3 +786,43 @@ def buscar_empresa_por_rut(request):
     except Exception as e:
         logger.error(f"[SmartBids] Error al buscar empresa por RUT: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
+
+
+@csrf_exempt
+def desvincular_empresa_suscriptor(request):
+    """Permite al suscriptor autenticado desvincular su cuenta de la empresa asociada actualmente."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        uid = data.get('uid')
+
+        if not uid:
+            return JsonResponse({'status': 'error', 'mensaje': 'No se recibió la identidad del suscriptor (UID requerido).'}, status=400)
+
+        suscriptor = Suscriptor.objects.select_related('sus_rut_empresa').filter(firebase_uid=uid).first()
+        if not suscriptor:
+            return JsonResponse({'status': 'error', 'mensaje': 'Cuenta de suscriptor no encontrada.'}, status=404)
+
+        empresa_actual = suscriptor.sus_rut_empresa
+        if not empresa_actual:
+            return JsonResponse({'status': 'error', 'mensaje': 'El suscriptor no se encuentra vinculado a ninguna empresa actualmente.'}, status=400)
+
+        nombre_empresa = empresa_actual.emp_nombre_fantasia or empresa_actual.emp_razon_social or empresa_actual.emp_rut
+
+        # Desvincular al suscriptor de la empresa
+        suscriptor.sus_rut_empresa = None
+        suscriptor.fecha_actualizacion = timezone.now()
+        suscriptor.save(update_fields=['sus_rut_empresa', 'fecha_actualizacion'])
+
+        logger.info(f"[SmartBids] Suscriptor {suscriptor.id_suscriptor} desvinculado de empresa {empresa_actual.emp_rut}")
+
+        return JsonResponse({
+            'status': 'ok',
+            'mensaje': f'Se ha desvinculado exitosamente de la empresa {nombre_empresa}.'
+        })
+
+    except Exception as e:
+        logger.error(f"[SmartBids] Error al desvincular empresa: {str(e)}")
+        return JsonResponse({'status': 'error', 'mensaje': f'Error interno al procesar la desvinculación: {str(e)}'}, status=500)
