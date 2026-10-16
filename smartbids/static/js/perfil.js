@@ -2445,18 +2445,8 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
 }
 
 // ==========================================================================
-// 9. ESCUCHA DE SESIÓN
+// 9. ESCUCHA DE SESIÓN (Gestionada centralizadamente en sesion.js)
 // ==========================================================================
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        localStorage.setItem('smartbids_uid', user.uid);
-        document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
-
-        if (document.getElementById('form-perfil-preferencias')) {
-            inicializarVistaPerfil(user);
-        }
-    }
-});
 
 // ==========================================================================
 // 10. GESTIÓN DEL MODAL DE SALIDA DE PESTAÑAS

@@ -163,7 +163,7 @@
         <div id="seguimiento-feedback" role="status" aria-live="polite" hidden class="mis-lic__feedback"></div>
 
         <!-- Listado Limpio de Tarjetas (Reemplazo de la tabla saturada) -->
-        <div id="licitaciones-list" data-solo-seguidas="{{ solo_seguidas|yesno:'true,false' }}" class="mis-lic__list">
+        <div id="licitaciones-list" data-solo-seguidas="{{ solo_seguidas|yesno:'true,false' }}" data-suscriptor-activo="{{ suscriptor_activo|yesno:'true,false' }}" class="mis-lic__list">
             {% for lic in licitaciones %}
             <div class="dashboard-card mis-lic__card" data-licitacion-card>
                 <div class="mis-lic__card-layout">

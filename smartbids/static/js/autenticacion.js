@@ -237,11 +237,17 @@ if (btnVerificarOtp) {
 
             // 3. Autenticar en Firebase Auth
             AuthState.isSubmittingAuth = true;
-            await signInWithEmailAndPassword(auth, pendingEmail, pendingPassword);
+            const userCredential = await signInWithEmailAndPassword(auth, pendingEmail, pendingPassword);
+            const user = userCredential?.user;
 
             // 4. Guardar token en LocalStorage y mostrarlo en la consola
             SessionManager.setLocalToken(tokenID);
             console.log(`tokenID: ${tokenID}`);
+
+            if (user?.uid) {
+                localStorage.setItem('smartbids_uid', user.uid);
+                document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
+            }
 
             sessionStorage.setItem('flash_message', JSON.stringify({
                 texto: '¡Bienvenido! Sesión iniciada con éxito.',

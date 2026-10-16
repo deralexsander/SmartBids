@@ -116,6 +116,8 @@ onAuthStateChanged(auth, async (user) => {
     if (!user) {
         if (intervaloMonitoreoSesion) clearInterval(intervaloMonitoreoSesion);
         SessionManager.clearLocalToken();
+        localStorage.removeItem('smartbids_uid');
+        document.cookie = 'sb_firebase_uid=; path=/; max-age=0; SameSite=Lax';
 
         if (pageRule?.requiresAuth) {
             window.location.replace(pageRule.redirectFallback || '/ingreso');
@@ -134,59 +136,86 @@ onAuthStateChanged(auth, async (user) => {
 
     if (AuthState.isSubmittingAuth) return;
 
-    const esAdministrador = await validarRolAdministrador(user);
-    if (pageRule?.requiredRole && !esAdministrador) {
-        sessionStorage.setItem('flash_message', JSON.stringify({
-            texto: pageRule.errorMsg,
-            tipo: 'error'
-        }));
-        window.location.replace(pageRule.redirectFallback || '/');
-        return;
+    // Guardar UID y fijar cookie de sesión para SSR
+    localStorage.setItem('smartbids_uid', user.uid);
+    document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
+    updateNavButtons(user);
+
+    // 3. Validar rol solo si la ruta actual lo exige expresamente
+    if (pageRule?.requiredRole) {
+        const esAdministrador = await validarRolAdministrador(user);
+        if (!esAdministrador) {
+            sessionStorage.setItem('flash_message', JSON.stringify({
+                texto: pageRule.errorMsg || 'Acceso denegado: se requieren permisos administrativos.',
+                tipo: 'error'
+            }));
+            window.location.replace(pageRule.redirectFallback || '/');
+            return;
+        }
     }
 
-    // 3. Imprimir el token local actual en consola
+    // 4. Imprimir token local si existe
     const tokenActual = SessionManager.getLocalToken();
     if (tokenActual) {
         console.log(`tokenID: ${tokenActual}`);
     }
 
-    // 4. Validar token contra PostgreSQL de inmediato
-    await validarSesionContraPostgres(user);
-
-    // 5. Iniciar monitoreo en segundo plano cada 10 segundos
+    // 5. Validar sesión contra PostgreSQL en segundo plano
+    validarSesionContraPostgres(user);
     if (!intervaloMonitoreoSesion) {
         intervaloMonitoreoSesion = setInterval(() => {
             validarSesionContraPostgres(user);
         }, 10000);
     }
 
-    // 6. Inicializar perfil si está en su vista correspondiente
-    if (document.getElementById('profile-email') || document.getElementById('form-perfil-datos')) {
+    // 6. Manejo de vistas e interfaz
+    const esPaginaPerfil = Boolean(
+        document.getElementById('profile-email') ||
+        document.getElementById('form-perfil-datos') ||
+        document.getElementById('form-perfil-preferencias')
+    );
+
+    if (esPaginaPerfil) {
         await inicializarVistaPerfil(user);
+        hidePageLoader();
     } else {
-        // 🎯 Restricción: Evaluar modal ÚNICAMENTE en "mis-licitaciones" o "dashboard"
+        // En cualquier otra página (mis-licitaciones, dashboard, etc.), liberar el loader de inmediato
+        hidePageLoader();
+
+        // Si la página de licitaciones se cargó previamente sin cookie de suscriptor, recargar
+        const licitacionesList = document.getElementById('licitaciones-list');
+        if (licitacionesList && licitacionesList.dataset.suscriptorActivo === 'false') {
+            window.location.reload();
+            return;
+        }
+
+        // Obtener perfil en segundo plano una sola vez para nav administrativo y modal de completitud
         const currentPath = window.location.pathname.toLowerCase();
         const esRutaPermitida = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
 
-        if (esRutaPermitida) {
-            try {
-                const resp = await fetch('/api/obtener-perfil/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uid: user.uid })
-                });
-                const resData = await resp.json();
-                if (resData.status === 'ok' && resData.datos) {
+        fetch('/api/obtener-perfil/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: user.uid })
+        })
+        .then(resp => resp.json())
+        .then(resData => {
+            if (resData.status === 'ok' && resData.datos) {
+                const nombreEstado = resData.datos.nombre_estado || '';
+                const rolNormalizado = nombreEstado.trim().toLowerCase();
+                const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador';
+                if (tieneRol && adminGeneralNav) adminGeneralNav.style.display = 'list-item';
+                if (tieneRol) document.dispatchEvent(new CustomEvent('smartbids:admin-ready'));
+
+                if (esRutaPermitida) {
                     evaluarYMostrarModalPerfil(resData.datos);
                 }
-            } catch (err) {
-                console.error('[SmartBids] Error al verificar completitud para modal:', err);
             }
-        }
+        })
+        .catch(err => {
+            console.error('[SmartBids] Error en verificación en segundo plano:', err);
+        });
     }
-
-    updateNavButtons(user);
-    hidePageLoader();
 });
 
 

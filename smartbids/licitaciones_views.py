@@ -1,7 +1,8 @@
 import csv
 from datetime import date, timedelta
 
-from django.db.models import Q
+from django.core.cache import cache
+from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.shortcuts import render
@@ -13,7 +14,12 @@ from .licitacion_utils import estado_licitacion, estado_qs, escribir_fila_csv, r
 
 
 def filtrar_licitaciones(request, suscriptor):
-    qs = Licitacion.objects.select_related('lic_codigo_ucom').all().order_by('-lic_fecha_public')
+    qs = (
+        Licitacion.objects
+        .select_related('lic_codigo_ucom')
+        .all()
+        .order_by('-lic_fecha_public')
+    )
     preferencias = Preferencia.objects.filter(id_suscriptor=suscriptor).first() if suscriptor else None
     match_perfil = 0
 
@@ -45,35 +51,29 @@ def filtrar_licitaciones(request, suscriptor):
                 filtros_estrictos &= Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas)
             if palabras:
                 q_palabras = Q()
-                for palabra in palabras:
-                    q_palabras |= Q(lic_nombre__icontains=palabra) | Q(lic_descripcion__icontains=palabra)
+                for palabra in palabras[:10]:
+                    q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra)
                 filtros_estrictos &= q_palabras
             if productos:
-                codigos_licitacion = LicitacionesProductos.objects.filter(
+                subq_productos = LicitacionesProductos.objects.filter(
                     codigo_producto__in=productos
-                ).values_list('lic_codigo_id', flat=True)
-                q_productos = Q(lic_codigo__in=codigos_licitacion)
-                for producto in productos:
-                    q_productos |= Q(lic_codigos_producto__icontains=producto)
-                filtros_estrictos &= q_productos
+                ).values('lic_codigo_id')
+                filtros_estrictos &= Q(lic_codigo__in=subq_productos)
 
-            coincidencias = qs.filter(filtros_estrictos).distinct()
+            coincidencias = qs.filter(filtros_estrictos)
             if coincidencias.exists():
                 qs = coincidencias
             else:
                 filtros_flexibles = Q()
                 if productos:
-                    codigos_licitacion = LicitacionesProductos.objects.filter(
+                    subq_productos = LicitacionesProductos.objects.filter(
                         codigo_producto__in=productos
-                    ).values_list('lic_codigo_id', flat=True)
-                    q_productos = Q(lic_codigo__in=codigos_licitacion)
-                    for producto in productos:
-                        q_productos |= Q(lic_codigos_producto__icontains=producto)
-                    filtros_flexibles |= q_productos
+                    ).values('lic_codigo_id')
+                    filtros_flexibles |= Q(lic_codigo__in=subq_productos)
                 if palabras:
                     q_palabras = Q()
-                    for palabra in palabras:
-                        q_palabras |= Q(lic_nombre__icontains=palabra) | Q(lic_descripcion__icontains=palabra)
+                    for palabra in palabras[:10]:
+                        q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra)
                     filtros_flexibles |= q_palabras
                 if ucom_ids:
                     filtros_flexibles |= Q(lic_codigo_ucom_id__in=ucom_ids)
@@ -81,8 +81,8 @@ def filtrar_licitaciones(request, suscriptor):
                     filtros_flexibles |= Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas)
                 if tipos:
                     filtros_flexibles |= Q(lic_tipo_licitacion__in=tipos)
-                qs = qs.filter(filtros_flexibles).distinct()
-            match_perfil = qs.count()
+            # Coincidencias encontradas
+            pass
 
     termino = request.GET.get('q', '').strip()
     if termino:
@@ -99,6 +99,7 @@ def filtrar_licitaciones(request, suscriptor):
     estado = request.GET.get('estado', '').strip()
     if estado in {'publicada', 'preguntas', 'ofertas', 'cerrada'}:
         qs = qs.filter(estado_qs(estado))
+
     return qs, match_perfil
 
 
@@ -107,16 +108,21 @@ def mis_licitaciones_view(request):
     if suscriptor:
         from .tracking_views import _sincronizar_seguimientos
         _sincronizar_seguimientos(suscriptor)
-    qs, match_perfil = filtrar_licitaciones(request, suscriptor)
+    qs, _ = filtrar_licitaciones(request, suscriptor)
 
-    hoy = date.today()
+    hoy = timezone.localdate()
     plazo_tres_dias = hoy + timedelta(days=3)
-    cierre_proximo = qs.filter(
-        lic_fecha_cierre__gte=hoy,
-        lic_fecha_cierre__lte=plazo_tres_dias,
-    ).count()
-    convenio_marco = qs.filter(lic_tipo_licitacion='CM').count()
-    total_licitaciones = Licitacion.objects.count()
+
+    stats = qs.aggregate(
+        match_perfil=Count('lic_codigo'),
+        cierre_proximo=Count('lic_codigo', filter=Q(lic_fecha_cierre__gte=hoy, lic_fecha_cierre__lte=plazo_tres_dias)),
+        convenio_marco=Count('lic_codigo', filter=Q(lic_tipo_licitacion='CM'))
+    )
+    match_perfil = stats['match_perfil'] or 0
+    cierre_proximo = stats['cierre_proximo'] or 0
+    convenio_marco = stats['convenio_marco'] or 0
+
+    total_licitaciones = cache.get_or_set('total_licitaciones_count', Licitacion.objects.count, 3600)
 
     seguidos = set()
     if suscriptor:
@@ -128,14 +134,19 @@ def mis_licitaciones_view(request):
             ).values_list('licitacion_id', flat=True)
         )
 
-    tipos = list(
-        Licitacion.objects.exclude(lic_tipo_licitacion__isnull=True)
-        .exclude(lic_tipo_licitacion='')
-        .values_list('lic_tipo_licitacion', flat=True)
-        .distinct()
-        .order_by('lic_tipo_licitacion')
+    tipos = cache.get_or_set(
+        'licitacion_tipos_list',
+        lambda: list(
+            Licitacion.objects.exclude(lic_tipo_licitacion__isnull=True)
+            .exclude(lic_tipo_licitacion='')
+            .values_list('lic_tipo_licitacion', flat=True)
+            .distinct()
+            .order_by('lic_tipo_licitacion')
+        ),
+        86400
     )
     paginator = Paginator(qs, 20)
+    paginator.count = match_perfil
     licitaciones = paginator.get_page(request.GET.get('page'))
     for licitacion in licitaciones:
         licitacion.estado_proceso, licitacion.estado_proceso_label = estado_licitacion(licitacion)
