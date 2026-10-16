@@ -1,5 +1,5 @@
 {% extends 'smartbids/base.html' %}
-{% load static %}
+{% load static l10n %}
 
 {% block nombrePag %}
 <title>Dashboard Analítico</title>
@@ -24,13 +24,9 @@
             <!-- Selector de Rango de Fecha y Acciones -->
             <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center;">
                 <div class="form-inline" style="margin: 0;">
-                    <select id="filtro-periodo" style="padding: 0.6rem 1rem; border-radius: 10px; border: 1.5px solid var(--soft-mint); background: var(--white); color: var(--dark-green); font-weight: 700;">
-                        <option value="30">Últimos 30 días</option>
-                        <option value="90" selected>Último Trimestre</option>
-                        <option value="365">Año en curso</option>
-                    </select>
+                    <span style="color: var(--dark-green); font-weight: 700;">Período: todos los datos cargados</span>
                 </div>
-                <button type="button" class="btn btn-outline" style="padding: 0.6rem 1.2rem;">
+                <button type="button" class="btn btn-outline" disabled title="Exportación pendiente de integrar" style="padding: 0.6rem 1.2rem; opacity: 0.6; cursor: not-allowed;">
                     <i class="fa-solid fa-download"></i> Exportar Informe
                 </button>
             </div>
@@ -50,7 +46,7 @@
 
                     <div>
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
-                            Monto Total Transado
+                            Monto total de OCs (CLP)
                         </span>
 
                         <div style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
@@ -84,7 +80,7 @@
                 </div>
 
 
-                <!-- KPI 3: Proveedores Activos -->
+                <!-- KPI 3: Proveedores con OCs -->
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(59, 130, 246, 0.12); color: #3b82f6; flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(59, 130, 246, 0.25);">
                         <i class="fa-solid fa-users-viewfinder"></i>
@@ -92,7 +88,7 @@
 
                     <div>
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
-                            Proveedores Activos
+                            Proveedores con OCs
                         </span>
 
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
@@ -108,7 +104,7 @@
                 </div>
 
 
-                <!-- KPI 4: Compradores Activos -->
+                <!-- KPI 4: Compradores con OCs -->
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1;">
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(92, 150, 136, 0.15); color: var(--muted-teal); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(92, 150, 136, 0.25);">
                         <i class="fa-solid fa-building"></i>
@@ -116,7 +112,7 @@
 
                     <div>
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
-                            Compradores Activos
+                            Compradores con OCs
                         </span>
 
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
@@ -138,13 +134,13 @@
         <!-- PESTAÑAS DE NAVEGACIÓN DEL DASHBOARD                          -->
         <!-- ============================================================ -->
         <div style="display: flex; gap: 0.8rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.8rem; flex-wrap: wrap;">
-            <button type="button" class="tab-dash-btn active" onclick="cambiarDashboard('tab-productos', this)">
+            <button type="button" class="tab-dash-btn active" onclick="cambiarTabAnalitico('tab-productos', this)">
                 <i class="fa-solid fa-box-archive"></i> Demanda de Productos
             </button>
-            <button type="button" class="tab-dash-btn" onclick="cambiarDashboard('tab-competencia', this)">
+            <button type="button" class="tab-dash-btn" onclick="cambiarTabAnalitico('tab-competencia', this)">
                 <i class="fa-solid fa-chart-pie"></i> Análisis de Competencia
             </button>
-            <button type="button" class="tab-dash-btn" onclick="cambiarDashboard('tab-compradores', this)">
+            <button type="button" class="tab-dash-btn" onclick="cambiarTabAnalitico('tab-compradores', this)">
                 <i class="fa-solid fa-building-columns"></i> Organismos Compradores
             </button>
         </div>
@@ -161,11 +157,11 @@
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
                         <div class="dash-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-chart-column" style="color: var(--accent-green);"></i>
-                            Volumen de Órdenes de compra por Categoría de Producto
+                            Grupos con mayor monto neto de compra
                         </div>
-                        <span class="dash-badge">Mensual</span>
+                        <span class="dash-badge">CLP · Top 10</span>
                     </div>
-                    <div style="position: relative; height: 280px; width: 100%;">
+                    <div style="position: relative; height: 400px; width: 100%;">
                         <canvas id="graficoProductos"></canvas>
                     </div>
                 </div>
@@ -175,36 +171,34 @@
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
                         <div class="dash-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-fire" style="color: #ef4444;"></i>
-                            Top Productos Demandados
+                            Grupos destacados por monto neto
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 0.9rem;">
+                        {% for producto in productos_mas_comprados|slice:":3" %}
                         <div class="stat-mini-card" style="margin: 0; padding: 0.8rem 1rem;">
-                            <label>81111812 - Mantenimiento TI</label>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span style="font-size: 1.1rem; font-weight: 800; color: var(--dark-green);">84 Licitaciones</span>
-                                <small style="color: var(--accent-green); font-weight: 700;">+18% vs mes ant.</small>
-                            </div>
+                            <div style="font-weight: 700; overflow-wrap: anywhere; color: var(--dark-green);">{{ producto.producto_key__producto_nombre }}</div>
+                            <p style="margin: 0.5rem 0; font-weight: 800;">$<span class="monto-producto" data-monto="{{ producto.monto_neto|unlocalize }}">{{ producto.monto_neto }}</span> CLP</p>
+                            <small>{{ producto.cantidad_items }} ítems analizados</small>
                         </div>
-                        <div class="stat-mini-card" style="margin: 0; padding: 0.8rem 1rem;">
-                            <label>43211507 - Laptops y Servidores</label>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span style="font-size: 1.1rem; font-weight: 800; color: var(--dark-green);">52 Licitaciones</span>
-                                <small style="color: var(--muted-teal); font-weight: 700;">+5% vs mes ant.</small>
-                            </div>
-                        </div>
-                        <div class="stat-mini-card" style="margin: 0; padding: 0.8rem 1rem;">
-                            <label>81111508 - Licencias Software</label>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span style="font-size: 1.1rem; font-weight: 800; color: var(--dark-green);">39 Licitaciones</span>
-                                <small style="color: #ef4444; font-weight: 700;">-2% vs mes ant.</small>
-                            </div>
-                        </div>
+                        {% empty %}<p>No hay productos para mostrar.</p>{% endfor %}
                     </div>
                 </div>
                 <!-- próximos gráficos de "Productos" van dentro de este mismo grid o en una fila nueva -->
 
             </div>
+        <div id="panel-desglose" class="dashboard-card" hidden style="padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap;">
+                <div>
+                    <h2 id="titulo-desglose" style="font-size:1.1rem;color:var(--dark-green);">Desglose</h2>
+                    <p id="ruta-desglose"></p>
+                </div>
+                <button id="volver-desglose" type="button" class="btn btn-outline" hidden>Volver a nivel 1</button>
+            </div>
+            <p id="estado-desglose" role="status" aria-live="polite">Selecciona una barra para explorar.</p>
+            <div style="position:relative;height:420px;"><canvas id="graficoDesglose"></canvas></div>
+        </div>
+
         </div>
 
         <!-- ============================================================ -->
@@ -219,7 +213,7 @@
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
                         <div class="dash-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-pie-chart" style="color: var(--accent-green);"></i>
-                            Distribución de Órdenes de compra por Competidor
+                            Distribución de OCs entre los cinco principales proveedores
                         </div>
                     </div>
                     <div style="position: relative; height: 280px; width: 100%;">
@@ -241,7 +235,7 @@
                             <tr style="border-bottom: 2px solid var(--border-color); color: var(--dark-green); font-weight: 800;">
                                 <th style="padding: 0.6rem 0.4rem;">Competidor</th>
                                 <th style="padding: 0.6rem 0.4rem;">Órdenes de Compra</th>
-                                <th style="padding: 0.6rem 0.4rem;">Participación</th>
+                                <th style="padding: 0.6rem 0.4rem;">% del total de OCs</th>
                                 <th style="padding: 0.6rem 0.4rem;">Monto Total</th>
                             </tr>
                         </thead>
@@ -252,7 +246,7 @@
                             <tr style="border-bottom: 1px solid var(--border-color);">
 
                                 <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">
-                                    {{ competidor.nombre }}
+                                    <span data-proveedor="{{ competidor.nombre }}">{{ competidor.nombre }}</span>
                                 </td>
 
                                 <td style="padding: 0.8rem 0.4rem;">
@@ -282,7 +276,7 @@
                 </div>
 
                 <!-- Gráfico 2: Evolución de Órdenes de Compra por Competidor -->
-                <div class="dashboard-card" style="padding: 1.5rem; margin-top: 1.5rem;">
+                <div class="dashboard-card" style="padding: 1.5rem; grid-column: 1 / -1; min-width: 0;">
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
                         <div class="dash-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-chart-line" style="color: var(--accent-green);"></i>
@@ -310,10 +304,10 @@
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
                         <div class="dash-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-landmark" style="color: var(--accent-green);"></i>
-                            Organismos Estatales con Mayor Presupuesto Asignado
+                            Organismos con más órdenes de compra
                         </div>
                     </div>
-                    <div style="position: relative; height: 260px; width: 100%;">
+                    <div style="position: relative; height: 320px; width: 100%;">
                         <canvas id="graficoCompradores"></canvas>
                     </div>
                 </div>
@@ -329,6 +323,8 @@
 <!-- ESTILOS ESPECÍFICOS DE LAS PESTAÑAS                           -->
 <!-- ============================================================ -->
 <style>
+    .dashboard-card { min-width: 0; }
+    .dashboard-card td { overflow-wrap: anywhere; }
     .tab-dash-btn {
         padding: 0.65rem 1.2rem;
         background: transparent;
@@ -365,207 +361,193 @@
 <!-- cada nuevo gráfico se agrega dentro de la función que le      -->
 <!-- corresponde (initGraficosProductos / Competencia / Compradores) -->
 <!-- ============================================================ -->
+{{ productos_mas_comprados|json_script:"datos-productos" }}
+{{ proveedores_competencia|json_script:"datos-proveedores" }}
+{{ evolucion_competidores|json_script:"datos-evolucion" }}
+{{ organismos_compradores|json_script:"datos-compradores" }}
 <script>
-    // --- Navegación entre pestañas ---
-    function cambiarDashboard(tabId, btn) {
-        document.querySelectorAll('.dashboard-view').forEach(view => view.style.display = 'none');
-        document.querySelectorAll('.tab-dash-btn').forEach(b => b.classList.remove('active'));
+    const datosDashboard = id => JSON.parse(document.getElementById(id).textContent);
+    const productos = datosDashboard('datos-productos');
+    const proveedores = datosDashboard('datos-proveedores');
+    const evolucion = datosDashboard('datos-evolucion');
+    const compradores = datosDashboard('datos-compradores');
+    const colores = ['#11634e', '#1ec498', '#5c9688', '#b1d2ca', '#7bb8aa'];
+    const numeros = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
+    const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+    const graficos = {};
+    // La identidad se mantiene completa en los datos; solo se limpia la etiqueta visible.
+    const nombreVisible = nombre => String(nombre || 'Sin nombre').replace(/ \[\d+\]$/, '');
+    const abreviar = (nombre, largo = 45) => nombre.length > largo ? nombre.slice(0, largo - 1) + '…' : nombre;
 
+    function crearBarras(id, filas, campoNombre, campoValor, monetario) {
+        const nombres = filas.map(f => String(f[campoNombre] || 'Sin nombre'));
+        graficos[id] = new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels: nombres.map(n => abreviar(n)),
+                datasets: [{
+                    label: monetario ? 'Monto neto (CLP)' : 'Cantidad de órdenes de compra',
+                    data: filas.map(f => Number(f[campoValor] || 0)),
+                    backgroundColor: '#1ec498', borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                onClick: id === 'graficoProductos' ? (_event, elementos) => {
+                    if (elementos.length) abrirGrupo(filas[elementos[0].index]);
+                } : undefined,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: {
+                        title: items => nombres[items[0].dataIndex],
+                        label: item => monetario ? pesos.format(item.parsed.x) : numeros.format(item.parsed.x) + ' OCs'
+                    } }
+                },
+                scales: { x: { beginAtZero: true, ticks: {
+                    precision: monetario ? undefined : 0,
+                    callback: value => monetario ? '$' + numeros.format(value) : numeros.format(value)
+                } } }
+            }
+        });
+    }
+
+    function iniciarTab(tabId) {
+        if (typeof Chart === 'undefined') {
+            document.querySelectorAll('canvas').forEach(canvas => {
+                const aviso = document.createElement('p');
+                aviso.textContent = 'No se pudo cargar Chart.js. Revisa la conexión o el bloqueo del CDN.';
+                canvas.replaceWith(aviso);
+            });
+            return;
+        }
+        if (tabId === 'tab-productos' && !graficos.graficoProductos) {
+            crearBarras('graficoProductos', productos, 'producto_key__producto_nombre', 'monto_neto', true);
+        }
+        if (tabId === 'tab-compradores' && !graficos.graficoCompradores) {
+            crearBarras('graficoCompradores', compradores, 'comprador_key__comprador_organismo_nombre', 'cantidad_ordenes', false);
+        }
+        if (tabId === 'tab-competencia' && !graficos.graficoCompetencia) {
+            const claves = proveedores.map(p => p.proveedor_key__proveedor_nombre);
+            graficos.graficoCompetencia = new Chart(document.getElementById('graficoCompetencia'), {
+                type: 'doughnut',
+                data: {
+                    labels: claves.map(nombreVisible),
+                    datasets: [{ data: proveedores.map(p => Number(p.cantidad_ordenes)), backgroundColor: colores }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: {
+                        label: item => item.label + ': ' + numeros.format(item.parsed) + ' OCs'
+                    } } }
+                }
+            });
+            graficos.evolucionCompetidoresChart = new Chart(document.getElementById('evolucionCompetidoresChart'), {
+                type: 'line',
+                data: {
+                    labels: evolucion.map(f => f.periodo),
+                    datasets: claves.map((clave, i) => ({
+                        label: nombreVisible(clave),
+                        data: evolucion.map(f => Number(f[clave] || 0)),
+                        borderColor: colores[i], backgroundColor: colores[i],
+                        tension: 0.3, fill: false, pointRadius: 3
+                    }))
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Órdenes de compra' } } }
+                }
+            });
+        }
+    }
+
+
+    // URL relativa: funciona si la página termina en /dashboard/ o /dashboard.
+    const urlDesglose = window.location.pathname.replace(/\/?$/, '/') + 'desglose/';
+    let grupoActual = null;
+    let grupoEtiqueta = '';
+    let nivelActual = null;
+    let peticionDesglose = null;
+
+    function abrirGrupo(fila) {
+        grupoActual = fila.grupo;
+        grupoEtiqueta = fila.producto_key__producto_nombre;
+        cargarDesglose('nivel1');
+    }
+
+    async function cargarDesglose(nivel, nivel1 = null, etiquetaNivel = '') {
+        if (peticionDesglose) peticionDesglose.abort();
+        const controller = new AbortController();
+        peticionDesglose = controller;
+        const panel = document.getElementById('panel-desglose');
+        const estado = document.getElementById('estado-desglose');
+        panel.hidden = false;
+        estado.textContent = 'Cargando desglose…';
+        document.getElementById('titulo-desglose').textContent = nivel === 'nivel1'
+            ? 'Nivel 1 con mayor monto neto · Top 10' : 'Productos con mayor monto neto · Top 10';
+        document.getElementById('ruta-desglose').textContent = 'Todos los grupos → ' + grupoEtiqueta
+            + (nivel === 'producto' ? ' → ' + etiquetaNivel : '');
+        document.getElementById('volver-desglose').hidden = nivel !== 'producto';
+        if (graficos.graficoDesglose) {
+            graficos.graficoDesglose.destroy();
+            delete graficos.graficoDesglose;
+        }
+        const params = new URLSearchParams({nivel});
+        if (grupoActual === null) params.set('grupo_nulo', '1');
+        else params.set('grupo', grupoActual);
+        if (nivel === 'producto') {
+            if (nivel1 === null) params.set('nivel1_nulo', '1');
+            else params.set('nivel1', nivel1);
+        }
+        try {
+            const response = await fetch(urlDesglose + '?' + params, {
+                signal: controller.signal, headers: {'Accept': 'application/json'}
+            });
+            if (!response.ok) throw new Error('Error HTTP ' + response.status);
+            const payload = await response.json();
+            if (controller !== peticionDesglose) return;
+            const filas = payload.filas;
+            nivelActual = nivel;
+            estado.textContent = !filas.length ? 'Sin datos para esta selección.'
+                : nivel === 'nivel1' ? 'Selecciona una barra para ver sus productos. Montos en CLP.'
+                : 'Monto neto por producto en CLP.';
+            if (filas.length) {
+                crearBarras('graficoDesglose', filas, 'nombre', 'monto_neto', true);
+                if (nivel === 'nivel1') {
+                    graficos.graficoDesglose.options.onClick = (_event, elementos) => {
+                        if (elementos.length) {
+                            const fila = filas[elementos[0].index];
+                            cargarDesglose('producto', fila.valor, fila.nombre);
+                        }
+                    };
+                    graficos.graficoDesglose.update();
+                }
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError' && controller === peticionDesglose) {
+                estado.textContent = 'No se pudo cargar el desglose. Revisa la ruta de Django y la terminal.';
+                console.error(error);
+            }
+        }
+    }
+
+    function cambiarTabAnalitico(tabId, btn) {
+        document.querySelectorAll('.dashboard-view').forEach(v => v.style.display = 'none');
+        document.querySelectorAll('.tab-dash-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tabId).style.display = 'block';
         btn.classList.add('active');
+        requestAnimationFrame(() => {
+            iniciarTab(tabId);
+            Object.values(graficos).forEach(g => g.resize());
+        });
     }
 
-    // --- Pestaña: Demanda de Productos ---
-    function initGraficosProductos() {
-        // Gráfico 1: Volumen de Órdenes de compra por Categoría de Producto
-        new Chart(document.getElementById('graficoProductos'), {
-            type: 'bar',
-
-            data: {
-                labels: [
-                    {% for producto in productos_mas_comprados %}
-                        "{{ producto.producto_key__producto_nombre|escapejs }}",
-                    {% endfor %}
-                ],
-
-                datasets: [{
-                    label: 'Cantidad de Órdenes de Compra',
-
-                    data: [
-                        {% for producto in productos_mas_comprados %}
-                            {{ producto.cantidad_ordenes }},
-                        {% endfor %}
-                    ],
-
-                    backgroundColor: '#1ec498',
-                    borderRadius: 6
-                }]
-            },
-
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-
-        // <-- próximos gráficos de "Productos" se inicializan aquí -->
-    }
-
-    // --- Pestaña: Análisis de Competencia ---
-    function initGraficosCompetencia() {
-        // Gráfico 1: Distribución de Órdenes de compra por Competidor
-        new Chart(document.getElementById('graficoCompetencia'), {
-            type: 'doughnut',
-
-            data: {
-                labels: [
-                    {% for proveedor in proveedores_competencia %}
-                        "{{ proveedor.proveedor_key__proveedor_nombre|escapejs }}",
-                    {% endfor %}
-                ],
-
-                datasets: [{
-                    data: [
-                        {% for proveedor in proveedores_competencia %}
-                            {{ proveedor.cantidad_ordenes }},
-                        {% endfor %}
-                    ],
-
-                    backgroundColor: [
-                        '#11634e',
-                        '#1ec498',
-                        '#5c9688',
-                        '#b1d2ca',
-                        '#7bb8aa'
-                    ]
-                }]
-            },
-
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-
-                plugins: {
-                    legend: {
-                        position: 'right'
-                    }
-                }
-            }
-        });
-
-        // Gráfico 2: Evolución de Órdenes de Compra por Competidor
-        const evolucionCompetidores = {{ evolucion_competidores|safe }};
-
-        const periodosCompetidores = evolucionCompetidores.map(
-            fila => fila.periodo
-        );
-
-        const nombresCompetidores = [
-            {% for proveedor in proveedores_competencia %}
-                "{{ proveedor.proveedor_key__proveedor_nombre|escapejs }}",
-            {% endfor %}
-        ];
-
-        const datasetsCompetidores = nombresCompetidores.map(nombre => ({
-            label: nombre,
-
-            data: evolucionCompetidores.map(
-                fila => fila[nombre] || 0
-            ),
-
-            tension: 0.3,
-            fill: false,
-            pointRadius: 3,
-            pointHoverRadius: 5
-        }));
-
-        new Chart(document.getElementById('evolucionCompetidoresChart'), {
-            type: 'line',
-
-            data: {
-                labels: periodosCompetidores,
-                datasets: datasetsCompetidores
-            },
-
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                },
-
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Órdenes de Compra'
-                        },
-                        ticks: {
-                            precision: 0
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Período'
-                        }
-                    }
-                }
-            }
-        });
-
-        // <-- próximos gráficos de "Competencia" se inicializan aquí -->
-    }
-
-    // --- Pestaña: Organismos Compradores ---
-    function initGraficosCompradores() {
-        // Gráfico 1: Organismos Estatales con Mayor Presupuesto Asignado
-        new Chart(document.getElementById('graficoCompradores'), {
-            type: 'bar',
-
-            data: {
-                labels: [
-                    {% for organismo in organismos_compradores %}
-                        "{{ organismo.comprador_key__comprador_organismo_nombre|escapejs }}",
-                    {% endfor %}
-                ],
-
-                datasets: [{
-                    label: 'Cantidad de Órdenes de Compra',
-
-                    data: [
-                        {% for organismo in organismos_compradores %}
-                            {{ organismo.cantidad_ordenes }},
-                        {% endfor %}
-                    ],
-
-                    backgroundColor: '#11634e',
-                    borderRadius: 6
-                }]
-            },
-
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-
-        // <-- próximos gráficos de "Compradores" se inicializan aquí -->
-    }
-
-    // --- Inicialización general al cargar el DOM ---
     document.addEventListener('DOMContentLoaded', () => {
-        initGraficosProductos();
-        initGraficosCompetencia();
-        initGraficosCompradores();
+        document.getElementById('volver-desglose').addEventListener('click', () => cargarDesglose('nivel1'));
+        document.querySelectorAll('.monto-producto').forEach(el => el.textContent = numeros.format(Number(el.dataset.monto || 0)));
+        document.querySelectorAll('[data-proveedor]').forEach(el => el.textContent = nombreVisible(el.dataset.proveedor));
+        iniciarTab('tab-productos');
     });
 </script>
 {% endblock %}

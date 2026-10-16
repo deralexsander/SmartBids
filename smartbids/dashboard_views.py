@@ -1,228 +1,160 @@
-from django.shortcuts import render
-from django.db.models import Count, Sum
+"""Dashboard para el DW actual. Consultas de lectura mediante el alias dw."""
+from decimal import Decimal
 
-from .models import FactItemOrdenCompra, FactOrdenCompra
+from django.db.models import Count, F, Sum
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+from .models import FactOcCabecera, FactOrdenCompra
+
 
 def dashboard_view(request):
-    
-    # KPIs principales del dashboard
+    cabeceras = FactOcCabecera.objects.using("dw")
+    compras = FactOrdenCompra.objects.using("dw")
 
-    monto_total_ordenes = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .aggregate(
-            total=Sum('orden_monto_total_clp')
-        )['total']
+    # Una fila de cabecera corresponde a una OC única.
+    kpis = cabeceras.aggregate(
+        monto=Sum("monto_total_clp"),
+        ordenes=Count("codigo_oc"),
+        proveedores=Count("proveedor_key", distinct=True),
+        compradores=Count("comprador_key", distinct=True),
     )
-    monto_total_ordenes = formatear_monto(monto_total_ordenes)
+    total_ordenes = kpis["ordenes"]
 
-    total_ordenes = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .values('orden_codigo')
-        .distinct()
-        .count()
+    # El resumen no permite reconstruir OCs únicas por producto.
+    # Ranking por monto neto; se conserva el nombre de producto que usa el template.
+    # Primer gráfico: grupos, no productos individuales.
+    productos_mas_comprados = list(
+        compras.values(grupo=F("producto_key__producto_grupo"))
+        .annotate(monto_neto=Sum("monto_neto"), cantidad_items=Sum("cantidad_items"))
+        .order_by("-monto_neto", "grupo")[:10]
     )
+    for fila in productos_mas_comprados:
+        fila["producto_key__producto_nombre"] = fila["grupo"] or "Sin grupo informado"
 
-    proveedores_activos = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .values('proveedor_key')
-        .distinct()
-        .count()
-    )
-
-    compradores_activos = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .values('comprador_key')
-        .distinct()
-        .count()
-    )
-    
-    # 1. Productos m├ís comprados
-    productos_mas_comprados = (
-        FactItemOrdenCompra.objects
-        .using('dw')
-        .values('producto_key__producto_nombre')
+    competidores_qs = list(
+        cabeceras.values("proveedor_key_id", "proveedor_key__proveedor_nombre")
         .annotate(
-            cantidad_ordenes=Count(
-                'orden_codigo',
-                distinct=True
-            )
+            cantidad_ordenes=Count("codigo_oc"),
+            monto_adjudicado=Sum("monto_total_clp"),
         )
-        .order_by('-cantidad_ordenes')[:10]
+        .order_by("-cantidad_ordenes", "proveedor_key_id")[:5]
     )
-
-    # 2. Competencia (proveedores)
-    proveedores_competencia = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .values(
-            'proveedor_key__proveedor_nombre'
+    # Evita mezclar proveedores diferentes que tengan un mismo nombre.
+    etiquetas = {
+        r["proveedor_key_id"]: (
+            f'{r["proveedor_key__proveedor_nombre"] or "Sin nombre"} '
+            f'[{r["proveedor_key_id"]}]'
         )
-        .annotate(
-            cantidad_ordenes=Count(
-                'orden_codigo',
-                distinct=True
-            )
-        )
-        .order_by('-cantidad_ordenes')[:5]
-    )
-    
-    # Ranking de principales competidores
-    competidores_qs = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .values(
-            'proveedor_key__proveedor_nombre'
-        )
-        .annotate(
-            adjudicaciones=Count(
-                'orden_codigo',
-                distinct=True
-            ),
-            monto_adjudicado=Sum(
-                'orden_monto_total_clp'
-            )
-        )
-        .order_by('-adjudicaciones')[:5]
-    )
-    
-    total_adjudicaciones = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .values('orden_codigo')
-        .distinct()
-        .count()
-    )
-    
+        for r in competidores_qs
+    }
+    proveedores_competencia = []
     competidores = []
-
-    for competidor in competidores_qs:
-        adjudicaciones = competidor['adjudicaciones']
-
-        participacion = (
-            (adjudicaciones / total_adjudicaciones) * 100
-            if total_adjudicaciones > 0
-            else 0
-        )
-
-        competidores.append({
-            'nombre': competidor['proveedor_key__proveedor_nombre'],
-            'adjudicaciones': adjudicaciones,
-            'participacion': round(participacion, 2),
-            'monto_adjudicado': formatear_monto(competidor['monto_adjudicado'] or 0),
+    for r in competidores_qs:
+        nombre = etiquetas[r["proveedor_key_id"]]
+        proveedores_competencia.append({
+            "proveedor_key_id": r["proveedor_key_id"],
+            "proveedor_key__proveedor_nombre": nombre,
+            "cantidad_ordenes": r["cantidad_ordenes"],
         })
-        
-    top_competidores = [
-        proveedor['proveedor_key__proveedor_nombre']
-        for proveedor in proveedores_competencia
-    ]
-    
-    evolucion_competidores_qs = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .filter(
-            proveedor_key__proveedor_nombre__in=top_competidores
-        )
+        competidores.append({
+            "nombre": nombre,
+            # Claves históricas del template: representan OCs, no eventos de adjudicación.
+            "adjudicaciones": r["cantidad_ordenes"],
+            "participacion": round(r["cantidad_ordenes"] / total_ordenes * 100, 2)
+                if total_ordenes else 0,
+            "monto_adjudicado": formatear_monto(r["monto_adjudicado"]),
+        })
+
+    evolucion_qs = (
+        cabeceras.filter(proveedor_key_id__in=list(etiquetas))
         .values(
-            'fecha_creacion_key__anio',
-            'fecha_creacion_key__mes',
-            'fecha_creacion_key__nombre_mes_corto',
-            'proveedor_key__proveedor_nombre'
+            "fecha_key__anio", "fecha_key__mes",
+            "fecha_key__nombre_mes_corto", "proveedor_key_id",
         )
-        .annotate(
-            cantidad_ordenes=Count(
-                'orden_codigo',
-                distinct=True
-            )
-        )
-        .order_by(
-            'fecha_creacion_key__anio',
-            'fecha_creacion_key__mes'
-        )
+        .annotate(cantidad_ordenes=Count("codigo_oc"))
+        .order_by("fecha_key__anio", "fecha_key__mes", "proveedor_key_id")
     )
-        
-    evolucion_competidores_data = {}
-
-    for fila in evolucion_competidores_qs:
-
-        anio = fila['fecha_creacion_key__anio']
-        mes = fila['fecha_creacion_key__mes']
-        nombre_mes = fila['fecha_creacion_key__nombre_mes_corto']
-        proveedor = fila['proveedor_key__proveedor_nombre']
-        cantidad = fila['cantidad_ordenes']
-
+    periodos = {}
+    for r in evolucion_qs:
+        anio, mes = r["fecha_key__anio"], r["fecha_key__mes"]
         periodo = f"{anio}-{mes:02d}"
-
-        if periodo not in evolucion_competidores_data:
-            evolucion_competidores_data[periodo] = {
-                'periodo': f"{nombre_mes} {anio}",
+        if periodo not in periodos:
+            periodos[periodo] = {
+                "periodo": f'{r["fecha_key__nombre_mes_corto"]} {anio}',
+                **{nombre: 0 for nombre in etiquetas.values()},
             }
+        periodos[periodo][etiquetas[r["proveedor_key_id"]]] = r["cantidad_ordenes"]
+    evolucion_competidores = list(periodos.values())
 
-        evolucion_competidores_data[periodo][proveedor] = cantidad
-        
-        evolucion_competidores = list(
-            evolucion_competidores_data.values()
-        )
-        
-    # 3. Organismos Compradores
-    organismos_compradores = (
-        FactOrdenCompra.objects
-        .using('dw')
-        .values(
-            'comprador_key__comprador_organismo_nombre'
-        )
-        .annotate(
-            cantidad_ordenes=Count(
-                'orden_codigo',
-                distinct=True
-            )
-        )
-        .order_by('-cantidad_ordenes')[:5]  
+    organismos_compradores = list(
+        cabeceras.values("comprador_key_id", "comprador_key__comprador_organismo_nombre")
+        .annotate(cantidad_ordenes=Count("codigo_oc"))
+        .order_by("-cantidad_ordenes", "comprador_key_id")[:5]
     )
 
     context = {
-        'monto_total_ordenes': monto_total_ordenes,
-        'total_ordenes': total_ordenes,
-        'proveedores_activos': proveedores_activos,
-        'compradores_activos': compradores_activos,
-        'productos_mas_comprados': productos_mas_comprados,
-        'proveedores_competencia': proveedores_competencia,
-        'competidores': competidores,
-        'evolucion_competidores': evolucion_competidores,
-        'organismos_compradores': organismos_compradores,
+        "monto_total_ordenes": formatear_monto(kpis["monto"]),
+        "total_ordenes": total_ordenes,
+        "proveedores_activos": kpis["proveedores"],
+        "compradores_activos": kpis["compradores"],
+        "productos_mas_comprados": productos_mas_comprados,
+        "proveedores_competencia": proveedores_competencia,
+        "competidores": competidores,
+        "evolucion_competidores": evolucion_competidores,
+        "organismos_compradores": organismos_compradores,
     }
+    return render(request, "smartbids/dashboard.html", context)
 
-    return render(
-        request,
-        'smartbids/dashboard.html',
-        context
-    )
-
-# ==============================================================================
-# FUNCIONES AUXILIARES
-# ==============================================================================
 
 def formatear_monto(monto):
-    if monto is None:
-        return '$0'
-
-    monto = float(monto)
-
-    if monto >= 1_000_000_000:
-        valor = monto / 1_000_000
-        return f"${valor:,.0f} MM".replace(",", ".")
-
-    if monto >= 1_000_000:
-        valor = monto / 1_000_000
-        return f"${valor:,.0f} M".replace(",", ".")
-
-    if monto >= 1_000:
-        valor = monto / 1_000
-        return f"${valor:,.0f} mil".replace(",", ".")
-
+    """CLP abreviado; MM significa millones en todos los casos."""
+    monto = Decimal(0) if monto is None else Decimal(str(monto))
+    if abs(monto) >= 1_000_000:
+        return f"${monto / Decimal(1_000_000):,.0f} MM".replace(",", ".")
+    if abs(monto) >= 1_000:
+        return f"${monto / Decimal(1_000):,.0f} mil".replace(",", ".")
     return f"${monto:,.0f}".replace(",", ".")
 
 
+@require_GET
+def dashboard_desglose(request):
+    """Desglose por monto neto; mismo alcance que el dashboard: datos cargados."""
+    nivel = request.GET.get("nivel", "nivel1")
+    if nivel not in {"nivel1", "producto"}:
+        return JsonResponse({"error": "Nivel inválido."}, status=400)
+    compras = FactOrdenCompra.objects.using("dw")
+    if request.GET.get("grupo_nulo") == "1":
+        grupo = None
+    elif "grupo" in request.GET:
+        grupo = request.GET["grupo"]
+    else:
+        return JsonResponse({"error": "Falta el grupo."}, status=400)
+    compras = compras.filter(producto_key__producto_grupo=grupo)
+    if nivel == "nivel1":
+        filas = list(
+            compras.values(valor=F("producto_key__producto_nivel1"))
+            .annotate(monto_neto=Sum("monto_neto"))
+            .order_by("-monto_neto", "valor")[:10]
+        )
+        for fila in filas:
+            fila["nombre"] = fila["valor"] or "Sin nivel informado"
+    else:
+        if request.GET.get("nivel1_nulo") == "1":
+            nivel1 = None
+        elif "nivel1" in request.GET:
+            nivel1 = request.GET["nivel1"]
+        else:
+            return JsonResponse({"error": "Falta el nivel 1."}, status=400)
+        filas = list(
+            compras.filter(producto_key__producto_nivel1=nivel1)
+            .values(
+                producto_id=F("producto_key_id"),
+                codigo=F("producto_key__producto_codigo"),
+                nombre=F("producto_key__producto_descripcion"),
+            )
+            .annotate(monto_neto=Sum("monto_neto"))
+            .order_by("-monto_neto", "producto_id")[:10]
+        )
+    return JsonResponse({"nivel": nivel, "filas": filas})
