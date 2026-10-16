@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/views/base-layout.css' %}">
     {% if request.resolver_match.url_name == 'home' %}
     <link rel="stylesheet" href="{% static 'css/views/home.css' %}">
-    {% elif request.resolver_match.url_name == 'ingreso' or request.resolver_match.url_name == 'registro' %}
+    {% elif request.resolver_match.url_name == 'ingreso' or request.resolver_match.url_name == 'registro' or request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
     <link rel="stylesheet" href="{% static 'css/views/registro.css' %}">
     {% elif request.resolver_match.url_name == 'perfil' %}
     <link rel="stylesheet" href="{% static 'css/views/perfil.css' %}?v={% now 'U' %}">
@@ -72,7 +72,7 @@
             {% endif %}
 
 
-            {% if request.resolver_match.url_name not in 'home informacion ingreso registro' %}
+            {% if request.resolver_match.url_name not in 'home informacion ingreso registro accion_cuenta firebase_auth_action' %}
                 <li class="{% if request.resolver_match.url_name == 'mis_licitaciones' %}active{% endif %}">
                     <a href="{% url 'mis_licitaciones' %}">Mis licitaciones</a>
                 </li>
@@ -88,13 +88,13 @@
                 <i class="fa-solid fa-user"></i>
             </a>
             {% endblock %}
-            {% if request.resolver_match.url_name not in 'home informacion ingreso registro' %}
+            {% if request.resolver_match.url_name not in 'home informacion ingreso registro accion_cuenta firebase_auth_action' %}
             <div class="site-header__notifications">
                 <button type="button" id="licitacion-notifications-toggle" data-endpoint="{% url 'api_notificaciones_licitaciones' %}" aria-label="Notificaciones de licitaciones" aria-expanded="false" class="site-header__notifications-toggle">
                     <i class="fa-solid fa-bell"></i>
                     <span id="licitacion-notifications-count" hidden class="site-header__notifications-count"></span>
                 </button>
-                <div id="licitacion-notifications-panel" hidden class="site-header__notifications-panel">
+                <div id="licitacion-notifications-panel" hidden style="display: none;" class="site-header__notifications-panel">
                     <strong class="site-header__notifications-title">Actualizaciones de licitaciones</strong>
                     <div id="licitacion-notifications-list" class="site-header__notifications-list"></div>
                 </div>
@@ -239,6 +239,8 @@
     {% if request.resolver_match.url_name == 'home' %}
     <script type="module" src="{% static 'js/contacto.js' %}"></script>
     <script type="module" src="{% static 'js/home-slide.js' %}"></script>
+    {% elif request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
+    <script type="module" src="{% static 'js/accion-cuenta.js' %}"></script>
     {% elif request.resolver_match.url_name == 'dashboard' %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'js/dashboard.js' %}"></script>

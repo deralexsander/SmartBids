@@ -1,5 +1,5 @@
 from .page_views import (
-    home, login_view, register_view, perfil_view, mensajeria_view,
+    home, login_view, register_view, accion_cuenta_view, perfil_view, mensajeria_view,
     administracion_general_view, exportar_dashboard_view,
     handler404_view, informacion_view, dashboard_view,
 )
@@ -13,6 +13,7 @@ from .auth_views import (
     registrar_prospecto, enviar_codigo_login, validar_codigo_login,
     verificar_sesion_activa, enviar_correo_bienvenida,
     reenviar_correo_activacion, enviar_correo_cambio_password,
+    solicitar_recuperacion_password, validar_email_registro,
 )
 from .perfil_views import (
     obtener_perfil_suscriptor, actualizar_empresa_suscriptor,

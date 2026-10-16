@@ -106,6 +106,9 @@ function iniciarNotificacionesLicitacion() {
     const contador = document.getElementById('licitacion-notifications-count');
     if (!toggle || !panel || !lista || !contador) return;
 
+    panel.hidden = true;
+    panel.style.display = 'none';
+
     const endpoint = toggle.dataset.endpoint;
     const mostrarError = () => {
         lista.replaceChildren();
@@ -113,7 +116,6 @@ function iniciarNotificacionesLicitacion() {
         error.textContent = 'No se pudieron cargar las notificaciones. Intenta nuevamente.';
         error.style.color = '#b91c1c';
         lista.append(error);
-        panel.hidden = false;
     };
 
     const cargar = async () => {
@@ -158,9 +160,22 @@ function iniciarNotificacionesLicitacion() {
         });
     };
 
-    toggle.addEventListener('click', () => {
-        panel.hidden = !panel.hidden;
-        toggle.setAttribute('aria-expanded', String(!panel.hidden));
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = panel.hidden || panel.style.display === 'none';
+        panel.hidden = !isHidden;
+        panel.style.display = isHidden ? 'block' : 'none';
+        panel.classList.toggle('is-open', isHidden);
+        toggle.setAttribute('aria-expanded', String(isHidden));
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+            panel.hidden = true;
+            panel.style.display = 'none';
+            panel.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
     });
     cargar().catch((error) => {
         console.error(error);

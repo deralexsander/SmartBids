@@ -43,6 +43,7 @@
 }
 
 .site-header__notifications-panel {
+    display: none;
     position: absolute;
     z-index: 1000;
     right: 0;
@@ -53,6 +54,15 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: 0 12px 32px rgba(0,0,0,.14);
+}
+
+.site-header__notifications-panel.is-open {
+    display: block;
+}
+
+.site-header__notifications-panel[hidden],
+[hidden] {
+    display: none !important;
 }
 
 .site-header__notifications-title {

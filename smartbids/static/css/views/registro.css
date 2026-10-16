@@ -191,3 +191,154 @@
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(17, 99, 78, 0.08);
 }
+
+/* ===== Gestión de Acción de Cuenta (Activar Cuenta & Cambiar Contraseña) ===== */
+
+.action-panel {
+    width: 100%;
+    animation: fadeIn 0.35s ease;
+}
+
+.action-badge-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    margin: 0 auto 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.85rem;
+    transition: transform 0.3s ease;
+}
+
+.action-badge-icon--verify {
+    background-color: #e6f7f2;
+    color: var(--dark-green);
+    border: 2px solid #b1d2ca;
+}
+
+.action-badge-icon--password {
+    background-color: #edf2f7;
+    color: var(--dark-green);
+    border: 2px solid #cbd5e0;
+}
+
+.action-badge-icon--error {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 2px solid #fca5a5;
+}
+
+.action-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 2.25rem 2rem;
+    border: 1px solid #e2ece9;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.action-card--center {
+    text-align: center;
+}
+
+.action-instruction-box {
+    background-color: #f4f8f7;
+    border-left: 4px solid var(--accent-green);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 1.75rem;
+}
+
+.action-instruction-box i {
+    color: var(--dark-green);
+    font-size: 1.2rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.action-instruction-box p {
+    color: #4a5568;
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.action-buttons-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.action-submit-btn {
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.action-account-email {
+    color: var(--dark-green);
+    word-break: break-all;
+}
+
+.action-feedback {
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    animation: fadeIn 0.3s ease;
+}
+
+.action-feedback--success {
+    background-color: #e6f7f2;
+    border: 1px solid #a3e0ce;
+    color: #0b5844;
+}
+
+.action-feedback--success i {
+    font-size: 2.2rem;
+    color: var(--accent-green);
+    margin-bottom: 4px;
+}
+
+.action-feedback--error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.action-feedback--error i {
+    font-size: 1.6rem;
+    color: #dc2626;
+    margin-bottom: 4px;
+}
+
+.action-loading-box {
+    text-align: center;
+    padding: 3.5rem 1.5rem;
+}
+
+.action-loading-spinner {
+    font-size: 2.5rem;
+    color: var(--accent-green);
+    margin-bottom: 1.25rem;
+}
+
+.action-loading-title {
+    color: var(--dark-green);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}

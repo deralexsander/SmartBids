@@ -199,7 +199,7 @@ class ReenvioActivacionTests(SimpleTestCase):
             )
             resp = reenviar_correo_activacion(req)
             self.assertEqual(resp.status_code, 200)
-            mock_envio.assert_called_once_with('pendiente@smartbids.cl', app=mock_envio.call_args.kwargs.get('app'))
+            mock_envio.assert_called_once_with('pendiente@smartbids.cl', app=mock_envio.call_args.kwargs.get('app'), request=req)
 
             # Segundo intento inmediato debe devolver 429
             req2 = self.rf.post(
@@ -310,3 +310,120 @@ class AdministracionGeneralTests(SimpleTestCase):
             resp = administracion_general_view(req)
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp.url, '/mis-licitaciones/')
+
+
+class AccionCuentaTests(SimpleTestCase):
+    def setUp(self):
+        from django.test import RequestFactory
+        self.rf = RequestFactory()
+
+    def test_construir_enlace_accion_web(self):
+        from .auth_views import _construir_enlace_accion_web
+        raw_link = "https://smartbids-auth-users.firebaseapp.com/__/auth/action?mode=verifyEmail&oobCode=XYZ123&apiKey=KEY789&lang=es-419"
+        req = self.rf.get('/api/algo/')
+
+        link = _construir_enlace_accion_web(raw_link, request=req, mode_override='verifyEmail')
+        self.assertIn('/auth/action/?', link)
+        self.assertIn('mode=verifyEmail', link)
+        self.assertIn('oobCode=XYZ123', link)
+        self.assertIn('apiKey=KEY789', link)
+
+    def test_solicitar_recuperacion_password_validacion(self):
+        from .auth_views import solicitar_recuperacion_password
+        # Sin email
+        req = self.rf.post('/api/solicitar-recuperacion-password/', data=b'{}', content_type='application/json')
+        resp = solicitar_recuperacion_password(req)
+        self.assertEqual(resp.status_code, 400)
+
+        # Formato inválido
+        req_bad = self.rf.post('/api/solicitar-recuperacion-password/', data=b'{"email": "invalido"}', content_type='application/json')
+        resp_bad = solicitar_recuperacion_password(req_bad)
+        self.assertEqual(resp_bad.status_code, 400)
+
+    def test_solicitar_recuperacion_password_exito(self):
+        from unittest.mock import patch, MagicMock
+        from .auth_views import solicitar_recuperacion_password
+        from django.core.cache import cache
+
+        cache.clear()
+        mock_user = MagicMock(email='usuario@smartbids.cl')
+        with patch('smartbids.auth_views._firebase_admin_app', return_value=MagicMock()), \
+             patch('firebase_admin.auth.get_user_by_email', return_value=mock_user), \
+             patch('firebase_admin.auth.generate_password_reset_link', return_value='https://firebase.com?oobCode=RESET123&apiKey=KEY'), \
+             patch('smartbids.auth_views.send_mail') as mock_mail:
+
+            req = self.rf.post(
+                '/api/solicitar-recuperacion-password/',
+                data=b'{"email": "usuario@smartbids.cl"}',
+                content_type='application/json'
+            )
+            resp = solicitar_recuperacion_password(req)
+            self.assertEqual(resp.status_code, 200)
+            mock_mail.assert_called_once()
+            call_kwargs = mock_mail.call_args.kwargs
+            self.assertIn('/auth/action/?', call_kwargs.get('html_message', ''))
+            self.assertIn('mode=resetPassword', call_kwargs.get('html_message', ''))
+
+    def test_renderizado_vista_accion_cuenta(self):
+        from unittest.mock import patch
+        from .page_views import accion_cuenta_view
+        req = self.rf.get('/auth/action/?mode=verifyEmail&oobCode=TEST1234')
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            resp = accion_cuenta_view(req)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+        self.assertIn('btn-activar-cuenta', content)
+        self.assertIn('reset-password-form', content)
+
+
+class ValidacionRegistroEmailTests(SimpleTestCase):
+    def setUp(self):
+        from django.test import RequestFactory
+        self.rf = RequestFactory()
+
+    def test_verificar_existencia_gmail_formato(self):
+        from .auth_views import verificar_existencia_gmail
+        ok, err = verificar_existencia_gmail('abc@gmail.com')
+        self.assertFalse(ok)
+        self.assertIn('al menos 6 caracteres', err)
+
+        ok2, err2 = verificar_existencia_gmail('usuarioextremadamentelargoconmasde30caracteres@gmail.com')
+        self.assertFalse(ok2)
+        self.assertIn('más de 30 caracteres', err2)
+
+        ok3, err3 = verificar_existencia_gmail('contacto@miempresa.cl')
+        self.assertTrue(ok3)
+        self.assertIsNone(err3)
+
+    def test_validar_email_registro_endpoints(self):
+        from unittest.mock import patch, MagicMock
+        import firebase_admin.auth
+        from .auth_views import validar_email_registro
+
+        req = self.rf.post('/api/validar-email-registro/', data=b'{}', content_type='application/json')
+        resp = validar_email_registro(req)
+        self.assertEqual(resp.status_code, 400)
+
+        with patch('smartbids.auth_views.verificar_existencia_gmail', return_value=(False, 'La cuenta no existe en Gmail')):
+            req_gmail = self.rf.post('/api/validar-email-registro/', data=b'{"email": "inexistente@gmail.com"}', content_type='application/json')
+            resp_gmail = validar_email_registro(req_gmail)
+            self.assertEqual(resp_gmail.status_code, 400)
+            self.assertIn('no existe en Gmail', resp_gmail.content.decode('utf-8'))
+
+        mock_user = MagicMock(email='existente@smartbids.cl')
+        with patch('smartbids.auth_views.verificar_existencia_gmail', return_value=(True, None)), \
+             patch('smartbids.auth_views._firebase_admin_app', return_value=MagicMock()), \
+             patch('firebase_admin.auth.get_user_by_email', return_value=mock_user):
+            req_duplicado = self.rf.post('/api/validar-email-registro/', data=b'{"email": "existente@smartbids.cl"}', content_type='application/json')
+            resp_duplicado = validar_email_registro(req_duplicado)
+            self.assertEqual(resp_duplicado.status_code, 400)
+            self.assertIn('Ya existe una cuenta registrada', resp_duplicado.content.decode('utf-8'))
+
+        with patch('smartbids.auth_views.verificar_existencia_gmail', return_value=(True, None)), \
+             patch('smartbids.auth_views._firebase_admin_app', return_value=MagicMock()), \
+             patch('firebase_admin.auth.get_user_by_email', side_effect=firebase_admin.auth.UserNotFoundError('No user')):
+            req_nuevo = self.rf.post('/api/validar-email-registro/', data=b'{"email": "nuevo@smartbids.cl"}', content_type='application/json')
+            resp_nuevo = validar_email_registro(req_nuevo)
+            self.assertEqual(resp_nuevo.status_code, 200)
+
+

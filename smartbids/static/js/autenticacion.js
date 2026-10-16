@@ -489,31 +489,22 @@ if (forgotPasswordLink) {
         forgotPasswordLink.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando...`;
 
         try {
-            const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseConfig.apiKey}`, {
+            const response = await fetch('/api/solicitar-recuperacion-password/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    requestType: 'PASSWORD_RESET',
-                    email: email
-                })
+                body: JSON.stringify({ email: email })
             });
 
             const data = await response.json();
             forgotPasswordLink.style.pointerEvents = 'auto';
             forgotPasswordLink.innerHTML = originalHtml;
 
-            if (!response.ok) {
-                if (data.error && data.error.message === 'EMAIL_NOT_FOUND') {
-                    mostrarMensaje(MENSAJES.validacion.cuentaNoExiste, 'error');
-                } else if (data.error && data.error.message === 'INVALID_EMAIL') {
-                    mostrarMensaje(MENSAJES.validacion.emailInvalido, 'error');
-                } else {
-                    mostrarMensaje(MENSAJES.auth.resetPasswordError, 'error');
-                }
+            if (!response.ok || data.status !== 'ok') {
+                mostrarMensaje(data.mensaje || MENSAJES.auth.resetPasswordError, 'error');
                 return;
             }
 
-            mostrarMensaje(MENSAJES.auth.resetPasswordEnviado, 'exito');
+            mostrarMensaje(data.mensaje || MENSAJES.auth.resetPasswordEnviado, 'exito', 16000);
         } catch (error) {
             forgotPasswordLink.style.pointerEvents = 'auto';
             forgotPasswordLink.innerHTML = originalHtml;
@@ -560,12 +551,29 @@ if (registerForm) {
         }
 
         const submitBtn = registerForm.querySelector('button[type="submit"]');
-        setButtonLoading(submitBtn, true, 'Registrando...');
+        setButtonLoading(submitBtn, true, 'Verificando correo...');
 
-        const secondaryApp = initializeApp(firebaseConfig, `SecondaryApp_${Date.now()}`);
-        const secondaryAuth = getAuth(secondaryApp);
-
+        let secondaryApp = null;
         try {
+            // 1. Validar que el correo exista en Gmail y no esté ya registrado
+            const resValidacion = await fetch('/api/validar-email-registro/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+
+            const dataValidacion = await resValidacion.json();
+            if (!resValidacion.ok || dataValidacion.status !== 'ok') {
+                setButtonLoading(submitBtn, false);
+                mostrarMensaje(dataValidacion.mensaje || 'El correo ingresado no es válido para el registro.', 'error', 12000);
+                return;
+            }
+
+            setButtonLoading(submitBtn, true, 'Registrando...');
+
+            secondaryApp = initializeApp(firebaseConfig, `SecondaryApp_${Date.now()}`);
+            const secondaryAuth = getAuth(secondaryApp);
+
             const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
             const user = userCredential.user;
 
@@ -615,7 +623,9 @@ if (registerForm) {
                 'error'
             );
         } finally {
-            await deleteApp(secondaryApp);
+            if (secondaryApp) {
+                await deleteApp(secondaryApp);
+            }
         }
     });
 }

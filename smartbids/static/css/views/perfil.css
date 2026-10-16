@@ -55,10 +55,29 @@
     border-top: 1px solid var(--border-color);
 }
 
-.perfil__logout-button {
+.perfil__logout-button,
+#logout-button.perfil__logout-button {
     width: 100%;
-    border-color: #e53e3e;
-    color: #e53e3e;
+    border-color: #dc2626;
+    color: #dc2626;
+    background: transparent;
+    transition: all 0.25s ease;
+}
+
+.perfil__logout-button:hover,
+#logout-button.perfil__logout-button:hover,
+.perfil__logout-button:focus,
+#logout-button.perfil__logout-button:focus {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+}
+
+.perfil__logout-button:hover i,
+#logout-button.perfil__logout-button:hover i {
+    color: #ffffff !important;
 }
 
 /* ===== Progreso del perfil ===== */

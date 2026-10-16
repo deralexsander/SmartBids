@@ -18,6 +18,14 @@ def login_view(request):
 def register_view(request):
     return render(request, 'registro/registro.html')
 
+def accion_cuenta_view(request):
+    mode = request.GET.get('mode', '')
+    oob_code = request.GET.get('oobCode', '')
+    return render(request, 'smartbids/accion_cuenta.html', {
+        'mode': mode,
+        'oob_code': oob_code,
+    })
+
 def perfil_view(request):
     return render(request, 'smartbids/perfil.html')
 
