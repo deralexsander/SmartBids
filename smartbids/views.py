@@ -12,7 +12,7 @@ from .tracking_views import (
 from .auth_views import (
     registrar_prospecto, enviar_codigo_login, validar_codigo_login,
     verificar_sesion_activa, enviar_correo_bienvenida,
-    enviar_correo_cambio_password,
+    reenviar_correo_activacion, enviar_correo_cambio_password,
 )
 from .perfil_views import (
     obtener_perfil_suscriptor, actualizar_empresa_suscriptor,

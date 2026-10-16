@@ -174,7 +174,29 @@ function iniciarNotificacionesLicitacion() {
     }, 60000);
 }
 
+function iniciarFiltrosDetalleLicitacion() {
+    const configurarFiltro = (inputId, itemSelector) => {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.addEventListener('input', () => {
+            const term = input.value.trim().toLowerCase();
+            const items = document.querySelectorAll(itemSelector);
+
+            items.forEach((item) => {
+                const text = (item.dataset.searchText || item.textContent || '').toLowerCase();
+                const match = !term || text.includes(term);
+                item.style.display = match ? '' : 'none';
+            });
+        });
+    };
+
+    configurarFiltro('filtro-documentos', '[data-doc-item]');
+    configurarFiltro('filtro-preguntas', '[data-qa-item]');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     iniciarSeguimientoAsincrono();
     iniciarNotificacionesLicitacion();
+    iniciarFiltrosDetalleLicitacion();
 });

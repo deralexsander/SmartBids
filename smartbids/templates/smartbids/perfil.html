@@ -585,6 +585,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 5.1 Acceso Exclusivo a Administración General (Solo Administradores) -->
+                <div id="perfil-admin-section" class="perfil__admin-section" style="display: none;">
+                    <div class="perfil__admin-card">
+                        <div class="perfil__admin-content">
+                            <div class="perfil__admin-icon">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div class="perfil__admin-text">
+                                <div class="perfil__admin-tag">
+                                    <i class="fa-solid fa-crown"></i> Privilegios de Administrador
+                                </div>
+                                <h4 class="perfil__admin-title">Administración General</h4>
+                                <p class="perfil__admin-desc">
+                                    Gestión centralizada de usuarios, políticas de seguridad de contraseñas, alertas de perfil e información institucional.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="perfil__admin-actions">
+                            <a href="{% url 'administracion_general' %}" class="btn btn-primary perfil__admin-btn">
+                                <i class="fa-solid fa-gear"></i> Ir a Administración General
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </main>

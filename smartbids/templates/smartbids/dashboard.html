@@ -26,9 +26,9 @@
                     </select>
                     <button type="submit" class="btn btn-outline dashboard__period-submit">Aplicar período</button>
                 </form>
-                <a href="{% url 'exportar_dashboard' %}?dias={{ dias }}" class="btn btn-outline dashboard__export-link">
-                    <i class="fa-solid fa-file-csv"></i> Exportar CSV
-                </a>
+                <button type="button" id="btn-exportar-dashboard" class="btn btn-outline dashboard__export-link" data-export-url="{% url 'exportar_dashboard' %}?dias={{ dias }}">
+                    <i class="fa-solid fa-file-export"></i> Exportar
+                </button>
             </div>
         </div>
 

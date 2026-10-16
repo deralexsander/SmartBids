@@ -57,8 +57,100 @@ export function setupPasswordToggles() {
     bindToggle('toggle-profile-confirm-pass', 'profile-confirm-pass', 'toggle-profile-confirm-icon');
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupPasswordToggles, { once: true });
-} else {
+export function setupExportModal() {
+    const modal = document.getElementById('modal-exportar-reporte');
+    if (!modal) return;
+
+    const btnCerrar = document.getElementById('btn-cerrar-modal-exportar');
+    const btnCancelar = document.getElementById('btn-cancelar-modal-exportar');
+    const btnCsv = document.getElementById('btn-exportar-formato-csv');
+    const btnExcel = document.getElementById('btn-exportar-formato-excel');
+
+    let currentExportUrl = '';
+
+    const cerrarModal = () => {
+        modal.classList.remove('active');
+        modal.classList.add('closing');
+        modal.setAttribute('aria-hidden', 'true');
+        setTimeout(() => {
+            modal.classList.remove('closing');
+        }, 400);
+    };
+
+    const abrirModal = (targetUrl) => {
+        currentExportUrl = targetUrl;
+        modal.classList.remove('closing');
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+    };
+
+    const descargar = (formato) => {
+        if (!currentExportUrl) return;
+        try {
+            const urlObj = new URL(currentExportUrl, window.location.origin);
+            urlObj.searchParams.set('formato', formato);
+            window.location.assign(urlObj.toString());
+        } catch {
+            const sep = currentExportUrl.includes('?') ? '&' : '?';
+            window.location.assign(`${currentExportUrl}${sep}formato=${formato}`);
+        }
+        cerrarModal();
+    };
+
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
+    if (btnCancelar) btnCancelar.addEventListener('click', cerrarModal);
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) cerrarModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            cerrarModal();
+        }
+    });
+
+    if (btnCsv) {
+        btnCsv.addEventListener('click', (e) => {
+            e.preventDefault();
+            descargar('csv');
+        });
+    }
+
+    if (btnExcel) {
+        btnExcel.addEventListener('click', (e) => {
+            e.preventDefault();
+            descargar('xlsx');
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        const trigger = e.target.closest('[data-export-url]');
+        if (trigger) {
+            e.preventDefault();
+            let targetUrl = trigger.dataset.exportUrl;
+            const periodoSelect = document.getElementById('filtro-periodo');
+            if (periodoSelect && targetUrl.includes('/dashboard/exportar/')) {
+                try {
+                    const urlObj = new URL(targetUrl, window.location.origin);
+                    urlObj.searchParams.set('dias', periodoSelect.value);
+                    targetUrl = urlObj.pathname + urlObj.search;
+                } catch {
+                    // Fallback sin procesar
+                }
+            }
+            abrirModal(targetUrl);
+        }
+    });
+}
+
+function inicializarControlesUI() {
     setupPasswordToggles();
+    setupExportModal();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarControlesUI, { once: true });
+} else {
+    inicializarControlesUI();
 }

@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.core.cache import cache
+from django.core.validators import validate_email, ValidationError
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape
@@ -144,10 +145,15 @@ def enviar_codigo_login(request):
 
     try:
         data = json.loads(request.body.decode('utf-8'))
-        email_destinatario = data.get('email')
+        email_destinatario = (data.get('email') or '').strip().lower()
 
         if not email_destinatario:
             return JsonResponse({'status': 'error', 'mensaje': 'El correo electrónico es requerido.'}, status=400)
+
+        try:
+            validate_email(email_destinatario)
+        except ValidationError:
+            return JsonResponse({'status': 'error', 'mensaje': 'El formato del correo ingresado no es válido.'}, status=400)
 
         segundos_espera = _limite_envio_otp(request, email_destinatario)
         if segundos_espera:
@@ -303,6 +309,96 @@ def verificar_sesion_activa(request):
         logger.error(f"[SmartBids] Error al verificar sesión: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
 
+def _enviar_email_activacion(email_destinatario, app=None):
+    app = app or _firebase_admin_app()
+    enlace_activacion = firebase_auth.generate_email_verification_link(
+        email_destinatario,
+        app=app,
+    )
+
+    asunto = 'Activa tu cuenta SmartBids y comienza a ganar licitaciones'
+    mensaje_plano = (
+        f'¡Hola!\n\n'
+        f'Te damos la bienvenida a SmartBids. Activa tu cuenta ({email_destinatario}) '
+        f'abriendo este enlace:\n{enlace_activacion}\n\n'
+        f'Una vez activada, podrás comenzar a usar la plataforma.\n\n'
+        f'Nota importante: Si no encuentras este correo en tu bandeja principal, '
+        f'por favor revisa tu carpeta de SPAM o correo no deseado.'
+    )
+
+    html_mensaje = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f8f7; margin: 0; padding: 20px; color: #2d3748; }}
+            .card {{ max-width: 560px; background: #ffffff; margin: 0 auto; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2ece9; }}
+            .header {{ background: linear-gradient(135deg, #11634e 0%, #0b3831 100%); padding: 35px 30px; text-align: center; color: #ffffff; }}
+            .header h1 {{ margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }}
+            .header p {{ color: #b1d2ca; margin: 8px 0 0 0; font-size: 15px; }}
+            .body {{ padding: 30px; }}
+            .user-badge {{ background: #eef7f4; border-left: 4px solid #1ec498; padding: 12px 16px; border-radius: 4px; margin: 20px 0; font-size: 14px; color: #11634e; font-weight: 600; }}
+            .features {{ background: #fdfefe; border: 1px dashed #b1d2ca; border-radius: 10px; padding: 18px 20px; margin: 25px 0; }}
+            .features ul {{ margin: 0; padding-left: 18px; }}
+            .features li {{ margin-bottom: 8px; font-size: 14px; color: #4a5568; }}
+            .alert-box {{ background: #fffaf0; border: 1px solid #feebc8; border-radius: 8px; padding: 14px; margin: 20px 0; font-size: 13px; color: #c05621; line-height: 1.5; }}
+            .footer {{ background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #a0aec0; border-top: 1px solid #e2e8f0; }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="header">
+                <h1>¡Bienvenido a SmartBids!</h1>
+                <p>Activa tu cuenta para comenzar</p>
+            </div>
+            <div class="body">
+                <p style="font-size: 16px; line-height: 1.6;">
+                    ¡Hola! Estamos felices de darte la bienvenida a nuestra plataforma de analítica y monitoreo de compras públicas.
+                </p>
+                <div class="user-badge">
+                    👤 Cuenta registrada: <span>{escape(email_destinatario)}</span>
+                </div>
+                <div class="features">
+                    <strong style="color: #11634e; display: block; margin-bottom: 8px;">¿Qué puedes hacer en SmartBids?</strong>
+                    <ul>
+                        <li>🎯 <strong>Monitorear</strong> oportunidades de negocio en Mercado Público en tiempo real.</li>
+                        <li>🤖 <strong>Predecir</strong> probabilidades de adjudicación mediante Machine Learning.</li>
+                        <li>⚡ <strong>Optimizar</strong> tus ofertas y tomar decisiones basadas en datos.</li>
+                    </ul>
+                </div>
+                <div style="text-align: center; margin: 28px 0;">
+                    <a href="{escape(enlace_activacion)}" style="display: inline-block; background: #11634e; color: #ffffff; text-decoration: none; font-weight: 700; padding: 14px 24px; border-radius: 6px;">
+                        Activar mi cuenta
+                    </a>
+                </div>
+                <div class="alert-box">
+                    🔔 <strong>Activa tu cuenta:</strong> usa el botón de este correo para verificar tu dirección y habilitar el acceso a SmartBids.<br><br>
+                    📁 <em>¿No ves este correo en tu bandeja principal? Recuerda revisar tu carpeta de <strong>SPAM o Correo no deseado</strong>.</em>
+                </div>
+                <p style="font-size: 14px; color: #718096; margin-top: 25px;">
+                    Saludos cordiales,<br>
+                    <strong style="color: #11634e;">El equipo de SmartBids</strong>
+                </p>
+            </div>
+            <div class="footer">
+                © SmartBids — Transformando el acceso al mercado público
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    send_mail(
+        subject=asunto,
+        message=mensaje_plano,
+        html_message=html_mensaje,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[email_destinatario],
+        fail_silently=False,
+    )
+
+
 @csrf_exempt
 def enviar_correo_bienvenida(request):
     if request.method != 'POST':
@@ -311,106 +407,102 @@ def enviar_correo_bienvenida(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
         id_token = data.get('idToken')
-
-        if not id_token:
-            return JsonResponse({'status': 'error', 'mensaje': 'El token de autenticación es requerido.'}, status=400)
+        email = (data.get('email') or '').strip().lower()
 
         app = _firebase_admin_app()
-        claims = firebase_auth.verify_id_token(id_token, app=app)
-        email_destinatario = claims.get('email')
-        if not email_destinatario or claims.get('email_verified'):
-            return JsonResponse({'status': 'error', 'mensaje': 'La cuenta no requiere activación.'}, status=400)
+        if id_token:
+            claims = firebase_auth.verify_id_token(id_token, app=app)
+            email_destinatario = claims.get('email')
+            if not email_destinatario or claims.get('email_verified'):
+                return JsonResponse({'status': 'error', 'mensaje': 'La cuenta no requiere activación.'}, status=400)
+        elif email:
+            try:
+                validate_email(email)
+            except ValidationError:
+                return JsonResponse({'status': 'error', 'mensaje': 'El formato del correo ingresado no es válido.'}, status=400)
+            email_destinatario = email
+        else:
+            return JsonResponse({'status': 'error', 'mensaje': 'El token de autenticación o correo es requerido.'}, status=400)
 
-        enlace_activacion = firebase_auth.generate_email_verification_link(
-            email_destinatario,
-            app=app,
-        )
-
-        asunto = 'Activa tu cuenta SmartBids y comienza a ganar licitaciones'
-        mensaje_plano = (
-            f'¡Hola!\n\n'
-            f'Te damos la bienvenida a SmartBids. Activa tu cuenta ({email_destinatario}) '
-            f'abriendo este enlace:\n{enlace_activacion}\n\n'
-            f'Una vez activada, podrás comenzar a usar la plataforma.'
-        )
-
-        html_mensaje = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f8f7; margin: 0; padding: 20px; color: #2d3748; }}
-                .card {{ max-width: 560px; background: #ffffff; margin: 0 auto; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2ece9; }}
-                .header {{ background: linear-gradient(135deg, #11634e 0%, #0b3831 100%); padding: 35px 30px; text-align: center; color: #ffffff; }}
-                .header h1 {{ margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }}
-                .header p {{ color: #b1d2ca; margin: 8px 0 0 0; font-size: 15px; }}
-                .body {{ padding: 30px; }}
-                .user-badge {{ background: #eef7f4; border-left: 4px solid #1ec498; padding: 12px 16px; border-radius: 4px; margin: 20px 0; font-size: 14px; color: #11634e; font-weight: 600; }}
-                .features {{ background: #fdfefe; border: 1px dashed #b1d2ca; border-radius: 10px; padding: 18px 20px; margin: 25px 0; }}
-                .features ul {{ margin: 0; padding-left: 18px; }}
-                .features li {{ margin-bottom: 8px; font-size: 14px; color: #4a5568; }}
-                .alert-box {{ background: #fffaf0; border: 1px solid #feebc8; border-radius: 8px; padding: 14px; margin: 20px 0; font-size: 13px; color: #c05621; }}
-                .footer {{ background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #a0aec0; border-top: 1px solid #e2e8f0; }}
-            </style>
-        </head>
-        <body>
-            <div class="card">
-                <div class="header">
-                    <h1>¡Bienvenido a SmartBids!</h1>
-                    <p>Activa tu cuenta para comenzar</p>
-                </div>
-                <div class="body">
-                    <p style="font-size: 16px; line-height: 1.6;">
-                        ¡Hola! Estamos felices de darte la bienvenida a nuestra plataforma de analítica y monitoreo de compras públicas.
-                    </p>
-                    <div class="user-badge">
-                        👤 Cuenta registrada: <span>{escape(email_destinatario)}</span>
-                    </div>
-                    <div class="features">
-                        <strong style="color: #11634e; display: block; margin-bottom: 8px;">¿Qué puedes hacer en SmartBids?</strong>
-                        <ul>
-                            <li>🎯 <strong>Monitorear</strong> oportunidades de negocio en Mercado Público en tiempo real.</li>
-                            <li>🤖 <strong>Predecir</strong> probabilidades de adjudicación mediante Machine Learning.</li>
-                            <li>⚡ <strong>Optimizar</strong> tus ofertas y tomar decisiones basadas en datos.</li>
-                        </ul>
-                    </div>
-                    <div style="text-align: center; margin: 28px 0;">
-                        <a href="{escape(enlace_activacion)}" style="display: inline-block; background: #11634e; color: #ffffff; text-decoration: none; font-weight: 700; padding: 14px 24px; border-radius: 6px;">
-                            Activar mi cuenta
-                        </a>
-                    </div>
-                    <div class="alert-box">
-                        🔔 <strong>Activa tu cuenta:</strong> usa el botón de este correo para verificar tu dirección y habilitar el acceso a SmartBids.
-                    </div>
-                    <p style="font-size: 14px; color: #718096; margin-top: 25px;">
-                        Saludos cordiales,<br>
-                        <strong style="color: #11634e;">El equipo de SmartBids</strong>
-                    </p>
-                </div>
-                <div class="footer">
-                    © SmartBids — Transformando el acceso al mercado público
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-
-        send_mail(
-            subject=asunto,
-            message=mensaje_plano,
-            html_message=html_mensaje,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email_destinatario],
-            fail_silently=False,
-        )
-
+        _enviar_email_activacion(email_destinatario, app=app)
         return JsonResponse({'status': 'ok', 'mensaje': 'Correo de bienvenida y activación enviado exitosamente.'}, status=200)
 
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'mensaje': 'Cuerpo de la petición JSON inválido.'}, status=400)
     except Exception as e:
         logger.error(f"[SmartBids] Error al enviar correo de bienvenida: {str(e)}")
+        return JsonResponse({'status': 'error', 'mensaje': f'Error en el servidor: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def reenviar_correo_activacion(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        email = (data.get('email') or '').strip().lower()
+        id_token = data.get('idToken')
+
+        app = _firebase_admin_app()
+
+        if id_token and not email:
+            try:
+                claims = firebase_auth.verify_id_token(id_token, app=app)
+                email = (claims.get('email') or '').strip().lower()
+            except Exception as e:
+                logger.warning(f"[SmartBids] Token no verificable al reenviar activación: {e}")
+
+        if not email:
+            return JsonResponse({'status': 'error', 'mensaje': 'El correo electrónico es requerido para reenviar la activación.'}, status=400)
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'El formato del correo ingresado no es válido. Ingresa una dirección completa (ej: usuario@empresa.cl).'
+            }, status=400)
+
+        cache_key = f"resend_activation_{email}"
+        if cache.get(cache_key):
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'Ya enviamos un correo recientemente. Por favor espera un momento antes de volver a solicitarlo.'
+            }, status=429)
+
+        try:
+            user_record = firebase_auth.get_user_by_email(email, app=app)
+        except (firebase_auth.UserNotFoundError, firebase_auth.EmailNotFoundError):
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'No existe una cuenta registrada con ese correo electrónico.'
+            }, status=404)
+        except ValueError as val_err:
+            logger.warning(f"[SmartBids] Formato de correo no válido para Firebase: {val_err}")
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'El formato del correo ingresado no es válido. Ingresa una dirección completa (ej: usuario@empresa.cl).'
+            }, status=400)
+
+        if user_record.email_verified:
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'Esta cuenta ya se encuentra verificada y activa. Puedes iniciar sesión directamente.'
+            }, status=400)
+
+        _enviar_email_activacion(email, app=app)
+        cache.set(cache_key, True, 60)
+
+        return JsonResponse({
+            'status': 'ok',
+            'mensaje': 'Correo de activación reenviado exitosamente. Por favor revisa tu bandeja de entrada o tu carpeta de SPAM.'
+        }, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'mensaje': 'Cuerpo de la petición JSON inválido.'}, status=400)
+    except Exception as e:
+        logger.error(f"[SmartBids] Error al reenviar correo de activación: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': f'Error en el servidor: {str(e)}'}, status=500)
 
 @csrf_exempt
@@ -420,10 +512,15 @@ def enviar_correo_cambio_password(request):
 
     try:
         data = json.loads(request.body.decode('utf-8'))
-        email_destinatario = data.get('email')
+        email_destinatario = (data.get('email') or '').strip().lower()
 
         if not email_destinatario:
             return JsonResponse({'status': 'error', 'mensaje': 'El correo es requerido.'}, status=400)
+
+        try:
+            validate_email(email_destinatario)
+        except ValidationError:
+            return JsonResponse({'status': 'error', 'mensaje': 'El formato del correo ingresado no es válido.'}, status=400)
 
         asunto = '🔒 Tu contraseña en SmartBids ha sido modificada'
         mensaje_plano = (

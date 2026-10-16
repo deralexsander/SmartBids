@@ -1861,6 +1861,14 @@ export async function inicializarVistaPerfil(user) {
             const roleBadge = document.getElementById('profile-role-badge');
             if (roleBadge) roleBadge.textContent = data.nombre_estado || 'Activo';
 
+            const nombreEstado = data.nombre_estado || '';
+            const rolNormalizado = nombreEstado.trim().toLowerCase();
+            const esAdmin = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || data.codigo_estado === 5;
+            const adminSection = document.getElementById('perfil-admin-section');
+            if (adminSection) {
+                adminSection.style.display = esAdmin ? 'block' : 'none';
+            }
+
             const initials = document.getElementById('profile-initials');
             if (initials) initials.textContent = data.sus_iniciales || (n1 && a1 ? (n1[0] + a1[0]).toUpperCase() : 'SB');
 
@@ -2600,3 +2608,8 @@ export function cambiarPestana(event, tabId) {
     aplicarCambioPestanaDirecto(tabId);
 }
 window.cambiarPestana = cambiarPestana;
+
+document.addEventListener('smartbids:admin-ready', () => {
+    const adminSection = document.getElementById('perfil-admin-section');
+    if (adminSection) adminSection.style.display = 'block';
+});

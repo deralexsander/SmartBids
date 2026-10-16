@@ -159,9 +159,10 @@ LICITACIONES, SEGUIMIENTO Y EXPORTACIÓN
   el último estado observado y muestra una alerta en la campana.
 - Los seguimientos se conservan durante 30 días después de dejar de seguir un
   proceso o después de detectar su cierre; luego se eliminan junto con sus alertas.
-- Mis Licitaciones y el Dashboard permiten descargar CSV. La descarga de
-  licitaciones respeta los filtros de búsqueda, estado, tipo y perfil; el Dashboard
-  aplica el rango de fechas seleccionado.
+- Mis Licitaciones y el Dashboard permiten descargar reportes en CSV y Excel (.xlsx)
+  mediante un modal de selección de formato. La descarga de licitaciones respeta los
+  filtros de búsqueda, estado, tipo y perfil; el Dashboard aplica el rango de fechas
+  seleccionado.
 
 
 ====================================================================

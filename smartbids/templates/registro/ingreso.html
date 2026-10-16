@@ -31,7 +31,24 @@
 
             <div class="auth__actions--login">
                 <a href="{% url 'registro' %}" class="btn btn-outline">Crear cuenta</a>
-                <a href="#" id="forgot-password-link">¿Olvidaste tu contraseña?</a>
+                <button type="button" id="btn-ayuda-login" class="btn btn-outline auth__help-toggle-btn" aria-expanded="false" title="Opciones de ayuda y recuperación">
+                    <i class="fa-solid fa-circle-question"></i> Ayuda
+                </button>
+            </div>
+
+            <!-- Panel de opciones de ayuda -->
+            <div id="ayuda-login-panel" class="auth__help-panel" style="display: none;">
+                <p class="auth__help-prompt">
+                    <i class="fa-solid fa-circle-info"></i> Selecciona una opción (usa el correo ingresado arriba):
+                </p>
+                <div class="auth__help-actions">
+                    <button type="button" id="forgot-password-link" class="btn btn-outline btn-small auth__help-btn">
+                        <i class="fa-solid fa-key"></i> Recuperar contraseña
+                    </button>
+                    <button type="button" id="btn-reenviar-activacion" class="btn btn-outline btn-small auth__help-btn">
+                        <i class="fa-solid fa-paper-plane"></i> Reenviar activación
+                    </button>
+                </div>
             </div>
         </form>
     </div>

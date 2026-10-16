@@ -770,3 +770,110 @@
     color: var(--muted-teal);
     font-size: 1.3rem;
 }
+
+/* ===== Sección Exclusiva de Administración en Sesión y Auditoría ===== */
+
+.perfil__admin-section {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--soft-mint);
+    animation: fadeInAdmin 0.35s ease;
+}
+
+@keyframes fadeInAdmin {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.perfil__admin-card {
+    background: linear-gradient(135deg, rgba(17, 99, 78, 0.04) 0%, rgba(30, 196, 152, 0.08) 100%);
+    border: 1.5px solid rgba(17, 99, 78, 0.2);
+    border-radius: 14px;
+    padding: 1.4rem 1.6rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+}
+
+.perfil__admin-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.1rem;
+    flex: 1 1 320px;
+}
+
+.perfil__admin-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--dark-green);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(17, 99, 78, 0.2);
+}
+
+.perfil__admin-text {
+    flex: 1;
+}
+
+.perfil__admin-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(17, 99, 78, 0.12);
+    color: var(--dark-green);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 0.45rem;
+}
+
+.perfil__admin-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    margin: 0 0 0.35rem 0;
+}
+
+.perfil__admin-desc {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--text-dark);
+    margin: 0;
+    opacity: 0.9;
+}
+
+.perfil__admin-actions {
+    flex-shrink: 0;
+}
+
+.perfil__admin-btn {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(17, 99, 78, 0.25);
+    transition: all 0.25s ease;
+}
+
+.perfil__admin-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(17, 99, 78, 0.35);
+}

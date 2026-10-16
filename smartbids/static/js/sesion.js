@@ -58,13 +58,17 @@ async function validarRolAdministrador(user) {
         const data = await response.json();
         const nombreEstado = data.datos?.nombre_estado || '';
         const rolNormalizado = nombreEstado.trim().toLowerCase();
-        const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador';
+        const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || data.datos?.codigo_estado === 5;
 
+        const perfilAdminSection = document.getElementById('perfil-admin-section');
+        if (perfilAdminSection) perfilAdminSection.style.display = tieneRol ? 'block' : 'none';
         if (tieneRol && adminGeneralNav) adminGeneralNav.style.display = 'list-item';
         if (tieneRol) document.dispatchEvent(new CustomEvent('smartbids:admin-ready'));
         return tieneRol;
     } catch (error) {
         console.error('[SmartBids] Error verificando rol administrativo:', error);
+        const perfilAdminSection = document.getElementById('perfil-admin-section');
+        if (perfilAdminSection) perfilAdminSection.style.display = 'none';
         if (adminGeneralNav) adminGeneralNav.style.display = 'none';
         return false;
     }
@@ -203,7 +207,9 @@ onAuthStateChanged(auth, async (user) => {
             if (resData.status === 'ok' && resData.datos) {
                 const nombreEstado = resData.datos.nombre_estado || '';
                 const rolNormalizado = nombreEstado.trim().toLowerCase();
-                const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador';
+                const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || resData.datos?.codigo_estado === 5;
+                const perfilAdminSection = document.getElementById('perfil-admin-section');
+                if (perfilAdminSection) perfilAdminSection.style.display = tieneRol ? 'block' : 'none';
                 if (tieneRol && adminGeneralNav) adminGeneralNav.style.display = 'list-item';
                 if (tieneRol) document.dispatchEvent(new CustomEvent('smartbids:admin-ready'));
 

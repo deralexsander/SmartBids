@@ -79,9 +79,6 @@
                 <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <a href="{% url 'dashboard' %}">Dashboard</a>
                 </li>
-                <li id="admin-general-nav" class="{% if request.resolver_match.url_name == 'administracion_general' %}active{% endif %} site-header__admin-link--hidden">
-                    <a href="{% url 'administracion_general' %}">Administración General</a>
-                </li>
             {% endif %}
         </ul>
         </nav>
@@ -112,6 +109,9 @@
         <div id="global-message-badge" class="floating-badge">
             <i id="global-message-icon" class="fa-solid fa-circle-info"></i>
             <span id="global-message-text"></span>
+            <button type="button" id="global-message-close" class="global-message-close-btn" aria-label="Cerrar notificación">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
     </div>
 
@@ -163,26 +163,82 @@
         </div>
     </div>
 
+    <!-- Modal de Selección de Formato de Exportación -->
+    <div id="modal-exportar-reporte" class="modal-2fa-overlay site-modal export-modal" aria-hidden="true" role="dialog" aria-labelledby="modal-exportar-titulo">
+        <div class="modal-2fa-card site-modal__card export-modal__card">
+            <!-- Botón Cerrar (X) -->
+            <button type="button" id="btn-cerrar-modal-exportar" class="site-modal__close" aria-label="Cerrar ventana">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Ícono y Encabezado -->
+            <div class="site-modal__icon export-modal__icon">
+                <i class="fa-solid fa-file-arrow-down"></i>
+            </div>
+
+            <h3 id="modal-exportar-titulo" class="site-modal__title">
+                ¿En qué formato deseas descargar el reporte?
+            </h3>
+
+            <p class="site-modal__description">
+                Selecciona la opción de descarga que prefieras para tus datos:
+            </p>
+
+            <!-- Opciones de formato -->
+            <div class="export-modal__options">
+                <button type="button" id="btn-exportar-formato-csv" class="export-modal__option" data-formato="csv">
+                    <div class="export-modal__option-icon export-modal__option-icon--csv">
+                        <i class="fa-solid fa-file-csv"></i>
+                    </div>
+                    <div class="export-modal__option-info">
+                        <strong class="export-modal__option-title">Formato CSV (.csv)</strong>
+                        <span class="export-modal__option-desc">Archivo delimitado por comas con codificación UTF-8 BOM, ideal para importar en cualquier sistema.</span>
+                    </div>
+                    <i class="fa-solid fa-download export-modal__option-arrow"></i>
+                </button>
+
+                <button type="button" id="btn-exportar-formato-excel" class="export-modal__option" data-formato="xlsx">
+                    <div class="export-modal__option-icon export-modal__option-icon--excel">
+                        <i class="fa-solid fa-file-excel"></i>
+                    </div>
+                    <div class="export-modal__option-info">
+                        <strong class="export-modal__option-title">Microsoft Excel (.xlsx)</strong>
+                        <span class="export-modal__option-desc">Libro de Excel con encabezados estilizados, anchos de columna automáticos y valores protegidos.</span>
+                    </div>
+                    <i class="fa-solid fa-download export-modal__option-arrow"></i>
+                </button>
+            </div>
+
+            <!-- Acciones -->
+            <div class="site-modal__actions export-modal__actions">
+                <button type="button" id="btn-cancelar-modal-exportar" class="btn btn-outline site-modal__button">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
     {% block contenido %}{% endblock %}
     {% block footer %}{% endblock %}
 
     <script type="module" src="{% static 'js/firebase-config.js' %}"></script>
     <script type="module" src="{% static 'js/auth-state.js' %}"></script>
-    <script type="module" src="{% static 'js/ui.js' %}?v=2"></script>
+    <script type="module" src="{% static 'js/ui.js' %}?v=3"></script>
     <script type="module" src="{% static 'js/session.js' %}"></script>
     <script type="module" src="{% static 'js/profile-ui.js' %}"></script>
     <script type="module" src="{% static 'js/two-factor.js' %}"></script>
     <script type="module" src="{% static 'js/licitaciones-ui.js' %}"></script>
     <script type="module" src="{% static 'js/functions.js' %}"></script>
-    <script type="module" src="{% static 'js/mensaje.js' %}"></script>
+    <script type="module" src="{% static 'js/mensaje.js' %}?v=2"></script>
     <script type="module" src="{% static 'js/perfil.js' %}"></script>
     <script type="module" src="{% static 'js/sesion.js' %}"></script>
-    <script type="module" src="{% static 'js/autenticacion.js' %}?v=3"></script>
+    <script type="module" src="{% static 'js/autenticacion.js' %}?v=4"></script>
     <script type="module" src="{% static 'js/mensajeria-admin.js' %}"></script>
     <script type="module" src="{% static 'js/firebase.js' %}"></script>
 
     {% if request.resolver_match.url_name == 'home' %}
     <script type="module" src="{% static 'js/contacto.js' %}"></script>
+    <script type="module" src="{% static 'js/home-slide.js' %}"></script>
     {% elif request.resolver_match.url_name == 'dashboard' %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'js/dashboard.js' %}"></script>

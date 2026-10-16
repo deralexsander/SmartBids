@@ -10,7 +10,13 @@ from django.utils import timezone
 
 from .models.procurement import Licitacion, LicitacionesProductos
 from .models.core import Preferencia, Suscriptor
-from .licitacion_utils import estado_licitacion, estado_qs, escribir_fila_csv, resolver_suscriptor
+from .licitacion_utils import (
+    escribir_fila_csv,
+    estado_licitacion,
+    estado_qs,
+    generar_excel_response,
+    resolver_suscriptor,
+)
 
 
 def filtrar_licitaciones(request, suscriptor):
@@ -174,24 +180,37 @@ def mis_licitaciones_view(request):
 def exportar_licitaciones_view(request):
     suscriptor = resolver_suscriptor(request)
     licitaciones, _ = filtrar_licitaciones(request, suscriptor)
+    formato = (request.GET.get('formato') or request.GET.get('format') or 'csv').strip().lower()
+
+    encabezados = (
+        'Código', 'Nombre', 'Descripción', 'Estado', 'Tipo', 'Unidad de compra',
+        'Fecha publicación', 'Fecha cierre', 'Presupuesto', 'Moneda', 'Enlace externo'
+    )
+
+    def obtener_filas():
+        for licitacion in licitaciones:
+            yield (
+                licitacion.lic_codigo,
+                licitacion.lic_nombre,
+                licitacion.lic_descripcion,
+                estado_licitacion(licitacion)[1],
+                licitacion.lic_tipo_licitacion,
+                licitacion.lic_codigo_ucom.ucom_descripcion if licitacion.lic_codigo_ucom else '',
+                licitacion.lic_fecha_public,
+                licitacion.lic_fecha_cierre,
+                licitacion.lic_presupuesto,
+                licitacion.lic_moneda,
+                licitacion.lic_url,
+            )
+
+    if formato in {'excel', 'xlsx'}:
+        return generar_excel_response('licitaciones-smartbids.xlsx', encabezados, obtener_filas())
+
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="licitaciones-smartbids.csv"'
     response.write('\ufeff')
     writer = csv.writer(response)
-    writer.writerow(('Código', 'Nombre', 'Descripción', 'Estado', 'Tipo', 'Unidad de compra',
-                     'Fecha publicación', 'Fecha cierre', 'Presupuesto', 'Moneda', 'Enlace externo'))
-    for licitacion in licitaciones:
-        escribir_fila_csv(writer, (
-            licitacion.lic_codigo,
-            licitacion.lic_nombre,
-            licitacion.lic_descripcion,
-            estado_licitacion(licitacion)[1],
-            licitacion.lic_tipo_licitacion,
-            licitacion.lic_codigo_ucom.ucom_descripcion if licitacion.lic_codigo_ucom else '',
-            licitacion.lic_fecha_public,
-            licitacion.lic_fecha_cierre,
-            licitacion.lic_presupuesto,
-            licitacion.lic_moneda,
-            licitacion.lic_url,
-        ))
+    writer.writerow(encabezados)
+    for fila in obtener_filas():
+        escribir_fila_csv(writer, fila)
     return response
