@@ -426,4 +426,75 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
             resp_nuevo = validar_email_registro(req_nuevo)
             self.assertEqual(resp_nuevo.status_code, 200)
 
+    def test_filtrar_licitaciones_sin_perfil_match_cero(self):
+        from unittest.mock import patch, MagicMock
+        from .licitaciones_views import filtrar_licitaciones
+
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+
+        with patch('smartbids.licitaciones_views.Licitacion.objects', mock_qs), \
+             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+            # Suscriptor sin preferencias configuradas (None o listas vacías)
+            mock_pref.return_value.first.return_value = MagicMock(
+                pref_comunas=[],
+                pref_tipo_licitacion=[],
+                pref_ucom=[],
+                pref_palabras_claves=[],
+                pref_productos=[]
+            )
+            req = self.rf.get('/mis-licitaciones/')
+            qs, match_perfil = filtrar_licitaciones(req, suscriptor=MagicMock())
+
+            # El match debe ser 0 y mock_qs no debe haberse filtrado por q_perfil
+            self.assertEqual(match_perfil, 0)
+            mock_qs.filter.assert_not_called()
+
+    def test_filtrar_licitaciones_con_perfil_aplica_filtro_y_aumenta_match(self):
+        from unittest.mock import patch, MagicMock
+        from .licitaciones_views import filtrar_licitaciones
+
+        mock_qs = MagicMock()
+        mock_filtered_qs = MagicMock()
+        mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+        mock_qs.filter.return_value.distinct.return_value = mock_filtered_qs
+
+        with patch('smartbids.licitaciones_views.Licitacion.objects') as mock_licitacion_objects, \
+             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+            mock_licitacion_objects.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+            mock_licitacion_objects.filter.return_value.distinct.return_value.count.return_value = 42
+
+            mock_pref.return_value.first.return_value = MagicMock(
+                pref_comunas=['13101'],
+                pref_tipo_licitacion=['LE'],
+                pref_ucom=[],
+                pref_palabras_claves=['servidor', 'computador'],
+                pref_productos=[]
+            )
+            req = self.rf.get('/mis-licitaciones/')
+            qs, match_perfil = filtrar_licitaciones(req, suscriptor=MagicMock())
+
+            # El match con perfil debe ser 42 y el queryset devuelto debe estar filtrado
+            self.assertEqual(match_perfil, 42)
+            self.assertEqual(qs, mock_filtered_qs)
+
+    def test_mis_licitaciones_view_kpi_match_cero_cuando_perfil_vacio(self):
+        from unittest.mock import patch, MagicMock
+        from .licitaciones_views import mis_licitaciones_view
+
+        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.licitaciones_views.cache.get_or_set', return_value=62650), \
+             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(MagicMock(), 0)), \
+             patch('smartbids.licitaciones_views.render') as mock_render, \
+             patch('smartbids.licitaciones_views.Paginator') as mock_paginator:
+            
+            mock_paginator.return_value.get_page.return_value = []
+            req = self.rf.get('/mis-licitaciones/')
+            mis_licitaciones_view(req)
+
+            self.assertTrue(mock_render.called)
+            context = mock_render.call_args[0][2]
+            self.assertEqual(context['match_perfil'], 0)
+
+
 

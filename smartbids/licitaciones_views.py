@@ -27,68 +27,70 @@ def filtrar_licitaciones(request, suscriptor):
         .order_by('-lic_fecha_public')
     )
     preferencias = Preferencia.objects.filter(id_suscriptor=suscriptor).first() if suscriptor else None
-    match_perfil = 0
 
+    comunas = [str(value).strip() for value in (preferencias.pref_comunas or []) if str(value).strip()] if preferencias else []
+    tipos = [str(value).strip() for value in (preferencias.pref_tipo_licitacion or []) if str(value).strip()] if preferencias else []
+    ucom_ids = [int(value) for value in (preferencias.pref_ucom or []) if str(value).strip().isdigit()] if preferencias else []
+    palabras = [str(value).strip() for value in (preferencias.pref_palabras_claves or []) if str(value).strip()] if preferencias else []
+    productos = [str(value).strip() for value in (preferencias.pref_productos or []) if str(value).strip()] if preferencias else []
+
+    tiene_filtros_perfil = bool(comunas or tipos or ucom_ids or palabras or productos)
     solo_seguidas = request.GET.get('solo_seguidas') == '1'
-    if solo_seguidas:
-        if suscriptor:
-            from .models.tracking import SeguimientoLicitacion
-            codigos_seguidos = SeguimientoLicitacion.objects.filter(
-                usuario=suscriptor,
-                seguimiento_activo=True,
-            ).values_list('licitacion_id', flat=True)
-            qs = qs.filter(lic_codigo__in=codigos_seguidos)
-        else:
-            qs = qs.none()
-    elif preferencias:
-        comunas = [str(value).strip() for value in (preferencias.pref_comunas or []) if str(value).strip()]
-        tipos = [str(value).strip() for value in (preferencias.pref_tipo_licitacion or []) if str(value).strip()]
-        ucom_ids = [int(value) for value in (preferencias.pref_ucom or []) if str(value).strip().isdigit()]
-        palabras = [str(value).strip() for value in (preferencias.pref_palabras_claves or []) if str(value).strip()]
-        productos = [str(value).strip() for value in (preferencias.pref_productos or []) if str(value).strip()]
 
-        if comunas or tipos or ucom_ids or palabras or productos:
-            filtros_estrictos = Q()
-            if tipos:
-                filtros_estrictos &= Q(lic_tipo_licitacion__in=tipos)
-            if ucom_ids:
-                filtros_estrictos &= Q(lic_codigo_ucom_id__in=ucom_ids)
-            if comunas:
-                filtros_estrictos &= Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas)
-            if palabras:
-                q_palabras = Q()
-                for palabra in palabras[:10]:
-                    q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra)
-                filtros_estrictos &= q_palabras
-            if productos:
-                subq_productos = LicitacionesProductos.objects.filter(
-                    codigo_producto__in=productos
-                ).values('lic_codigo_id')
-                filtros_estrictos &= Q(lic_codigo__in=subq_productos)
+    if tiene_filtros_perfil:
+        q_perfil = Q()
+        if palabras:
+            q_palabras = Q()
+            for palabra in palabras:
+                q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra) | Q(lic_descripcion__icontains=palabra)
+            q_perfil |= q_palabras
 
-            coincidencias = qs.filter(filtros_estrictos)
-            if coincidencias.exists():
-                qs = coincidencias
+        if productos:
+            subq_productos = LicitacionesProductos.objects.filter(
+                codigo_producto__in=productos
+            ).values('lic_codigo_id')
+            q_perfil |= Q(lic_codigo__in=subq_productos)
+
+        if comunas:
+            q_perfil |= Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas)
+
+        if ucom_ids:
+            q_perfil |= Q(lic_codigo_ucom_id__in=ucom_ids)
+
+        if tipos:
+            q_perfil |= Q(lic_tipo_licitacion__in=tipos)
+
+        # El match con perfil aumenta según los criterios configurados
+        match_perfil = Licitacion.objects.filter(q_perfil).distinct().count()
+
+        if solo_seguidas:
+            if suscriptor:
+                from .models.tracking import SeguimientoLicitacion
+                codigos_seguidos = SeguimientoLicitacion.objects.filter(
+                    usuario=suscriptor,
+                    seguimiento_activo=True,
+                ).values_list('licitacion_id', flat=True)
+                qs = qs.filter(lic_codigo__in=codigos_seguidos)
             else:
-                filtros_flexibles = Q()
-                if productos:
-                    subq_productos = LicitacionesProductos.objects.filter(
-                        codigo_producto__in=productos
-                    ).values('lic_codigo_id')
-                    filtros_flexibles |= Q(lic_codigo__in=subq_productos)
-                if palabras:
-                    q_palabras = Q()
-                    for palabra in palabras[:10]:
-                        q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra)
-                    filtros_flexibles |= q_palabras
-                if ucom_ids:
-                    filtros_flexibles |= Q(lic_codigo_ucom_id__in=ucom_ids)
-                if comunas:
-                    filtros_flexibles |= Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas)
-                if tipos:
-                    filtros_flexibles |= Q(lic_tipo_licitacion__in=tipos)
-            # Coincidencias encontradas
-            pass
+                qs = qs.none()
+        else:
+            # Mostrar solo las licitaciones que hacen match con el perfil
+            qs = qs.filter(q_perfil).distinct()
+    else:
+        # Si el usuario no tiene nada configurado en el perfil:
+        # El match es 0 y se muestran todas las licitaciones sin filtro
+        match_perfil = 0
+
+        if solo_seguidas:
+            if suscriptor:
+                from .models.tracking import SeguimientoLicitacion
+                codigos_seguidos = SeguimientoLicitacion.objects.filter(
+                    usuario=suscriptor,
+                    seguimiento_activo=True,
+                ).values_list('licitacion_id', flat=True)
+                qs = qs.filter(lic_codigo__in=codigos_seguidos)
+            else:
+                qs = qs.none()
 
     termino = request.GET.get('q', '').strip()
     if termino:
@@ -114,17 +116,15 @@ def mis_licitaciones_view(request):
     if suscriptor:
         from .tracking_views import _sincronizar_seguimientos
         _sincronizar_seguimientos(suscriptor)
-    qs, _ = filtrar_licitaciones(request, suscriptor)
+    qs, match_perfil = filtrar_licitaciones(request, suscriptor)
 
     hoy = timezone.localdate()
     plazo_tres_dias = hoy + timedelta(days=3)
 
     stats = qs.aggregate(
-        match_perfil=Count('lic_codigo'),
         cierre_proximo=Count('lic_codigo', filter=Q(lic_fecha_cierre__gte=hoy, lic_fecha_cierre__lte=plazo_tres_dias)),
         convenio_marco=Count('lic_codigo', filter=Q(lic_tipo_licitacion='CM'))
     )
-    match_perfil = stats['match_perfil'] or 0
     cierre_proximo = stats['cierre_proximo'] or 0
     convenio_marco = stats['convenio_marco'] or 0
 
@@ -152,7 +152,6 @@ def mis_licitaciones_view(request):
         86400
     )
     paginator = Paginator(qs, 20)
-    paginator.count = match_perfil
     licitaciones = paginator.get_page(request.GET.get('page'))
     for licitacion in licitaciones:
         licitacion.estado_proceso, licitacion.estado_proceso_label = estado_licitacion(licitacion)
