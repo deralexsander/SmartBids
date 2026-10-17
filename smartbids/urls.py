@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .dashboard_views import dashboard_view, dashboard_desglose, dashboard_competencia
+from .dashboard_views import dashboard_periodos, dashboard_desglose, dashboard_competencia, dashboard_kpis
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -16,10 +16,13 @@ urlpatterns = [
     path('dashboard/exportar/', views.exportar_dashboard_view, name='exportar_dashboard'),
     path('dashboard/desglose/', dashboard_desglose, name='dashboard_desglose'),
     path('dashboard/competencia/', dashboard_competencia, name='dashboard_competencia'),
+    path("dashboard/periodos/", dashboard_periodos, name="dashboard_periodos"),
+    path("dashboard/kpis/", dashboard_kpis, name="dashboard_kpis"),
     path('mis-licitaciones/', views.mis_licitaciones_view, name='mis_licitaciones'),
     path('mis-licitaciones/exportar/', views.exportar_licitaciones_view, name='exportar_licitaciones'),
     path('licitaciones/<str:codigo>/', views.detalle_licitacion_view, name='detalle_licitacion'),
     path('licitaciones/<str:codigo>/seguimiento/', views.seguimiento_licitacion_view, name='seguimiento_licitacion'),
+    
 
     path('api/licitaciones/notificaciones/', views.notificaciones_licitacion_view, name='api_notificaciones_licitaciones'),
     path('api/alertas-activas/', views.obtener_alertas_activas, name='api_alertas_activas'),
