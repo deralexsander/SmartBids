@@ -39,9 +39,9 @@
         {% endif %}
 
             <div class="mis-lic__toolbar-actions">
-                <a href="{% url 'exportar_licitaciones' %}{{ export_query }}" class="btn btn-outline mis-lic__toolbar-link">
-                    <i class="fa-solid fa-file-csv"></i> Exportar CSV
-                </a>
+                <button type="button" id="btn-exportar-licitaciones" class="btn btn-outline mis-lic__toolbar-link" data-export-url="{% url 'exportar_licitaciones' %}{{ export_query }}">
+                    <i class="fa-solid fa-file-export"></i> Exportar
+                </button>
                 <a href="{% url 'perfil' %}" class="btn btn-primary mis-lic__toolbar-link">
                     <i class="fa-solid fa-sliders"></i> Ajustar Filtros en Perfil
                 </a>
@@ -163,7 +163,7 @@
         <div id="seguimiento-feedback" role="status" aria-live="polite" hidden class="mis-lic__feedback"></div>
 
         <!-- Listado Limpio de Tarjetas (Reemplazo de la tabla saturada) -->
-        <div id="licitaciones-list" data-solo-seguidas="{{ solo_seguidas|yesno:'true,false' }}" class="mis-lic__list">
+        <div id="licitaciones-list" data-solo-seguidas="{{ solo_seguidas|yesno:'true,false' }}" data-suscriptor-activo="{{ suscriptor_activo|yesno:'true,false' }}" class="mis-lic__list">
             {% for lic in licitaciones %}
             <div class="dashboard-card mis-lic__card" data-licitacion-card>
                 <div class="mis-lic__card-layout">

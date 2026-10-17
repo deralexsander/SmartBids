@@ -21,7 +21,8 @@ function formatTimestamp(ts) {
 let cambiosSinGuardar = {
     info: false,
     empresa: false,
-    filtros: false
+    filtros: false,
+    palabras: false
 };
 
 export function registrarCambio(seccion) {
@@ -37,7 +38,7 @@ export function limpiarCambio(seccion) {
 }
 
 export function tieneCambiosPendientes() {
-    return cambiosSinGuardar.info || cambiosSinGuardar.empresa || cambiosSinGuardar.filtros;
+    return cambiosSinGuardar.info || cambiosSinGuardar.empresa || cambiosSinGuardar.filtros || cambiosSinGuardar.palabras;
 }
 
 // Instancias globales
@@ -65,7 +66,10 @@ export function calcularMetricasPerfil(dataObj = null) {
         const checkSus1 = Boolean(dataObj.sus_nombre1?.trim());
         const checkSus2 = Boolean(dataObj.sus_apellido1?.trim());
         const checkSocial = Boolean(dataObj.sus_nombre_social?.trim() || dataObj.sus_nombre2?.trim() || dataObj.sus_apellido2?.trim());
-        const checkInic = Boolean(dataObj.sus_iniciales?.trim());
+        const checkInic = Boolean(
+            dataObj.sus_iniciales?.trim() ||
+            (dataObj.sus_nombre1?.trim() && dataObj.sus_apellido1?.trim())
+        );
 
         suscriptorChecks = [checkSus1, checkSus2, checkSocial, checkInic];
 
@@ -95,59 +99,84 @@ export function calcularMetricasPerfil(dataObj = null) {
         filtrosChecks = [
             countComunas > 0,
             countProds > 0,
+            Boolean(tieneTipos),
             countUcom > 0,
-            tieneTipos || tienePalabras
+            Boolean(tienePalabras)
         ];
 
         if (countComunas === 0) faltantes.push('Cobertura territorial (comunas)');
         if (countProds === 0) faltantes.push('Catálogo de productos (ONU)');
+        if (!tieneTipos) faltantes.push('Tipo de procedimiento (L1, LE, LP, etc.)');
         if (countUcom === 0) faltantes.push('Organismos o unidades de compra');
-        if (!tieneTipos && !tienePalabras) faltantes.push('Tipos de licitación o palabras clave');
+        if (!tienePalabras) faltantes.push('Palabras clave');
 
     } else {
-        const checkVal = (id) => Boolean(document.getElementById(id)?.value?.trim());
+        const tieneVal = (id) => Boolean(document.getElementById(id)?.value?.trim());
+        const tieneNombreYApellido = tieneVal('profile-nombre1') && tieneVal('profile-apellido1');
         const avatarInitials = document.getElementById('profile-initials')?.textContent?.replace('--', '').trim();
+        const checkInic = Boolean((avatarInitials && avatarInitials !== 'SB') || tieneNombreYApellido);
+        const checkSocial = Boolean(tieneVal('profile-nombre-social') || tieneVal('profile-nombre2') || tieneVal('profile-apellido2'));
 
         suscriptorChecks = [
-            checkVal('profile-nombre1'),
-            checkVal('profile-apellido1'),
-            checkVal('profile-nombre-social') || checkVal('profile-nombre2') || checkVal('profile-apellido2'),
-            Boolean(avatarInitials)
+            tieneVal('profile-nombre1'),
+            tieneVal('profile-apellido1'),
+            checkSocial,
+            checkInic
         ];
 
-        empresaChecks = [
-            checkVal('empresa-rut'),
-            checkVal('empresa-fantasia'),
-            checkVal('empresa-razon-social'),
-            checkVal('empresa-correo'),
-            checkVal('empresa-comuna'),
-            checkVal('empresa-direccion') || checkVal('empresa-telefono') || checkVal('empresa-iniciales') || checkVal('empresa-contacto-nombre')
-        ];
+        if (!tieneNombreYApellido) faltantes.push('Nombres y apellidos del suscriptor');
+
+        const checkRut = tieneVal('empresa-rut');
+        const checkFantasia = tieneVal('empresa-fantasia');
+        const checkRazon = tieneVal('empresa-razon-social');
+        const checkCorreo = tieneVal('empresa-correo');
+        const checkComuna = tieneVal('empresa-comuna');
+        const checkExtra = Boolean(tieneVal('empresa-direccion') || tieneVal('empresa-telefono') || tieneVal('empresa-iniciales') || tieneVal('empresa-contacto-nombre'));
+
+        empresaChecks = [checkRut, checkFantasia, checkRazon, checkCorreo, checkComuna, checkExtra];
+
+        if (!checkRut) faltantes.push('RUT de la empresa');
+        if (!checkFantasia) faltantes.push('Nombre de fantasía de la empresa');
+        if (!checkRazon) faltantes.push('Razón social');
+        if (!checkCorreo) faltantes.push('Correo de notificaciones');
+        if (!checkComuna) faltantes.push('Comuna de casa matriz');
 
         const countComunas = comunasManager ? comunasManager.getCodes().length : 0;
         const countProductos = productosManager ? productosManager.getCodes().length : 0;
         const countUcom = ucomManager ? ucomManager.getCodes().length : 0;
         
         const tieneProcedimiento = document.querySelectorAll('input[name="pref_tipo_lic_check"]:checked').length > 0;
-        const tienePalabras = checkVal('pref-palabras');
+        const tienePalabras = tieneVal('pref-palabras');
 
         filtrosChecks = [
             countComunas > 0,
             countProductos > 0,
+            tieneProcedimiento,
             countUcom > 0,
-            tieneProcedimiento || tienePalabras
+            Boolean(tienePalabras)
         ];
+
+        if (countComunas === 0) faltantes.push('Cobertura territorial (comunas)');
+        if (countProductos === 0) faltantes.push('Catálogo de productos (ONU)');
+        if (!tieneProcedimiento) faltantes.push('Tipo de procedimiento (L1, LE, LP, etc.)');
+        if (countUcom === 0) faltantes.push('Organismos o unidades de compra');
+        if (!tienePalabras) faltantes.push('Palabras clave');
     }
 
     const totalItems = [...suscriptorChecks, ...empresaChecks, ...filtrosChecks];
     const completados = totalItems.filter(Boolean).length;
-    const porcentaje = Math.round((completados / totalItems.length) * 100);
+    let porcentaje = Math.round((completados / totalItems.length) * 100);
+
+    // Salvaguarda: si falta cualquier sección o campo, nunca puede marcar 100%
+    if ((completados < totalItems.length || faltantes.length > 0) && porcentaje >= 100) {
+        porcentaje = 99;
+    }
 
     return { porcentaje, faltantes };
 }
 
 export function actualizarPorcentajePerfil() {
-    const { porcentaje } = calcularMetricasPerfil(null);
+    const { porcentaje, faltantes } = calcularMetricasPerfil(null);
 
     const barFill = document.getElementById('profile-progress-fill');
     const numberText = document.getElementById('profile-progress-number');
@@ -166,10 +195,15 @@ export function actualizarPorcentajePerfil() {
         barFill.style.backgroundColor = '#dd6b20';
         numberText.style.color = '#dd6b20';
         if (statusText) statusText.textContent = 'Perfil intermedio. Puedes afinar tus filtros de búsqueda y datos tributarios.';
+    } else if (porcentaje < 100) {
+        barFill.style.backgroundColor = 'var(--accent-green)';
+        numberText.style.color = 'var(--dark-green)';
+        const pend = faltantes && faltantes.length > 0 ? ` (Pendiente: ${faltantes.slice(0, 2).join(', ')})` : '';
+        if (statusText) statusText.textContent = `Casi completo.${pend}`;
     } else {
         barFill.style.backgroundColor = 'var(--accent-green)';
         numberText.style.color = 'var(--dark-green)';
-        if (statusText) statusText.textContent = '¡Excelente! Perfil y filtros de licitación completamente calibrados.';
+        if (statusText) statusText.textContent = '¡Excelente! Perfil y filtros de licitación completamente calibrados al 100%.';
     }
 }
 
@@ -182,6 +216,12 @@ class TagManager {
         this.hiddenInput = document.getElementById(hiddenInputId);
         this.placeholderText = placeholderText;
         this.items = new Map();
+        if (this.container) {
+            this.container.style.maxHeight = '120px';
+            this.container.style.overflowY = 'auto';
+            this.container.style.overflowX = 'hidden';
+            this.container.style.alignContent = 'flex-start';
+        }
     }
 
     setItems(itemArray, marcarModificado = false) {
@@ -228,6 +268,10 @@ class TagManager {
 
     render() {
         if (!this.container) return;
+        this.container.style.maxHeight = '120px';
+        this.container.style.overflowY = 'auto';
+        this.container.style.overflowX = 'hidden';
+        this.container.style.alignContent = 'flex-start';
         this.container.innerHTML = '';
         const codes = Array.from(this.items.keys());
 
@@ -256,6 +300,45 @@ class TagManager {
 
         actualizarPorcentajePerfil();
     }
+}
+
+export function actualizarChipsPalabras() {
+    const inputPalabras = document.getElementById('pref-palabras');
+    const container = document.getElementById('chips-palabras');
+    if (!container) return;
+
+    const raw = inputPalabras ? inputPalabras.value : '';
+    const palabras = raw
+        .split(',')
+        .map(p => p.trim())
+        .filter(Boolean);
+
+    container.innerHTML = '';
+
+    if (palabras.length === 0) {
+        container.innerHTML = '<span class="perfil__selection-placeholder">Sin palabras clave configuradas</span>';
+        return;
+    }
+
+    palabras.forEach((palabra, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'dash-badge';
+        chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: 0.83rem; background: var(--white); border: 1.5px solid var(--accent-green); color: var(--dark-green); border-radius: 20px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.04);';
+        chip.innerHTML = `
+            <span>${palabra}</span>
+            <i class="fa-solid fa-xmark" style="cursor: pointer; color: #e53e3e; margin-left: 4px;" title="Eliminar término"></i>
+        `;
+        chip.querySelector('i').addEventListener('click', () => {
+            const nuevas = palabras.filter((_, i) => i !== index);
+            if (inputPalabras) {
+                inputPalabras.value = nuevas.length > 0 ? nuevas.join(', ') + ', ' : '';
+            }
+            actualizarChipsPalabras();
+            registrarCambio('palabras');
+            actualizarPorcentajePerfil();
+        });
+        container.appendChild(chip);
+    });
 }
 
 // ==========================================================================
@@ -1246,29 +1329,87 @@ function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', y
         'empresa-direccion'
     ];
 
-    // 1. Datos tributarios siempre quedan bloqueados
-    camposTributariosFijos.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.readOnly = true;
-            el.style.backgroundColor = '#f1f5f9';
-            el.style.cursor = 'not-allowed';
-            el.title = 'Dato tributario consolidado.';
-        }
-    });
+    const btnDesvincular = document.getElementById('btn-desvincular-empresa');
+    if (btnDesvincular) {
+        btnDesvincular.style.display = yaVinculada ? 'inline-flex' : 'none';
+    }
 
     const btnBuscar = document.getElementById('btn-buscar-rut-empresa');
-    if (btnBuscar && yaVinculada) {
-        btnBuscar.disabled = true;
-        btnBuscar.style.opacity = '0.5';
-        btnBuscar.style.cursor = 'not-allowed';
+    if (btnBuscar) {
+        btnBuscar.disabled = yaVinculada;
+        btnBuscar.style.opacity = yaVinculada ? '0.5' : '1';
+        btnBuscar.style.cursor = yaVinculada ? 'not-allowed' : 'pointer';
+    }
+
+    if (yaVinculada) {
+        // 1. Datos tributarios quedan bloqueados si ya está vinculada
+        camposTributariosFijos.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.readOnly = true;
+                el.style.backgroundColor = '#f1f5f9';
+                el.style.cursor = 'not-allowed';
+                el.title = 'Dato tributario consolidado.';
+            }
+        });
+    } else {
+        // Desbloquear campos tributarios para nuevo registro o búsqueda
+        camposTributariosFijos.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && id !== 'empresa-iniciales') {
+                el.readOnly = false;
+                el.style.backgroundColor = '#ffffff';
+                el.style.cursor = 'text';
+                el.title = '';
+            }
+        });
     }
 
     const btnComuna = document.getElementById('btn-seleccionar-comuna-empresa');
     const inputComunaLabel = document.getElementById('empresa-comuna-label');
     const codigoComunaGuardado = document.getElementById('empresa-comuna')?.value?.trim();
-    const comunaBloqueada = Boolean(codigoComunaGuardado);
+    const comunaBloqueada = Boolean(codigoComunaGuardado) && yaVinculada;
     const btnGuardar = document.getElementById('btn-guardar-empresa');
+
+    if (!yaVinculada) {
+        // ⚪ SIN EMPRESA VINCULADA: Todo editable para buscar o registrar
+        camposModificables.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && id !== 'empresa-comuna-label') {
+                el.readOnly = false;
+                el.style.backgroundColor = '#ffffff';
+                el.style.cursor = 'text';
+                el.title = '';
+            }
+        });
+
+        if (btnComuna) {
+            btnComuna.disabled = false;
+            btnComuna.style.opacity = '1';
+            btnComuna.style.cursor = 'pointer';
+            btnComuna.style.pointerEvents = 'auto';
+        }
+        if (inputComunaLabel) {
+            inputComunaLabel.style.backgroundColor = '#ffffff';
+            inputComunaLabel.style.cursor = 'pointer';
+            inputComunaLabel.title = 'Selecciona la comuna de casa matriz.';
+        }
+
+        if (btnGuardar) {
+            btnGuardar.style.display = 'inline-flex';
+            btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+            btnGuardar.className = 'btn btn-primary';
+        }
+
+        const badgeTributaria = document.querySelector('#tab-empresa .dash-badge');
+        if (badgeTributaria) {
+            badgeTributaria.textContent = 'Sin Empresa Vinculada';
+            badgeTributaria.style.background = '#f1f5f9';
+            badgeTributaria.style.color = '#64748b';
+            badgeTributaria.title = 'No tienes una empresa asociada actualmente.';
+        }
+        return;
+    }
 
     if (esDueno) {
         // 🟢 ADMINISTRADOR: Habilitar campos modificables
@@ -1282,7 +1423,6 @@ function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', y
             }
         });
 
-        // La comuna solo se puede elegir antes de que la empresa quede registrada con ella.
         if (btnComuna) {
             btnComuna.disabled = comunaBloqueada;
             btnComuna.style.opacity = comunaBloqueada ? '0.5' : '1';
@@ -1297,11 +1437,18 @@ function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', y
                 : 'Selecciona la comuna de casa matriz antes de guardar la empresa.';
         }
 
-        // Botón visible para guardar cambios
         if (btnGuardar) {
             btnGuardar.style.display = 'inline-flex';
             btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Cambios Empresa';
             btnGuardar.className = 'btn btn-primary';
+        }
+
+        const badgeTributaria = document.querySelector('#tab-empresa .dash-badge');
+        if (badgeTributaria) {
+            badgeTributaria.textContent = 'Administrador de Empresa';
+            badgeTributaria.style.background = 'rgba(30, 196, 152, 0.15)';
+            badgeTributaria.style.color = 'var(--dark-green)';
+            badgeTributaria.title = 'Tienes permisos de edición para los campos modificables.';
         }
 
     } else {
@@ -1327,30 +1474,16 @@ function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', y
             inputComunaLabel.style.cursor = 'not-allowed';
         }
 
-        // Si ya está vinculada, se oculta; si está buscando unirse, se muestra el botón de alianza
         if (btnGuardar) {
-            if (!yaVinculada) {
-                btnGuardar.style.display = 'inline-flex';
-                btnGuardar.innerHTML = '<i class="fa-solid fa-link"></i> Vincularme a esta Empresa';
-                btnGuardar.className = 'btn btn-primary';
-            } else {
-                btnGuardar.style.display = 'none';
-            }
+            btnGuardar.style.display = 'none';
         }
-    }
 
-    const badgeTributaria = document.querySelector('#tab-empresa .dash-badge');
-    if (badgeTributaria) {
-        if (!esDueno) {
+        const badgeTributaria = document.querySelector('#tab-empresa .dash-badge');
+        if (badgeTributaria) {
             badgeTributaria.textContent = 'Cuenta Asociada (Solo Lectura)';
             badgeTributaria.style.background = '#fef3c7';
             badgeTributaria.style.color = '#92400e';
             badgeTributaria.title = `Administrado por: ${correoDueno || 'Titular de la empresa'}`;
-        } else {
-            badgeTributaria.textContent = 'Administrador de Empresa';
-            badgeTributaria.style.background = 'rgba(30, 196, 152, 0.15)';
-            badgeTributaria.style.color = 'var(--dark-green)';
-            badgeTributaria.title = 'Tienes permisos de edición para los campos modificables.';
         }
     }
 }
@@ -1623,6 +1756,79 @@ export async function inicializarVistaPerfil(user) {
         });
     });
 
+    const fPalabras = document.getElementById('form-perfil-palabras');
+    if (fPalabras && fPalabras.dataset.listenerAttached !== 'true') {
+        fPalabras.dataset.listenerAttached = 'true';
+        ['input', 'change'].forEach(evt => {
+            fPalabras.addEventListener(evt, () => {
+                registrarCambio('palabras');
+                actualizarPorcentajePerfil();
+            });
+        });
+    }
+
+    // Sugeridor ortográfico reactivo y visualizador de chips para Palabras Clave
+    const inputPalabras = document.getElementById('pref-palabras');
+    const boxSugerencia = document.getElementById('palabras-sugerencia-box');
+    const txtSugerencia = document.getElementById('palabra-sugerida-texto');
+
+    if (inputPalabras && boxSugerencia && txtSugerencia && inputPalabras.dataset.suggestBound !== 'true') {
+        inputPalabras.dataset.suggestBound = 'true';
+        let debounceSugerencia = null;
+
+        inputPalabras.addEventListener('input', () => {
+            clearTimeout(debounceSugerencia);
+            actualizarChipsPalabras();
+
+            const textoCompleto = inputPalabras.value;
+            const partes = textoCompleto.split(',');
+            const palabraActual = partes[partes.length - 1].trim();
+
+            if (palabraActual.length < 3) {
+                boxSugerencia.style.display = 'none';
+                return;
+            }
+
+            debounceSugerencia = setTimeout(async () => {
+                try {
+                    const resp = await fetch(`/api/catalogos-preferencias/?tipo=sugerir_palabra&q=${encodeURIComponent(palabraActual)}`);
+                    const data = await resp.json();
+
+                    if (data.status === 'ok' && data.sugerencia) {
+                        const sug = String(data.sugerencia).toLowerCase();
+                        if (sug !== palabraActual.toLowerCase()) {
+                            txtSugerencia.textContent = sug;
+                            boxSugerencia.style.display = 'inline-flex';
+                            return;
+                        }
+                    }
+                    boxSugerencia.style.display = 'none';
+                } catch (e) {
+                    console.error('[SmartBids] Error en sugeridor ortográfico:', e);
+                }
+            }, 250);
+        });
+
+        const aplicarSugerencia = (e) => {
+            if (e) e.stopPropagation();
+            const sugWord = txtSugerencia.textContent.trim();
+            if (!sugWord) return;
+
+            const partes = inputPalabras.value.split(',');
+            partes[partes.length - 1] = ' ' + sugWord;
+
+            inputPalabras.value = partes.map(p => p.trim()).filter(Boolean).join(', ') + ', ';
+            boxSugerencia.style.display = 'none';
+            inputPalabras.focus();
+            actualizarChipsPalabras();
+            registrarCambio('palabras');
+            actualizarPorcentajePerfil();
+        };
+
+        txtSugerencia.addEventListener('click', aplicarSugerencia);
+        boxSugerencia.addEventListener('click', aplicarSugerencia);
+    }
+
     const targetUid = user?.uid || auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
     if (!targetUid) return;
 
@@ -1654,6 +1860,14 @@ export async function inicializarVistaPerfil(user) {
 
             const roleBadge = document.getElementById('profile-role-badge');
             if (roleBadge) roleBadge.textContent = data.nombre_estado || 'Activo';
+
+            const nombreEstado = data.nombre_estado || '';
+            const rolNormalizado = nombreEstado.trim().toLowerCase();
+            const esAdmin = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || data.codigo_estado === 5;
+            const adminSection = document.getElementById('perfil-admin-section');
+            if (adminSection) {
+                adminSection.style.display = esAdmin ? 'block' : 'none';
+            }
 
             const initials = document.getElementById('profile-initials');
             if (initials) initials.textContent = data.sus_iniciales || (n1 && a1 ? (n1[0] + a1[0]).toUpperCase() : 'SB');
@@ -1705,6 +1919,8 @@ export async function inicializarVistaPerfil(user) {
             // 🔒 APLICAR PERMISOS DINÁMICOS: Administrador edita modificables, Asociado solo lectura
             if (emp.emp_rut && String(emp.emp_rut).trim() !== '') {
                 configurarPermisosFormularioEmpresa(asoc.es_dueno, asoc.correo_dueno, true);
+            } else {
+                configurarPermisosFormularioEmpresa(true, '', false);
             }
 
             comunasManager.setItems(pref.comunas_detalle || []);
@@ -1723,10 +1939,12 @@ export async function inicializarVistaPerfil(user) {
             });
 
             setVal('pref-palabras', Array.isArray(pref.pref_palabras_claves) ? pref.pref_palabras_claves.join(', ') : (pref.pref_palabras_claves || ''));
+            actualizarChipsPalabras();
 
             limpiarCambio('info');
             limpiarCambio('empresa');
             limpiarCambio('filtros');
+            limpiarCambio('palabras');
 
             actualizarPorcentajePerfil();
         }
@@ -1792,17 +2010,12 @@ export async function inicializarVistaPerfil(user) {
             const tiposSeleccionados = Array.from(document.querySelectorAll('input[name="pref_tipo_lic_check"]:checked'))
                 .map(cb => cb.value);
 
-            const rawPalabras = document.getElementById('pref-palabras')?.value || '';
-            const tokens = rawPalabras.split(',').flatMap(p => sanitizarPalabraClave(p));
-            const palabrasLimpias = [...new Set(tokens)];
-
             const payload = {
                 uid: targetUid,
                 pref_comunas: getArrayOrHidden(comunasManager, 'pref-comunas'),
                 pref_productos: getArrayOrHidden(productosManager, 'pref-productos'),
                 pref_tipo_licitacion: tiposSeleccionados,
-                pref_ucom: getArrayOrHidden(ucomManager, 'pref-ucom'),
-                pref_palabras_claves: palabrasLimpias
+                pref_ucom: getArrayOrHidden(ucomManager, 'pref-ucom')
             };
 
             try {
@@ -1815,8 +2028,54 @@ export async function inicializarVistaPerfil(user) {
 
                 if (res.status === 'ok') {
                     limpiarCambio('filtros');
-                    mostrarMensaje(res.mensaje, 'exito');
-                    document.getElementById('pref-palabras').value = (res.palabras_sanitizadas || palabrasLimpias).join(', ');
+                    mostrarMensaje('Filtros de licitación guardados con éxito.', 'exito');
+                } else {
+                    mostrarMensaje(`No se pudo guardar: ${res.mensaje}`, 'error');
+                }
+                actualizarPorcentajePerfil();
+            } catch (err) {
+                console.error('[SmartBids] Error de red:', err);
+                mostrarMensaje('Error al conectar con el servidor Django.', 'error');
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        };
+    }
+
+    const formPalabras = document.getElementById('form-perfil-palabras');
+    if (formPalabras && formPalabras.dataset.bound !== 'true') {
+        formPalabras.dataset.bound = 'true';
+        formPalabras.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = formPalabras.querySelector('button[type="submit"]');
+            setButtonLoading(btn, true, 'Guardando...');
+
+            const rawPalabras = document.getElementById('pref-palabras')?.value || '';
+            const tokens = rawPalabras.split(',').flatMap(p => sanitizarPalabraClave(p));
+            const palabrasLimpias = [...new Set(tokens)];
+
+            const payload = {
+                uid: targetUid,
+                pref_palabras_claves: palabrasLimpias
+            };
+
+            try {
+                const resp = await fetch('/api/actualizar-preferencias/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const res = await resp.json();
+
+                if (res.status === 'ok') {
+                    limpiarCambio('palabras');
+                    mostrarMensaje('Palabras clave guardadas con éxito.', 'exito');
+                    if (boxSugerencia) boxSugerencia.style.display = 'none';
+                    const inp = document.getElementById('pref-palabras');
+                    if (inp) {
+                        inp.value = (res.palabras_sanitizadas || palabrasLimpias).join(', ');
+                    }
+                    actualizarChipsPalabras();
                 } else {
                     mostrarMensaje(`No se pudo guardar: ${res.mensaje}`, 'error');
                 }
@@ -2008,6 +2267,99 @@ if (btnCancelarEmpresa && !btnCancelarEmpresa.dataset.bound) {
     btnCancelarEmpresa.addEventListener('click', cerrarModalConfirmEmpresa);
 }
 
+// ==========================================================================
+// MODAL DE DESVINCULACIÓN CORPORATIVA
+// ==========================================================================
+const modalDesvincular = document.getElementById('modal-desvincular-empresa');
+const btnDesvincularTrigger = document.getElementById('btn-desvincular-empresa');
+const btnCancelarDesvincular = document.getElementById('btn-cancelar-modal-desvincular');
+const btnConfirmarDesvincular = document.getElementById('btn-confirmar-modal-desvincular');
+
+function abrirModalDesvincular() {
+    if (!modalDesvincular) return;
+
+    const rut = document.getElementById('empresa-rut')?.value?.trim() || '--';
+    const nombre = document.getElementById('empresa-fantasia')?.value?.trim() ||
+                   document.getElementById('empresa-razon-social')?.value?.trim() ||
+                   'Empresa Asociada';
+    const badge = document.querySelector('#tab-empresa .dash-badge');
+    const rol = badge ? badge.textContent.trim() : 'Usuario Vinculado';
+
+    const elRut = document.getElementById('modal-desvincular-rut');
+    const elNombre = document.getElementById('modal-desvincular-nombre');
+    const elRol = document.getElementById('modal-desvincular-rol');
+
+    if (elRut) elRut.textContent = rut;
+    if (elNombre) elNombre.textContent = nombre;
+    if (elRol) elRol.textContent = rol;
+
+    modalDesvincular.style.display = 'flex';
+    modalDesvincular.classList.remove('closing');
+    requestAnimationFrame(() => {
+        modalDesvincular.classList.add('active');
+    });
+}
+
+function cerrarModalDesvincular() {
+    if (!modalDesvincular) return;
+
+    modalDesvincular.classList.remove('active');
+    modalDesvincular.classList.add('closing');
+    setTimeout(() => {
+        modalDesvincular.classList.remove('closing');
+        modalDesvincular.style.display = 'none';
+    }, 350);
+}
+
+if (btnDesvincularTrigger && !btnDesvincularTrigger.dataset.bound) {
+    btnDesvincularTrigger.dataset.bound = 'true';
+    btnDesvincularTrigger.addEventListener('click', abrirModalDesvincular);
+}
+
+if (btnCancelarDesvincular && !btnCancelarDesvincular.dataset.bound) {
+    btnCancelarDesvincular.dataset.bound = 'true';
+    btnCancelarDesvincular.addEventListener('click', cerrarModalDesvincular);
+}
+
+if (btnConfirmarDesvincular && !btnConfirmarDesvincular.dataset.bound) {
+    btnConfirmarDesvincular.dataset.bound = 'true';
+    btnConfirmarDesvincular.addEventListener('click', async () => {
+        const targetUid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
+        if (!targetUid) {
+            mostrarMensaje('No se detectó una sesión activa para procesar la solicitud.', 'error');
+            return;
+        }
+
+        setButtonLoading(btnConfirmarDesvincular, true, 'Desvinculando...');
+
+        try {
+            const resp = await fetch('/api/desvincular-empresa/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: targetUid })
+            });
+            const res = await resp.json();
+
+            if (res.status === 'ok') {
+                cerrarModalDesvincular();
+                limpiarCamposEmpresa();
+                setFieldState('empresa-rut', '', true);
+                configurarPermisosFormularioEmpresa(true, '', false);
+                limpiarCambio('empresa');
+                actualizarPorcentajePerfil();
+                mostrarMensaje(res.mensaje || 'Se ha desvinculado de la empresa exitosamente.', 'exito');
+            } else {
+                mostrarMensaje(res.mensaje || 'No se pudo completar la desvinculación.', 'error');
+            }
+        } catch (err) {
+            console.error('[SmartBids] Error al desvincular empresa:', err);
+            mostrarMensaje('Error de conexión al procesar la desvinculación.', 'error');
+        } finally {
+            setButtonLoading(btnConfirmarDesvincular, false);
+        }
+    });
+}
+
 const formEmpresa = document.getElementById('form-perfil-empresa');
 const inputTelefonoEmpresa = document.getElementById('empresa-telefono');
 
@@ -2101,18 +2453,8 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
 }
 
 // ==========================================================================
-// 9. ESCUCHA DE SESIÓN
+// 9. ESCUCHA DE SESIÓN (Gestionada centralizadamente en sesion.js)
 // ==========================================================================
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        localStorage.setItem('smartbids_uid', user.uid);
-        document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
-
-        if (document.getElementById('form-perfil-preferencias')) {
-            inicializarVistaPerfil(user);
-        }
-    }
-});
 
 // ==========================================================================
 // 10. GESTIÓN DEL MODAL DE SALIDA DE PESTAÑAS
@@ -2172,6 +2514,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (idActivo === 'tab-filtros') {
                 const f = document.getElementById('form-perfil-preferencias');
                 if (f) f.requestSubmit();
+            } else if (idActivo === 'tab-palabras') {
+                const f = document.getElementById('form-perfil-palabras');
+                if (f) f.requestSubmit();
             }
 
             if (accionSalidaPendiente === 'tab' && pestanaDestinoPendiente) {
@@ -2193,6 +2538,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (idActivo === 'tab-info') limpiarCambio('info');
             if (idActivo === 'tab-empresa') limpiarCambio('empresa');
             if (idActivo === 'tab-filtros') limpiarCambio('filtros');
+            if (idActivo === 'tab-palabras') limpiarCambio('palabras');
 
             if (accionSalidaPendiente === 'tab' && pestanaDestinoPendiente) {
                 aplicarCambioPestanaDirecto(pestanaDestinoPendiente);
@@ -2200,6 +2546,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 limpiarCambio('info');
                 limpiarCambio('empresa');
                 limpiarCambio('filtros');
+                limpiarCambio('palabras');
                 SessionManager.clearLocalToken();
                 localStorage.removeItem('smartbids_uid');
                 await signOut(auth);
@@ -2212,7 +2559,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function aplicarCambioPestanaDirecto(tabId) {
     document.querySelectorAll('.profile-menu-btn').forEach((btn) => {
         btn.classList.remove('active');
-        if (btn.getAttribute('onclick')?.includes(tabId)) {
+        if (btn.getAttribute('data-profile-tab') === tabId || btn.getAttribute('onclick')?.includes(tabId)) {
             btn.classList.add('active');
         }
     });
@@ -2247,6 +2594,9 @@ export function cambiarPestana(event, tabId) {
         } else if (idActivo === 'tab-filtros' && cambiosSinGuardar.filtros) {
             hayCambiosEnPestanaActual = true;
             nombreSeccion = 'Filtros de Licitación';
+        } else if (idActivo === 'tab-palabras' && cambiosSinGuardar.palabras) {
+            hayCambiosEnPestanaActual = true;
+            nombreSeccion = 'Palabras Clave';
         }
 
         if (hayCambiosEnPestanaActual) {
@@ -2258,3 +2608,8 @@ export function cambiarPestana(event, tabId) {
     aplicarCambioPestanaDirecto(tabId);
 }
 window.cambiarPestana = cambiarPestana;
+
+document.addEventListener('smartbids:admin-ready', () => {
+    const adminSection = document.getElementById('perfil-admin-section');
+    if (adminSection) adminSection.style.display = 'block';
+});

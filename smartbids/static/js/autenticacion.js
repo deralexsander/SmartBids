@@ -25,11 +25,20 @@ const mensajeFlash = sessionStorage.getItem('flash_message');
 if (mensajeFlash) {
     try {
         const flashData = JSON.parse(mensajeFlash);
-        mostrarMensaje(flashData.texto, flashData.tipo);
+        mostrarMensaje(flashData.texto, flashData.tipo, flashData.duracion || 14000);
     } catch (e) {
         console.error('Error parseando mensaje flash:', e);
     }
     sessionStorage.removeItem('flash_message');
+}
+
+const registeredEmail = sessionStorage.getItem('registered_email');
+if (registeredEmail) {
+    const emailInput = document.getElementById('email');
+    if (emailInput && !emailInput.value) {
+        emailInput.value = registeredEmail;
+    }
+    sessionStorage.removeItem('registered_email');
 }
 
 let pendingEmail = null;
@@ -127,6 +136,11 @@ otpInputs.forEach((input, index) => {
     });
 });
 
+function esEmailValido(email) {
+    if (!email || typeof email !== 'string') return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -137,6 +151,12 @@ if (loginForm) {
 
         if (!email || !password) {
             mostrarMensaje(MENSAJES.validacion.camposRequeridos, 'error');
+            return;
+        }
+
+        if (!esEmailValido(email)) {
+            mostrarMensaje('El formato del correo ingresado no es válido. Ingresa una dirección completa (ej: usuario@empresa.cl).', 'error', 12000);
+            document.getElementById('email').focus();
             return;
         }
 
@@ -152,7 +172,11 @@ if (loginForm) {
                 await signOut(auth);
                 AuthState.isSubmittingAuth = false;
                 setButtonLoading(submitBtn, false);
-                mostrarMensaje(MENSAJES.auth.emailNoVerificado, 'error');
+                mostrarMensaje(
+                    'Tu cuenta aún no está activada. Revisa tu bandeja de entrada o tu carpeta de SPAM. Si necesitas reenviar el correo de activación, usa el botón "Ayuda".',
+                    'error',
+                    15000
+                );
                 return;
             }
 
@@ -237,11 +261,17 @@ if (btnVerificarOtp) {
 
             // 3. Autenticar en Firebase Auth
             AuthState.isSubmittingAuth = true;
-            await signInWithEmailAndPassword(auth, pendingEmail, pendingPassword);
+            const userCredential = await signInWithEmailAndPassword(auth, pendingEmail, pendingPassword);
+            const user = userCredential?.user;
 
             // 4. Guardar token en LocalStorage y mostrarlo en la consola
             SessionManager.setLocalToken(tokenID);
             console.log(`tokenID: ${tokenID}`);
+
+            if (user?.uid) {
+                localStorage.setItem('smartbids_uid', user.uid);
+                document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
+            }
 
             sessionStorage.setItem('flash_message', JSON.stringify({
                 texto: '¡Bienvenido! Sesión iniciada con éxito.',
@@ -309,6 +339,111 @@ if (btnCancelarOtp) {
 }
 
 // ==========================================================================
+// 5.1 Reenvío de Correo de Activación
+// ==========================================================================
+async function solicitarReenvioActivacion(targetBtn = null) {
+    limpiarMensaje();
+    const emailInput = document.getElementById('email');
+    const email = emailInput ? emailInput.value.trim() : '';
+
+    if (!email) {
+        mostrarMensaje('Ingresa tu correo electrónico en el campo superior para reenviar la activación.', 'error', 12000);
+        if (emailInput) emailInput.focus();
+        return;
+    }
+
+    if (!esEmailValido(email)) {
+        mostrarMensaje('El formato del correo ingresado no es válido. Ingresa una dirección completa (ej: usuario@empresa.cl).', 'error', 12000);
+        if (emailInput) emailInput.focus();
+        return;
+    }
+
+    const resendBtn = targetBtn || document.getElementById('btn-reenviar-activacion');
+    if (resendBtn) {
+        setButtonLoading(resendBtn, true, 'Enviando correo...');
+    }
+
+    try {
+        const response = await fetch('/api/reenviar-correo-activacion/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
+
+        const data = await response.json();
+
+        if (response.status === 429) {
+            mostrarMensaje(data.mensaje || 'Espera un momento antes de volver a solicitar el correo.', 'error', 12000);
+            return;
+        }
+
+        if (response.status === 404) {
+            mostrarMensaje(data.mensaje || 'No existe una cuenta registrada con este correo.', 'error', 12000);
+            return;
+        }
+
+        if (response.status === 400) {
+            mostrarMensaje(data.mensaje || 'El formato del correo no es válido.', 'error', 12000);
+            return;
+        }
+
+        if (!response.ok || data.status !== 'ok') {
+            throw new Error(data.mensaje || 'No se pudo reenviar el correo de activación.');
+        }
+
+        mostrarMensaje(
+            '¡Correo de activación reenviado! Por favor revisa tu bandeja de entrada o tu carpeta de SPAM / correo no deseado.',
+            'exito',
+            16000
+        );
+
+    } catch (error) {
+        console.error('[SmartBids] Error al reenviar correo de activación:', error);
+        mostrarMensaje(error.message || 'Error al reenviar el correo. Inténtalo más tarde.', 'error', 12000);
+    } finally {
+        if (resendBtn) {
+            setButtonLoading(resendBtn, false);
+        }
+    }
+}
+
+const btnReenviarActivacion = document.getElementById('btn-reenviar-activacion');
+if (btnReenviarActivacion) {
+    btnReenviarActivacion.addEventListener('click', (e) => {
+        e.preventDefault();
+        solicitarReenvioActivacion(btnReenviarActivacion);
+    });
+}
+
+// Botón de ayuda para desplegar opciones en el login
+const btnAyudaLogin = document.getElementById('btn-ayuda-login');
+const ayudaLoginPanel = document.getElementById('ayuda-login-panel');
+if (btnAyudaLogin && ayudaLoginPanel) {
+    btnAyudaLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        const estaAbierto = ayudaLoginPanel.style.display === 'block';
+        if (estaAbierto) {
+            ayudaLoginPanel.style.display = 'none';
+            btnAyudaLogin.setAttribute('aria-expanded', 'false');
+            btnAyudaLogin.classList.remove('active');
+        } else {
+            ayudaLoginPanel.style.display = 'block';
+            btnAyudaLogin.setAttribute('aria-expanded', 'true');
+            btnAyudaLogin.classList.add('active');
+        }
+    });
+}
+
+const linkAbrirReenvio = document.getElementById('link-abrir-reenvio-activacion');
+if (linkAbrirReenvio) {
+    linkAbrirReenvio.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (ayudaLoginPanel) ayudaLoginPanel.style.display = 'block';
+        solicitarReenvioActivacion();
+    });
+}
+
+// ==========================================================================
 // 6. Cierre de Sesión
 // ==========================================================================
 const logoutButton = document.getElementById('logout-button');
@@ -339,42 +474,40 @@ if (forgotPasswordLink) {
 
         if (!email) {
             mostrarMensaje(MENSAJES.auth.resetPasswordSinEmail, 'error');
+            if (emailInput) emailInput.focus();
             return;
         }
 
-        const originalText = forgotPasswordLink.textContent;
+        if (!esEmailValido(email)) {
+            mostrarMensaje('El formato del correo ingresado no es válido. Ingresa una dirección completa (ej: usuario@empresa.cl).', 'error', 12000);
+            if (emailInput) emailInput.focus();
+            return;
+        }
+
+        const originalHtml = forgotPasswordLink.innerHTML;
         forgotPasswordLink.style.pointerEvents = 'none';
         forgotPasswordLink.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando...`;
 
         try {
-            const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseConfig.apiKey}`, {
+            const response = await fetch('/api/solicitar-recuperacion-password/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    requestType: 'PASSWORD_RESET',
-                    email: email
-                })
+                body: JSON.stringify({ email: email })
             });
 
             const data = await response.json();
             forgotPasswordLink.style.pointerEvents = 'auto';
-            forgotPasswordLink.textContent = originalText;
+            forgotPasswordLink.innerHTML = originalHtml;
 
-            if (!response.ok) {
-                if (data.error && data.error.message === 'EMAIL_NOT_FOUND') {
-                    mostrarMensaje(MENSAJES.validacion.cuentaNoExiste, 'error');
-                } else if (data.error && data.error.message === 'INVALID_EMAIL') {
-                    mostrarMensaje(MENSAJES.validacion.emailInvalido, 'error');
-                } else {
-                    mostrarMensaje(MENSAJES.auth.resetPasswordError, 'error');
-                }
+            if (!response.ok || data.status !== 'ok') {
+                mostrarMensaje(data.mensaje || MENSAJES.auth.resetPasswordError, 'error');
                 return;
             }
 
-            mostrarMensaje(MENSAJES.auth.resetPasswordEnviado, 'exito');
+            mostrarMensaje(data.mensaje || MENSAJES.auth.resetPasswordEnviado, 'exito', 16000);
         } catch (error) {
             forgotPasswordLink.style.pointerEvents = 'auto';
-            forgotPasswordLink.textContent = originalText;
+            forgotPasswordLink.innerHTML = originalHtml;
             console.error(error);
             mostrarMensaje(MENSAJES.auth.resetPasswordError, 'error');
         }
@@ -418,12 +551,29 @@ if (registerForm) {
         }
 
         const submitBtn = registerForm.querySelector('button[type="submit"]');
-        setButtonLoading(submitBtn, true, 'Registrando...');
+        setButtonLoading(submitBtn, true, 'Verificando correo...');
 
-        const secondaryApp = initializeApp(firebaseConfig, `SecondaryApp_${Date.now()}`);
-        const secondaryAuth = getAuth(secondaryApp);
-
+        let secondaryApp = null;
         try {
+            // 1. Validar que el correo exista en Gmail y no esté ya registrado
+            const resValidacion = await fetch('/api/validar-email-registro/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+
+            const dataValidacion = await resValidacion.json();
+            if (!resValidacion.ok || dataValidacion.status !== 'ok') {
+                setButtonLoading(submitBtn, false);
+                mostrarMensaje(dataValidacion.mensaje || 'El correo ingresado no es válido para el registro.', 'error', 12000);
+                return;
+            }
+
+            setButtonLoading(submitBtn, true, 'Registrando...');
+
+            secondaryApp = initializeApp(firebaseConfig, `SecondaryApp_${Date.now()}`);
+            const secondaryAuth = getAuth(secondaryApp);
+
             const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
             const user = userCredential.user;
 
@@ -459,8 +609,10 @@ if (registerForm) {
 
             sessionStorage.setItem('flash_message', JSON.stringify({
                 texto: MENSAJES.auth.registroExitoso,
-                tipo: 'exito'
+                tipo: 'exito',
+                duracion: 16000
             }));
+            sessionStorage.setItem('registered_email', email);
 
             window.location.href = '/ingreso';
         } catch (error) {
@@ -471,7 +623,9 @@ if (registerForm) {
                 'error'
             );
         } finally {
-            await deleteApp(secondaryApp);
+            if (secondaryApp) {
+                await deleteApp(secondaryApp);
+            }
         }
     });
 }

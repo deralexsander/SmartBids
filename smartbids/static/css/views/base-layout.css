@@ -43,6 +43,7 @@
 }
 
 .site-header__notifications-panel {
+    display: none;
     position: absolute;
     z-index: 1000;
     right: 0;
@@ -53,6 +54,15 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: 0 12px 32px rgba(0,0,0,.14);
+}
+
+.site-header__notifications-panel.is-open {
+    display: block;
+}
+
+.site-header__notifications-panel[hidden],
+[hidden] {
+    display: none !important;
 }
 
 .site-header__notifications-title {
@@ -178,6 +188,106 @@
     padding: 0.65rem 1.5rem;
     font-size: 0.9rem;
     text-decoration: none;
+}
+
+/* ===== Modal · Selección de Formato de Exportación ===== */
+
+.export-modal__card {
+    max-width: 520px;
+    padding: 2.2rem 2rem;
+}
+
+.export-modal__icon {
+    background: rgba(30, 196, 152, 0.15);
+    color: var(--dark-green);
+}
+
+.export-modal__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin: 1.5rem 0 1.2rem;
+    text-align: left;
+}
+
+.export-modal__option {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    padding: 1.1rem 1.25rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--white);
+    text-decoration: none;
+    color: inherit;
+    font-family: inherit;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    width: 100%;
+}
+
+.export-modal__option:hover,
+.export-modal__option:focus-visible {
+    border-color: var(--accent-green);
+    background: rgba(30, 196, 152, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(17, 99, 78, 0.08);
+    outline: none;
+}
+
+.export-modal__option-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.export-modal__option-icon--csv {
+    background: rgba(30, 196, 152, 0.15);
+    color: var(--dark-green);
+}
+
+.export-modal__option-icon--excel {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+
+.export-modal__option-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.export-modal__option-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dark-green);
+}
+
+.export-modal__option-desc {
+    font-size: 0.82rem;
+    color: var(--gray-text);
+    line-height: 1.35;
+}
+
+.export-modal__option-arrow {
+    color: var(--muted-teal);
+    font-size: 1.05rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.export-modal__option:hover .export-modal__option-arrow {
+    color: var(--dark-green);
+    transform: translateY(2px);
+}
+
+.export-modal__actions {
+    margin-top: 0.8rem;
 }
 
 /* ===== Footer · Marca ===== */

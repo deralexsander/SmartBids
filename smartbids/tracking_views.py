@@ -16,6 +16,7 @@ from .licitacion_utils import (
     hito_completado,
     resolver_suscriptor,
 )
+from .mercadopublico_service import obtener_datos_externos_licitacion
 from .models.procurement import Licitacion
 from .models.tracking import (
     LicitacionDocumento,
@@ -63,15 +64,37 @@ def detalle_licitacion_view(request, codigo):
         for nombre, fecha, estado_hito in historial
         if fecha
     ]
+
+    datos_externos = obtener_datos_externos_licitacion(licitacion.lic_codigo)
+    url_adjuntos = datos_externos.get('url_adjuntos')
+    url_preguntas = datos_externos.get('url_preguntas')
+
+    preguntas_db = list(LicitacionPregunta.objects.filter(licitacion=licitacion))
+    if preguntas_db:
+        preguntas = [
+            {
+                'numero': idx + 1,
+                'pregunta': p.pregunta,
+                'fecha_pregunta': p.fecha_pregunta.strftime('%d-%m-%Y %H:%M') if p.fecha_pregunta else '',
+                'respuesta': p.respuesta,
+                'fecha_respuesta': p.fecha_respuesta.strftime('%d-%m-%Y %H:%M') if p.fecha_respuesta else '',
+            }
+            for idx, p in enumerate(preguntas_db)
+        ]
+    else:
+        preguntas = datos_externos.get('preguntas', [])
+
     return render(request, 'smartbids/licitacion_detalle.html', {
         'licitacion': licitacion,
         'url_externa': _url_http(licitacion.lic_url),
+        'url_adjuntos': url_adjuntos,
+        'url_preguntas': url_preguntas,
         'estado': estado,
         'estado_label': estado_label,
         'seguimiento_activo': seguimiento is not None,
         'suscriptor_activo': suscriptor is not None,
         'documentos': LicitacionDocumento.objects.filter(licitacion=licitacion),
-        'preguntas': LicitacionPregunta.objects.filter(licitacion=licitacion),
+        'preguntas': preguntas,
         'hitos': hitos,
         'return_to': return_to,
         'return_solo_seguidas': query_return_to.get('solo_seguidas', [''])[0],

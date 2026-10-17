@@ -2,10 +2,10 @@ import csv
 from datetime import timedelta
 
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.utils import timezone
 
-from .licitacion_utils import escribir_fila_csv
+from .licitacion_utils import escribir_fila_csv, generar_excel_response, resolver_suscriptor
 from .models.procurement import Licitacion
 
 
@@ -18,6 +18,14 @@ def login_view(request):
 def register_view(request):
     return render(request, 'registro/registro.html')
 
+def accion_cuenta_view(request):
+    mode = request.GET.get('mode', '')
+    oob_code = request.GET.get('oobCode', '')
+    return render(request, 'smartbids/accion_cuenta.html', {
+        'mode': mode,
+        'oob_code': oob_code,
+    })
+
 def perfil_view(request):
     return render(request, 'smartbids/perfil.html')
 
@@ -25,6 +33,12 @@ def mensajeria_view(request):
     return render(request, 'smartbids/mensajeria.html')
 
 def administracion_general_view(request):
+    suscriptor = resolver_suscriptor(request)
+    if suscriptor and suscriptor.codigo_estado:
+        rol = (suscriptor.codigo_estado.nombre_estado or '').strip().lower()
+        es_admin = rol in ('admin', 'administrador') or suscriptor.codigo_estado.codigo_estado == 5
+        if not es_admin:
+            return redirect('mis_licitaciones')
     return render(request, 'smartbids/administracion_general.html')
 
 def handler404_view(request, exception=None):
@@ -64,22 +78,35 @@ def exportar_dashboard_view(request):
         .filter(lic_fecha_public__gte=fecha_inicio, lic_fecha_public__lte=timezone.localdate())
         .order_by('-lic_fecha_public')
     )
+    formato = (request.GET.get('formato') or request.GET.get('format') or 'csv').strip().lower()
+
+    encabezados = (
+        'Código', 'Nombre', 'Tipo', 'Unidad de compra', 'Fecha publicación',
+        'Fecha cierre', 'Presupuesto', 'Moneda', 'Enlace externo'
+    )
+
+    def obtener_filas():
+        for licitacion in licitaciones:
+            yield (
+                licitacion.lic_codigo,
+                licitacion.lic_nombre,
+                licitacion.lic_tipo_licitacion,
+                licitacion.lic_codigo_ucom.ucom_descripcion if licitacion.lic_codigo_ucom else '',
+                licitacion.lic_fecha_public,
+                licitacion.lic_fecha_cierre,
+                licitacion.lic_presupuesto,
+                licitacion.lic_moneda,
+                licitacion.lic_url,
+            )
+
+    if formato in {'excel', 'xlsx'}:
+        return generar_excel_response('dashboard-smartbids.xlsx', encabezados, obtener_filas())
+
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="dashboard-smartbids.csv"'
     response.write('\ufeff')
     writer = csv.writer(response)
-    writer.writerow(('Código', 'Nombre', 'Tipo', 'Unidad de compra', 'Fecha publicación',
-                     'Fecha cierre', 'Presupuesto', 'Moneda', 'Enlace externo'))
-    for licitacion in licitaciones:
-        escribir_fila_csv(writer, (
-            licitacion.lic_codigo,
-            licitacion.lic_nombre,
-            licitacion.lic_tipo_licitacion,
-            licitacion.lic_codigo_ucom.ucom_descripcion if licitacion.lic_codigo_ucom else '',
-            licitacion.lic_fecha_public,
-            licitacion.lic_fecha_cierre,
-            licitacion.lic_presupuesto,
-            licitacion.lic_moneda,
-            licitacion.lic_url,
-        ))
+    writer.writerow(encabezados)
+    for fila in obtener_filas():
+        escribir_fila_csv(writer, fila)
     return response

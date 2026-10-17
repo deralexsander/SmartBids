@@ -9,25 +9,40 @@
 <section class="lic-detalle__page">
     <div class="lic-detalle__container">
         <div id="seguimiento-feedback" role="status" aria-live="polite" hidden class="lic-detalle__feedback"></div>
-        <a href="{{ return_to }}" class="lic-detalle__back-link">
-            <i class="fa-solid fa-arrow-left"></i> Volver a licitaciones
-        </a>
+        <div class="lic-detalle__topbar">
+            <a href="{{ return_to }}" class="lic-detalle__back-link">
+                <i class="fa-solid fa-arrow-left"></i> Volver a licitaciones
+            </a>
+            {% if url_externa %}
+            <a href="{{ url_externa }}" target="_blank" rel="noopener noreferrer" class="lic-detalle__topbar-external">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Consultar ficha oficial en Mercado Público
+            </a>
+            {% endif %}
+        </div>
 
+        <!-- Encabezado Principal y Resumen a Pantalla Completa -->
         <article class="dashboard-card lic-detalle__summary-card">
             <div class="lic-detalle__summary-header">
                 <div class="lic-detalle__identity">
                     <div class="lic-detalle__badges">
-                        <span class="dash-badge">{{ licitacion.lic_codigo }}</span>
+                        <span class="dash-badge lic-detalle__code-badge">{{ licitacion.lic_codigo }}</span>
                         <span class="dash-badge">{{ licitacion.lic_tipo_licitacion|default:"Tipo no informado" }}</span>
                         <span class="dash-badge{% if estado == 'cerrada' %} licitacion-state-badge--closed{% endif %}">{{ estado_label }}</span>
                     </div>
                     <h1 class="lic-detalle__title">
                         {{ licitacion.lic_nombre|default:"Licitación sin nombre" }}
                     </h1>
-                    <p class="lic-detalle__organization">
-                        <i class="fa-solid fa-building"></i>
-                        {{ licitacion.lic_codigo_ucom.ucom_descripcion|default:"Unidad de compra no informada" }}
-                    </p>
+                    <div class="lic-detalle__organization-meta">
+                        <span><i class="fa-solid fa-building"></i> {{ licitacion.lic_codigo_ucom.ucom_descripcion|default:"Unidad de compra no informada" }}</span>
+                        {% if licitacion.lic_codigo_ucom.ucom_codigo_comuna %}
+                        <span class="lic-detalle__meta-sep">•</span>
+                        <span><i class="fa-solid fa-location-dot"></i> {{ licitacion.lic_codigo_ucom.ucom_codigo_comuna }}</span>
+                        {% endif %}
+                        {% if licitacion.lic_codigo_ucom.ucom_rut %}
+                        <span class="lic-detalle__meta-sep">•</span>
+                        <span><strong>RUT:</strong> {{ licitacion.lic_codigo_ucom.ucom_rut }}</span>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="lic-detalle__header-actions">
                     {% if suscriptor_activo %}
@@ -39,100 +54,257 @@
                         {% if return_estado %}<input type="hidden" name="estado" value="{{ return_estado }}">{% endif %}
                         {% if seguimiento_activo %}
                             <input type="hidden" name="accion" value="dejar">
-                            <button class="btn btn-outline" type="submit" data-seguir-label="Seguir proceso" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-primary"><i class="fa-solid fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Dejar de seguir</span></button>
+                            <button class="btn btn-outline lic-detalle__follow-btn" type="submit" data-seguir-label="Seguir proceso" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-primary"><i class="fa-solid fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Dejar de seguir</span></button>
                         {% else %}
                             <input type="hidden" name="accion" value="seguir">
-                            <button class="btn btn-primary" type="submit" data-seguir-label="Seguir proceso" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-primary"><i class="fa-regular fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Seguir proceso</span></button>
+                            <button class="btn btn-primary lic-detalle__follow-btn" type="submit" data-seguir-label="Seguir proceso" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-primary"><i class="fa-regular fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Seguir proceso</span></button>
                         {% endif %}
                     </form>
                     {% endif %}
                     {% elif estado != 'cerrada' %}
-                    <a href="{% url 'ingreso' %}" class="btn btn-primary">Inicia sesión para seguir</a>
+                    <a href="{% url 'ingreso' %}" class="btn btn-primary lic-detalle__follow-btn">Inicia sesión para seguir</a>
                     {% endif %}
                 </div>
             </div>
 
+            <!-- Fila de Métricas / KPIs a 4 columnas a pantalla completa -->
             <div class="lic-detalle__facts">
-                <div class="dashboard-card lic-detalle__fact-card">
-                    <small class="lic-detalle__fact-label">Presupuesto</small>
-                    <div class="lic-detalle__budget-value">{% if licitacion.lic_presupuesto %}{{ licitacion.lic_moneda|default:"$" }} {{ licitacion.lic_presupuesto|miles_chilenos }}{% else %}No informado{% endif %}</div>
+                <div class="dashboard-card lic-detalle__fact-card lic-detalle__fact-card--budget">
+                    <div class="lic-detalle__fact-icon-wrap">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <div>
+                        <small class="lic-detalle__fact-label">Presupuesto Estimado</small>
+                        <div class="lic-detalle__budget-value">{% if licitacion.lic_presupuesto %}{{ licitacion.lic_moneda|default:"$" }} {{ licitacion.lic_presupuesto|miles_chilenos }}{% else %}No informado{% endif %}</div>
+                    </div>
                 </div>
                 <div class="dashboard-card lic-detalle__fact-card lic-detalle__fact-card--publication">
-                    <small class="lic-detalle__fact-label">Publicación</small>
-                    <div class="lic-detalle__fact-value">{{ licitacion.lic_fecha_public|default:"No informada" }}</div>
+                    <div class="lic-detalle__fact-icon-wrap">
+                        <i class="fa-regular fa-calendar-plus"></i>
+                    </div>
+                    <div>
+                        <small class="lic-detalle__fact-label">Fecha de Publicación</small>
+                        <div class="lic-detalle__fact-value">{{ licitacion.lic_fecha_public|default:"No informada" }}</div>
+                    </div>
                 </div>
-                <div class="dashboard-card licitacion-close-card{% if estado == 'cerrada' %} licitacion-close-card--closed{% endif %}">
-                    <small class="lic-detalle__fact-label">Cierre</small>
-                    <div class="licitacion-close-date{% if estado == 'cerrada' %} licitacion-close-date--closed{% endif %}">{{ licitacion.lic_fecha_cierre|default:"No informado" }}</div>
+                <div class="dashboard-card lic-detalle__fact-card lic-detalle__fact-card--close{% if estado == 'cerrada' %} lic-detalle__fact-card--closed{% endif %}">
+                    <div class="lic-detalle__fact-icon-wrap">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <div>
+                        <small class="lic-detalle__fact-label">Fecha de Cierre</small>
+                        <div class="licitacion-close-date{% if estado == 'cerrada' %} licitacion-close-date--closed{% endif %}">{{ licitacion.lic_fecha_cierre|default:"No informado" }}</div>
+                    </div>
                 </div>
-                <div class="dashboard-card lic-detalle__fact-card">
-                    <small class="lic-detalle__fact-label">Productos / ítems</small>
-                    <div class="lic-detalle__fact-value">{{ licitacion.lic_items_cantidad|default:"No informado" }}</div>
+                <div class="dashboard-card lic-detalle__fact-card lic-detalle__fact-card--items">
+                    <div class="lic-detalle__fact-icon-wrap">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                    <div>
+                        <small class="lic-detalle__fact-label">Productos / Ítems</small>
+                        <div class="lic-detalle__fact-value">{{ licitacion.lic_items_cantidad|default:"No informado" }}</div>
+                    </div>
                 </div>
             </div>
         </article>
 
-        <div class="lic-detalle__content-grid">
-            <section class="dashboard-card lic-detalle__panel">
-                <h2 class="lic-detalle__section-title"><i class="fa-solid fa-align-left lic-detalle__icon"></i> Descripción del proceso</h2>
-                {% if licitacion.lic_descripcion %}
-                    <p class="lic-detalle__description">{{ licitacion.lic_descripcion }}</p>
-                {% elif licitacion.lic_texto %}
-                    <p class="lic-detalle__description">{{ licitacion.lic_texto }}</p>
-                {% else %}
-                    <p class="lic-detalle__empty-message">El proceso no incluye una descripción en los datos disponibles.</p>
-                {% endif %}
-            </section>
-
-            <section class="dashboard-card lic-detalle__panel">
-                <h2 class="lic-detalle__section-title"><i class="fa-solid fa-timeline lic-detalle__icon"></i> Historial del proceso</h2>
-                <ol class="lic-detalle__milestones">
-                    {% for hito in hitos %}
-                    <li class="licitacion-hito{% if hito.completado %} licitacion-hito--completed{% else %} licitacion-hito--pending{% endif %}">
-                        <strong>{{ hito.nombre }}</strong><br>
-                        <small>{{ hito.fecha }}</small>
-                        {% if hito.estado == estado %}<span class="dash-badge">Estado actual</span>{% endif %}
-                    </li>
-                    {% empty %}
-                    <li class="lic-detalle__empty-message">Sin hitos con fechas registradas.</li>
-                    {% endfor %}
-                </ol>
-            </section>
-        </div>
-
-        <div class="lic-detalle__related-grids">
-            <section class="dashboard-card lic-detalle__panel">
-                <h2 class="lic-detalle__section-title"><i class="fa-solid fa-file-lines lic-detalle__icon"></i> Documentos</h2>
-                {% for documento in documentos %}
-                    <p><a href="{{ documento.url }}" target="_blank" rel="noopener noreferrer">{{ documento.titulo }}</a>
-                        {% if documento.fecha_publicacion %}<small> · {{ documento.fecha_publicacion|date:"d-m-Y" }}</small>{% endif %}
-                    </p>
-                {% empty %}
-                    <p class="lic-detalle__empty-message">Aún no hay documentos asociados en SmartBids.</p>
-                {% endfor %}
-            </section>
-
-            <section class="dashboard-card lic-detalle__panel">
-                <h2 class="lic-detalle__section-title"><i class="fa-solid fa-circle-question lic-detalle__icon"></i> Preguntas y respuestas</h2>
-                {% for item in preguntas %}
-                    <div class="lic-detalle__question">
-                        <strong>Pregunta</strong><p>{{ item.pregunta }}</p>
-                        <strong>Respuesta</strong><p>{{ item.respuesta|default:"Pendiente de respuesta" }}</p>
-                        {% if item.fecha_pregunta %}<small>{{ item.fecha_pregunta|date:"d-m-Y H:i" }}</small>{% endif %}
+        <!-- Distribución Principal a Pantalla Completa (2 Columnas Grandes) -->
+        <div class="lic-detalle__main-grid">
+            
+            <!-- Columna Izquierda: Especificaciones y Documentación Oficial -->
+            <div class="lic-detalle__col">
+                
+                <!-- Tarjeta 1: Descripción del Proceso -->
+                <section class="dashboard-card lic-detalle__panel">
+                    <div class="lic-detalle__section-header-flex">
+                        <h2 class="lic-detalle__section-title">
+                            <i class="fa-solid fa-align-left lic-detalle__icon"></i> Descripción del Proceso
+                        </h2>
                     </div>
-                {% empty %}
-                    <p class="lic-detalle__empty-message">Aún no hay preguntas o respuestas asociadas en SmartBids.</p>
-                {% endfor %}
-            </section>
-        </div>
+                    <div class="lic-detalle__description-body">
+                        {% if licitacion.lic_descripcion %}
+                            <p class="lic-detalle__description">{{ licitacion.lic_descripcion }}</p>
+                        {% elif licitacion.lic_texto %}
+                            <p class="lic-detalle__description">{{ licitacion.lic_texto }}</p>
+                        {% else %}
+                            <p class="lic-detalle__empty-message">El proceso no incluye una descripción en los datos disponibles.</p>
+                        {% endif %}
+                    </div>
+                    {% if licitacion.lic_codigo_ucom.ucom_direccion %}
+                    <div class="lic-detalle__comprador-footer">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>Dirección del organismo: <strong>{{ licitacion.lic_codigo_ucom.ucom_direccion }}</strong></span>
+                    </div>
+                    {% endif %}
+                </section>
 
-        {% if url_externa %}
-        <p class="lic-detalle__external-link-wrap">
-            <a href="{{ url_externa }}" target="_blank" rel="noopener noreferrer" class="lic-detalle__external-link">
-                Consultar ficha oficial en Mercado Público <i class="fa-solid fa-arrow-up-right-from-square"></i>
-            </a>
-        </p>
-        {% endif %}
+                <!-- Tarjeta 2: Documentos y Adjuntos -->
+                <section class="dashboard-card lic-detalle__panel">
+                    <div class="lic-detalle__section-header-flex">
+                        <div class="lic-detalle__section-title-wrap">
+                            <h2 class="lic-detalle__section-title">
+                                <i class="fa-solid fa-file-lines lic-detalle__icon"></i> Documentos y Adjuntos
+                            </h2>
+                            {% if documentos %}
+                            <span class="dash-badge lic-detalle__qa-count">{{ documentos|length }} archivo{{ documentos|length|pluralize:"s" }}</span>
+                            {% endif %}
+                        </div>
+                        {% if url_adjuntos %}
+                        <a href="{{ url_adjuntos }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__card-action-btn" title="Abrir repositorio de anexos en Mercado Público">
+                            <i class="fa-solid fa-paperclip"></i> Repositorio Oficial
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    {% if documentos %}
+                        {% if documentos|length > 4 %}
+                        <div class="lic-detalle__filter-box">
+                            <i class="fa-solid fa-magnifying-glass lic-detalle__filter-icon"></i>
+                            <input type="search" id="filtro-documentos" placeholder="Filtrar por nombre o tipo de anexo..." class="lic-detalle__filter-input">
+                        </div>
+                        {% endif %}
+                        <div class="lic-detalle__docs-scrollable" id="lista-documentos">
+                            {% for doc in documentos %}
+                            <div class="lic-detalle__doc-card" data-doc-item data-search-text="{{ doc.nombre|lower }} {{ doc.descripcion|lower }}">
+                                <div class="lic-detalle__doc-icon-wrap lic-detalle__doc-icon-wrap--{{ doc.extension }}">
+                                    {% if doc.extension == 'pdf' %}
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                    {% elif doc.extension == 'docx' or doc.extension == 'doc' %}
+                                        <i class="fa-solid fa-file-word"></i>
+                                    {% elif doc.extension == 'xlsx' or doc.extension == 'xls' or doc.extension == 'csv' %}
+                                        <i class="fa-solid fa-file-excel"></i>
+                                    {% elif doc.extension == 'zip' or doc.extension == 'rar' or doc.extension == '7z' %}
+                                        <i class="fa-solid fa-file-zipper"></i>
+                                    {% else %}
+                                        <i class="fa-solid fa-file-lines"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="lic-detalle__doc-body">
+                                    <div class="lic-detalle__doc-header">
+                                        <span class="lic-detalle__doc-name">{{ doc.nombre }}</span>
+                                        {% if doc.extension %}<span class="dash-badge lic-detalle__doc-ext-badge">{{ doc.extension|upper }}</span>{% endif %}
+                                    </div>
+                                    <div class="lic-detalle__doc-meta">
+                                        {% if doc.descripcion %}<span class="lic-detalle__doc-tag"><i class="fa-solid fa-tag"></i> {{ doc.descripcion }}</span>{% endif %}
+                                        {% if doc.fecha %}<small class="lic-detalle__doc-date"><i class="fa-regular fa-clock"></i> {{ doc.fecha }}</small>{% endif %}
+                                    </div>
+                                </div>
+                                {% if doc.url %}
+                                <div class="lic-detalle__doc-action">
+                                    <a href="{{ doc.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__doc-btn" title="Descargar / Consultar anexo oficial">
+                                        <i class="fa-solid fa-download"></i> Descargar
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="lic-detalle__docs-empty">
+                            {% if url_adjuntos %}
+                            <div class="lic-detalle__cta-wrap">
+                                <a href="{{ url_adjuntos }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__cta-btn">
+                                    <i class="fa-solid fa-paperclip"></i> Consultar Archivos en Mercado Público
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+
+            <!-- Columna Derecha: Cronograma y Foro de Preguntas -->
+            <div class="lic-detalle__col">
+                
+                <!-- Tarjeta 3: Cronograma e Historial -->
+                <section class="dashboard-card lic-detalle__panel">
+                    <div class="lic-detalle__section-header-flex">
+                        <h2 class="lic-detalle__section-title">
+                            <i class="fa-solid fa-timeline lic-detalle__icon"></i> Cronograma e Historial del Proceso
+                        </h2>
+                    </div>
+                    <ol class="lic-detalle__milestones">
+                        {% for hito in hitos %}
+                        <li class="licitacion-hito{% if hito.completado %} licitacion-hito--completed{% else %} licitacion-hito--pending{% endif %}{% if hito.estado == estado %} licitacion-hito--current{% endif %}">
+                            <div class="licitacion-hito__bullet">
+                                {% if hito.completado %}<i class="fa-solid fa-check"></i>{% else %}<i class="fa-regular fa-circle"></i>{% endif %}
+                            </div>
+                            <div class="licitacion-hito__content">
+                                <div class="licitacion-hito__header">
+                                    <strong class="licitacion-hito__title">{{ hito.nombre }}</strong>
+                                    {% if hito.estado == estado %}<span class="dash-badge lic-detalle__current-badge">Etapa actual</span>{% endif %}
+                                </div>
+                                <small class="licitacion-hito__date"><i class="fa-regular fa-calendar"></i> {{ hito.fecha }}</small>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="lic-detalle__empty-message">Sin hitos con fechas registradas.</li>
+                        {% endfor %}
+                    </ol>
+                </section>
+
+                <!-- Tarjeta 4: Preguntas y Respuestas del Foro Oficial -->
+                <section class="dashboard-card lic-detalle__panel">
+                    <div class="lic-detalle__section-header-flex">
+                        <div class="lic-detalle__section-title-wrap">
+                            <h2 class="lic-detalle__section-title">
+                                <i class="fa-solid fa-circle-question lic-detalle__icon"></i> Preguntas y Respuestas
+                            </h2>
+                            {% if preguntas %}
+                            <span class="dash-badge lic-detalle__qa-count">{{ preguntas|length }} consulta{{ preguntas|length|pluralize:"s" }}</span>
+                            {% endif %}
+                        </div>
+                        {% if url_preguntas %}
+                        <a href="{{ url_preguntas }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__card-action-btn" title="Abrir foro oficial de preguntas en Mercado Público">
+                            <i class="fa-solid fa-comments"></i> Abrir Foro Oficial
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    {% if preguntas %}
+                        {% if preguntas|length > 3 %}
+                        <div class="lic-detalle__filter-box">
+                            <i class="fa-solid fa-magnifying-glass lic-detalle__filter-icon"></i>
+                            <input type="search" id="filtro-preguntas" placeholder="Buscar en preguntas y respuestas..." class="lic-detalle__filter-input">
+                        </div>
+                        {% endif %}
+                        <div class="lic-detalle__questions-scrollable" id="lista-preguntas">
+                            {% for item in preguntas %}
+                            <div class="lic-detalle__qa-item" data-qa-item data-search-text="{{ item.pregunta|lower }} {{ item.respuesta|lower }}">
+                                <div class="lic-detalle__qa-bubble lic-detalle__qa-bubble--question">
+                                    <div class="lic-detalle__qa-meta">
+                                        <span class="lic-detalle__qa-tag"><i class="fa-solid fa-circle-question"></i> Pregunta {% if item.numero %}#{{ item.numero }}{% endif %}</span>
+                                        {% if item.fecha_pregunta %}<small class="lic-detalle__qa-time"><i class="fa-regular fa-clock"></i> {{ item.fecha_pregunta }}</small>{% endif %}
+                                    </div>
+                                    <p class="lic-detalle__qa-content">{{ item.pregunta }}</p>
+                                </div>
+                                <div class="lic-detalle__qa-bubble lic-detalle__qa-bubble--answer">
+                                    <div class="lic-detalle__qa-meta">
+                                        <span class="lic-detalle__qa-tag lic-detalle__qa-tag--answer"><i class="fa-solid fa-comment-dots"></i> Respuesta Oficial</span>
+                                        {% if item.fecha_respuesta %}<small class="lic-detalle__qa-time"><i class="fa-regular fa-clock"></i> {{ item.fecha_respuesta }}</small>{% endif %}
+                                    </div>
+                                    <p class="lic-detalle__qa-content">{% if item.respuesta %}{{ item.respuesta }}{% else %}<em class="lic-detalle__qa-pending">Pendiente de respuesta oficial por el organismo comprador.</em>{% endif %}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="lic-detalle__qa-empty">
+                            <p class="lic-detalle__empty-message">
+                                No se registran preguntas o respuestas publicadas en el foro de esta licitación.
+                            </p>
+                            {% if url_preguntas %}
+                            <div class="lic-detalle__cta-wrap">
+                                <a href="{{ url_preguntas }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__cta-btn">
+                                    <i class="fa-solid fa-comments"></i> Consultar Foro en Mercado Público
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

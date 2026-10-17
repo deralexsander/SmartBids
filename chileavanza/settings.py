@@ -106,61 +106,57 @@ TEMPLATES = [
 WSGI_APPLICATION = 'chileavanza.wsgi.application'
 
 
-# Database
-# Compatible con la red interna privada de Railway y fallback para desarrollo local
-_db_url_env = os.getenv('DATABASE_PRIVATE_URL') or os.getenv('DATABASE_URL')
+# ==============================================================================
+# BASE DE DATOS (CONFIGURACIÓN EXCLUSIVA CON POSTGRESQL EN RAILWAY)
+# ==============================================================================
+# Soporta la URL privada interna en Railway (DATABASE_PRIVATE_URL) y la URL pública (DATABASE_URL / DATABASE_PUBLIC_URL)
+_db_url_env = os.getenv('DATABASE_PRIVATE_URL') or os.getenv('DATABASE_URL') or os.getenv('DATABASE_PUBLIC_URL')
 
 if _db_url_env:
     _url = urlparse(_db_url_env)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': _url.path.lstrip('/'),
-            'USER': unquote(_url.username or ''),
-            'PASSWORD': unquote(_url.password or ''),
-            'HOST': _url.hostname,
-            'PORT': _url.port or 5432,
-            'OPTIONS': {
-                'options': '-c search_path=public,catalog,procurement,core,config'
-            },
-        },
-        'dw': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DW_DB_NAME', 'smartbids_dw'),
-            'USER': unquote(_url.username or ''),
-            'PASSWORD': unquote(_url.password or ''),
-            'HOST': _url.hostname,
-            'PORT': _url.port or 5432,
-            'OPTIONS': {
-                'options': '-c search_path=dw,public'
-            },
-        },
-    }
+    _db_name = _url.path.lstrip('/')
+    _db_user = unquote(_url.username or '')
+    _db_password = unquote(_url.password or '')
+    _db_host = _url.hostname
+    _db_port = _url.port or 5432
+elif os.getenv('DB_HOST') and os.getenv('DB_USER'):
+    _db_name = os.getenv('DB_NAME', 'railway')
+    _db_user = os.getenv('DB_USER', '')
+    _db_password = os.getenv('DB_PASSWORD', '')
+    _db_host = os.getenv('DB_HOST', '')
+    _db_port = int(os.getenv('DB_PORT', 5432))
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME', 'smartbids'),
-            'USER': os.getenv('DB_USER', 'postgres'),
-            'PASSWORD': os.getenv('DB_PASSWORD', ''),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '5432'),
-            'OPTIONS': {
-                'options': '-c search_path=public,catalog,procurement,core,config'
-            },
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        "DATABASE_URL no está configurada en las variables de entorno. "
+        "El proyecto está configurado para operar exclusivamente con PostgreSQL en Railway. "
+        "Asegúrate de definir DATABASE_URL en tu archivo .env o en el panel de Railway."
+    )
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': _db_name,
+        'USER': _db_user,
+        'PASSWORD': _db_password,
+        'HOST': _db_host,
+        'PORT': _db_port,
+        'OPTIONS': {
+            'options': '-c search_path=public,catalog,procurement,core,config'
         },
-        'dw': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DW_DB_NAME', 'smartbids_dw'),
-            'USER': os.getenv('DW_DB_USER', os.getenv('DB_USER', 'postgres')),
-            'PASSWORD': os.getenv('DW_DB_PASSWORD', os.getenv('DB_PASSWORD', '')),
-            'HOST': os.getenv('DW_DB_HOST', os.getenv('DB_HOST', 'localhost')),
-            'PORT': os.getenv('DW_DB_PORT', os.getenv('DB_PORT', '5432')),
-            'OPTIONS': {
-                'options': '-c search_path=dw,public'
-            },
+    },
+    'dw': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DW_DB_NAME', _db_name),
+        'USER': _db_user,
+        'PASSWORD': _db_password,
+        'HOST': _db_host,
+        'PORT': _db_port,
+        'OPTIONS': {
+            'options': '-c search_path=dw,public'
         },
-    }
+    },
+}
 
 
 # Password validation

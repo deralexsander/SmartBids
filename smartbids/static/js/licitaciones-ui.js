@@ -106,6 +106,9 @@ function iniciarNotificacionesLicitacion() {
     const contador = document.getElementById('licitacion-notifications-count');
     if (!toggle || !panel || !lista || !contador) return;
 
+    panel.hidden = true;
+    panel.style.display = 'none';
+
     const endpoint = toggle.dataset.endpoint;
     const mostrarError = () => {
         lista.replaceChildren();
@@ -113,7 +116,6 @@ function iniciarNotificacionesLicitacion() {
         error.textContent = 'No se pudieron cargar las notificaciones. Intenta nuevamente.';
         error.style.color = '#b91c1c';
         lista.append(error);
-        panel.hidden = false;
     };
 
     const cargar = async () => {
@@ -158,9 +160,22 @@ function iniciarNotificacionesLicitacion() {
         });
     };
 
-    toggle.addEventListener('click', () => {
-        panel.hidden = !panel.hidden;
-        toggle.setAttribute('aria-expanded', String(!panel.hidden));
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = panel.hidden || panel.style.display === 'none';
+        panel.hidden = !isHidden;
+        panel.style.display = isHidden ? 'block' : 'none';
+        panel.classList.toggle('is-open', isHidden);
+        toggle.setAttribute('aria-expanded', String(isHidden));
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+            panel.hidden = true;
+            panel.style.display = 'none';
+            panel.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
     });
     cargar().catch((error) => {
         console.error(error);
@@ -174,7 +189,29 @@ function iniciarNotificacionesLicitacion() {
     }, 60000);
 }
 
+function iniciarFiltrosDetalleLicitacion() {
+    const configurarFiltro = (inputId, itemSelector) => {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.addEventListener('input', () => {
+            const term = input.value.trim().toLowerCase();
+            const items = document.querySelectorAll(itemSelector);
+
+            items.forEach((item) => {
+                const text = (item.dataset.searchText || item.textContent || '').toLowerCase();
+                const match = !term || text.includes(term);
+                item.style.display = match ? '' : 'none';
+            });
+        });
+    };
+
+    configurarFiltro('filtro-documentos', '[data-doc-item]');
+    configurarFiltro('filtro-preguntas', '[data-qa-item]');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     iniciarSeguimientoAsincrono();
     iniciarNotificacionesLicitacion();
+    iniciarFiltrosDetalleLicitacion();
 });

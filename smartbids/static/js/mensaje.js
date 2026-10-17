@@ -4,8 +4,9 @@
 export const MENSAJES = {
     auth: {
         loginExitoso: 'Ingreso exitoso.',
-        emailNoVerificado: 'Por favor verifica tu correo electrónico antes de ingresar.',
-        registroExitoso: 'Registro exitoso. Revisa tu correo de bienvenida para activar tu cuenta.',
+        emailNoVerificado: 'Tu cuenta aún no está activada. Revisa tu bandeja de entrada o tu carpeta de SPAM.',
+        registroExitoso: '¡Registro exitoso! Te enviamos un correo de activación. Por favor revisa tu bandeja de entrada o tu carpeta de SPAM / correo no deseado.',
+        reenvioActivacionExitoso: '¡Correo de activación reenviado! Por favor revisa tu bandeja de entrada o tu carpeta de SPAM.',
         resetPasswordEnviado: 'Se ha enviado un correo para restablecer tu contraseña.',
         resetPasswordSinEmail: 'Ingresa tu correo en el campo superior para recuperar tu contraseña.',
         resetPasswordError: 'No se pudo enviar el correo de recuperación. Inténtalo más tarde.',
@@ -87,47 +88,86 @@ export function getFriendlyErrorMessage(errorCode, rawMessage = '') {
 // ==========================================================================
 let timerMensaje = null;
 
-export function mostrarMensaje(texto, tipo = 'info') {
+export function mostrarMensaje(texto, tipo = 'info', duracion = 14000) {
     const container = document.getElementById('global-message-container');
     const badge = document.getElementById('global-message-badge');
     const badgeText = document.getElementById('global-message-text');
     const icon = document.getElementById('global-message-icon');
+    const closeBtn = document.getElementById('global-message-close');
+    const closeIcon = closeBtn ? closeBtn.querySelector('i') : null;
 
     if (!container || !badgeText) return;
 
     if (timerMensaje) {
         clearTimeout(timerMensaje);
+        timerMensaje = null;
     }
 
     badgeText.textContent = texto;
 
     if (icon && badge) {
         icon.className = 'fa-solid';
+        badge.classList.remove('global-message--exito', 'global-message--error', 'global-message--info');
+
         if (tipo === 'exito') {
+            badge.classList.add('global-message--exito');
             icon.classList.add('fa-circle-check');
             icon.style.color = 'var(--accent-green)';
             badgeText.style.color = 'var(--dark-green)';
             badge.style.borderColor = 'var(--accent-green)';
+            if (closeBtn) closeBtn.style.color = 'var(--accent-green)';
+            if (closeIcon) closeIcon.style.color = 'var(--accent-green)';
         } else if (tipo === 'error') {
+            badge.classList.add('global-message--error');
             icon.classList.add('fa-circle-exclamation');
             icon.style.color = '#e53e3e';
             badgeText.style.color = '#c53030';
             badge.style.borderColor = '#feb2b2';
+            if (closeBtn) closeBtn.style.color = '#e53e3e';
+            if (closeIcon) closeIcon.style.color = '#e53e3e';
         } else {
+            badge.classList.add('global-message--info');
             icon.classList.add('fa-circle-info');
             icon.style.color = 'var(--muted-teal)';
             badgeText.style.color = 'var(--dark-green)';
             badge.style.borderColor = 'var(--soft-mint)';
+            if (closeBtn) closeBtn.style.color = 'var(--muted-teal)';
+            if (closeIcon) closeIcon.style.color = 'var(--muted-teal)';
         }
+    }
+
+    if (closeBtn && closeBtn.dataset.bound !== 'true') {
+        closeBtn.dataset.bound = 'true';
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            limpiarMensaje();
+        });
+    }
+
+    if (!container.dataset.hoverBound) {
+        container.dataset.hoverBound = 'true';
+        container.addEventListener('mouseenter', () => {
+            if (timerMensaje) {
+                clearTimeout(timerMensaje);
+                timerMensaje = null;
+            }
+        });
+        container.addEventListener('mouseleave', () => {
+            if (container.style.visibility === 'visible' && duracion > 0) {
+                timerMensaje = setTimeout(limpiarMensaje, 4000);
+            }
+        });
     }
 
     container.style.visibility = 'visible';
     container.style.opacity = '1';
     container.style.transform = 'translate(-50%, 0)';
 
-    timerMensaje = setTimeout(() => {
-        limpiarMensaje();
-    }, 5000);
+    if (duracion > 0) {
+        timerMensaje = setTimeout(() => {
+            limpiarMensaje();
+        }, duracion);
+    }
 }
 
 // ==========================================================================
@@ -136,6 +176,11 @@ export function mostrarMensaje(texto, tipo = 'info') {
 export function limpiarMensaje() {
     const container = document.getElementById('global-message-container');
     if (!container) return;
+
+    if (timerMensaje) {
+        clearTimeout(timerMensaje);
+        timerMensaje = null;
+    }
 
     container.style.opacity = '0';
     container.style.transform = 'translate(-50%, -25px)';

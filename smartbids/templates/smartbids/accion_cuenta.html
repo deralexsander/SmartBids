@@ -1,0 +1,112 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title id="page-title">SmartBids - Gestión de Cuenta</title>
+{% endblock %}
+
+{% block contenido %}
+<section class="cta-section">
+    <div class="cta-container">
+
+        <!-- PANEL DE CARGA INICIAL -->
+        <div id="panel-loading-accion" class="action-panel">
+            <div class="action-loading-box">
+                <i class="fa-solid fa-circle-notch fa-spin action-loading-spinner"></i>
+                <h3 class="action-loading-title">Verificando enlace de seguridad...</h3>
+                <p class="section-desc">Por favor espera un instante mientras validamos tu solicitud.</p>
+            </div>
+        </div>
+
+        <!-- ESTADO 1: VERIFICAR / ACTIVAR CUENTA -->
+        <div id="panel-verificar-correo" class="action-panel" style="display: none;">
+            <div class="section-header">
+                <div class="action-badge-icon action-badge-icon--verify">
+                    <i class="fa-solid fa-envelope-circle-check"></i>
+                </div>
+                <span class="section-subtitle">Verificación de Cuenta</span>
+                <h2 class="section-title">Activa tu Cuenta SmartBids</h2>
+                <p class="section-desc">
+                    Estás a un paso de comenzar a monitorear oportunidades y analizar licitaciones con Inteligencia Artificial.
+                </p>
+            </div>
+
+            <div class="action-card">
+                <div class="action-card__body">
+                    <div class="action-instruction-box">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <p>Haz clic en el botón a continuación para verificar tu correo y habilitar el acceso a tu cuenta.</p>
+                    </div>
+
+                    <div id="verify-feedback" class="action-feedback" style="display: none;"></div>
+
+                    <div id="verify-actions" class="action-buttons-wrap">
+                        <button type="button" id="btn-activar-cuenta" class="btn btn-primary btn-large action-submit-btn">
+                            <i class="fa-solid fa-circle-check"></i> Activar Cuenta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESTADO 2: CAMBIAR / RESTABLECER CONTRASEÑA -->
+        <div id="panel-reset-password" class="action-panel" style="display: none;">
+            <div class="section-header">
+                <div class="action-badge-icon action-badge-icon--password">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <span class="section-subtitle">Seguridad</span>
+                <h2 class="section-title">Cambiar Contraseña</h2>
+                <p class="section-desc">
+                    Ingresa una nueva contraseña para la cuenta <strong id="reset-account-email" class="action-account-email"></strong>.
+                </p>
+            </div>
+
+            <div class="action-card">
+                <form id="reset-password-form" class="action-form" novalidate>
+                    <div class="form-inline auth__field auth__field--password">
+                        <input type="password" id="new-password" name="new-password" placeholder="Nueva contraseña (mínimo 8 caracteres)" required minlength="8" autocomplete="new-password">
+                        <button type="button" id="toggle-new-password" class="auth__password-toggle" aria-label="Mostrar u ocultar contraseña">
+                            <i class="fa-solid fa-eye" id="toggle-new-password-icon"></i>
+                        </button>
+                    </div>
+
+                    <div class="form-inline auth__field auth__field--password-confirm">
+                        <input type="password" id="confirm-new-password" name="confirm-new-password" placeholder="Confirmar nueva contraseña" required minlength="8" autocomplete="new-password">
+                        <button type="button" id="toggle-confirm-password" class="auth__password-toggle" aria-label="Mostrar u ocultar confirmación de contraseña">
+                            <i class="fa-solid fa-eye" id="toggle-confirm-password-icon"></i>
+                        </button>
+                    </div>
+
+                    <div id="reset-feedback" class="action-feedback" style="display: none;"></div>
+
+                    <button type="submit" id="btn-cambiar-password" class="btn btn-primary btn-large action-submit-btn">
+                        <i class="fa-solid fa-lock"></i> Guardar Nueva Contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ESTADO 3: ENLACE INVÁLIDO O EXPIRADO -->
+        <div id="panel-error-accion" class="action-panel" style="display: none;">
+            <div class="section-header">
+                <div class="action-badge-icon action-badge-icon--error">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <span class="section-subtitle">Enlace No Válido</span>
+                <h2 class="section-title" id="error-title">El enlace ha expirado o es inválido</h2>
+                <p class="section-desc" id="error-desc">
+                    Este enlace de seguridad ya fue utilizado o ha expirado. Por favor, solicita uno nuevo desde la pantalla de ingreso.
+                </p>
+            </div>
+
+            <div class="action-card action-card--center">
+                <a href="{% url 'ingreso' %}" class="btn btn-primary btn-large">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Ir a Ingresar
+                </a>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

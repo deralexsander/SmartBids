@@ -6,6 +6,31 @@
 {% endblock %}
 
 {% block contenido %}
+<style>
+    .perfil__selection-chips {
+        max-height: 120px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        align-content: flex-start !important;
+        scrollbar-width: thin;
+        scrollbar-color: var(--muted-teal) #f1f5f9;
+    }
+    .perfil__selection-chips::-webkit-scrollbar {
+        width: 6px;
+        display: block;
+    }
+    .perfil__selection-chips::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    .perfil__selection-chips::-webkit-scrollbar-thumb {
+        background: var(--muted-teal);
+        border-radius: 4px;
+    }
+    .perfil__selection-chips::-webkit-scrollbar-thumb:hover {
+        background: var(--dark-green);
+    }
+</style>
 <div class="profile-container">
     <div class="profile-layout">
 
@@ -44,6 +69,11 @@
                     <li>
                         <button type="button" class="profile-menu-btn" data-profile-tab="tab-filtros">
                             <i class="fa-solid fa-sliders"></i> Filtros de Licitación
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-palabras">
+                            <i class="fa-solid fa-tags"></i> Palabras Clave
                         </button>
                     </li>
                     <li>
@@ -204,7 +234,10 @@
                         </div>
                     </div>
 
-                    <div class="perfil__form-actions">
+                    <div class="perfil__form-actions" style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; align-items: center;">
+                        <button type="button" class="btn btn-outline perfil__unlink-button" id="btn-desvincular-empresa" style="display: none;">
+                            <i class="fa-solid fa-link-slash"></i> Desvincular de la Empresa
+                        </button>
                         <button type="submit" class="btn btn-primary" id="btn-guardar-empresa">
                             <i class="fa-solid fa-floppy-disk"></i> Guardar Empresa
                         </button>
@@ -246,6 +279,41 @@
                 </div>
             </div>
 
+            <!-- Modal de Confirmación Desvincular Empresa -->
+            <div id="modal-desvincular-empresa" class="modal-2fa-overlay perfil__company-dialog-overlay">
+                <div class="modal-2fa-card perfil__dialog-card">
+                    <div class="perfil__dialog-indicator perfil__dialog-indicator--danger">
+                        <i class="fa-solid fa-building-circle-xmark"></i>
+                    </div>
+
+                    <h3 class="modal-2fa-title perfil__dialog-title">Desvinculación Corporativa</h3>
+                    
+                    <p class="modal-2fa-desc perfil__dialog-description">
+                        ¿Está seguro de que desea desvincular su cuenta de la entidad corporativa asociada?
+                    </p>
+
+                    <div class="perfil__company-summary">
+                        <div><strong>• Empresa:</strong> <span id="modal-desvincular-nombre">--</span></div>
+                        <div><strong>• RUT Corporativo:</strong> <span id="modal-desvincular-rut">--</span></div>
+                        <div><strong>• Rol Registrado:</strong> <span id="modal-desvincular-rol">--</span></div>
+                    </div>
+
+                    <p class="perfil__dialog-note" style="color: #64748b; line-height: 1.5; text-align: left;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #dd6b20;"></i>
+                        <strong>Alcance de la acción:</strong> Su perfil personal dejará de tener acceso a los antecedentes tributarios y al historial compartido de esta entidad. Para operar nuevamente con una empresa, deberá vincularse mediante su RUT corporativo o registrar una nueva organización.
+                    </p>
+
+                    <div class="perfil__company-dialog-actions">
+                        <button type="button" id="btn-cancelar-modal-desvincular" class="btn btn-outline perfil__company-review-button">
+                            Mantener Vinculación
+                        </button>
+                        <button type="button" id="btn-confirmar-modal-desvincular" class="btn perfil__btn-danger">
+                            <i class="fa-solid fa-link-slash"></i> Confirmar Desvinculación
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- 3. Filtros de Licitación -->
             <div id="tab-filtros" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
@@ -270,7 +338,7 @@
                                 </button>
                             </div>
                             
-                            <div id="chips-comunas" class="perfil__selection-chips">
+                            <div id="chips-comunas" class="perfil__selection-chips" style="max-height: 120px; overflow-y: auto; overflow-x: hidden;">
                                 <span class="perfil__selection-placeholder">Sin comunas seleccionadas (Aplica cobertura nacional)</span>
                             </div>
                             <input type="hidden" id="pref-comunas" name="pref_comunas">
@@ -287,7 +355,7 @@
                                 </button>
                             </div>
 
-                            <div id="chips-productos" class="perfil__selection-chips perfil__product-chips">
+                            <div id="chips-productos" class="perfil__selection-chips perfil__product-chips" style="max-height: 120px; overflow-y: auto; overflow-x: hidden;">
                                 <span class="perfil__selection-placeholder">Sin filtros de productos (Aplica a todos los rubros)</span>
                             </div>
                             <input type="hidden" id="pref-productos" name="pref_productos">
@@ -347,21 +415,6 @@
                                         </div>
                                     </label>
                                 </div>
-
-                                <!-- Sugeridor de Palabras Clave -->
-                                <div class="form-item grid-full perfil__keyword-field">
-                                    <div class="perfil__keyword-header">
-                                        <label for="pref-palabras" class="perfil__keyword-label">Palabras Clave (Separadas por coma)</label>
-                                        <small class="perfil__keyword-hint">(Se guardan en minúsculas y sin signos)</small>
-                                    </div>
-                                    <input type="text" id="pref-palabras" class="form-input" placeholder="Ej: Mantención, Cloud, Seguridad">
-
-                                    <div id="palabras-sugerencia-box" class="perfil__suggestion">
-                                        <i class="fa-solid fa-wand-magic-sparkles perfil__suggestion-icon"></i>
-                                        ¿Quisiste decir <strong id="palabra-sugerida-texto" class="perfil__suggestion-text"></strong>?
-                                        <span class="perfil__suggestion-hint">(Haz clic para corregir)</span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -376,7 +429,7 @@
                                 </button>
                             </div>
 
-                            <div id="chips-ucom" class="perfil__selection-chips">
+                            <div id="chips-ucom" class="perfil__selection-chips" style="max-height: 120px; overflow-y: auto; overflow-x: hidden;">
                                 <span class="perfil__selection-placeholder">Sin entidades específicas (Monitorea todo el Estado)</span>
                             </div>
                             <input type="hidden" id="pref-ucom" name="pref_ucom">
@@ -387,6 +440,74 @@
                     <div class="perfil__form-footer">
                         <button type="submit" class="btn btn-primary perfil__submit-button">
                             <i class="fa-solid fa-floppy-disk"></i> Guardar Filtros de Licitación
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 4. Palabras Clave -->
+            <div id="tab-palabras" class="dashboard-card tab-content-panel">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-tags perfil__section-icon"></i>
+                        Palabras Clave de Búsqueda
+                    </div>
+                    <span class="dash-badge">Monitoreo Específico</span>
+                </div>
+
+                <form id="form-perfil-palabras">
+                    <div class="perfil__preference-sections">
+                        <div class="stat-mini-card" style="border-left: 4px solid var(--accent-green); padding: 1.4rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <div class="perfil__preference-header" style="margin-bottom: 0.8rem;">
+                                <div class="perfil__preference-title" style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-key" style="color: var(--accent-green);"></i> Términos y Criterios de Adquisición
+                                </div>
+                            </div>
+
+                            <p style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 1.2rem; line-height: 1.5;">
+                                Define palabras clave o frases exactas para identificar oportunidades relevantes en licitaciones del Estado. Se evalúan contra los títulos, rubros y descripciones de las adquisiciones publicadas.
+                            </p>
+
+                            <div class="form-item grid-full perfil__keyword-field">
+                                <div class="perfil__keyword-header">
+                                    <label for="pref-palabras" class="perfil__keyword-label">Palabras Clave (Separadas por coma)</label>
+                                    <small class="perfil__keyword-hint">(Se guardan en minúsculas y sin acentos)</small>
+                                </div>
+                                <input type="text" id="pref-palabras" name="pref_palabras" class="form-input" placeholder="Ej: Mantención, Cloud, Seguridad, Insumos médicos, Climatización" autocomplete="off">
+
+                                <div id="palabras-sugerencia-box" class="perfil__suggestion" style="display: none; cursor: pointer;">
+                                    <i class="fa-solid fa-wand-magic-sparkles perfil__suggestion-icon"></i>
+                                    <span>¿Quisiste decir <strong id="palabra-sugerida-texto" class="perfil__suggestion-text"></strong>?</span>
+                                    <span class="perfil__suggestion-hint">(Haz clic para corregir)</span>
+                                </div>
+                            </div>
+
+                            <!-- Chips de previsualización dinámica -->
+                            <div style="margin-top: 1.2rem;">
+                                <label style="font-size: 0.86rem; font-weight: 700; color: var(--dark-green); margin-bottom: 0.4rem; display: block;">
+                                    <i class="fa-solid fa-tags" style="color: var(--muted-teal); font-size: 0.82rem; margin-right: 4px;"></i> Palabras configuradas actualmente:
+                                </label>
+                                <div id="chips-palabras" class="perfil__selection-chips" style="max-height: 120px; overflow-y: auto; overflow-x: hidden;">
+                                    <span class="perfil__selection-placeholder">Sin palabras clave configuradas</span>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 1.2rem; padding: 0.85rem 1rem; background: var(--light-bg); border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.84rem; color: var(--gray-text);">
+                                <strong style="color: var(--dark-green); display: block; margin-bottom: 4px;">
+                                    <i class="fa-solid fa-circle-info" style="color: var(--muted-teal);"></i> Consejos para optimizar tu búsqueda:
+                                </strong>
+                                <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.5;">
+                                    <li>Escribe términos representativos de tus servicios o productos (ej: <em>auditoría, catering, servidores</em>).</li>
+                                    <li>Haz clic en la <strong>&times;</strong> de cualquier etiqueta para eliminarla rápidamente.</li>
+                                    <li>El asistente ortográfico te sugerirá correcciones basadas en el catálogo oficial de Mercado Público.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="perfil__form-footer">
+                        <button type="submit" class="btn btn-primary perfil__submit-button">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Palabras Clave
                         </button>
                     </div>
                 </form>
@@ -461,6 +582,31 @@
                         </label>
                         <div class="token-display-box perfil__token-box">
                             <span id="profile-token-id" class="perfil__token-value">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5.1 Acceso Exclusivo a Administración General (Solo Administradores) -->
+                <div id="perfil-admin-section" class="perfil__admin-section" style="display: none;">
+                    <div class="perfil__admin-card">
+                        <div class="perfil__admin-content">
+                            <div class="perfil__admin-icon">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div class="perfil__admin-text">
+                                <div class="perfil__admin-tag">
+                                    <i class="fa-solid fa-crown"></i> Privilegios de Administrador
+                                </div>
+                                <h4 class="perfil__admin-title">Administración General</h4>
+                                <p class="perfil__admin-desc">
+                                    Gestión centralizada de usuarios, políticas de seguridad de contraseñas, alertas de perfil e información institucional.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="perfil__admin-actions">
+                            <a href="{% url 'administracion_general' %}" class="btn btn-primary perfil__admin-btn">
+                                <i class="fa-solid fa-gear"></i> Ir a Administración General
+                            </a>
                         </div>
                     </div>
                 </div>
