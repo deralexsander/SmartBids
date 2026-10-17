@@ -1,553 +1,1000 @@
 {% extends 'smartbids/base.html' %}
+
 {% load static l10n %}
 
 {% block nombrePag %}
+
 <title>Dashboard Analítico</title>
+
 <!-- Librería Chart.js para renderizar los gráficos interactivos -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 {% endblock %}
 
 {% block contenido %}
+
 <section class="value-prop" style="padding-top: 130px; padding-bottom: 60px; min-height: 100vh; background-color: var(--light-bg); width: 100%; box-sizing: border-box;">
+
     <div style="width: 100%; padding: 0 3%; box-sizing: border-box;">
 
         <!-- ============================================================ -->
+
         <!-- ENCABEZADO PRINCIPAL Y FILTROS GLOBALES                       -->
+
         <!-- ============================================================ -->
+
         <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
+
             <div>
+
                 <h1 style="font-size: 2.3rem; color: var(--dark-green); font-weight: 800; letter-spacing: -0.5px; margin: 0.4rem 0 0.2rem;">
+
                     Dashboard <span>Analítico</span>
+
                 </h1>
+
             </div>
 
             <!-- Selector de Rango de Fecha y Acciones -->
+
             <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center;">
+
                 <div class="form-inline" style="margin: 0;">
+
                     <span style="color: var(--dark-green); font-weight: 700;">Período: todos los datos cargados</span>
+
                 </div>
+
                 <button type="button" class="btn btn-outline" disabled title="Exportación pendiente de integrar" style="padding: 0.6rem 1.2rem; opacity: 0.6; cursor: not-allowed;">
+
                     <i class="fa-solid fa-download"></i> Exportar Informe
+
                 </button>
+
             </div>
+
         </div>
 
         <!-- ============================================================ -->
+
         <!-- BARRA DE KPIs (compacta, horizontal, con scroll en móvil)     -->
+
         <!-- ============================================================ -->
+
         <div class="dashboard-card" style="padding: 1.2rem 1.8rem; margin-bottom: 2rem; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+
             <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-width: 820px; width: 100%; gap: 1.5rem;">
 
                 <!-- KPI 1: Monto Total -->
+
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(30, 196, 152, 0.12); color: var(--accent-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(30, 196, 152, 0.25);">
+
                         <i class="fa-solid fa-coins"></i>
+
                     </div>
 
                     <div>
+
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+
                             Monto total de OCs (CLP)
+
                         </span>
 
                         <div style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
-                            {{ monto_total_ordenes }}
-                        </div>
-                    </div>
-                </div>
 
+                            {{ monto_total_ordenes }}
+
+                        </div>
+
+                    </div>
+
+                </div>
 
                 <!-- KPI 2: Órdenes de Compra -->
+
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(17, 99, 78, 0.12); color: var(--dark-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(17, 99, 78, 0.25);">
+
                         <i class="fa-solid fa-file-invoice-dollar"></i>
+
                     </div>
 
                     <div>
+
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+
                             Órdenes de Compra
+
                         </span>
 
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+
                             <span style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
+
                                 {{ total_ordenes }}
+
                             </span>
 
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">
-                                Registradas
-                            </span>
-                        </div>
-                    </div>
-                </div>
 
+                                Registradas
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
                 <!-- KPI 3: Proveedores con OCs -->
+
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
+
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(59, 130, 246, 0.12); color: #3b82f6; flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(59, 130, 246, 0.25);">
+
                         <i class="fa-solid fa-users-viewfinder"></i>
+
                     </div>
 
                     <div>
+
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+
                             Proveedores con OCs
+
                         </span>
 
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+
                             <span style="font-size: 1.7rem; font-weight: 800; color: #3b82f6; line-height: 1.1;">
+
                                 {{ proveedores_activos }}
+
                             </span>
 
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">
+
                                 Empresas
+
                             </span>
+
                         </div>
+
                     </div>
+
                 </div>
 
-
                 <!-- KPI 4: Compradores con OCs -->
+
                 <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1;">
+
                     <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(92, 150, 136, 0.15); color: var(--muted-teal); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(92, 150, 136, 0.25);">
+
                         <i class="fa-solid fa-building"></i>
+
                     </div>
 
                     <div>
+
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+
                             Compradores con OCs
+
                         </span>
 
                         <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
+
                             <span style="font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1.1;">
+
                                 {{ compradores_activos }}
+
                             </span>
 
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">
+
                                 Organismos
+
                             </span>
+
                         </div>
+
                     </div>
+
                 </div>
 
             </div>
+
         </div>        
 
         <!-- ============================================================ -->
+
         <!-- PESTAÑAS DE NAVEGACIÓN DEL DASHBOARD                          -->
+
         <!-- ============================================================ -->
+
         <div style="display: flex; gap: 0.8rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.8rem; flex-wrap: wrap;">
+
             <button type="button" class="tab-dash-btn active" onclick="cambiarTabAnalitico('tab-productos', this)">
+
                 <i class="fa-solid fa-box-archive"></i> Demanda de Productos
+
             </button>
+
             <button type="button" class="tab-dash-btn" onclick="cambiarTabAnalitico('tab-competencia', this)">
+
                 <i class="fa-solid fa-chart-pie"></i> Análisis de Competencia
+
             </button>
+
             <button type="button" class="tab-dash-btn" onclick="cambiarTabAnalitico('tab-compradores', this)">
+
                 <i class="fa-solid fa-building-columns"></i> Organismos Compradores
+
             </button>
+
         </div>
 
         <!-- ============================================================ -->
+
         <!-- VISTA A: DASHBOARD DE PRODUCTOS                               -->
+
         <!-- (agregar aquí los nuevos gráficos/tarjetas de esta pestaña)   -->
+
         <!-- ============================================================ -->
+
         <div id="tab-productos" class="dashboard-view active">
+
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
 
                 <!-- Gráfico de Demanda Temporal -->
+
                 <div class="dashboard-card" style="padding: 1.5rem;">
+
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
+
                         <div class="dash-title" style="font-size: 1.1rem;">
+
                             <i class="fa-solid fa-chart-column" style="color: var(--accent-green);"></i>
+
                             Grupos con mayor monto neto de compra
+
                         </div>
+
                         <span class="dash-badge">CLP · Top 10</span>
+
                     </div>
+
                     <div style="position: relative; height: 400px; width: 100%;">
+
                         <canvas id="graficoProductos"></canvas>
+
                     </div>
+
                 </div>
 
                 <!-- Top Productos Más Solicitados -->
+
                 <div class="dashboard-card" style="padding: 1.5rem;">
+
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
+
                         <div class="dash-title" style="font-size: 1.1rem;">
+
                             <i class="fa-solid fa-fire" style="color: #ef4444;"></i>
+
                             Grupos destacados por monto neto
+
                         </div>
+
                     </div>
+
                     <div style="display: flex; flex-direction: column; gap: 0.9rem;">
+
                         {% for producto in productos_mas_comprados|slice:":3" %}
+
                         <div class="stat-mini-card" style="margin: 0; padding: 0.8rem 1rem;">
+
                             <div style="font-weight: 700; overflow-wrap: anywhere; color: var(--dark-green);">{{ producto.producto_key__producto_nombre }}</div>
+
                             <p style="margin: 0.5rem 0; font-weight: 800;">$<span class="monto-producto" data-monto="{{ producto.monto_neto|unlocalize }}">{{ producto.monto_neto }}</span> CLP</p>
+
                             <small>{{ producto.cantidad_items }} ítems analizados</small>
+
                         </div>
+
                         {% empty %}<p>No hay productos para mostrar.</p>{% endfor %}
+
                     </div>
+
                 </div>
+
                 <!-- próximos gráficos de "Productos" van dentro de este mismo grid o en una fila nueva -->
 
             </div>
+
         <div id="panel-desglose" class="dashboard-card" hidden style="padding: 1.5rem; margin-bottom: 1.5rem;">
+
             <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap;">
+
                 <div>
+
                     <h2 id="titulo-desglose" style="font-size:1.1rem;color:var(--dark-green);">Desglose</h2>
+
                     <p id="ruta-desglose"></p>
+
                 </div>
+
                 <button id="volver-desglose" type="button" class="btn btn-outline" hidden>Volver a nivel 1</button>
+
             </div>
+
             <p id="estado-desglose" role="status" aria-live="polite">Selecciona una barra para explorar.</p>
+
             <div style="position:relative;height:420px;"><canvas id="graficoDesglose"></canvas></div>
+
         </div>
 
         </div>
 
         <!-- ============================================================ -->
+
         <!-- VISTA B: DASHBOARD DE COMPETENCIA (E03-H02)                   -->
+
         <!-- (agregar aquí los nuevos gráficos/tarjetas de esta pestaña)   -->
+
         <!-- ============================================================ -->
-        <div id="tab-competencia" class="dashboard-view" style="display: none;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
 
-                <!-- Gráfico 1: Participación y Adjudicación -->
-                <div class="dashboard-card" style="padding: 1.5rem;">
-                    <div class="dashboard-header" style="margin-bottom: 1rem;">
-                        <div class="dash-title" style="font-size: 1.1rem;">
-                            <i class="fa-solid fa-pie-chart" style="color: var(--accent-green);"></i>
-                            Distribución de OCs entre los cinco principales proveedores
-                        </div>
-                    </div>
-                    <div style="position: relative; height: 280px; width: 100%;">
-                        <canvas id="graficoCompetencia"></canvas>
-                    </div>
+        <div id="tab-competencia" class="dashboard-view" style="display:none;">
+            <div class="dashboard-card" style="padding:1.5rem;margin-bottom:1.5rem;">
+                <div class="dashboard-header"><div class="dash-title">Explorador de competencia en compras públicas</div></div>
+                <p style="color:var(--gray-text);">Filtra el mercado y compara proveedores por monto bruto comprado. La región corresponde al organismo comprador.</p>
+                <div class="competencia-filtros">
+                    <label>Grupo de producto<select id="comp-grupo"><option value="">Todos los grupos</option></select></label>
+                    <label>Región compradora<select id="comp-region"><option value="">Todas las regiones</option></select></label>
+                    <label>Organismo comprador<select id="comp-organismo"><option value="">Todos los organismos</option></select></label>
+                    <label>Ranking por<select id="comp-por">
+                        <option value="proveedor">Proveedores</option><option value="producto">Productos</option>
+                        <option value="organismo">Organismos compradores</option>
+                    </select></label>
+                    <label>Buscar producto (código o descripción)
+                        <input id="comp-busqueda" type="search" placeholder="Buscar dentro del grupo seleccionado" autocomplete="off">
+                    </label>
+                    <label>Producto específico<select id="comp-producto"><option value="">Selecciona un grupo o busca un producto</option></select></label>
                 </div>
-
-                <!-- Tabla de Principales Competidores -->
-                <div class="dashboard-card" style="padding: 1.5rem; overflow-x: auto;">
-                    <div class="dashboard-header" style="margin-bottom: 1rem;">
-                        <div class="dash-title" style="font-size: 1.1rem;">
-                            <i class="fa-solid fa-users" style="color: var(--accent-green);"></i>
-                            Principales Competidores
-                        </div>
-                    </div>
-
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--border-color); color: var(--dark-green); font-weight: 800;">
-                                <th style="padding: 0.6rem 0.4rem;">Competidor</th>
-                                <th style="padding: 0.6rem 0.4rem;">Órdenes de Compra</th>
-                                <th style="padding: 0.6rem 0.4rem;">% del total de OCs</th>
-                                <th style="padding: 0.6rem 0.4rem;">Monto Total</th>
-                            </tr>
-                        </thead>
-
-                        <tbody style="color: var(--gray-text);">
-
-                            {% for competidor in competidores %}
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-
-                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--dark-green);">
-                                    <span data-proveedor="{{ competidor.nombre }}">{{ competidor.nombre }}</span>
-                                </td>
-
-                                <td style="padding: 0.8rem 0.4rem;">
-                                    {{ competidor.adjudicaciones }}
-                                </td>
-
-                                <td style="padding: 0.8rem 0.4rem; font-weight: 700; color: var(--accent-green);">
-                                    {{ competidor.participacion }}%
-                                </td>
-
-                                <td style="padding: 0.8rem 0.4rem;">
-                                    {{ competidor.monto_adjudicado}}
-                                </td>
-
-                            </tr>
-
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" style="padding: 1rem; text-align: center;">
-                                    No hay datos disponibles.
-                                </td>
-                            </tr>
-                            {% endfor %}
-
-                        </tbody>
-                    </table>
+                <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:1rem;">
+                    <button id="comp-aplicar" class="btn btn-primary" type="button">Aplicar filtros</button>
+                    <button id="comp-limpiar" class="btn btn-outline" type="button">Limpiar filtros</button>
                 </div>
-
-                <!-- Gráfico 2: Evolución de Órdenes de Compra por Competidor -->
-                <div class="dashboard-card" style="padding: 1.5rem; grid-column: 1 / -1; min-width: 0;">
-                    <div class="dashboard-header" style="margin-bottom: 1rem;">
-                        <div class="dash-title" style="font-size: 1.1rem;">
-                            <i class="fa-solid fa-chart-line" style="color: var(--accent-green);"></i>
-                            Evolución de Órdenes de Compra por Competidor
-                        </div>
-                    </div>
-                    <div style="position: relative; height: 350px;">
-                        <canvas id="evolucionCompetidoresChart"></canvas>
-                    </div>
+                <p id="comp-estado" role="status" aria-live="polite" style="margin:0.8rem 0 0;"></p>
+            </div>
+            <div class="dashboard-card" style="padding:1.5rem;margin-bottom:1.5rem;">
+                <p style="color:var(--gray-text);margin:0;">Monto comprado en el segmento seleccionado</p>
+                <strong id="comp-total" style="font-size:1.5rem;color:var(--dark-green);">—</strong>
+                <p style="font-size:.82rem;color:var(--gray-text);margin-bottom:0;">La participación se calcula respecto del segmento filtrado, no del total global.</p>
+            </div>
+            <div class="comp-graficos" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+                <div class="dashboard-card" style="padding:1.5rem;">
+                    <div class="dash-title" id="comp-titulo-ranking">Top 10 proveedores por monto</div>
+                    <div style="height:380px;position:relative;"><canvas id="comp-ranking"></canvas></div>
                 </div>
-                <!-- próximos gráficos de "Competencia" van dentro de este mismo grid o en una fila nueva -->
-
+                <div class="dashboard-card" style="padding:1.5rem;">
+                    <div class="dash-title">Participación de los 5 primeros y resto</div>
+                    <div style="height:380px;position:relative;"><canvas id="comp-participacion"></canvas></div>
+                </div>
+            </div>
+            <div class="dashboard-card" style="padding:1.5rem;overflow-x:auto;margin-bottom:1.5rem;">
+                <div class="dash-title">Ranking del segmento</div>
+                <table class="comp-tabla">
+                    <thead><tr><th id="comp-col-nombre">Proveedor</th><th id="comp-col-organismos">Organismos compradores</th><th>Participación del segmento</th><th>Monto bruto CLP</th></tr></thead>
+                    <tbody id="comp-filas"><tr><td colspan="4">Cargando…</td></tr></tbody>
+                </table>
+            </div>
+            <div class="dashboard-card" style="padding:1.5rem;margin-bottom:1.5rem;" id="comp-panel-evolucion">
+                <div class="dash-title">Evolución mensual de los cinco principales proveedores</div>
+                <div style="height:360px;position:relative;"><canvas id="comp-evolucion"></canvas></div>
             </div>
         </div>
 
         <!-- ============================================================ -->
+
         <!-- VISTA C: DASHBOARD DE COMPRADORES                             -->
+
         <!-- (agregar aquí los nuevos gráficos/tarjetas de esta pestaña)   -->
+
         <!-- ============================================================ -->
+
         <div id="tab-compradores" class="dashboard-view" style="display: none;">
+
             <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
 
                 <!-- Gráfico de Organismos Compradores -->
+
                 <div class="dashboard-card" style="padding: 1.5rem;">
+
                     <div class="dashboard-header" style="margin-bottom: 1rem;">
+
                         <div class="dash-title" style="font-size: 1.1rem;">
+
                             <i class="fa-solid fa-landmark" style="color: var(--accent-green);"></i>
-                            Organismos con más órdenes de compra
+
+                            Organismos con mayor monto de compras
+
                         </div>
+
                     </div>
+
                     <div style="position: relative; height: 320px; width: 100%;">
+
                         <canvas id="graficoCompradores"></canvas>
+
                     </div>
+
                 </div>
+
                 <!-- próximos gráficos de "Compradores" van dentro de este mismo grid o en una fila nueva -->
 
             </div>
+
         </div>
 
     </div>
+
 </section>
 
 <!-- ============================================================ -->
+
 <!-- ESTILOS ESPECÍFICOS DE LAS PESTAÑAS                           -->
+
 <!-- ============================================================ -->
+
 <style>
+
     .dashboard-card { min-width: 0; }
+
+    .competencia-filtros { display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:1rem;margin-top:1rem; }
+    .competencia-filtros label { display:flex;flex-direction:column;gap:0.4rem;font-weight:650;color:var(--dark-green);font-size:0.87rem; }
+    .competencia-filtros input,.competencia-filtros select { width:100%;min-width:0;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:white; }
+    @media (max-width: 900px) { .comp-graficos { grid-template-columns: 1fr !important; } }
+    .comp-tabla {width:100%;border-collapse:collapse;text-align:left;font-size:0.9rem;margin-top:1rem;}
+    .comp-tabla th,.comp-tabla td {padding:0.75rem 0.5rem;border-bottom:1px solid var(--border-color);}
+    .comp-tabla th {color:var(--dark-green);}
+
+
     .dashboard-card td { overflow-wrap: anywhere; }
+
     .tab-dash-btn {
+
         padding: 0.65rem 1.2rem;
+
         background: transparent;
+
         border: none;
+
         border-radius: 8px;
+
         font-weight: 700;
+
         font-size: 0.95rem;
+
         color: var(--gray-text);
+
         cursor: pointer;
+
         display: inline-flex;
+
         align-items: center;
+
         gap: 8px;
+
         transition: all 0.25s ease;
+
     }
+
     .tab-dash-btn:hover {
+
         background: rgba(30, 196, 152, 0.08);
+
         color: var(--dark-green);
+
     }
+
     .tab-dash-btn.active {
+
         background: var(--dark-green);
+
         color: var(--white);
+
     }
+
     @media (max-width: 900px) {
+
         div[style*="grid-template-columns: 2fr 1fr"],
+
         div[style*="grid-template-columns: 1fr 1fr"] {
+
             grid-template-columns: 1fr !important;
+
         }
+
     }
+
 </style>
 
 <!-- ============================================================ -->
+
 <!-- LÓGICA DE PESTAÑAS Y GRÁFICOS                                 -->
+
 <!-- Organizado en una función de inicialización por pestaña, así -->
+
 <!-- cada nuevo gráfico se agrega dentro de la función que le      -->
+
 <!-- corresponde (initGraficosProductos / Competencia / Compradores) -->
+
 <!-- ============================================================ -->
+
 {{ productos_mas_comprados|json_script:"datos-productos" }}
+
 {{ proveedores_competencia|json_script:"datos-proveedores" }}
+
 {{ evolucion_competidores|json_script:"datos-evolucion" }}
+
 {{ organismos_compradores|json_script:"datos-compradores" }}
+
 <script>
+
     const datosDashboard = id => JSON.parse(document.getElementById(id).textContent);
+
     const productos = datosDashboard('datos-productos');
+
     const proveedores = datosDashboard('datos-proveedores');
+
     const evolucion = datosDashboard('datos-evolucion');
+
     const compradores = datosDashboard('datos-compradores');
+
     const colores = ['#11634e', '#1ec498', '#5c9688', '#b1d2ca', '#7bb8aa'];
+
     const numeros = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
+
     const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+
     const graficos = {};
+
     // La identidad se mantiene completa en los datos; solo se limpia la etiqueta visible.
+
     const nombreVisible = nombre => String(nombre || 'Sin nombre').replace(/ \[\d+\]$/, '');
+
     const abreviar = (nombre, largo = 45) => nombre.length > largo ? nombre.slice(0, largo - 1) + '…' : nombre;
 
-    function crearBarras(id, filas, campoNombre, campoValor, monetario) {
+    function crearBarras(id, filas, campoNombre, campoValor, monetario, etiqueta = null) {
+
         const nombres = filas.map(f => String(f[campoNombre] || 'Sin nombre'));
+
         graficos[id] = new Chart(document.getElementById(id), {
+
             type: 'bar',
+
             data: {
+
                 labels: nombres.map(n => abreviar(n)),
+
                 datasets: [{
-                    label: monetario ? 'Monto neto (CLP)' : 'Cantidad de órdenes de compra',
+
+                    label: etiqueta || (monetario ? 'Monto neto (CLP)' : 'Cantidad de ítems'),
+
                     data: filas.map(f => Number(f[campoValor] || 0)),
+
                     backgroundColor: '#1ec498', borderRadius: 5
+
                 }]
+
             },
+
             options: {
+
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+
                 onClick: id === 'graficoProductos' ? (_event, elementos) => {
+
                     if (elementos.length) abrirGrupo(filas[elementos[0].index]);
+
                 } : undefined,
+
                 plugins: {
+
                     legend: { display: false },
+
                     tooltip: { callbacks: {
+
                         title: items => nombres[items[0].dataIndex],
-                        label: item => monetario ? pesos.format(item.parsed.x) : numeros.format(item.parsed.x) + ' OCs'
+
+                        label: item => monetario ? pesos.format(item.parsed.x) : numeros.format(item.parsed.x) + ' ítems'
+
                     } }
+
                 },
+
                 scales: { x: { beginAtZero: true, ticks: {
+
                     precision: monetario ? undefined : 0,
+
                     callback: value => monetario ? '$' + numeros.format(value) : numeros.format(value)
+
                 } } }
+
             }
+
         });
+
     }
 
     function iniciarTab(tabId) {
+
         if (typeof Chart === 'undefined') {
+
             document.querySelectorAll('canvas').forEach(canvas => {
+
                 const aviso = document.createElement('p');
+
                 aviso.textContent = 'No se pudo cargar Chart.js. Revisa la conexión o el bloqueo del CDN.';
+
                 canvas.replaceWith(aviso);
+
             });
+
             return;
+
         }
+
         if (tabId === 'tab-productos' && !graficos.graficoProductos) {
+
             crearBarras('graficoProductos', productos, 'producto_key__producto_nombre', 'monto_neto', true);
+
         }
+
         if (tabId === 'tab-compradores' && !graficos.graficoCompradores) {
-            crearBarras('graficoCompradores', compradores, 'comprador_key__comprador_organismo_nombre', 'cantidad_ordenes', false);
+
+            crearBarras('graficoCompradores', compradores, 'comprador_key__comprador_organismo_nombre', 'monto_compras', true, 'Monto de compras (CLP)');
+
         }
-        if (tabId === 'tab-competencia' && !graficos.graficoCompetencia) {
-            const claves = proveedores.map(p => p.proveedor_key__proveedor_nombre);
-            graficos.graficoCompetencia = new Chart(document.getElementById('graficoCompetencia'), {
-                type: 'doughnut',
-                data: {
-                    labels: claves.map(nombreVisible),
-                    datasets: [{ data: proveedores.map(p => Number(p.cantidad_ordenes)), backgroundColor: colores }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: {
-                        label: item => item.label + ': ' + numeros.format(item.parsed) + ' OCs'
-                    } } }
-                }
-            });
-            graficos.evolucionCompetidoresChart = new Chart(document.getElementById('evolucionCompetidoresChart'), {
-                type: 'line',
-                data: {
-                    labels: evolucion.map(f => f.periodo),
-                    datasets: claves.map((clave, i) => ({
-                        label: nombreVisible(clave),
-                        data: evolucion.map(f => Number(f[clave] || 0)),
-                        borderColor: colores[i], backgroundColor: colores[i],
-                        tension: 0.3, fill: false, pointRadius: 3
-                    }))
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } },
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Órdenes de compra' } } }
-                }
-            });
-        }
+
+        if (tabId === 'tab-competencia') iniciarCompetencia();
+
     }
 
 
+    // Endpoint nuevo: registrar en urls.py como dashboard/competencia/.
+    const urlCompetencia = "{% url 'dashboard_competencia' %}";
+    let competenciaLista = false;
+    let compAbort = null;
+    let compBusquedaAbort = null;
+    const compEl = id => document.getElementById(id);
+
+    function compQuery(extra = {}) {
+        const args = new URLSearchParams({
+            grupo: compEl('comp-grupo').value,
+            region: compEl('comp-region').value,
+            organismo: compEl('comp-organismo').value,
+            producto: compEl('comp-producto').value,
+            por: compEl('comp-por').value,
+            ...extra
+        });
+        return args;
+    }
+    function compOpcion(select, value, label) {
+        const option = document.createElement('option');
+        option.value = String(value);
+        option.textContent = label;
+        select.appendChild(option);
+    }
+    async function compOpciones() {
+        const response = await fetch(urlCompetencia + '?tipo=opciones');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        for (const g of data.grupos) compOpcion(compEl('comp-grupo'), g, g);
+        for (const r of data.regiones) compOpcion(compEl('comp-region'), r, r);
+        for (const o of data.organismos) compOpcion(compEl('comp-organismo'), o.id, o.nombre + ' [' + o.id + ']');
+    }
+    async function compBuscarProductos() {
+        const q = compEl('comp-busqueda').value.trim();
+        const grupo = compEl('comp-grupo').value;
+        const sel = compEl('comp-producto');
+        if (compBusquedaAbort) compBusquedaAbort.abort();
+        const controller = new AbortController();
+        compBusquedaAbort = controller;
+        const anterior = sel.value;
+        sel.replaceChildren();
+        compOpcion(sel, '', grupo ? 'Todos los productos del grupo' : 'Todos los productos');
+        if (!grupo && q.length < 2) {
+            compOpcion(sel, '', 'Selecciona un grupo o escribe al menos 2 caracteres');
+            return;
+        }
+        sel.disabled = true;
+        try {
+            const params = compQuery({tipo: 'productos', q});
+            const response = await fetch(urlCompetencia + '?' + params, {signal: controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            if (controller !== compBusquedaAbort) return;
+            for (const p of data.productos) {
+                compOpcion(sel, p.codigo, p.codigo + ' · ' + p.descripcion);
+            }
+            if (data.productos.some(p => String(p.codigo) === anterior)) sel.value = anterior;
+            if (data.hay_mas) {
+                compEl('comp-estado').textContent = 'Se muestran los primeros 500 productos. Escribe en el buscador para acotar el listado.';
+            } else if (!data.productos.length) {
+                compEl('comp-estado').textContent = 'No hay productos que coincidan con estos filtros.';
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                compEl('comp-estado').textContent = 'Error al buscar productos: ' + error.message;
+            }
+        } finally {
+            if (controller === compBusquedaAbort) sel.disabled = false;
+        }
+    }
+    function compGrafico(id, tipo, labels, datasets, extra = {}) {
+        if (graficos[id]) graficos[id].destroy();
+        graficos[id] = new Chart(compEl(id), {
+            type: tipo, data: {labels, datasets},
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: tipo === 'bar' ? 'y' : 'x',
+                plugins: {legend: {display: tipo !== 'bar',position:'bottom'},
+                    tooltip: {callbacks:{label: item => item.dataset.label + ': ' + pesos.format(tipo === 'bar' ? item.parsed.x : tipo === 'line' ? item.parsed.y : item.parsed)}}},
+                scales: tipo === 'doughnut' ? {} : {y: {beginAtZero: tipo === 'line'}, x: {beginAtZero: tipo === 'bar'}},
+                ...extra
+            }
+        });
+    }
+    async function compCargar() {
+        if (compAbort) compAbort.abort();
+        const controller = new AbortController();
+        compAbort = controller;
+        compEl('comp-estado').textContent = 'Consultando el Data Warehouse…';
+        try {
+            const response = await fetch(urlCompetencia + '?' + compQuery({tipo:'ranking'}), {signal:controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            if (controller !== compAbort) return;
+            const filas = data.ranking;
+            const etiquetas = {proveedor:'Proveedores',producto:'Productos',organismo:'Organismos compradores'};
+            compEl('comp-titulo-ranking').textContent = 'Top 10 ' + etiquetas[data.por].toLowerCase() + ' por monto';
+            compEl('comp-col-nombre').textContent = etiquetas[data.por].slice(0,-1);
+            compEl('comp-col-organismos').textContent = data.por === 'organismo' ? 'Proveedores participantes' : 'Organismos compradores';
+            compEl('comp-total').textContent = pesos.format(data.monto_segmento);
+            const body = compEl('comp-filas');
+            body.replaceChildren();
+            for (const r of filas) {
+                const tr = document.createElement('tr');
+                for (const valor of [r.nombre, numeros.format(data.por === 'organismo' ? r.proveedores : r.organismos), r.participacion.toLocaleString('es-CL') + '%', pesos.format(r.monto)]) {
+                    const td = document.createElement('td');td.textContent = valor;tr.appendChild(td);
+                }
+                body.appendChild(tr);
+            }
+            if (!filas.length) { const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=4;td.textContent='Sin compras para los filtros seleccionados.';tr.appendChild(td);body.appendChild(tr); }
+            const nombres = filas.map(r => r.nombre);
+            compGrafico('comp-ranking','bar', nombres.map(n => abreviar(n,32)),
+                [{label:'Monto bruto CLP',data:filas.map(r=>r.monto),backgroundColor:'#1ec498'}]);
+            const top5 = filas.slice(0,5);
+            const resto = Math.max(0,data.monto_segmento-top5.reduce((s,r)=>s+r.monto,0));
+            const pasteles = top5.map(r=>r.monto);
+            const nombresPastel = top5.map(r=>abreviar(r.nombre,30));
+            if (resto > 0) {pasteles.push(resto);nombresPastel.push('Otros');}
+            compGrafico('comp-participacion','doughnut',nombresPastel,
+                [{label:'Monto bruto CLP',data:pasteles,backgroundColor:[...colores,'#d3dadd']}]);
+            compEl('comp-panel-evolucion').hidden = data.por !== 'proveedor';
+            if (data.por === 'proveedor') {
+                const periodos = [...new Set(data.evolucion.map(r => r.periodo))].sort();
+                const series = top5.map((r,i)=>({
+                    label: r.nombre, data: periodos.map(periodo => {
+                        const f = data.evolucion.find(e => e.periodo===periodo && e.id===r.id);
+                        return f ? f.monto : 0;
+                    }), borderColor:colores[i],backgroundColor:colores[i],tension:0.25
+                }));
+                compGrafico('comp-evolucion','line',periodos,series);
+            }
+            compEl('comp-estado').textContent = 'Resultados: ' + filas.length + ' · Ranking por monto bruto en CLP';
+        } catch(error) {
+            if(error.name !== 'AbortError') {compEl('comp-estado').textContent='No fue posible cargar el ranking: '+error.message;console.error(error);}
+        }
+    }
+    async function iniciarCompetencia() {
+        if (competenciaLista) return;
+        competenciaLista = true;
+        try {
+            await compOpciones();
+            compEl('comp-aplicar').addEventListener('click', compCargar);
+            compEl('comp-limpiar').addEventListener('click', () => {
+                for(const id of ['comp-grupo','comp-region','comp-organismo','comp-producto']) compEl(id).value='';
+                compEl('comp-por').value='proveedor';
+                compEl('comp-busqueda').value='';
+                compBuscarProductos();
+                compCargar();
+            });
+            compEl('comp-busqueda').addEventListener('input', () => {
+                clearTimeout(window.__compDebounce);
+                window.__compDebounce=setTimeout(compBuscarProductos,300);
+            });
+            compEl('comp-grupo').addEventListener('change', () => {
+                compEl('comp-busqueda').value = '';
+                compEl('comp-producto').value = '';
+                compBuscarProductos();
+            });
+            await compCargar();
+        } catch(error) {compEl('comp-estado').textContent='No se pudieron cargar los filtros: '+error.message;console.error(error);}
+    }
+
     // URL relativa: funciona si la página termina en /dashboard/ o /dashboard.
-    const urlDesglose = window.location.pathname.replace(/\/?$/, '/') + 'desglose/';
+
+    const urlDesglose = "{% url 'dashboard_desglose' %}";
+
     let grupoActual = null;
+
     let grupoEtiqueta = '';
+
     let nivelActual = null;
+
     let peticionDesglose = null;
 
     function abrirGrupo(fila) {
+
         grupoActual = fila.grupo;
+
         grupoEtiqueta = fila.producto_key__producto_nombre;
+
         cargarDesglose('nivel1');
+
     }
 
     async function cargarDesglose(nivel, nivel1 = null, etiquetaNivel = '') {
+
         if (peticionDesglose) peticionDesglose.abort();
+
         const controller = new AbortController();
+
         peticionDesglose = controller;
+
         const panel = document.getElementById('panel-desglose');
+
         const estado = document.getElementById('estado-desglose');
+
         panel.hidden = false;
+
         estado.textContent = 'Cargando desglose…';
+
         document.getElementById('titulo-desglose').textContent = nivel === 'nivel1'
+
             ? 'Nivel 1 con mayor monto neto · Top 10' : 'Productos con mayor monto neto · Top 10';
+
         document.getElementById('ruta-desglose').textContent = 'Todos los grupos → ' + grupoEtiqueta
+
             + (nivel === 'producto' ? ' → ' + etiquetaNivel : '');
+
         document.getElementById('volver-desglose').hidden = nivel !== 'producto';
+
         if (graficos.graficoDesglose) {
+
             graficos.graficoDesglose.destroy();
+
             delete graficos.graficoDesglose;
+
         }
+
         const params = new URLSearchParams({nivel});
+
         if (grupoActual === null) params.set('grupo_nulo', '1');
+
         else params.set('grupo', grupoActual);
+
         if (nivel === 'producto') {
+
             if (nivel1 === null) params.set('nivel1_nulo', '1');
+
             else params.set('nivel1', nivel1);
+
         }
+
         try {
+
             const response = await fetch(urlDesglose + '?' + params, {
+
                 signal: controller.signal, headers: {'Accept': 'application/json'}
+
             });
+
             if (!response.ok) throw new Error('Error HTTP ' + response.status);
+
             const payload = await response.json();
+
             if (controller !== peticionDesglose) return;
+
             const filas = payload.filas;
+
             nivelActual = nivel;
+
             estado.textContent = !filas.length ? 'Sin datos para esta selección.'
+
                 : nivel === 'nivel1' ? 'Selecciona una barra para ver sus productos. Montos en CLP.'
+
                 : 'Monto neto por producto en CLP.';
+
             if (filas.length) {
+
                 crearBarras('graficoDesglose', filas, 'nombre', 'monto_neto', true);
+
                 if (nivel === 'nivel1') {
+
                     graficos.graficoDesglose.options.onClick = (_event, elementos) => {
+
                         if (elementos.length) {
+
                             const fila = filas[elementos[0].index];
+
                             cargarDesglose('producto', fila.valor, fila.nombre);
+
                         }
+
                     };
+
                     graficos.graficoDesglose.update();
+
                 }
+
             }
+
         } catch (error) {
+
             if (error.name !== 'AbortError' && controller === peticionDesglose) {
+
                 estado.textContent = 'No se pudo cargar el desglose. Revisa la ruta de Django y la terminal.';
+
                 console.error(error);
+
             }
+
         }
+
     }
 
     function cambiarTabAnalitico(tabId, btn) {
+
         document.querySelectorAll('.dashboard-view').forEach(v => v.style.display = 'none');
+
         document.querySelectorAll('.tab-dash-btn').forEach(b => b.classList.remove('active'));
+
         document.getElementById(tabId).style.display = 'block';
+
         btn.classList.add('active');
+
         requestAnimationFrame(() => {
+
             iniciarTab(tabId);
+
             Object.values(graficos).forEach(g => g.resize());
+
         });
+
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+
         document.getElementById('volver-desglose').addEventListener('click', () => cargarDesglose('nivel1'));
+
         document.querySelectorAll('.monto-producto').forEach(el => el.textContent = numeros.format(Number(el.dataset.monto || 0)));
+
         document.querySelectorAll('[data-proveedor]').forEach(el => el.textContent = nombreVisible(el.dataset.proveedor));
+
         iniciarTab('tab-productos');
+
     });
+
 </script>
+
 {% endblock %}

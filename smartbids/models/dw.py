@@ -95,18 +95,6 @@ class DimTipoOrdenCompra(models.Model):
 
 
 
-class FactOcCabecera(models.Model):
-    codigo_oc = models.TextField(primary_key=True)
-    fecha_key = models.ForeignKey(DimFecha, models.DO_NOTHING, db_column="fecha_key", related_name="cabeceras_oc")
-    proveedor_key = models.ForeignKey(DimProveedor, models.DO_NOTHING, db_column="proveedor_key", related_name="cabeceras_oc")
-    comprador_key = models.ForeignKey(DimComprador, models.DO_NOTHING, db_column="comprador_key", related_name="cabeceras_oc")
-    tipo_orden_compra_key = models.ForeignKey(DimTipoOrdenCompra, models.DO_NOTHING, db_column="tipo_orden_compra_key", related_name="cabeceras_oc")
-    monto_total_clp = models.DecimalField(max_digits=1000, decimal_places=60)
-
-    class Meta:
-        managed = False
-        db_table = '"dw"."fact_oc_cabecera"'
-
 
 
 class FactOrdenCompra(models.Model):
@@ -128,6 +116,8 @@ class FactOrdenCompra(models.Model):
     monto_item_origen = models.DecimalField(max_digits=1000, decimal_places=60, blank=True, null=True)
     monto_item_pesos = models.DecimalField(max_digits=1000, decimal_places=60, blank=True, null=True)
     monto_item_utm = models.DecimalField(max_digits=1000, decimal_places=60, blank=True, null=True)
+    total_oc_procesadas = models.BigIntegerField(null=True,blank=True)
+    monto_total_procesado_clp = models.DecimalField(max_digits=50,decimal_places=10,null=True,blank=True)
 
     class Meta:
         managed = False
