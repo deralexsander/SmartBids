@@ -17,15 +17,9 @@
         <!-- ============================================================ -->
         <div class="dash-progress-bar" id="dash-progress-bar"></div>
         <div class="dashboard__header">
-            <div class="dashboard__title-wrap">
-                <h1 class="dashboard__title">
-                    Dashboard <span>Analítico</span>
-                </h1>
-                <div class="dash-loading-pill" id="dash-loading-pill" role="status" aria-live="polite">
-                    <span class="dash-loading-dot"></span>
-                    <span>Actualizando datos…</span>
-                </div>
-            </div>
+            <h1 class="dashboard__title">
+                Dashboard <span>Analítico</span>
+            </h1>
             <div class="dashboard__actions">
                 <div id="per-global"></div>
                 <a href="{% url 'exportar_dashboard' %}" class="btn btn-outline dashboard__export-link" id="btn-exportar-dashboard" title="Exportar reporte del período">
@@ -258,8 +252,47 @@
                           : pesos.format(n);
 
     // ============================================================
-    // SISTEMA DE CARGA SUTIL
+    // SISTEMA DE CARGA SUTIL Y ALERTA HISTÓRICO
     // ============================================================
+    function mostrarAlertaHistorico() {
+        if (typeof periodo === 'undefined' || periodo.gran !== 'historico') {
+            ocultarAlertaHistorico();
+            return;
+        }
+        if (typeof window !== 'undefined' && typeof window.mostrarMensaje === 'function') {
+            window.mostrarMensaje('Histórico recorre todos los datos y puede tardar.', 'alerta', 0);
+        } else {
+            const container = document.getElementById('global-message-container');
+            const badge = document.getElementById('global-message-badge');
+            const badgeText = document.getElementById('global-message-text');
+            const icon = document.getElementById('global-message-icon');
+            if (container && badge && badgeText) {
+                badgeText.textContent = 'Histórico recorre todos los datos y puede tardar.';
+                badge.className = 'floating-badge global-message--alerta';
+                if (icon) {
+                    icon.className = 'fa-solid fa-triangle-exclamation';
+                    icon.style.color = '#dd6b20';
+                }
+                container.style.visibility = 'visible';
+                container.style.opacity = '1';
+                container.style.transform = 'translate(-50%, 0)';
+            }
+        }
+    }
+
+    function ocultarAlertaHistorico() {
+        if (typeof window !== 'undefined' && typeof window.limpiarMensaje === 'function') {
+            window.limpiarMensaje();
+        } else {
+            const container = document.getElementById('global-message-container');
+            if (container) {
+                container.style.opacity = '0';
+                container.style.transform = 'translate(-50%, -25px)';
+                container.style.visibility = 'hidden';
+            }
+        }
+    }
+
     const cargadorSubtil = {
         activos: 0,
         iniciar() {
@@ -269,10 +302,7 @@
                 bar.classList.remove('finished');
                 bar.classList.add('loading');
             }
-            const pill = el('dash-loading-pill');
-            if (pill) {
-                pill.classList.add('visible');
-            }
+            mostrarAlertaHistorico();
         },
         terminar() {
             this.activos = Math.max(0, this.activos - 1);
@@ -287,10 +317,7 @@
                         }
                     }, 400);
                 }
-                const pill = el('dash-loading-pill');
-                if (pill) {
-                    pill.classList.remove('visible');
-                }
+                ocultarAlertaHistorico();
             }
         }
     };
@@ -663,10 +690,12 @@
         periodo.gran = gran;
         if (gran === 'historico') {
             valor = '';
+            mostrarAlertaHistorico();
         } else {
             if (!valor) valor = perClave(gran, periodo.ancla);
             const m = [...mesesDisponibles].reverse().find(x => perClave(gran, x) === valor);
             if (m) periodo.ancla = m;
+            ocultarAlertaHistorico();
         }
         periodo.valor = valor;
         periodoCambio();
@@ -693,10 +722,7 @@
         const next = document.createElement('button');
         next.type = 'button'; next.textContent = '›'; next.setAttribute('aria-label', 'Período siguiente');
         nav.append(prev, sel, next);
-        const aviso = document.createElement('span');
-        aviso.className = 'rk-meta per-aviso';
-        aviso.textContent = 'Histórico recorre todos los datos y puede tardar.';
-        host.append(grans, nav, aviso);
+        host.append(grans, nav);
 
         sel.addEventListener('change', () => perElegir(periodo.gran, sel.value));
         prev.addEventListener('click', () => {
@@ -712,7 +738,6 @@
             grans.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.gran === periodo.gran));
             const historico = periodo.gran === 'historico';
             nav.hidden = historico;
-            aviso.hidden = !historico;
             if (historico) return;
             const opciones = perOpciones(periodo.gran);
             sel.replaceChildren();

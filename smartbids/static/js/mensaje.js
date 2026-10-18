@@ -107,7 +107,7 @@ export function mostrarMensaje(texto, tipo = 'info', duracion = 14000) {
 
     if (icon && badge) {
         icon.className = 'fa-solid';
-        badge.classList.remove('global-message--exito', 'global-message--error', 'global-message--info');
+        badge.classList.remove('global-message--exito', 'global-message--error', 'global-message--info', 'global-message--alerta');
 
         if (tipo === 'exito') {
             badge.classList.add('global-message--exito');
@@ -125,6 +125,14 @@ export function mostrarMensaje(texto, tipo = 'info', duracion = 14000) {
             badge.style.borderColor = '#feb2b2';
             if (closeBtn) closeBtn.style.color = '#e53e3e';
             if (closeIcon) closeIcon.style.color = '#e53e3e';
+        } else if (tipo === 'alerta' || tipo === 'warning') {
+            badge.classList.add('global-message--alerta');
+            icon.classList.add('fa-triangle-exclamation');
+            icon.style.color = '#dd6b20';
+            badgeText.style.color = '#7b341e';
+            badge.style.borderColor = '#fbd38d';
+            if (closeBtn) closeBtn.style.color = '#dd6b20';
+            if (closeIcon) closeIcon.style.color = '#dd6b20';
         } else {
             badge.classList.add('global-message--info');
             icon.classList.add('fa-circle-info');
@@ -347,3 +355,8 @@ async function cargarAlertasPostgres() {
 document.addEventListener('DOMContentLoaded', () => {
     cargarAlertasPostgres();
 });
+
+if (typeof window !== 'undefined') {
+    window.mostrarMensaje = mostrarMensaje;
+    window.limpiarMensaje = limpiarMensaje;
+}

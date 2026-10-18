@@ -1026,6 +1026,23 @@
     color: var(--dark-green) !important;
 }
 
+#global-message-badge.global-message--alerta {
+    background: #fff8eb;
+    border-color: #fbd38d;
+}
+
+#global-message-badge.global-message--alerta #global-message-icon,
+#global-message-badge.global-message--alerta .global-message-close-btn,
+#global-message-badge.global-message--alerta .global-message-close-btn i,
+#global-message-badge.global-message--alerta #global-message-close,
+#global-message-badge.global-message--alerta #global-message-close i {
+    color: #dd6b20 !important;
+}
+
+#global-message-badge.global-message--alerta #global-message-text {
+    color: #7b341e !important;
+}
+
 
 /* ==========================================================================
    SISTEMA DE CONTENEDOR Y ALERTAS DINÁMICAS (PILA APILADA)
