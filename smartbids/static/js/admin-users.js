@@ -223,6 +223,7 @@ confirmDeleteButton?.addEventListener('click', async () => {
         closeDeleteModal();
     } catch (error) {
         setUsersMessage(error.message, 'error');
+        mostrarMensaje(error.message, 'error');
     } finally {
         confirmDeleteButton.disabled = false;
         confirmDeleteButton.textContent = 'Sí, eliminar';
@@ -239,6 +240,7 @@ confirmChangeRoleButton?.addEventListener('click', async () => {
         closeChangeRoleModal(false);
     } catch (error) {
         setUsersMessage(error.message, 'error');
+        mostrarMensaje(error.message, 'error');
         closeChangeRoleModal();
     } finally {
         confirmChangeRoleButton.disabled = false;

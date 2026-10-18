@@ -257,12 +257,15 @@ if (formConfig) {
                     feedbackConfig.textContent = '¡Parámetros actualizados con éxito!';
                     feedbackConfig.style.color = 'var(--dark-green)';
                 }
+                mostrarMensaje('¡Parámetros actualizados con éxito!', 'exito');
                 setTimeout(cerrarModalConfig, 900);
             } else {
+                const errorMsg = res.mensaje || 'No se pudo guardar.';
                 if (feedbackConfig) {
-                    feedbackConfig.textContent = res.mensaje || 'No se pudo guardar.';
+                    feedbackConfig.textContent = errorMsg;
                     feedbackConfig.style.color = '#c53030';
                 }
+                mostrarMensaje(errorMsg, 'error');
             }
         } catch (err) {
             console.error('[SmartBids] Error al guardar:', err);
@@ -270,6 +273,7 @@ if (formConfig) {
                 feedbackConfig.textContent = 'Error al enviar petición.';
                 feedbackConfig.style.color = '#c53030';
             }
+            mostrarMensaje('Error de red al enviar petición.', 'error');
         }
     });
 }
@@ -408,10 +412,14 @@ infoContactoForm?.addEventListener('submit', async (event) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.mensaje || 'No se pudieron guardar los cambios.');
 
-        setInfoContactoFeedback('Información actualizada correctamente.');
+        const successMsg = data.mensaje || 'Información de contacto actualizada correctamente.';
+        setInfoContactoFeedback(successMsg);
+        mostrarMensaje(successMsg, 'exito');
         setTimeout(closeInfoContactoModal, 900);
     } catch (error) {
-        setInfoContactoFeedback(error.message || 'Error al guardar la información.', true);
+        const errorMsg = error.message || 'Error al guardar la información.';
+        setInfoContactoFeedback(errorMsg, true);
+        mostrarMensaje(errorMsg, 'error');
     } finally {
         saveInfoContactoButton.disabled = false;
         saveInfoContactoButton.innerHTML = originalButtonContent;

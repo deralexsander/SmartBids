@@ -360,3 +360,16 @@ if (typeof window !== 'undefined') {
     window.mostrarMensaje = mostrarMensaje;
     window.limpiarMensaje = limpiarMensaje;
 }
+
+// Captura global de validaciones HTML5 en cualquier formulario del sistema
+document.addEventListener('invalid', (e) => {
+    const form = e.target.closest('form');
+    if (!form) return;
+    if (form.dataset.invalidNotified !== 'true') {
+        form.dataset.invalidNotified = 'true';
+        setTimeout(() => { delete form.dataset.invalidNotified; }, 2500);
+        const label = e.target.getAttribute('aria-label') || e.target.getAttribute('placeholder') || e.target.name || '';
+        const mensaje = label ? `Por favor completa el campo: ${label}.` : 'Por favor completa todos los campos requeridos correctamente.';
+        mostrarMensaje(mensaje, 'error');
+    }
+}, true);
