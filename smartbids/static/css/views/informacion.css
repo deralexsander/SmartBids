@@ -44,3 +44,174 @@
     color: var(--gray-text);
     margin-bottom: 0;
 }
+
+/* ==========================================================================
+   ANIMACIONES DE DESLIZAMIENTO DE SECCIONES (SLIDE-IN ON SCROLL)
+   ========================================================================== */
+
+/* 1. Entrada de la sección Hero Informativo */
+.info__hero .section-header {
+    animation: heroSlideIn 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes heroSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 2. Secciones que se deslizan suavemente al entrar a la vista */
+.home-slide-section {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.home-slide-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 3. Tarjetas de Propuesta de Valor con deslizamiento escalonado */
+.value-prop .prop-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease;
+}
+
+.value-prop.is-visible .prop-card:nth-child(1) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
+}
+
+.value-prop.is-visible .prop-card:nth-child(2) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.25s;
+}
+
+.value-prop.is-visible .prop-card:nth-child(3) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.4s;
+}
+
+.prop-card:hover {
+    transform: translateY(-6px) !important;
+}
+
+/* 4. Filas de Funcionalidades / Secciones Legales con deslizamiento suave */
+.feature-row {
+    opacity: 0;
+    transform: translateY(35px);
+    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.feature-row.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 5. Tarjetas del módulo de Seguridad (ML Section) */
+.ml-section .ml-text {
+    opacity: 0;
+    transform: translateX(-35px);
+    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ml-section.is-visible .ml-text {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.ml-card-item {
+    opacity: 0;
+    transform: translateX(35px);
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease;
+}
+
+.ml-section.is-visible .ml-card-item:nth-child(1) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.1s;
+}
+
+.ml-section.is-visible .ml-card-item:nth-child(2) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.25s;
+}
+
+.ml-section.is-visible .ml-card-item:nth-child(3) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.4s;
+}
+
+/* 6. Beneficios / Pilares con entrada escalonada */
+.benefit-box {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease;
+}
+
+.benefits-banner.is-visible .benefit-box:nth-child(1) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
+}
+
+.benefits-banner.is-visible .benefit-box:nth-child(2) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.2s;
+}
+
+.benefits-banner.is-visible .benefit-box:nth-child(3) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+}
+
+.benefits-banner.is-visible .benefit-box:nth-child(4) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.4s;
+}
+
+.benefit-box:hover {
+    transform: translateY(-6px) !important;
+}
+
+/* Respeto por preferencias de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    .home-slide-section,
+    .prop-card,
+    .feature-row,
+    .ml-section .ml-text,
+    .ml-card-item,
+    .benefit-box,
+    .info__hero .section-header {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}

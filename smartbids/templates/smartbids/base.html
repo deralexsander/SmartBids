@@ -239,6 +239,8 @@
     {% if request.resolver_match.url_name == 'home' %}
     <script type="module" src="{% static 'js/contacto.js' %}"></script>
     <script type="module" src="{% static 'js/home-slide.js' %}"></script>
+    {% elif request.resolver_match.url_name == 'informacion' %}
+    <script type="module" src="{% static 'js/home-slide.js' %}"></script>
     {% elif request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
     <script type="module" src="{% static 'js/accion-cuenta.js' %}"></script>
     {% elif request.resolver_match.url_name == 'dashboard' %}

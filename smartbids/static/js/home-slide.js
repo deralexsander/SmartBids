@@ -40,6 +40,18 @@ function initSlideReveal() {
     }, observerOptions);
 
     targets.forEach(el => revealObserver.observe(el));
+
+    // Si la página se abre con un ancla hash (ej: /informacion/#terminos)
+    if (window.location.hash) {
+        try {
+            const targetEl = document.querySelector(window.location.hash);
+            if (targetEl) {
+                targetEl.classList.add('is-visible');
+                const parentSection = targetEl.closest('.home-slide-section');
+                if (parentSection) parentSection.classList.add('is-visible');
+            }
+        } catch (_) {}
+    }
 }
 
 /**
@@ -82,14 +94,18 @@ function initSmoothAnchorScroll() {
  * y actualiza la clase activa en el menú de navegación superior.
  */
 function initScrollSpy() {
-    const sectionIds = ['propuesta', 'funcionalidades', 'inteligencia', 'beneficios', 'contacto'];
-    const sections = sectionIds
-        .map(id => document.getElementById(id))
+    const navLinks = Array.from(document.querySelectorAll('header nav a[href^="#"]'));
+    if (!navLinks.length) return;
+
+    const sections = navLinks
+        .map(link => {
+            const rawHref = link.getAttribute('href') || '';
+            const id = rawHref.replace('#', '').trim();
+            return id ? document.getElementById(id) : null;
+        })
         .filter(el => el !== null);
 
-    const navLinks = Array.from(document.querySelectorAll('header nav a[href^="#"]'));
-
-    if (!sections.length || !navLinks.length) return;
+    if (!sections.length) return;
 
     const header = document.querySelector('header');
     const getHeaderHeight = () => (header ? header.getBoundingClientRect().height : 80);
@@ -108,7 +124,7 @@ function initScrollSpy() {
             }
         }
 
-        // Si el usuario está al final de la página (ej. en contacto)
+        // Si el usuario está al final de la página (ej. en contacto o garantías)
         if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 60) {
             const lastSection = sections[sections.length - 1];
             if (lastSection) {
@@ -117,7 +133,7 @@ function initScrollSpy() {
         }
 
         navLinks.forEach(link => {
-            const target = link.getAttribute('href')?.replace('#', '');
+            const target = link.getAttribute('href')?.replace('#', '').trim();
             const parentLi = link.closest('li');
 
             if (target && target === activeId) {
