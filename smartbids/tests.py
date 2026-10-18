@@ -555,4 +555,85 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
             self.assertEqual(context['match_perfil'], 0)
 
 
+class ResumenDiaTests(SimpleTestCase):
+    def setUp(self):
+        from django.test import RequestFactory
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def test_resumen_dia_view_sin_suscriptor(self):
+        from unittest.mock import patch, MagicMock
+        from .resumen_views import resumen_dia_view
+
+        mock_lic_qs = MagicMock()
+        mock_lic_qs.count.return_value = 0
+        mock_lic_qs.__iter__.return_value = []
+        mock_lic_qs.__getitem__.return_value = []
+
+        with patch('smartbids.resumen_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.resumen_views.render') as mock_render, \
+             patch('smartbids.resumen_views.Licitacion.objects') as mock_lic:
+            mock_lic.filter.return_value.select_related.return_value.order_by.return_value = mock_lic_qs
+            req = self.rf.get('/resumen/')
+            resumen_dia_view(req)
+
+            self.assertTrue(mock_render.called)
+            template_name = mock_render.call_args[0][1]
+            context = mock_render.call_args[0][2]
+            self.assertEqual(template_name, 'smartbids/resumen_dia.html')
+            self.assertEqual(context['nombre_usuario'], 'Suscriptor')
+            self.assertEqual(context['total_coincidencias'], 0)
+            self.assertEqual(context['total_seguidas'], 0)
+
+    def test_resumen_dia_view_con_suscriptor(self):
+        from unittest.mock import patch, MagicMock
+        from .resumen_views import resumen_dia_view
+
+        mock_susc = MagicMock(sus_nombre1='Juan', sus_apellido1='Pérez')
+        mock_pref = MagicMock(pref_palabras_claves=['servicios'], pref_productos=[])
+
+        mock_lic_qs = MagicMock()
+        mock_lic_qs.count.return_value = 3
+        mock_lic_qs.__iter__.return_value = []
+        mock_lic_qs.__getitem__.return_value = []
+
+        mock_destacadas_qs = MagicMock()
+        mock_destacadas_qs.__iter__.return_value = []
+        mock_destacadas_qs.__getitem__.return_value = []
+
+        mock_notif_qs = MagicMock()
+        mock_notif_qs.filter.return_value.count.return_value = 1
+        mock_notif_qs.__iter__.return_value = []
+        mock_notif_qs.__getitem__.return_value = []
+
+        with patch('smartbids.resumen_views.resolver_suscriptor', return_value=mock_susc), \
+             patch('smartbids.resumen_views._sincronizar_seguimientos'), \
+             patch('smartbids.resumen_views.Preferencia.objects.filter') as mock_pref_filter, \
+             patch('smartbids.resumen_views.SeguimientoLicitacion.objects.filter') as mock_seg_filter, \
+             patch('smartbids.resumen_views.NotificacionLicitacion.objects.filter') as mock_notif_filter, \
+             patch('smartbids.resumen_views.Licitacion.objects') as mock_lic, \
+             patch('smartbids.resumen_views.render') as mock_render:
+            
+            mock_pref_filter.return_value.first.return_value = mock_pref
+            mock_seg_filter.return_value.select_related.return_value.count.return_value = 2
+            mock_seg_filter.return_value.select_related.return_value.values_list.return_value = ['LIC-1']
+            mock_seg_filter.return_value.select_related.return_value.__iter__.return_value = []
+            mock_seg_filter.return_value.select_related.return_value.__getitem__.return_value = []
+            mock_notif_filter.return_value.select_related.return_value.order_by.return_value = mock_notif_qs
+            mock_lic.filter.return_value.distinct.return_value.count.return_value = 8
+            mock_lic.filter.return_value.select_related.return_value.order_by.return_value = mock_lic_qs
+            mock_lic.filter.return_value.filter.return_value.select_related.return_value.order_by.return_value.distinct.return_value = mock_destacadas_qs
+
+            req = self.rf.get('/resumen/')
+            resumen_dia_view(req)
+
+            self.assertTrue(mock_render.called)
+            context = mock_render.call_args[0][2]
+            self.assertEqual(context['nombre_usuario'], 'Juan Pérez')
+            self.assertTrue(context['tiene_palabras_perfil'])
+            self.assertEqual(context['total_coincidencias'], 8)
+
+
+
 

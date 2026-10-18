@@ -7,6 +7,7 @@ from .dashboard_views import (
     dashboard_view, dashboard_periodos, dashboard_kpis, dashboard_desglose, dashboard_competencia,
 )
 from .licitaciones_views import mis_licitaciones_view, exportar_licitaciones_view
+from .resumen_views import resumen_dia_view
 from .tracking_views import (
     detalle_licitacion_view,
     notificaciones_licitacion_view,

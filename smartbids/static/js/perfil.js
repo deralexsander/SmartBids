@@ -1559,7 +1559,7 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
     }
 
     const currentPath = window.location.pathname.toLowerCase();
-    const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
+    const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard') || currentPath.includes('/resumen');
     if (!esRutaObjetivo) return;
 
     let UMBRAL_CONFIGURADO = 90;

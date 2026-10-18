@@ -19,6 +19,7 @@ urlpatterns = [
     path('dashboard/competencia/', views.dashboard_competencia, name='dashboard_competencia'),
     path('dashboard/periodos/', views.dashboard_periodos, name='dashboard_periodos'),
     path('dashboard/kpis/', views.dashboard_kpis, name='dashboard_kpis'),
+    path('resumen/', views.resumen_dia_view, name='resumen_dia'),
     path('mis-licitaciones/', views.mis_licitaciones_view, name='mis_licitaciones'),
     path('mis-licitaciones/exportar/', views.exportar_licitaciones_view, name='exportar_licitaciones'),
     path('licitaciones/<str:codigo>/', views.detalle_licitacion_view, name='detalle_licitacion'),
