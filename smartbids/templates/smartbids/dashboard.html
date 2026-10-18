@@ -1,100 +1,99 @@
 {% extends 'smartbids/base.html' %}
+{% load static %}
 
 {% block nombrePag %}
-<title>Dashboard Analítico</title>
+<title>Dashboard Analítico - SmartBids</title>
+<!-- Librería Chart.js para renderizar los gráficos interactivos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
 {% block contenido %}
+
 <section class="value-prop dashboard__page">
     <div class="dashboard__container">
-        
-        <!-- Encabezado Principal y Filtros Globales -->
+
+        <!-- ============================================================ -->
+        <!-- ENCABEZADO Y FILTRO GLOBAL DE PERÍODO                         -->
+        <!-- ============================================================ -->
+        <div class="dash-progress-bar" id="dash-progress-bar"></div>
         <div class="dashboard__header">
-            <div>
-                <h1 class="dashboard__title">
-                    Dashboard <span>Analítico</span>
-                </h1>
-            </div>
-            
-            <!-- Selector de Rango de Fecha y Acciones -->
+            <h1 class="dashboard__title">
+                Dashboard <span>Analítico</span>
+            </h1>
             <div class="dashboard__actions">
-                <form method="get" action="{% url 'dashboard' %}" class="dashboard__period-form">
-                    <select id="filtro-periodo" name="dias" class="dashboard__period-select">
-                        <option value="30" {% if dias == 30 %}selected{% endif %}>Últimos 30 días</option>
-                        <option value="90" {% if dias == 90 %}selected{% endif %}>Último Trimestre</option>
-                        <option value="365" {% if dias == 365 %}selected{% endif %}>Último año</option>
-                    </select>
-                    <button type="submit" class="btn btn-outline dashboard__period-submit">Aplicar período</button>
-                </form>
-                <button type="button" id="btn-exportar-dashboard" class="btn btn-outline dashboard__export-link" data-export-url="{% url 'exportar_dashboard' %}?dias={{ dias }}">
-                    <i class="fa-solid fa-file-export"></i> Exportar
+                <div id="per-global"></div>
+                <button type="button" class="btn btn-outline dashboard__export-link" id="btn-exportar-dashboard" title="Descargar tablas y métricas del período">
+                    <i class="fa-solid fa-file-arrow-down"></i> <span>Descargar Tablas</span>
                 </button>
             </div>
         </div>
 
-        <!-- 1. Barra Métrica Compacta Horizontal de KPIs (Visible en Móvil con Scroll y Escritorio) -->
+        <!-- ============================================================ -->
+        <!-- BARRA DE KPIs (según el período seleccionado)                 -->
+        <!-- ============================================================ -->
         <div class="dashboard-card dashboard__metrics-card">
+            <div class="rk-meta" id="kpi-periodo" style="margin-bottom: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-regular fa-clock" style="color: var(--accent-green);"></i> KPIs del período: …
+            </div>
             <div class="dashboard__metrics-list">
-                
-                <!-- KPI 1: Monto Transado Estimado -->
+
+                <!-- KPI 1: Monto Total OCs -->
                 <div class="dashboard__metric">
                     <div class="profile-avatar-circle dashboard__metric-icon--amount">
                         <i class="fa-solid fa-coins"></i>
                     </div>
                     <div>
                         <span class="dashboard__metric-label">
-                            Monto Transado Estimado
+                            Monto total de OCs (CLP)
                         </span>
-                        <div class="dashboard__metric-value">
-                            $1.480M
-                        </div>
+                        <div id="kpi-monto" class="dashboard__metric-value">—</div>
                     </div>
                 </div>
 
-                <!-- KPI 2: Licitaciones Evaluadas -->
+                <!-- KPI 2: Ítems procesados / Órdenes -->
                 <div class="dashboard__metric">
                     <div class="profile-avatar-circle dashboard__metric-icon--evaluated">
                         <i class="fa-solid fa-file-invoice-dollar"></i>
                     </div>
                     <div>
-                        <span class="dashboard__metric-label">
-                            Licitaciones Evaluadas
+                        <span id="kpi-ordenes-etiqueta" class="dashboard__metric-label">
+                            Ítems procesados
                         </span>
                         <div class="dashboard__metric-value-row">
-                            <span class="dashboard__metric-value">342</span>
-                            <span class="dashboard__metric-unit">Totales</span>
+                            <span id="kpi-ordenes" class="dashboard__metric-value">—</span>
+                            <span id="kpi-ordenes-sufijo" class="dashboard__metric-unit">En el período</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- KPI 3: Competidores Activos -->
+                <!-- KPI 3: Proveedores con OCs -->
                 <div class="dashboard__metric">
                     <div class="profile-avatar-circle dashboard__metric-icon--competitors">
                         <i class="fa-solid fa-users-viewfinder"></i>
                     </div>
                     <div>
                         <span class="dashboard__metric-label">
-                            Competidores Activos
+                            Proveedores con OCs
                         </span>
                         <div class="dashboard__metric-value-row">
-                            <span class="dashboard__metric-value--competitors">89</span>
+                            <span id="kpi-proveedores" class="dashboard__metric-value dashboard__metric-value--competitors">—</span>
                             <span class="dashboard__metric-unit">Empresas</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- KPI 4: Tasa Media Adjudicación -->
-                <div class="dashboard__metric--award-rate">
+                <!-- KPI 4: Compradores con OCs -->
+                <div class="dashboard__metric dashboard__metric--award-rate">
                     <div class="profile-avatar-circle dashboard__metric-icon--award-rate">
-                        <i class="fa-solid fa-award"></i>
+                        <i class="fa-solid fa-landmark"></i>
                     </div>
                     <div>
                         <span class="dashboard__metric-label">
-                            Tasa Media Adjudicación
+                            Compradores con OCs
                         </span>
                         <div class="dashboard__metric-value-row">
-                            <span class="dashboard__metric-value--award-rate">24.6%</span>
-                            <span class="dashboard__metric-unit">Promedio</span>
+                            <span id="kpi-compradores" class="dashboard__metric-value dashboard__metric-value--award-rate">—</span>
+                            <span class="dashboard__metric-unit">Organismos</span>
                         </div>
                     </div>
                 </div>
@@ -102,151 +101,1289 @@
             </div>
         </div>
 
-        <!-- 2. Pestañas de Navegación del Dashboard -->
+        <!-- ============================================================ -->
+        <!-- PESTAÑAS                                                      -->
+        <!-- ============================================================ -->
         <div class="dashboard__tabs">
-            <button type="button" class="tab-dash-btn active" data-dashboard-tab="tab-productos">
-                <i class="fa-solid fa-box-archive"></i> Demanda de Productos (E03-H01)
+            <button type="button" class="tab-dash-btn active" data-tab="tab-productos" onclick="cambiarTabAnalitico('tab-productos', this)">
+                <i class="fa-solid fa-box-archive"></i> Demanda de Productos
             </button>
-            <button type="button" class="tab-dash-btn" data-dashboard-tab="tab-competencia">
-                <i class="fa-solid fa-chart-pie"></i> Análisis de Competencia (E03-H02)
+            <button type="button" class="tab-dash-btn" data-tab="tab-competencia" onclick="cambiarTabAnalitico('tab-competencia', this)">
+                <i class="fa-solid fa-chart-pie"></i> Análisis de Competencia
             </button>
-            <button type="button" class="tab-dash-btn" data-dashboard-tab="tab-compradores">
+            <button type="button" class="tab-dash-btn" data-tab="tab-compradores" onclick="cambiarTabAnalitico('tab-compradores', this)">
                 <i class="fa-solid fa-building-columns"></i> Organismos Compradores
             </button>
         </div>
 
-        <!-- 3. Contenedor Dinámico de Vistas -->
-
-        <!-- VISTA A: DASHBOARD DE PRODUCTOS (E03-H01) -->
+        <!-- ============================================================ -->
+        <!-- VISTA A: DEMANDA DE PRODUCTOS                                 -->
+        <!-- Jerarquía: producto_grupo > producto_nivel1 > descripción     -->
+        <!-- ============================================================ -->
         <div id="tab-productos" class="dashboard-view active">
-            <div class="dashboard__product-grid">
-                
-                <!-- Gráfico de Demanda Temporal -->
-                <div class="dashboard-card dashboard__card">
-                    <div class="dashboard-header dashboard__card-header">
-                        <div class="dash-title dashboard__card-title">
-                            <i class="fa-solid fa-chart-column dashboard__card-icon"></i>
-                            Volumen de Licitaciones por Categoría de Producto
-                        </div>
-                        <span class="dash-badge">Mensual</span>
+            <div class="dashboard-card rk-cab">
+                <div class="rk-fila-titulo">
+                    <div>
+                        <div class="dash-title"><i class="fa-solid fa-boxes-stacked text-accent"></i> Demanda de productos</div>
+                        <p class="rk-sub">Descubre qué se compra más, desde grandes grupos hasta productos específicos. Haz clic en cualquier fila para ver su detalle progresivo.</p>
                     </div>
-                    <div class="dashboard__product-chart">
-                        <canvas id="graficoProductos"></canvas>
-                    </div>
-                </div>
-
-                <!-- Top Productos Más Solicitados -->
-                <div class="dashboard-card dashboard__card">
-                    <div class="dashboard-header dashboard__card-header">
-                        <div class="dash-title dashboard__card-title">
-                            <i class="fa-solid fa-fire dashboard__icon--negative"></i>
-                            Top Productos Demandados
-                        </div>
-                    </div>
-                    <div class="dashboard__product-ranking">
-                        <div class="stat-mini-card dashboard__product-stat">
-                            <label>81111812 - Mantenimiento TI</label>
-                            <div class="dashboard__stat-row">
-                                <span class="dashboard__product-count">84 Licitaciones</span>
-                                <small class="dashboard__change--positive">+18% vs mes ant.</small>
-                            </div>
-                        </div>
-                        <div class="stat-mini-card dashboard__product-stat">
-                            <label>43211507 - Laptops y Servidores</label>
-                            <div class="dashboard__stat-row">
-                                <span class="dashboard__product-count">52 Licitaciones</span>
-                                <small class="dashboard__change--neutral">+5% vs mes ant.</small>
-                            </div>
-                        </div>
-                        <div class="stat-mini-card dashboard__product-stat">
-                            <label>81111508 - Licencias Software</label>
-                            <div class="dashboard__stat-row">
-                                <span class="dashboard__product-count">39 Licitaciones</span>
-                                <small class="dashboard__change--negative">-2% vs mes ant.</small>
-                            </div>
+                    <div class="rk-controles">
+                        <select id="prod-salto" aria-label="Ir directo a un grupo" class="rk-salto">
+                            <option value="">Ir directo a un grupo…</option>
+                        </select>
+                        <div class="per-chip-wrap">
+                            <button type="button" class="per-chip"><i class="fa-regular fa-calendar"></i> <span data-per-texto>Cargando…</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem; margin-left: 2px;"></i></button>
+                            <div class="per-pop" hidden></div>
                         </div>
                     </div>
                 </div>
-
+                <nav class="rk-migas" id="prod-migas" aria-label="Ruta de navegación"></nav>
             </div>
+            <div id="prod-panel"></div>
+            <div id="prod-evolucion-panel"></div>
         </div>
 
-        <!-- VISTA B: DASHBOARD DE COMPETENCIA (E03-H02) -->
-        <div id="tab-competencia" class="dashboard-view dashboard__view--inactive">
-            <div class="dashboard__competitor-grid">
-                
-                <!-- Participación y Adjudicación -->
-                <div class="dashboard-card dashboard__card">
-                    <div class="dashboard-header dashboard__card-header">
-                        <div class="dash-title dashboard__card-title">
-                            <i class="fa-solid fa-pie-chart dashboard__card-icon"></i>
-                            Distribución de Adjudicaciones por Competidor
-                        </div>
+        <!-- ============================================================ -->
+        <!-- VISTA B: ANÁLISIS DE COMPETENCIA                              -->
+        <!-- ============================================================ -->
+        <div id="tab-competencia" class="dashboard-view" style="display:none;">
+            <div class="dashboard-card rk-cab">
+                <div class="rk-fila-titulo">
+                    <div>
+                        <div class="dash-title"><i class="fa-solid fa-chart-simple text-accent"></i> Análisis de competencia</div>
+                        <p class="rk-sub">Analiza quién vende en cada mercado, explora la cartera de un proveedor y descubre qué empresas compiten por sus productos.</p>
                     </div>
-                    <div class="dashboard__product-chart">
-                        <canvas id="graficoCompetencia"></canvas>
+                    <div class="rk-controles">
+                        <div class="per-chip-wrap">
+                            <button type="button" class="per-chip"><i class="fa-regular fa-calendar"></i> <span data-per-texto>Cargando…</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem; margin-left: 2px;"></i></button>
+                            <div class="per-pop" hidden></div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Tabla de Comportamiento de Oferentes -->
-                <div class="dashboard-card dashboard__table-card">
-                    <div class="dashboard-header dashboard__card-header">
-                        <div class="dash-title dashboard__card-title">
-                            <i class="fa-solid fa-users dashboard__card-icon"></i>
-                            Ranking de Oferentes Principales
-                        </div>
+                <div class="rk-por">
+                    <span class="rk-meta" style="font-weight: 700; color: var(--dark-green);">Ranking por:</span>
+                    <div class="seg" id="comp-por-seg" role="group" aria-label="Ranking por">
+                        <button type="button" class="seg-btn active" data-por="proveedor">Proveedores</button>
+                        <button type="button" class="seg-btn" data-por="organismo" disabled title="Selecciona un proveedor para consultar sus organismos compradores">Clientes del proveedor</button>
                     </div>
-                    <table class="dashboard__competitor-table">
-                        <thead>
-                            <tr class="dashboard__table-header-row">
-                                <th class="dashboard__table-heading">Empresa Competidora</th>
-                                <th class="dashboard__table-heading">Ofertas</th>
-                                <th class="dashboard__table-heading">Tasa Adj.</th>
-                                <th class="dashboard__table-heading">Monto Total</th>
-                            </tr>
-                        </thead>
-                        <tbody class="dashboard__table-body">
-                            <tr class="dashboard__table-row">
-                                <td class="dashboard__company-name">Soluciones TI Global SpA</td>
-                                <td class="dashboard__table-data">34</td>
-                                <td class="dashboard__win-rate">41%</td>
-                                <td class="dashboard__table-data">$320M</td>
-                            </tr>
-                            <tr class="dashboard__table-row">
-                                <td class="dashboard__company-name">TechCloud Chile Ltda.</td>
-                                <td class="dashboard__table-data">28</td>
-                                <td class="dashboard__win-rate">28%</td>
-                                <td class="dashboard__table-data">$210M</td>
-                            </tr>
-                            <tr class="dashboard__table-row">
-                                <td class="dashboard__company-name">Informatica Austral S.A.</td>
-                                <td class="dashboard__table-data">19</td>
-                                <td class="dashboard__win-rate">15%</td>
-                                <td class="dashboard__table-data">$95M</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
 
+                <details class="comp-det">
+                    <summary><i class="fa-solid fa-sliders"></i> Filtros de mercado <span id="comp-filtros-n" class="comp-badge-pill"></span></summary>
+                    <div class="competencia-filtros">
+                        <label>Grupo de producto<select id="comp-grupo"><option value="">Todos los grupos</option></select></label>
+                        <label>Región compradora<select id="comp-region"><option value="">Todas las regiones</option></select></label>
+                        <label>Organismo comprador<select id="comp-organismo"><option value="">Todos los organismos</option></select></label>
+                        <label>Buscar producto (código o descripción)
+                            <input id="comp-busqueda" type="search" placeholder="Buscar dentro del grupo seleccionado" autocomplete="off">
+                        </label>
+                        <label>Producto específico<select id="comp-producto"><option value="">Selecciona un grupo o busca un producto</option></select></label>
+                    </div>
+                    <div class="comp-filter-actions">
+                        <button id="comp-aplicar" class="btn btn-primary" type="button"><i class="fa-solid fa-filter"></i> Aplicar filtros</button>
+                        <button id="comp-limpiar" class="btn btn-outline" type="button"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
+                    </div>
+                </details>
+                <div class="rk-chips" id="comp-chips"></div>
             </div>
+            <div id="comp-contexto" class="dashboard-card comp-contexto-card" hidden>
+                <div>
+                    <div class="dash-title" id="comp-contexto-titulo" style="font-size:1.1rem;"></div>
+                    <p class="rk-sub" id="comp-contexto-descripcion"></p>
+                </div>
+                <button type="button" class="btn btn-outline" id="comp-contexto-volver"><i class="fa-solid fa-arrow-left"></i> Volver a proveedores</button>
+            </div>
+            <div id="comp-panel"></div>
+            <div id="comp-evolucion-panel"></div>
         </div>
 
-        <!-- VISTA C: DASHBOARD DE COMPRADORES -->
-        <div id="tab-compradores" class="dashboard-view dashboard__view--inactive">
-            <div class="dashboard-card dashboard__card">
-                <div class="dashboard-header dashboard__card-header">
-                    <div class="dash-title dashboard__card-title">
-                        <i class="fa-solid fa-landmark dashboard__card-icon"></i>
-                        Organismos Estatales con Mayor Presupuesto Asignado
+        <!-- ============================================================ -->
+        <!-- VISTA C: ORGANISMOS COMPRADORES                               -->
+        <!-- ============================================================ -->
+        <div id="tab-compradores" class="dashboard-view" style="display:none;">
+            <div class="dashboard-card rk-cab">
+                <div class="rk-fila-titulo">
+                    <div>
+                        <div class="dash-title"><i class="fa-solid fa-building-columns text-accent"></i> Organismos compradores</div>
+                        <p class="rk-sub">Qué organismos concentran el mayor volumen de gasto en compras públicas durante el período seleccionado.</p>
+                    </div>
+                    <div class="rk-controles">
+                        <div class="per-chip-wrap">
+                            <button type="button" class="per-chip"><i class="fa-regular fa-calendar"></i> <span data-per-texto>Cargando…</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem; margin-left: 2px;"></i></button>
+                            <div class="per-pop" hidden></div>
+                        </div>
                     </div>
                 </div>
-                <div class="dashboard__buyer-chart">
-                    <canvas id="graficoCompradores"></canvas>
-                </div>
             </div>
+            <div id="compr-panel"></div>
         </div>
 
     </div>
 </section>
+
+<!-- ============================================================ -->
+<!-- ESTILOS LOCALES ESPECÍFICOS                                   -->
+<!-- ============================================================ -->
+<style>
+    .dashboard-card { min-width: 0; }
+    .dashboard-card td { overflow-wrap: anywhere; }
+</style>
+
+<!-- ============================================================ -->
+<!-- LÓGICA                                                        -->
+<!-- ============================================================ -->
+<script>
+    const el = id => document.getElementById(id);
+    const colores = ['#11634e', '#1ec498', '#5c9688', '#b1d2ca', '#7bb8aa'];
+    const numeros = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
+    const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+    const graficos = {};
+
+    const urlPeriodos = "{% url 'dashboard_periodos' %}";
+    const urlKpis = "{% url 'dashboard_kpis' %}";
+    const urlProductos = "{% url 'dashboard_desglose' %}";
+    const urlCompetencia = "{% url 'dashboard_competencia' %}";
+
+    const abreviar = (nombre, largo = 45) => nombre.length > largo ? nombre.slice(0, largo - 1) + '…' : nombre;
+    const pl = (n, singular, plural) => numeros.format(n) + ' ' + (n === 1 ? singular : plural);
+    const montoCorto = n => n >= 1e6 ? '$' + numeros.format(n / 1e6) + ' MM'
+                          : n >= 1e3 ? '$' + numeros.format(n / 1e3) + ' mil'
+                          : pesos.format(n);
+
+    // ============================================================
+    // SISTEMA DE CARGA SUTIL Y ALERTA HISTÓRICO
+    // ============================================================
+    function mostrarAlertaHistorico() {
+        if (typeof periodo === 'undefined' || periodo.gran !== 'historico') {
+            ocultarAlertaHistorico();
+            return;
+        }
+        if (typeof window !== 'undefined' && typeof window.mostrarMensaje === 'function') {
+            window.mostrarMensaje('Histórico recorre todos los datos y puede tardar.', 'alerta', 0);
+        } else {
+            const container = document.getElementById('global-message-container');
+            const badge = document.getElementById('global-message-badge');
+            const badgeText = document.getElementById('global-message-text');
+            const icon = document.getElementById('global-message-icon');
+            if (container && badge && badgeText) {
+                badgeText.textContent = 'Histórico recorre todos los datos y puede tardar.';
+                badge.className = 'floating-badge global-message--alerta';
+                if (icon) {
+                    icon.className = 'fa-solid fa-triangle-exclamation';
+                    icon.style.color = '#dd6b20';
+                }
+                container.style.visibility = 'visible';
+                container.style.opacity = '1';
+                container.style.transform = 'translate(-50%, 0)';
+            }
+        }
+    }
+
+    function ocultarAlertaHistorico() {
+        if (typeof window !== 'undefined' && typeof window.limpiarMensaje === 'function') {
+            window.limpiarMensaje();
+        } else {
+            const container = document.getElementById('global-message-container');
+            if (container) {
+                container.style.opacity = '0';
+                container.style.transform = 'translate(-50%, -25px)';
+                container.style.visibility = 'hidden';
+            }
+        }
+    }
+
+    const cargadorSubtil = {
+        activos: 0,
+        iniciar() {
+            this.activos++;
+            const bar = el('dash-progress-bar');
+            if (bar) {
+                bar.classList.remove('finished');
+                bar.classList.add('loading');
+            }
+            mostrarAlertaHistorico();
+        },
+        terminar() {
+            this.activos = Math.max(0, this.activos - 1);
+            if (this.activos === 0) {
+                const bar = el('dash-progress-bar');
+                if (bar) {
+                    bar.classList.remove('loading');
+                    bar.classList.add('finished');
+                    setTimeout(() => {
+                        if (cargadorSubtil.activos === 0) {
+                            bar.classList.remove('finished');
+                        }
+                    }, 400);
+                }
+                ocultarAlertaHistorico();
+            }
+        }
+    };
+
+    // ============================================================
+    // UTILIDADES COMPARTIDAS
+    // ============================================================
+    function compOpcion(select, value, label) {
+        const option = document.createElement('option');
+        option.value = String(value);
+        option.textContent = label;
+        select.appendChild(option);
+    }
+
+    function compGrafico(id, tipo, labels, datasets, extra = {}) {
+        if (graficos[id]) graficos[id].destroy();
+        graficos[id] = new Chart(el(id), {
+            type: tipo, data: {labels, datasets},
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: tipo === 'bar' ? 'y' : 'x',
+                plugins: {
+                    legend: {
+                        display: tipo !== 'bar',
+                        position: 'bottom',
+                        labels: {
+                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600', size: 12 },
+                            padding: 16,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(11, 56, 49, 0.95)',
+                        titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: '700', size: 13 },
+                        bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {label: item => (item.dataset.label ? item.dataset.label + ': ' : '') +
+                            pesos.format(tipo === 'bar' ? item.parsed.x : tipo === 'line' ? item.parsed.y : item.parsed)}
+                    }
+                },
+                scales: tipo === 'doughnut' ? {} : {
+                    y: {
+                        beginAtZero: tipo === 'line',
+                        grid: { color: 'rgba(177, 210, 202, 0.2)' },
+                        ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } }
+                    },
+                    x: {
+                        beginAtZero: tipo === 'bar',
+                        grid: { color: 'rgba(177, 210, 202, 0.2)' },
+                        ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } }
+                    }
+                },
+                ...extra
+            }
+        });
+    }
+
+    // Panel de ranking: tres indicadores + lista clicable + dona de participación.
+    function rkMontar(host, p, cfg) {
+        host.innerHTML = `
+            <div class="rk-kpis">
+                <div class="dashboard-card rk-kpi"><small>${cfg.montoEtiqueta}</small><strong id="${p}-total">—</strong></div>
+                <div class="dashboard-card rk-kpi"><small>${cfg.itemsEtiqueta}</small><strong id="${p}-items">—</strong></div>
+                <div class="dashboard-card rk-kpi"><small>${cfg.liderEtiqueta}</small><strong id="${p}-lider" style="font-size:1.15rem;">—</strong><span id="${p}-lider-pct" class="rk-meta" style="font-weight:600;color:var(--accent-green);display:block;margin-top:2px;"></span></div>
+            </div>
+            <div class="rk-layout">
+                <div class="dashboard-card" style="padding:1.35rem 1.4rem;border-radius:16px;">
+                    <div class="rk-paso" id="${p}-paso" hidden></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                        <div class="dash-title" id="${p}-titulo" style="margin:0;"><i class="fa-solid fa-ranking-star text-accent"></i> Top 10</div>
+                        <button type="button" class="btn btn-outline rk-btn-descargar" data-panel="${p}" title="Descargar datos y tablas del dashboard" style="padding:0.35rem 0.75rem;font-size:0.8rem;border-radius:8px;display:inline-flex;align-items:center;gap:6px;">
+                            <i class="fa-solid fa-file-arrow-down"></i> <span>Descargar</span>
+                        </button>
+                    </div>
+                    <p class="rk-meta" id="${p}-pista" style="margin:.25rem 0 0;"></p>
+                    <p id="${p}-estado" role="status" aria-live="polite" class="rk-meta"></p>
+                    <ul class="rk-lista" id="${p}-lista"></ul>
+                    <div class="rk-extra-wrap" id="${p}-extra-wrap">
+                        <ul class="rk-lista rk-lista--extra" id="${p}-lista-extra"></ul>
+                    </div>
+                    <div id="${p}-mas-contenedor" style="margin-top:0.6rem;" hidden>
+                        <button type="button" id="${p}-btn-mas" class="rk-btn-mas">
+                            <i class="fa-solid fa-chevron-down" id="${p}-btn-mas-icono"></i>
+                            <span id="${p}-btn-mas-texto">Presiona para mostrar más</span>
+                        </button>
+                    </div>
+                    <p class="rk-meta" style="margin-top:0.85rem;font-size:0.75rem;display:flex;align-items:center;gap:6px;">
+                        <i class="fa-solid fa-circle-info" style="color:var(--muted-teal);"></i>
+                        La participación se calcula sobre el segmento seleccionado, no sobre el total del DW.
+                    </p>
+                </div>
+                <div class="dashboard-card" style="padding:1.35rem 1.4rem;border-radius:16px;">
+                    <div class="dash-title"><i class="fa-solid fa-chart-pie text-accent"></i> ¿Cómo se reparte este segmento?</div>
+                    <p class="rk-meta" style="margin:.25rem 0 0;">Los 5 primeros frente al resto.</p>
+                    <div style="height:340px;position:relative;margin-top:0.9rem;"><canvas id="${p}-participacion"></canvas></div>
+                </div>
+            </div>`;
+    }
+
+    function rkFila(r, i, maximo, cfg) {
+        const clicable = cfg.clicable ? cfg.clicable(r) : false;
+        const li = document.createElement('li');
+        const fila = document.createElement(clicable ? 'button' : 'div');
+        if (clicable) fila.type = 'button';
+        fila.className = 'rk-fila' + (clicable ? ' clic' : '');
+
+        const rank = document.createElement('div');
+        rank.className = 'rk-rank';
+        rank.textContent = i + 1;
+
+        const cuerpo = document.createElement('div');
+        const nombre = document.createElement('div');
+        nombre.className = 'rk-nombre';
+        nombre.textContent = r.nombre;
+        const barra = document.createElement('div');
+        barra.className = 'rk-barra';
+        const relleno = document.createElement('span');
+        relleno.style.width = Math.max(2, r.monto / maximo * 100) + '%';
+        barra.appendChild(relleno);
+        const meta = document.createElement('div');
+        meta.className = 'rk-meta';
+        meta.textContent = cfg.meta(r);
+        cuerpo.append(nombre, barra, meta);
+
+        const derecha = document.createElement('div');
+        derecha.className = 'rk-derecha';
+        const monto = document.createElement('b');
+        monto.textContent = montoCorto(r.monto);
+        monto.title = pesos.format(r.monto);
+        derecha.appendChild(monto);
+        if (clicable) {
+            const flecha = document.createElement('i');
+            flecha.className = 'fa-solid fa-chevron-right rk-ir';
+            derecha.appendChild(flecha);
+            fila.addEventListener('click', () => cfg.onClick(r));
+        }
+
+        fila.append(rank, cuerpo, derecha);
+        li.appendChild(fila);
+        return li;
+    }
+
+    function rkPintar(p, data, cfg) {
+        const ranking = data.ranking;
+        const paso = el(p + '-paso');
+        paso.textContent = cfg.paso || '';
+        paso.hidden = !cfg.paso;
+        el(p + '-titulo').textContent = cfg.titulo;
+        el(p + '-pista').textContent = cfg.pista || '';
+        el(p + '-total').textContent = montoCorto(data.monto_segmento);
+        el(p + '-total').title = pesos.format(data.monto_segmento);
+        el(p + '-items').textContent = numeros.format(data.items_segmento);
+        el(p + '-lider').textContent = ranking.length ? ranking[0].nombre : '—';
+        el(p + '-lider-pct').textContent = ranking.length
+            ? ranking[0].participacion.toLocaleString('es-CL') + '% del segmento' : '';
+
+        const lista = el(p + '-lista');
+        const listaExtra = el(p + '-lista-extra');
+        const extraWrap = el(p + '-extra-wrap');
+        const masContenedor = el(p + '-mas-contenedor');
+        const masBtn = el(p + '-btn-mas');
+        const masTexto = el(p + '-btn-mas-texto');
+
+        lista.replaceChildren();
+        if (listaExtra) listaExtra.replaceChildren();
+        if (extraWrap) extraWrap.classList.remove('abierto');
+        if (masBtn) masBtn.classList.remove('abierto');
+
+        if (!ranking.length) {
+            const li = document.createElement('li');
+            li.className = 'rk-meta';
+            li.textContent = 'Sin datos para esta selección.';
+            lista.appendChild(li);
+            if (masContenedor) masContenedor.hidden = true;
+        } else {
+            const maximo = Math.max(...ranking.map(r => r.monto), 1);
+            let expandido = false;
+
+            ranking.forEach((r, i) => {
+                const li = rkFila(r, i, maximo, cfg);
+                if (i < 4) {
+                    lista.appendChild(li);
+                } else if (listaExtra) {
+                    listaExtra.appendChild(li);
+                }
+            });
+
+            if (masContenedor && masBtn && extraWrap) {
+                if (ranking.length > 4) {
+                    masContenedor.hidden = false;
+                    masTexto.textContent = 'Presiona para mostrar más (' + (ranking.length - 4) + ' adicionales)';
+
+                    masBtn.onclick = () => {
+                        expandido = !expandido;
+                        extraWrap.classList.toggle('abierto', expandido);
+                        masBtn.classList.toggle('abierto', expandido);
+                        if (expandido) {
+                            masTexto.textContent = 'Mostrar menos';
+                        } else {
+                            masTexto.textContent = 'Presiona para mostrar más (' + (ranking.length - 4) + ' adicionales)';
+                        }
+                    };
+                } else {
+                    masContenedor.hidden = true;
+                }
+            }
+        }
+
+        const top = ranking.slice(0, 5);
+        const valores = top.map(r => r.monto);
+        const etiquetas = top.map(r => abreviar(String(r.nombre), 30));
+        const resto = Math.max(0, data.monto_segmento - valores.reduce((s, v) => s + v, 0));
+        if (resto > 0) { valores.push(resto); etiquetas.push('Otros'); }
+        compGrafico(p + '-participacion', 'doughnut', etiquetas,
+            [{label: cfg.serieEtiqueta, data: valores, backgroundColor: [...colores, '#d3dadd']}]);
+    }
+
+    // Panel de evolución mensual (bajo demanda; resalta el período seleccionado).
+    function evMontar(host, p, descripcion, alCargar) {
+        host.innerHTML = `
+            <div class="dashboard-card ev-panel-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1.2rem;flex-wrap:wrap;">
+                    <div class="ev-encabezado">
+                        <div class="dash-title" id="${p}-ev-titulo"><i class="fa-solid fa-chart-line text-accent"></i> Evolución mensual</div>
+                        <p class="ev-descripcion" id="${p}-ev-descripcion"></p>
+                        <div class="ev-etiquetas" id="${p}-ev-etiquetas" aria-label="Contexto del gráfico"></div>
+                    </div>
+                    <button type="button" class="btn btn-outline" id="${p}-ev-btn" style="border-radius:10px;font-weight:700;"><i class="fa-solid fa-chart-line"></i> Ver evolución</button>
+                </div>
+                <p id="${p}-ev-estado" role="status" aria-live="polite" class="rk-meta" style="margin-top:0.6rem;"></p>
+                <div class="ev-chart-container" id="${p}-ev-caja" hidden><canvas id="${p}-evolucion"></canvas></div>
+            </div>`;
+        el(p + '-ev-descripcion').textContent = descripcion;
+        el(p + '-ev-btn').addEventListener('click', alCargar);
+    }
+
+    // El histórico mostrado no está restringido al período que selecciona el Top 5.
+    function evContexto(p, titulo, descripcion, alcance) {
+        el(p + '-ev-titulo').textContent = titulo;
+        el(p + '-ev-descripcion').textContent = descripcion;
+        const etiquetas = el(p + '-ev-etiquetas');
+        etiquetas.replaceChildren();
+        const chip = (texto, icono, clase = '') => {
+            const span = document.createElement('span');
+            span.className = 'ev-etiqueta' + (clase ? ' ' + clase : '');
+            const i = document.createElement('i');
+            i.className = 'fa-solid fa-' + icono;
+            i.setAttribute('aria-hidden', 'true');
+            const label = document.createElement('span');
+            label.textContent = texto;
+            span.append(i, label);
+            etiquetas.appendChild(span);
+        };
+        chip(p === 'prod' ? 'Monto neto · CLP' : 'Monto bruto · CLP', 'coins');
+        chip('Histórico mensual', 'chart-line');
+        if (periodo.gran !== 'historico') {
+            chip(perTextoCorto() + ' · destacado', 'calendar-days', 'seleccion');
+        }
+        alcance.forEach(filtro => chip(filtro, 'filter', 'activa'));
+    }
+
+    function prodContextoEvolucion() {
+        const alcance = [];
+        if (prodEstado.grupo) alcance.push('Grupo: ' + prodEstado.grupo);
+        if (prodEstado.nivel1) alcance.push('Nivel 1: ' + prodEstado.nivel1);
+        const titulo = prodEstado.nivel1
+            ? 'Evolución mensual — ' + prodEstado.nivel1
+            : prodEstado.grupo ? 'Evolución mensual — ' + prodEstado.grupo
+                               : 'Evolución mensual de la demanda';
+        evContexto('prod', titulo,
+            'Compras del segmento a lo largo del tiempo.', alcance);
+    }
+
+    function compContextoEvolucion() {
+        const alcance = [];
+        const agregar = (id, etiqueta) => {
+            const select = el(id);
+            if (select.value) alcance.push(etiqueta + ': ' + select.selectedOptions[0].textContent);
+        };
+        agregar('comp-grupo', 'Grupo');
+        agregar('comp-region', 'Región compradora');
+        agregar('comp-organismo', 'Organismo comprador');
+        agregar('comp-producto', 'Producto');
+        if (compProveedor) alcance.push('Proveedor: ' + compProveedor.nombre);
+        const titulos = {
+            proveedor: el('comp-producto').value
+                ? 'Evolución mensual de proveedores competidores'
+                : 'Evolución mensual de los principales proveedores',
+            producto: 'Evolución mensual de la cartera de productos',
+            organismo: 'Evolución mensual de organismos clientes'
+        };
+        const sujetos = {
+            proveedor: 'proveedores',
+            producto: 'productos',
+            organismo: 'organismos compradores'
+        };
+        evContexto('comp', titulos[compPor],
+            'Evolución histórica de los hasta cinco ' + sujetos[compPor] +
+            ' con mayor monto en la selección actual.',
+            alcance);
+    }
+
+    function evPintar(p, series) {
+        const caja = el(p + '-ev-caja');
+        if (!series.length) { caja.hidden = true; return; }
+        const periodos = [...new Set(series.flatMap(s => s.puntos.map(x => x.periodo)))].sort();
+        const datasets = series.map((s, i) => {
+            const color = colores[i % colores.length];
+            const mapa = new Map(s.puntos.map(x => [x.periodo, x.monto]));
+            return {
+                label: s.label, data: periodos.map(per => mapa.get(per) || 0),
+                borderColor: color, backgroundColor: color, tension: 0.25,
+                pointRadius: periodos.map(per => perContiene(per) ? 6 : 2),
+                pointBackgroundColor: periodos.map(per => perContiene(per) ? '#f59f00' : color)
+            };
+        });
+        caja.hidden = false;
+        compGrafico(p + '-evolucion', 'line', periodos, datasets);
+    }
+
+    // ============================================================
+    // FILTRO GLOBAL DE PERÍODO
+    // ============================================================
+    const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const GRANULARIDADES = [['mensual', 'Mensual'], ['trimestral', 'Trimestral'], ['semestral', 'Semestral'],
+                            ['anual', 'Anual'], ['historico', 'Histórico']];
+    const periodo = {gran: 'mensual', valor: '', ancla: null};
+    let mesesDisponibles = [];
+    const perControles = [];
+
+    function perClave(gran, m) {
+        const mm = String(m.mes).padStart(2, '0');
+        if (gran === 'mensual') return m.anio + '-' + mm;
+        if (gran === 'trimestral') return m.anio + '-T' + Math.ceil(m.mes / 3);
+        if (gran === 'semestral') return m.anio + '-S' + (m.mes <= 6 ? 1 : 2);
+        return String(m.anio);
+    }
+
+    function perEtiqueta(gran, valor) {
+        if (gran === 'historico') return 'Histórico';
+        const [anio, resto] = valor.split('-');
+        if (gran === 'mensual') return MESES[Number(resto) - 1] + ' ' + anio;
+        if (gran === 'anual') return anio;
+        return resto + ' ' + anio;
+    }
+
+    function perTextoCorto() {
+        return periodo.gran === 'historico' ? 'Histórico (todos los datos)' : perEtiqueta(periodo.gran, periodo.valor);
+    }
+
+    function perOpciones(gran) {
+        const vistos = new Set();
+        for (const m of mesesDisponibles) vistos.add(perClave(gran, m));
+        return [...vistos];
+    }
+
+    const perParams = () => ({gran: periodo.gran, periodo: periodo.valor});
+
+    // ¿El mes 'YYYY-MM' cae dentro del período seleccionado?
+    function perContiene(mesStr) {
+        if (periodo.gran === 'historico') return false;
+        const [anio, mes] = mesStr.split('-').map(Number);
+        return perClave(periodo.gran, {anio, mes}) === periodo.valor;
+    }
+
+    function perRefrescar() {
+        perControles.forEach(refrescar => refrescar());
+        document.querySelectorAll('[data-per-texto]').forEach(s => s.textContent = 'Período: ' + perTextoCorto());
+    }
+
+    function perElegir(gran, valor) {
+        if (gran !== 'historico' && !periodo.ancla) gran = 'historico';
+        periodo.gran = gran;
+        if (gran === 'historico') {
+            valor = '';
+            mostrarAlertaHistorico();
+        } else {
+            if (!valor) valor = perClave(gran, periodo.ancla);
+            const m = [...mesesDisponibles].reverse().find(x => perClave(gran, x) === valor);
+            if (m) periodo.ancla = m;
+            ocultarAlertaHistorico();
+        }
+        periodo.valor = valor;
+        periodoCambio();
+    }
+
+    function perMontar(host) {
+        host.classList.add('per-control');
+        const grans = document.createElement('div');
+        grans.className = 'seg';
+        grans.setAttribute('role', 'group');
+        grans.setAttribute('aria-label', 'Granularidad del período');
+        for (const [g, texto] of GRANULARIDADES) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'seg-btn'; b.dataset.gran = g; b.textContent = texto;
+            b.addEventListener('click', () => perElegir(g));
+            grans.appendChild(b);
+        }
+        const nav = document.createElement('div');
+        nav.className = 'per-nav';
+        const prev = document.createElement('button');
+        prev.type = 'button'; prev.textContent = '‹'; prev.setAttribute('aria-label', 'Período anterior');
+        const sel = document.createElement('select');
+        sel.setAttribute('aria-label', 'Período');
+        const next = document.createElement('button');
+        next.type = 'button'; next.textContent = '›'; next.setAttribute('aria-label', 'Período siguiente');
+        nav.append(prev, sel, next);
+        host.append(grans, nav);
+
+        sel.addEventListener('change', () => perElegir(periodo.gran, sel.value));
+        prev.addEventListener('click', () => {
+            const o = perOpciones(periodo.gran), i = o.indexOf(periodo.valor);
+            if (i > 0) perElegir(periodo.gran, o[i - 1]);
+        });
+        next.addEventListener('click', () => {
+            const o = perOpciones(periodo.gran), i = o.indexOf(periodo.valor);
+            if (i >= 0 && i < o.length - 1) perElegir(periodo.gran, o[i + 1]);
+        });
+
+        perControles.push(() => {
+            grans.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.gran === periodo.gran));
+            const historico = periodo.gran === 'historico';
+            nav.hidden = historico;
+            if (historico) return;
+            const opciones = perOpciones(periodo.gran);
+            sel.replaceChildren();
+            for (const v of [...opciones].reverse()) compOpcion(sel, v, perEtiqueta(periodo.gran, v));
+            sel.value = periodo.valor;
+            const i = opciones.indexOf(periodo.valor);
+            prev.disabled = i <= 0;
+            next.disabled = i < 0 || i >= opciones.length - 1;
+        });
+        perRefrescar();
+    }
+
+    async function perInicializar() {
+        cargadorSubtil.iniciar();
+        try {
+            const response = await fetch(urlPeriodos);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            mesesDisponibles = (await response.json()).meses;
+        } catch (error) {
+            console.error('No se pudieron cargar los períodos', error);
+            mesesDisponibles = [];
+        } finally {
+            cargadorSubtil.terminar();
+        }
+        if (mesesDisponibles.length) {
+            // Por defecto: el último mes con datos (carga inicial liviana).
+            periodo.ancla = mesesDisponibles[mesesDisponibles.length - 1];
+            periodo.gran = 'mensual';
+            periodo.valor = perClave('mensual', periodo.ancla);
+        } else {
+            periodo.gran = 'historico';
+            periodo.valor = '';
+        }
+        perRefrescar();
+    }
+
+    // Chip de período dentro de cada pestaña: abre el mismo control en un popover.
+    function perIniciarChips() {
+        document.querySelectorAll('.per-chip-wrap').forEach(wrap => {
+            const boton = wrap.querySelector('.per-chip');
+            const pop = wrap.querySelector('.per-pop');
+            boton.addEventListener('click', e => {
+                e.stopPropagation();
+                document.querySelectorAll('.per-pop').forEach(otro => { if (otro !== pop) otro.hidden = true; });
+                if (!pop.dataset.listo) { perMontar(pop); pop.dataset.listo = '1'; }
+                pop.hidden = !pop.hidden;
+            });
+        });
+        document.addEventListener('click', e => {
+            document.querySelectorAll('.per-pop').forEach(p => { if (!p.hidden && !p.contains(e.target)) p.hidden = true; });
+        });
+    }
+
+    // ---------- KPIs de la barra superior ----------
+    let kpisAbort = null;
+    async function cargarKpis() {
+        if (kpisAbort) kpisAbort.abort();
+        const controller = new AbortController();
+        kpisAbort = controller;
+        const kpiIds = ['kpi-monto', 'kpi-ordenes', 'kpi-proveedores', 'kpi-compradores'];
+        kpiIds.forEach(id => {
+            const node = el(id);
+            node.classList.add('dash-skeleton');
+            node.textContent = '…';
+        });
+        el('kpi-periodo').textContent = 'KPIs del período: ' + perTextoCorto();
+        cargadorSubtil.iniciar();
+        try {
+            const response = await fetch(urlKpis + '?' + new URLSearchParams(perParams()), {signal: controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const d = await response.json();
+            if (controller !== kpisAbort) return;
+            const conOrdenes = d.ordenes !== null;
+            el('kpi-monto').textContent = d.monto;
+            el('kpi-ordenes-etiqueta').textContent = conOrdenes ? 'Órdenes de Compra' : 'Ítems procesados';
+            el('kpi-ordenes').textContent = numeros.format(conOrdenes ? d.ordenes : d.items);
+            el('kpi-ordenes-sufijo').textContent = conOrdenes ? 'Registradas' : 'En el período';
+            el('kpi-proveedores').textContent = numeros.format(d.proveedores);
+            el('kpi-compradores').textContent = numeros.format(d.compradores);
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            console.error(error);
+            kpiIds.forEach(id => el(id).textContent = '—');
+        } finally {
+            if (controller === kpisAbort) {
+                kpiIds.forEach(id => el(id).classList.remove('dash-skeleton'));
+            }
+            cargadorSubtil.terminar();
+        }
+    }
+
+    // Al cambiar el período se recarga la pestaña activa; las demás, al abrirlas.
+    const cargadores = {
+        'tab-productos': () => prodCargar(),
+        'tab-competencia': () => compCargar(),
+        'tab-compradores': () => comprCargar()
+    };
+    const tabsListas = new Set();
+    const tabsViejas = new Set();
+    let tabActiva = 'tab-productos';
+
+    function periodoCambio() {
+        perRefrescar();
+        cargarKpis();
+        for (const id of tabsListas) {
+            if (id === tabActiva) cargadores[id]();
+            else tabsViejas.add(id);
+        }
+    }
+
+    // ============================================================
+    // DEMANDA DE PRODUCTOS
+    // ============================================================
+    const prodEstado = {grupo: '', nivel1: ''};
+    let productosListos = false;
+    let productosAbort = null;
+    let prodEvolucionAbort = null;
+
+    const PROD_NIVELES = {
+        grupo:    {paso: 1, titulo: 'Grupos de productos', pista: 'Elige un grupo para ver sus categorías.'},
+        nivel1:   {paso: 2, titulo: 'Categorías del grupo', pista: 'Elige una categoría para ver sus productos.'},
+        producto: {paso: 3, titulo: 'Productos', pista: 'Estos son los productos de la categoría seleccionada.'}
+    };
+
+    const prodNivel = () => prodEstado.nivel1 ? 'producto' : (prodEstado.grupo ? 'nivel1' : 'grupo');
+
+    function prodQuery(extra = {}) {
+        return new URLSearchParams({
+            tipo: 'ranking', grupo: prodEstado.grupo, nivel1: prodEstado.nivel1,
+            por: prodNivel(), ...perParams(), ...extra
+        });
+    }
+
+    function prodIr(grupo, nivel1) {
+        prodEstado.grupo = grupo;
+        prodEstado.nivel1 = nivel1;
+        el('prod-salto').value = grupo;
+        prodCargar();
+    }
+
+    function prodMigas() {
+        const caja = el('prod-migas');
+        caja.replaceChildren();
+        const pasos = [{texto: 'Todos los grupos', grupo: '', nivel1: ''}];
+        if (prodEstado.grupo) pasos.push({texto: prodEstado.grupo, grupo: prodEstado.grupo, nivel1: ''});
+        if (prodEstado.nivel1) pasos.push({texto: prodEstado.nivel1, grupo: prodEstado.grupo, nivel1: prodEstado.nivel1});
+        pasos.forEach((p, i) => {
+            const esActual = i === pasos.length - 1;
+            if (i) {
+                const sep = document.createElement('span');
+                sep.textContent = '›';
+                sep.setAttribute('aria-hidden', 'true');
+                caja.appendChild(sep);
+            }
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'rk-miga' + (esActual ? ' actual' : '');
+            b.textContent = abreviar(p.texto, 40);
+            b.title = p.texto;
+            if (esActual) b.setAttribute('aria-current', 'page');
+            else b.addEventListener('click', () => prodIr(p.grupo, p.nivel1));
+            caja.appendChild(b);
+        });
+    }
+
+    async function prodCargar() {
+        if (productosAbort) productosAbort.abort();
+        if (prodEvolucionAbort) prodEvolucionAbort.abort();
+        const controller = new AbortController();
+        productosAbort = controller;
+        const evVisible = !el('prod-ev-caja').hidden;
+        prodMigas();
+        prodContextoEvolucion();
+        el('prod-lista').classList.add('cargando');
+        el('prod-estado').innerHTML = '<span class="dash-inline-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Consultando el Data Warehouse…</span>';
+        el('prod-ev-caja').hidden = true;
+        el('prod-ev-estado').textContent = '';
+        cargadorSubtil.iniciar();
+        try {
+            const response = await fetch(urlProductos + '?' + prodQuery(), {signal: controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            if (controller !== productosAbort) return;
+            const nivel = data.por, info = PROD_NIVELES[nivel];
+            rkPintar('prod', data, {
+                paso: 'Paso ' + info.paso + ' de 3 · ' + info.titulo,
+                titulo: 'Top 10 por monto neto',
+                pista: info.pista,
+                serieEtiqueta: 'Monto neto CLP',
+                meta: r => (nivel === 'producto' && r.id ? 'Código ' + r.id + ' · ' : '')
+                    + numeros.format(r.items) + ' ítems · ' + r.participacion.toLocaleString('es-CL') + '% del segmento',
+                clicable: r => nivel !== 'producto' && !!r.id,
+                onClick: r => nivel === 'grupo' ? prodIr(r.id, '') : prodIr(prodEstado.grupo, r.id)
+            });
+            el('prod-estado').textContent = '';
+            if (evVisible) prodEvolucion();
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                el('prod-estado').textContent = 'No fue posible cargar la demanda: ' + err.message;
+                console.error(err);
+            }
+        } finally {
+            if (controller === productosAbort) el('prod-lista').classList.remove('cargando');
+            cargadorSubtil.terminar();
+        }
+    }
+
+    async function prodEvolucion() {
+        if (prodEvolucionAbort) prodEvolucionAbort.abort();
+        const controller = new AbortController();
+        prodEvolucionAbort = controller;
+        prodContextoEvolucion();
+        const mensaje = el('prod-ev-estado');
+        mensaje.innerHTML = '<span class="dash-inline-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Calculando evolución mensual…</span>';
+        cargadorSubtil.iniciar();
+        try {
+            const respuesta = await fetch(urlProductos + '?' + prodQuery({tipo: 'evolucion'}),
+                {signal: controller.signal});
+            if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+            const datos = await respuesta.json();
+            if (controller !== prodEvolucionAbort) return;
+            evPintar('prod', [{label: 'Monto neto CLP', puntos: datos.evolucion}]);
+            mensaje.textContent = datos.evolucion.length ? '' : 'Sin datos para esta selección.';
+        } catch (err) {
+            if (err.name !== 'AbortError' && controller === prodEvolucionAbort)
+                mensaje.textContent = 'No se pudo cargar la evolución: ' + err.message;
+        } finally {
+            cargadorSubtil.terminar();
+        }
+    }
+
+    async function iniciarProductos() {
+        if (productosListos) return;
+        productosListos = true;
+        tabsListas.add('tab-productos');
+        el('prod-salto').addEventListener('change', e => prodIr(e.target.value, ''));
+        try {
+            const response = await fetch(urlProductos + '?tipo=opciones');
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            for (const g of data.grupos) compOpcion(el('prod-salto'), g, g);
+        } catch (err) {
+            el('prod-estado').textContent = 'No se pudo cargar la lista de grupos: ' + err.message;
+            console.error(err);
+        }
+        await prodCargar();
+    }
+
+    // ============================================================
+    // ANÁLISIS DE COMPETENCIA
+    // ============================================================
+    let competenciaLista = false;
+    let compAbort = null;
+    let compEvolucionAbort = null;
+    let compBusquedaAbort = null;
+    let compPor = 'proveedor';
+    let compProveedor = null;   // {id, nombre}: se fija al hacer clic en un proveedor
+
+    const COMP_ETIQUETAS = {proveedor: 'proveedores', producto: 'productos del proveedor', organismo: 'organismos clientes'};
+    const COMP_PISTAS = {
+        proveedor: 'Selecciona un proveedor para explorar su cartera de productos o comparar empresas que venden un producto específico.',
+        producto: 'Cartera del proveedor seleccionado: selecciona un producto para comparar todos sus proveedores.',
+        organismo: 'Organismos que compran al proveedor seleccionado. Selecciona un organismo para ver sus proveedores.'
+    };
+
+    function compSetPor(valor) {
+        compPor = valor;
+        document.querySelectorAll('#comp-por-seg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.por === valor));
+        const botonClientes = document.querySelector('#comp-por-seg [data-por="organismo"]');
+        botonClientes.disabled = !compProveedor;
+    }
+
+    function compActualizarContexto() {
+        const contexto = el('comp-contexto');
+        const titulo = el('comp-contexto-titulo');
+        const descripcion = el('comp-contexto-descripcion');
+        const volver = el('comp-contexto-volver');
+        const codigoProducto = el('comp-producto').value;
+        const opcionProducto = el('comp-producto').selectedOptions[0];
+        if (compPor === 'producto' && compProveedor) {
+            contexto.hidden = false;
+            titulo.textContent = 'Cartera de productos · ' + compProveedor.nombre;
+            descripcion.textContent = 'Estos productos corresponden al proveedor seleccionado, dentro de los filtros actuales. Selecciona uno para identificar a sus competidores.';
+            volver.textContent = 'Volver a proveedores';
+        } else if (compPor === 'organismo' && compProveedor) {
+            contexto.hidden = false;
+            titulo.textContent = 'Clientes de ' + compProveedor.nombre;
+            descripcion.textContent = 'Organismos compradores del proveedor seleccionado, dentro del segmento y período actuales.';
+            volver.textContent = 'Volver a proveedores';
+        } else if (compPor === 'proveedor' && codigoProducto) {
+            contexto.hidden = false;
+            titulo.textContent = 'Competidores del producto · ' + codigoProducto;
+            descripcion.textContent = opcionProducto ? opcionProducto.textContent : 'Ranking de proveedores que venden el producto seleccionado.';
+            volver.textContent = 'Quitar filtro de producto';
+        } else {
+            contexto.hidden = true;
+        }
+    }
+
+    function compQuery(extra = {}) {
+        return new URLSearchParams({
+            grupo: el('comp-grupo').value,
+            region: el('comp-region').value,
+            organismo: el('comp-organismo').value,
+            producto: el('comp-producto').value,
+            proveedor: compProveedor ? compProveedor.id : '',
+            por: compPor, ...perParams(), ...extra
+        });
+    }
+
+    async function compOpciones() {
+        const response = await fetch(urlCompetencia + '?tipo=opciones');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        for (const g of data.grupos) compOpcion(el('comp-grupo'), g, g);
+        for (const r of data.regiones) compOpcion(el('comp-region'), r, r);
+        for (const o of data.organismos) compOpcion(el('comp-organismo'), o.id, o.nombre + ' [' + o.id + ']');
+    }
+
+    async function compBuscarProductos() {
+        const q = el('comp-busqueda').value.trim();
+        const grupo = el('comp-grupo').value;
+        const sel = el('comp-producto');
+        if (compBusquedaAbort) compBusquedaAbort.abort();
+        const controller = new AbortController();
+        compBusquedaAbort = controller;
+        const anterior = sel.value;
+        sel.replaceChildren();
+        compOpcion(sel, '', grupo ? 'Todos los productos del grupo' : 'Todos los productos');
+        if (!grupo && q.length < 2) {
+            compOpcion(sel, '', 'Selecciona un grupo o escribe al menos 2 caracteres');
+            return;
+        }
+        sel.disabled = true;
+        try {
+            const params = new URLSearchParams({tipo: 'productos', grupo, q});
+            const response = await fetch(urlCompetencia + '?' + params, {signal: controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            if (controller !== compBusquedaAbort) return;
+            for (const p of data.productos) compOpcion(sel, p.codigo, p.codigo + ' · ' + p.descripcion);
+            if (data.productos.some(p => String(p.codigo) === anterior)) sel.value = anterior;
+            if (data.hay_mas) {
+                el('comp-estado').textContent = 'Se muestran los primeros 500 productos. Escribe en el buscador para acotar el listado.';
+            } else if (!data.productos.length) {
+                el('comp-estado').textContent = 'No hay productos que coincidan con estos filtros.';
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                el('comp-estado').textContent = 'Error al buscar productos: ' + error.message;
+            }
+        } finally {
+            if (controller === compBusquedaAbort) sel.disabled = false;
+        }
+    }
+
+    function compAlCambiarGrupo() {
+        el('comp-busqueda').value = '';
+        el('comp-producto').value = '';
+        compBuscarProductos();
+    }
+
+    // Chips de filtros activos: se quitan con un clic.
+    function compChips() {
+        const caja = el('comp-chips');
+        caja.replaceChildren();
+        const activos = [];
+        for (const [id, rotulo] of [['comp-grupo', 'Grupo'], ['comp-region', 'Región'],
+                                    ['comp-organismo', 'Organismo'], ['comp-producto', 'Producto']]) {
+            const sel = el(id);
+            if (!sel.value) continue;
+            activos.push({
+                texto: rotulo + ': ' + abreviar(sel.selectedOptions[0].textContent, 40),
+                quitar: () => { sel.value = ''; if (id === 'comp-grupo') compAlCambiarGrupo(); }
+            });
+        }
+        if (compProveedor) {
+            activos.push({texto: 'Proveedor: ' + abreviar(compProveedor.nombre, 40), quitar: () => { compProveedor = null; compSetPor('proveedor'); }});
+        }
+        for (const a of activos) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'rk-chip';
+            b.textContent = a.texto + ' ✕';
+            b.title = 'Quitar filtro';
+            b.addEventListener('click', () => { a.quitar(); compCargar(); });
+            caja.appendChild(b);
+        }
+        el('comp-filtros-n').textContent = activos.length ? ' (' + activos.length + ' activos)' : '';
+    }
+
+    function compFijarProducto(codigo, nombre) {
+        const sel = el('comp-producto');
+        if (![...sel.options].some(o => o.value === String(codigo))) compOpcion(sel, codigo, codigo + ' · ' + nombre);
+        sel.value = String(codigo);
+    }
+
+    // Navegación competitiva: proveedor -> cartera -> producto -> todos sus competidores.
+    function compClicFila(r, por) {
+        if (por === 'proveedor') {
+            compProveedor = {id: r.id, nombre: r.nombre};
+            // El producto usado para comparar proveedores no debe restringir su cartera.
+            el('comp-producto').value = '';
+            compSetPor('producto');
+        } else if (por === 'producto') {
+            compFijarProducto(r.codigo, r.nombre);
+            // Quitar al proveedor inicial: ahora se analizan TODOS los competidores.
+            compProveedor = null;
+            compSetPor('proveedor');
+        } else {
+            el('comp-organismo').value = String(r.id);
+            compProveedor = null;
+            compSetPor('proveedor');
+        }
+        compCargar();
+    }
+
+    async function compCargar() {
+        if (compAbort) compAbort.abort();
+        if (compEvolucionAbort) compEvolucionAbort.abort();
+        const controller = new AbortController();
+        compAbort = controller;
+        const evVisible = !el('comp-ev-caja').hidden;
+        compChips();
+        compActualizarContexto();
+        compContextoEvolucion();
+        el('comp-lista').classList.add('cargando');
+        el('comp-estado').innerHTML = '<span class="dash-inline-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Consultando el Data Warehouse…</span>';
+        el('comp-ev-caja').hidden = true;
+        el('comp-ev-estado').textContent = '';
+        cargadorSubtil.iniciar();
+        try {
+            const response = await fetch(urlCompetencia + '?' + compQuery({tipo: 'ranking'}), {signal: controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            if (controller !== compAbort) return;
+            const por = data.por;
+            rkPintar('comp', data, {
+                titulo: (por === 'proveedor' && el('comp-producto').value ? 'Proveedores competidores · Top 10' : 'Top 10 ' + COMP_ETIQUETAS[por] + ' por monto bruto'),
+                pista: COMP_PISTAS[por],
+                serieEtiqueta: 'Monto bruto CLP',
+                meta: r => (por === 'organismo' ? pl(r.proveedores, 'proveedor', 'proveedores')
+                                                : pl(r.organismos, 'organismo', 'organismos'))
+                    + ' · ' + pl(r.items, 'ítem', 'ítems') + ' · ' + r.participacion.toLocaleString('es-CL') + '% del segmento',
+                clicable: r => por === 'producto' ? !!r.codigo : r.id !== null && r.id !== undefined,
+                onClick: r => compClicFila(r, por)
+            });
+            el('comp-estado').textContent = '';
+            if (evVisible) compEvolucion();
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                el('comp-estado').textContent = 'No fue posible cargar el ranking: ' + error.message;
+                console.error(error);
+            }
+        } finally {
+            if (controller === compAbort) el('comp-lista').classList.remove('cargando');
+            cargadorSubtil.terminar();
+        }
+    }
+
+    async function compEvolucion() {
+        if (compEvolucionAbort) compEvolucionAbort.abort();
+        const controller = new AbortController();
+        compEvolucionAbort = controller;
+        compContextoEvolucion();
+        const mensaje = el('comp-ev-estado');
+        mensaje.innerHTML = '<span class="dash-inline-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Calculando evolución…</span>';
+        cargadorSubtil.iniciar();
+        try {
+            const respuesta = await fetch(urlCompetencia + '?' + compQuery({tipo: 'evolucion'}),
+                {signal: controller.signal});
+            if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+            const datos = await respuesta.json();
+            if (controller !== compEvolucionAbort) return;
+            const series = datos.series.map(s => ({label: s.nombre, puntos: s.puntos}));
+            evPintar('comp', series);
+            mensaje.textContent = series.length ? '' : 'Sin datos para estos filtros.';
+        } catch (err) {
+            if (err.name !== 'AbortError' && controller === compEvolucionAbort)
+                mensaje.textContent = 'No se pudo cargar la evolución: ' + err.message;
+        } finally {
+            cargadorSubtil.terminar();
+        }
+    }
+
+    async function iniciarCompetencia() {
+        if (competenciaLista) return;
+        competenciaLista = true;
+        tabsListas.add('tab-competencia');
+
+        el('comp-aplicar').addEventListener('click', compCargar);
+        el('comp-limpiar').addEventListener('click', () => {
+            for (const id of ['comp-grupo', 'comp-region', 'comp-organismo', 'comp-producto']) el(id).value = '';
+            el('comp-busqueda').value = '';
+            compProveedor = null;
+            compSetPor('proveedor');
+            compBuscarProductos();
+            compCargar();
+        });
+        el('comp-busqueda').addEventListener('input', () => {
+            clearTimeout(window.__compDebounce);
+            window.__compDebounce = setTimeout(compBuscarProductos, 300);
+        });
+        el('comp-grupo').addEventListener('change', compAlCambiarGrupo);
+        el('comp-por-seg').addEventListener('click', e => {
+            const b = e.target.closest('.seg-btn');
+            if (!b || b.disabled) return;
+            if (b.dataset.por === 'proveedor') compProveedor = null;
+            if (b.dataset.por === 'organismo' && !compProveedor) return;
+            compSetPor(b.dataset.por);
+            compCargar();
+        });
+        el('comp-contexto-volver').addEventListener('click', () => {
+            // Desde la cartera/clientes: abandonar el proveedor; desde competidores: quitar producto.
+            if (compPor === 'proveedor') el('comp-producto').value = '';
+            compProveedor = null;
+            compSetPor('proveedor');
+            compCargar();
+        });
+
+        try {
+            await compOpciones();
+        } catch (error) {
+            el('comp-estado').textContent = 'No se pudieron cargar los filtros: ' + error.message;
+            console.error(error);
+        }
+        await compCargar();
+    }
+
+    // ============================================================
+    // ORGANISMOS COMPRADORES
+    // ============================================================
+    let compradoresListos = false;
+    let compradoresAbort = null;
+
+    async function comprCargar() {
+        if (compradoresAbort) compradoresAbort.abort();
+        const controller = new AbortController();
+        compradoresAbort = controller;
+        el('compr-lista').classList.add('cargando');
+        el('compr-estado').innerHTML = '<span class="dash-inline-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Consultando el Data Warehouse…</span>';
+        cargadorSubtil.iniciar();
+        try {
+            const params = new URLSearchParams({tipo: 'ranking', por: 'organismo', ...perParams()});
+            const response = await fetch(urlCompetencia + '?' + params, {signal: controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            if (controller !== compradoresAbort) return;
+            rkPintar('compr', data, {
+                titulo: 'Top 10 organismos por monto bruto',
+                pista: 'Organismos que más gastan en el período seleccionado.',
+                serieEtiqueta: 'Monto bruto CLP',
+                meta: r => pl(r.proveedores, 'proveedor', 'proveedores') + ' · ' + pl(r.items, 'ítem', 'ítems')
+                    + ' · ' + r.participacion.toLocaleString('es-CL') + '% del segmento'
+            });
+            el('compr-estado').textContent = '';
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                el('compr-estado').textContent = 'No fue posible cargar los organismos: ' + error.message;
+                console.error(error);
+            }
+        } finally {
+            if (controller === compradoresAbort) el('compr-lista').classList.remove('cargando');
+            cargadorSubtil.terminar();
+        }
+    }
+
+    async function iniciarCompradores() {
+        if (compradoresListos) return;
+        compradoresListos = true;
+        tabsListas.add('tab-compradores');
+        await comprCargar();
+    }
+
+    // ============================================================
+    // PESTAÑAS E INICIO
+    // ============================================================
+    function iniciarTab(tabId) {
+        if (typeof Chart === 'undefined') {
+            document.querySelectorAll('canvas').forEach(canvas => {
+                const aviso = document.createElement('p');
+                aviso.textContent = 'No se pudo cargar Chart.js. Revisa la conexión o el bloqueo del CDN.';
+                canvas.replaceWith(aviso);
+            });
+            return;
+        }
+        if (tabId === 'tab-productos') iniciarProductos();
+        if (tabId === 'tab-competencia') iniciarCompetencia();
+        if (tabId === 'tab-compradores') iniciarCompradores();
+        if (tabsViejas.has(tabId)) {
+            tabsViejas.delete(tabId);
+            cargadores[tabId]();
+        }
+    }
+
+    function cambiarTabAnalitico(tabId, btn) {
+        tabActiva = tabId;
+        document.querySelectorAll('.dashboard-view').forEach(v => v.style.display = 'none');
+        document.querySelectorAll('.tab-dash-btn').forEach(b => b.classList.remove('active'));
+        el(tabId).style.display = 'block';
+        btn.classList.add('active');
+        requestAnimationFrame(() => {
+            iniciarTab(tabId);
+            Object.values(graficos).forEach(g => g.resize());
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        rkMontar(el('prod-panel'), 'prod', {montoEtiqueta: 'Monto neto del segmento', itemsEtiqueta: 'Ítems comprados', liderEtiqueta: 'Mayor demanda'});
+        rkMontar(el('comp-panel'), 'comp', {montoEtiqueta: 'Monto bruto del segmento', itemsEtiqueta: 'Ítems comprados', liderEtiqueta: 'Líder del ranking'});
+        rkMontar(el('compr-panel'), 'compr', {montoEtiqueta: 'Monto bruto del segmento', itemsEtiqueta: 'Ítems comprados', liderEtiqueta: 'Mayor comprador'});
+        evMontar(el('prod-evolucion-panel'), 'prod', 'Monto neto mensual en CLP.', () => prodEvolucion());
+        evMontar(el('comp-evolucion-panel'), 'comp', 'Monto bruto mensual en CLP.', () => compEvolucion());
+        prodContextoEvolucion();
+        compContextoEvolucion();
+
+        perIniciarChips();
+        await perInicializar();
+        perMontar(el('per-global'));
+        cargarKpis();
+        iniciarTab('tab-productos');
+
+        const abrirExport = (e) => {
+            if (e) e.preventDefault();
+            const targetUrl = "{% url 'exportar_dashboard' %}?" + new URLSearchParams(perParams()).toString();
+            if (typeof window.abrirModalExportar === 'function') {
+                window.abrirModalExportar(targetUrl);
+            } else {
+                window.location.assign(targetUrl + '&formato=xlsx');
+            }
+        };
+
+        const exportBtn = el('btn-exportar-dashboard');
+        if (exportBtn) exportBtn.addEventListener('click', abrirExport);
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.rk-btn-descargar')) {
+                abrirExport(e);
+            }
+        });
+    });
+</script>
 
 {% endblock %}

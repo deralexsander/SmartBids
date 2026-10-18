@@ -11,6 +11,7 @@ const PAGES_CONFIG = [
     { elementId: 'register-form', guestOnly: true, redirectFallback: '/perfil' },
     { elementId: 'profile-email', requiresAuth: true, redirectFallback: '/ingreso' },
     { elementId: 'form-perfil-datos', requiresAuth: true, redirectFallback: '/ingreso' },
+    { path: '/resumen', requiresAuth: true, redirectFallback: '/ingreso' },
     { path: '/mis-licitaciones', requiresAuth: true, redirectFallback: '/ingreso' }, 
     { path: '/dashboard', requiresAuth: true, redirectFallback: '/ingreso' }, 
     { 
@@ -195,7 +196,7 @@ onAuthStateChanged(auth, async (user) => {
 
         // Obtener perfil en segundo plano una sola vez para nav administrativo y modal de completitud
         const currentPath = window.location.pathname.toLowerCase();
-        const esRutaPermitida = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
+        const esRutaPermitida = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard') || currentPath.includes('/resumen');
 
         fetch('/api/obtener-perfil/', {
             method: 'POST',

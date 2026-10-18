@@ -107,7 +107,7 @@ export function mostrarMensaje(texto, tipo = 'info', duracion = 14000) {
 
     if (icon && badge) {
         icon.className = 'fa-solid';
-        badge.classList.remove('global-message--exito', 'global-message--error', 'global-message--info');
+        badge.classList.remove('global-message--exito', 'global-message--error', 'global-message--info', 'global-message--alerta');
 
         if (tipo === 'exito') {
             badge.classList.add('global-message--exito');
@@ -125,6 +125,14 @@ export function mostrarMensaje(texto, tipo = 'info', duracion = 14000) {
             badge.style.borderColor = '#feb2b2';
             if (closeBtn) closeBtn.style.color = '#e53e3e';
             if (closeIcon) closeIcon.style.color = '#e53e3e';
+        } else if (tipo === 'alerta' || tipo === 'warning') {
+            badge.classList.add('global-message--alerta');
+            icon.classList.add('fa-triangle-exclamation');
+            icon.style.color = '#dd6b20';
+            badgeText.style.color = '#7b341e';
+            badge.style.borderColor = '#fbd38d';
+            if (closeBtn) closeBtn.style.color = '#dd6b20';
+            if (closeIcon) closeIcon.style.color = '#dd6b20';
         } else {
             badge.classList.add('global-message--info');
             icon.classList.add('fa-circle-info');
@@ -347,3 +355,103 @@ async function cargarAlertasPostgres() {
 document.addEventListener('DOMContentLoaded', () => {
     cargarAlertasPostgres();
 });
+
+if (typeof window !== 'undefined') {
+    window.mostrarMensaje = mostrarMensaje;
+    window.limpiarMensaje = limpiarMensaje;
+}
+
+// Captura global de validaciones HTML5 en cualquier formulario del sistema
+document.addEventListener('invalid', (e) => {
+    // Evitar la aparición de las burbujas nativas del navegador ("validaciones de django")
+    e.preventDefault();
+
+    const form = e.target.closest('form');
+    if (!form) return;
+
+    if (form.dataset.invalidNotified !== 'true') {
+        form.dataset.invalidNotified = 'true';
+        setTimeout(() => { delete form.dataset.invalidNotified; }, 2500);
+
+        let nombreCampo = '';
+
+        // 1. Buscar en <label for="...">
+        if (e.target.id) {
+            try {
+                const labelEl = form.querySelector(`label[for="${CSS.escape(e.target.id)}"]`);
+                if (labelEl) {
+                    nombreCampo = labelEl.textContent.replace(/\*/g, '').trim();
+                }
+            } catch (_) {}
+        }
+
+        // 2. Buscar en e.target.labels
+        if (!nombreCampo && e.target.labels && e.target.labels.length > 0) {
+            nombreCampo = e.target.labels[0].textContent.replace(/\*/g, '').trim();
+        }
+
+        // 3. Buscar en aria-label
+        if (!nombreCampo) {
+            nombreCampo = e.target.getAttribute('aria-label') || '';
+        }
+
+        // 4. Diccionario de traducción para nombres técnicos comunes
+        const DICCIONARIO_CAMPOS = {
+            'name': 'Nombre',
+            'nombre': 'Nombre',
+            'first_name': 'Nombre',
+            'last_name': 'Apellido',
+            'topic': 'Tema',
+            'tema': 'Tema',
+            'email': 'Correo',
+            'correo': 'Correo',
+            'phone': 'Teléfono',
+            'telefono': 'Teléfono',
+            'message': 'Mensaje',
+            'mensaje': 'Mensaje',
+            'password': 'Contraseña',
+            'password1': 'Contraseña',
+            'password2': 'Confirmar contraseña',
+            'current_password': 'Contraseña actual',
+            'new_password': 'Nueva contraseña',
+            'rut': 'RUT',
+            'organization': 'Organización',
+            'empresa': 'Empresa',
+            'cargo': 'Cargo',
+            'motivo': 'Motivo',
+            'website': 'Sitio web'
+        };
+
+        const fieldName = (e.target.name || '').toLowerCase();
+        if (!nombreCampo && fieldName && DICCIONARIO_CAMPOS[fieldName]) {
+            nombreCampo = DICCIONARIO_CAMPOS[fieldName];
+        }
+
+        // 5. Fallback a placeholder si es representativo
+        if (!nombreCampo) {
+            const ph = e.target.getAttribute('placeholder') || '';
+            if (ph && !ph.toLowerCase().startsWith('ej') && !ph.includes('@')) {
+                nombreCampo = ph;
+            }
+        }
+
+        if (!nombreCampo && fieldName) {
+            nombreCampo = fieldName;
+        }
+
+        let mensaje = 'Por favor completa todos los campos requeridos correctamente.';
+        if (nombreCampo) {
+            if (e.target.tagName === 'SELECT') {
+                mensaje = `Por favor selecciona una opción para: ${nombreCampo}.`;
+            } else if (e.target.type === 'email' && e.target.validity?.typeMismatch) {
+                mensaje = `Por favor ingresa un ${nombreCampo} válido.`;
+            } else if (e.target.validity?.tooShort) {
+                mensaje = `El campo ${nombreCampo} es demasiado corto.`;
+            } else {
+                mensaje = `Por favor completa el campo: ${nombreCampo}.`;
+            }
+        }
+
+        mostrarMensaje(mensaje, 'error');
+    }
+}, true);

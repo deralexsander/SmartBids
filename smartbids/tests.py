@@ -126,12 +126,44 @@ class VistasExportacionTests(SimpleTestCase):
         from unittest.mock import patch
         from .page_views import exportar_dashboard_view
 
-        with patch('smartbids.page_views.Licitacion.objects') as mock_objects:
-            mock_objects.select_related.return_value.filter.return_value.order_by.return_value = []
-            req = self.rf.get('/dashboard/exportar/?formato=xlsx')
-            resp = exportar_dashboard_view(req)
-            self.assertEqual(resp['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            self.assertIn('dashboard-smartbids.xlsx', resp['Content-Disposition'])
+        req = self.rf.get('/dashboard/exportar/?formato=xlsx&gran=mes&periodo=2024-05')
+        resp = exportar_dashboard_view(req)
+        self.assertEqual(resp['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertIn('dashboard-tablas-2024-05.xlsx', resp['Content-Disposition'])
+
+    def test_exportar_dashboard_csv(self):
+        from .page_views import exportar_dashboard_view
+
+        req = self.rf.get('/dashboard/exportar/?formato=csv&gran=mes&periodo=2024-05')
+        resp = exportar_dashboard_view(req)
+        self.assertEqual(resp['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertIn('dashboard-tablas-2024-05.csv', resp['Content-Disposition'])
+        self.assertIn('=== RESUMEN KPIS ===', resp.content.decode('utf-8'))
+
+
+
+class DashboardDWTests(SimpleTestCase):
+    def setUp(self):
+        from django.test import RequestFactory
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def test_dashboard_page_render(self):
+        from unittest.mock import patch
+        from .dashboard_views import dashboard_view
+        req = self.rf.get('/dashboard/')
+        with patch('smartbids.dashboard_views.render') as mock_render:
+            mock_render.return_value = 'ok'
+            resp = dashboard_view(req)
+            self.assertEqual(resp, 'ok')
+            mock_render.assert_called_once_with(req, 'smartbids/dashboard.html')
+
+    def test_dashboard_periodo_invalido(self):
+        from .dashboard_views import dashboard_kpis
+        req = self.rf.get('/dashboard/kpis/?gran=mensual&periodo=invalido')
+        resp = dashboard_kpis(req)
+        self.assertEqual(resp.status_code, 400)
 
 
 class ReenvioActivacionTests(SimpleTestCase):
@@ -471,12 +503,38 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
                 pref_palabras_claves=['servidor', 'computador'],
                 pref_productos=[]
             )
-            req = self.rf.get('/mis-licitaciones/')
+            req = self.rf.get('/mis-licitaciones/?tab=claves')
             qs, match_perfil = filtrar_licitaciones(req, suscriptor=MagicMock())
 
-            # El match con perfil debe ser 42 y el queryset devuelto debe estar filtrado
+            # El match con perfil debe ser 42 y el queryset devuelto debe estar filtrado en pestaña de claves
             self.assertEqual(match_perfil, 42)
             self.assertEqual(qs, mock_filtered_qs)
+
+    def test_filtrar_licitaciones_tab_todas_sin_filtro_de_claves(self):
+        from unittest.mock import patch, MagicMock
+        from .licitaciones_views import filtrar_licitaciones
+
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+
+        with patch('smartbids.licitaciones_views.Licitacion.objects') as mock_licitacion_objects, \
+             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+            mock_licitacion_objects.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+            mock_licitacion_objects.filter.return_value.distinct.return_value.count.return_value = 15
+
+            mock_pref.return_value.first.return_value = MagicMock(
+                pref_comunas=[],
+                pref_tipo_licitacion=[],
+                pref_ucom=[],
+                pref_palabras_claves=['software'],
+                pref_productos=[]
+            )
+            req = self.rf.get('/mis-licitaciones/?tab=todas')
+            qs, match_perfil = filtrar_licitaciones(req, suscriptor=MagicMock())
+
+            # En pestaña Todas, no se aplica el filtro de palabras clave a qs, pero se calcula el match
+            self.assertEqual(match_perfil, 15)
+            self.assertEqual(qs, mock_qs)
 
     def test_mis_licitaciones_view_kpi_match_cero_cuando_perfil_vacio(self):
         from unittest.mock import patch, MagicMock
@@ -495,6 +553,234 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
             self.assertTrue(mock_render.called)
             context = mock_render.call_args[0][2]
             self.assertEqual(context['match_perfil'], 0)
+
+
+class ResumenDiaTests(SimpleTestCase):
+    def setUp(self):
+        from django.test import RequestFactory
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def test_resumen_dia_view_sin_suscriptor(self):
+        from unittest.mock import patch, MagicMock
+        from .resumen_views import resumen_dia_view
+
+        mock_lic_qs = MagicMock()
+        mock_lic_qs.count.return_value = 0
+        mock_lic_qs.__iter__.return_value = []
+        mock_lic_qs.__getitem__.return_value = []
+
+        with patch('smartbids.resumen_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.resumen_views.render') as mock_render, \
+             patch('smartbids.resumen_views.Licitacion.objects') as mock_lic:
+            mock_lic.filter.return_value.select_related.return_value.order_by.return_value = mock_lic_qs
+            req = self.rf.get('/resumen/')
+            resumen_dia_view(req)
+
+            self.assertTrue(mock_render.called)
+            template_name = mock_render.call_args[0][1]
+            context = mock_render.call_args[0][2]
+            self.assertEqual(template_name, 'smartbids/resumen_dia.html')
+            self.assertEqual(context['nombre_usuario'], 'Suscriptor')
+            self.assertEqual(context['total_coincidencias'], 0)
+            self.assertEqual(context['total_seguidas'], 0)
+
+    def test_resumen_dia_view_con_suscriptor(self):
+        from unittest.mock import patch, MagicMock
+        from .resumen_views import resumen_dia_view
+
+        mock_susc = MagicMock(sus_nombre1='Juan', sus_apellido1='Pérez')
+        mock_pref = MagicMock(pref_palabras_claves=['servicios'], pref_productos=[])
+
+        mock_lic_qs = MagicMock()
+        mock_lic_qs.count.return_value = 3
+        mock_lic_qs.__iter__.return_value = []
+        mock_lic_qs.__getitem__.return_value = []
+
+        mock_destacadas_qs = MagicMock()
+        mock_destacadas_qs.__iter__.return_value = []
+        mock_destacadas_qs.__getitem__.return_value = []
+
+        mock_notif_qs = MagicMock()
+        mock_notif_qs.filter.return_value.count.return_value = 1
+        mock_notif_qs.__iter__.return_value = []
+        mock_notif_qs.__getitem__.return_value = []
+
+        with patch('smartbids.resumen_views.resolver_suscriptor', return_value=mock_susc), \
+             patch('smartbids.resumen_views._sincronizar_seguimientos'), \
+             patch('smartbids.resumen_views.Preferencia.objects.filter') as mock_pref_filter, \
+             patch('smartbids.resumen_views.SeguimientoLicitacion.objects.filter') as mock_seg_filter, \
+             patch('smartbids.resumen_views.NotificacionLicitacion.objects.filter') as mock_notif_filter, \
+             patch('smartbids.resumen_views.Licitacion.objects') as mock_lic, \
+             patch('smartbids.resumen_views.render') as mock_render:
+            
+            mock_pref_filter.return_value.first.return_value = mock_pref
+            mock_seg_filter.return_value.select_related.return_value.count.return_value = 2
+            mock_seg_filter.return_value.select_related.return_value.values_list.return_value = ['LIC-1']
+            mock_seg_filter.return_value.select_related.return_value.__iter__.return_value = []
+            mock_seg_filter.return_value.select_related.return_value.__getitem__.return_value = []
+            mock_notif_filter.return_value.select_related.return_value.order_by.return_value = mock_notif_qs
+            mock_lic.filter.return_value.distinct.return_value.count.return_value = 8
+            mock_lic.filter.return_value.select_related.return_value.order_by.return_value = mock_lic_qs
+            mock_lic.filter.return_value.filter.return_value.select_related.return_value.order_by.return_value.distinct.return_value = mock_destacadas_qs
+
+            req = self.rf.get('/resumen/')
+            resumen_dia_view(req)
+
+            self.assertTrue(mock_render.called)
+            context = mock_render.call_args[0][2]
+            self.assertEqual(context['nombre_usuario'], 'Juan Pérez')
+            self.assertTrue(context['tiene_palabras_perfil'])
+            self.assertEqual(context['total_coincidencias'], 8)
+
+
+class AdminSafetyAndEmailConfigTests(SimpleTestCase):
+    def setUp(self):
+        import json
+        from django.test import RequestFactory
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def test_admin_auto_eliminacion_bloqueada(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from .firebase_policy_views import usuarios_firebase
+
+        mock_susc = MagicMock(sus_nombre1='Admin', sus_apellido1='Uno', sus_nombre_social='')
+
+        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.firebase_policy_views._firebase_admin_session'), \
+             patch('smartbids.firebase_policy_views._firebase_accounts_url'), \
+             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs:
+            
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_susc
+            req = self.rf.delete('/api/firebase/usuarios/?uid=admin_123', HTTP_X_FIREBASE_UID='admin_123')
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 403)
+            data = json.loads(resp.content)
+            self.assertIn('no puede eliminar su propia cuenta', data['mensaje'])
+
+    def test_admin_auto_remocion_bloqueada(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from .firebase_policy_views import usuarios_firebase
+
+        mock_susc = MagicMock(sus_nombre1='Admin', sus_apellido1='Uno', sus_nombre_social='')
+        mock_estado_suscriptor = MagicMock(nombre_estado='suscriptor')
+
+        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.firebase_policy_views._firebase_admin_session'), \
+             patch('smartbids.firebase_policy_views._firebase_accounts_url'), \
+             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_estado_suscriptor)):
+            
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_susc
+            body = json.dumps({'uid': 'admin_123', 'codigo_estado': 2})
+            req = self.rf.patch('/api/firebase/usuarios/', data=body, content_type='application/json', HTTP_X_FIREBASE_UID='admin_123')
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 403)
+            data = json.loads(resp.content)
+            self.assertIn('no puede revocar su propio rol', data['mensaje'])
+
+    def test_admin_eliminar_otro_admin_genera_auditoria_y_correo(self):
+        from unittest.mock import patch, MagicMock
+        from .firebase_policy_views import usuarios_firebase
+
+        mock_target_susc = MagicMock(
+            codigo_estado=MagicMock(nombre_estado='administrador', codigo_estado=5),
+            sus_nombre1='Admin',
+            sus_apellido1='Dos',
+            sus_nombre_social='Admin 2'
+        )
+        mock_session = MagicMock()
+        mock_session.post.return_value = MagicMock(ok=True, status_code=200)
+
+        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.firebase_policy_views.Preferencia.objects'), \
+             patch('smartbids.firebase_policy_views.registrar_auditoria_admin') as mock_registrar, \
+             patch('smartbids.firebase_policy_views.notificar_accion_entre_administradores') as mock_notificar:
+            
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
+            mock_susc_objs.filter.return_value.first.return_value = mock_target_susc
+
+            req = self.rf.delete('/api/firebase/usuarios/?uid=admin_456&email=admin2@empresa.cl', HTTP_X_FIREBASE_UID='admin_123')
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_registrar.called)
+            self.assertEqual(mock_registrar.call_args[1]['accion'], 'ELIMINACION')
+            self.assertTrue(mock_notificar.called)
+            self.assertEqual(mock_notificar.call_args[1]['afectado_email'], 'admin2@empresa.cl')
+
+    def test_config_correo_get_y_patch(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from .mensajeria_views import administrar_config_correo
+
+        with patch('smartbids.mensajeria_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.mensajeria_views.ConfiguracionCorreo.objects') as mock_cfg_objs:
+            
+            mock_cfg = MagicMock(
+                email_contacto='contacto@chileavanza.cl',
+                email_notificaciones='notif@chileavanza.cl',
+                nombre_remitente='SmartBids',
+                email_seguridad_auditoria='auditoria@chileavanza.cl'
+            )
+            mock_cfg_objs.first.return_value = mock_cfg
+
+            # Test GET
+            req_get = self.rf.get('/api/administracion/config-correo/')
+            resp_get = administrar_config_correo(req_get)
+            self.assertEqual(resp_get.status_code, 200)
+            data_get = json.loads(resp_get.content)
+            self.assertEqual(data_get['status'], 'ok')
+
+            # Test PATCH
+            body = json.dumps({
+                'email_contacto': 'nuevo_contacto@smartbids.cl',
+                'email_notificaciones': 'alertas@smartbids.cl',
+                'nombre_remitente': 'SmartBids Admin',
+                'email_seguridad_auditoria': 'seguridad@smartbids.cl'
+            })
+            req_patch = self.rf.patch('/api/administracion/config-correo/', data=body, content_type='application/json')
+            resp_patch = administrar_config_correo(req_patch)
+            self.assertEqual(resp_patch.status_code, 200)
+            data_patch = json.loads(resp_patch.content)
+            self.assertEqual(data_patch['config']['email_contacto'], 'nuevo_contacto@smartbids.cl')
+
+    def test_auditoria_admin_view_retorna_registros(self):
+        import json
+        from django.utils import timezone
+        from unittest.mock import patch, MagicMock
+        from .mensajeria_views import auditoria_admin_view
+
+        mock_reg = MagicMock(
+            id=1,
+            ejecutor_email='admin1@chileavanza.cl',
+            ejecutor_nombre='Admin Uno',
+            afectado_email='admin2@chileavanza.cl',
+            afectado_nombre='Admin Dos',
+            accion='ELIMINACION',
+            detalle='Eliminó admin 2',
+            creado_el=timezone.now(),
+            ip_origen='127.0.0.1'
+        )
+
+        with patch('smartbids.mensajeria_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.mensajeria_views.AuditoriaAdmin.objects.all') as mock_all:
+            mock_all.return_value.order_by.return_value = [mock_reg]
+            req = self.rf.get('/api/administracion/auditoria-admin/')
+            resp = auditoria_admin_view(req)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(len(data['registros']), 1)
+            self.assertEqual(data['registros'][0]['accion'], 'ELIMINACION')
+
+
 
 
 

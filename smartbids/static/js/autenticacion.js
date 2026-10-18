@@ -283,7 +283,7 @@ if (btnVerificarOtp) {
             pendingUid = null;
 
             AuthState.isSubmittingAuth = false;
-            window.location.href = '/mis-licitaciones/';
+            window.location.href = '/resumen/';
 
         } catch (error) {
             AuthState.isSubmittingAuth = false;

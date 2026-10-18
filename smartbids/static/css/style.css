@@ -1026,6 +1026,23 @@
     color: var(--dark-green) !important;
 }
 
+#global-message-badge.global-message--alerta {
+    background: #fff8eb;
+    border-color: #fbd38d;
+}
+
+#global-message-badge.global-message--alerta #global-message-icon,
+#global-message-badge.global-message--alerta .global-message-close-btn,
+#global-message-badge.global-message--alerta .global-message-close-btn i,
+#global-message-badge.global-message--alerta #global-message-close,
+#global-message-badge.global-message--alerta #global-message-close i {
+    color: #dd6b20 !important;
+}
+
+#global-message-badge.global-message--alerta #global-message-text {
+    color: #7b341e !important;
+}
+
 
 /* ==========================================================================
    SISTEMA DE CONTENEDOR Y ALERTAS DINÁMICAS (PILA APILADA)
@@ -1403,6 +1420,26 @@
         border-color: var(--accent-green);
         box-shadow: 0 0 0 3px rgba(30, 196, 152, 0.15);
         color: var(--dark-green);
+    }
+
+    select.form-input {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230b3b32' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1.2rem center;
+        background-size: 1rem;
+        padding-right: 2.8rem;
+    }
+
+    select.form-input:hover {
+        border-color: var(--accent-green);
+    }
+
+    select.form-input::-ms-expand {
+        display: none;
     }
 
     .form-input:read-only {

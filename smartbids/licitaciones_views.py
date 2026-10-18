@@ -35,62 +35,54 @@ def filtrar_licitaciones(request, suscriptor):
     productos = [str(value).strip() for value in (preferencias.pref_productos or []) if str(value).strip()] if preferencias else []
 
     tiene_filtros_perfil = bool(comunas or tipos or ucom_ids or palabras or productos)
+    tab = request.GET.get('tab', '').strip().lower()
     solo_seguidas = request.GET.get('solo_seguidas') == '1'
+    solo_claves = (tab == 'claves' or request.GET.get('solo_claves') == '1') and not solo_seguidas
 
-    if tiene_filtros_perfil:
-        q_perfil = Q()
-        if palabras:
-            q_palabras = Q()
-            for palabra in palabras:
-                q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra) | Q(lic_descripcion__icontains=palabra)
-            q_perfil |= q_palabras
+    q_palabras = Q()
+    if palabras:
+        for palabra in palabras:
+            q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra) | Q(lic_descripcion__icontains=palabra)
 
-        if productos:
-            subq_productos = LicitacionesProductos.objects.filter(
-                codigo_producto__in=productos
-            ).values('lic_codigo_id')
-            q_perfil |= Q(lic_codigo__in=subq_productos)
+    q_perfil = Q()
+    if q_palabras:
+        q_perfil |= q_palabras
+    if productos:
+        subq_productos = LicitacionesProductos.objects.filter(
+            codigo_producto__in=productos
+        ).values('lic_codigo_id')
+        q_perfil |= Q(lic_codigo__in=subq_productos)
+    if comunas:
+        q_perfil |= Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas)
+    if ucom_ids:
+        q_perfil |= Q(lic_codigo_ucom_id__in=ucom_ids)
+    if tipos:
+        q_perfil |= Q(lic_tipo_licitacion__in=tipos)
 
-        if comunas:
-            q_perfil |= Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas)
-
-        if ucom_ids:
-            q_perfil |= Q(lic_codigo_ucom_id__in=ucom_ids)
-
-        if tipos:
-            q_perfil |= Q(lic_tipo_licitacion__in=tipos)
-
-        # El match con perfil aumenta según los criterios configurados
+    if q_perfil:
         match_perfil = Licitacion.objects.filter(q_perfil).distinct().count()
-
-        if solo_seguidas:
-            if suscriptor:
-                from .models.tracking import SeguimientoLicitacion
-                codigos_seguidos = SeguimientoLicitacion.objects.filter(
-                    usuario=suscriptor,
-                    seguimiento_activo=True,
-                ).values_list('licitacion_id', flat=True)
-                qs = qs.filter(lic_codigo__in=codigos_seguidos)
-            else:
-                qs = qs.none()
-        else:
-            # Mostrar solo las licitaciones que hacen match con el perfil
-            qs = qs.filter(q_perfil).distinct()
     else:
-        # Si el usuario no tiene nada configurado en el perfil:
-        # El match es 0 y se muestran todas las licitaciones sin filtro
         match_perfil = 0
 
-        if solo_seguidas:
-            if suscriptor:
-                from .models.tracking import SeguimientoLicitacion
-                codigos_seguidos = SeguimientoLicitacion.objects.filter(
-                    usuario=suscriptor,
-                    seguimiento_activo=True,
-                ).values_list('licitacion_id', flat=True)
-                qs = qs.filter(lic_codigo__in=codigos_seguidos)
-            else:
-                qs = qs.none()
+    if solo_seguidas:
+        if suscriptor:
+            from .models.tracking import SeguimientoLicitacion
+            codigos_seguidos = SeguimientoLicitacion.objects.filter(
+                usuario=suscriptor,
+                seguimiento_activo=True,
+            ).values_list('licitacion_id', flat=True)
+            qs = qs.filter(lic_codigo__in=codigos_seguidos)
+        else:
+            qs = qs.none()
+    elif solo_claves:
+        # Pestaña "Con palabras clave": filtrar solo por el perfil configurado
+        if q_perfil:
+            qs = qs.filter(q_perfil).distinct()
+        else:
+            qs = qs.none()
+    else:
+        # Pestaña "Todas": se muestran todas las licitaciones sin el filtro de palabras clave
+        pass
 
     termino = request.GET.get('q', '').strip()
     if termino:
@@ -155,6 +147,21 @@ def mis_licitaciones_view(request):
     licitaciones = paginator.get_page(request.GET.get('page'))
     for licitacion in licitaciones:
         licitacion.estado_proceso, licitacion.estado_proceso_label = estado_licitacion(licitacion)
+    tab = request.GET.get('tab', '').strip().lower()
+    solo_seguidas = request.GET.get('solo_seguidas') == '1'
+    solo_claves = (tab == 'claves' or request.GET.get('solo_claves') == '1') and not solo_seguidas
+    tab_activa = 'seguidas' if solo_seguidas else ('claves' if solo_claves else 'todas')
+
+    export_params = request.GET.copy()
+    if 'page' in export_params:
+        del export_params['page']
+    export_query = f"?{export_params.urlencode()}" if export_params else ""
+
+    preferencias = Preferencia.objects.filter(id_suscriptor=suscriptor).first() if suscriptor else None
+    tiene_palabras_perfil = bool(
+        preferencias and (preferencias.pref_palabras_claves or preferencias.pref_productos)
+    ) if suscriptor else False
+
     return render(request, 'smartbids/Mis_licitaciones.html', {
         'licitaciones': licitaciones,
         'total_licitaciones': total_licitaciones,
@@ -172,7 +179,11 @@ def mis_licitaciones_view(request):
         ),
         'estado_licitacion': estado_licitacion,
         'suscriptor_activo': suscriptor is not None,
-        'solo_seguidas': request.GET.get('solo_seguidas') == '1',
+        'solo_seguidas': solo_seguidas,
+        'solo_claves': solo_claves,
+        'tab_activa': tab_activa,
+        'tiene_palabras_perfil': tiene_palabras_perfil,
+        'export_query': export_query,
     })
 
 

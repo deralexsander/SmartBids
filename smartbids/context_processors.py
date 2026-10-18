@@ -3,7 +3,7 @@ import re
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 # Importación correcta según tu estructura de carpetas
-from smartbids.models.config import InfoContacto
+from smartbids.models.config import InfoContacto, obtener_correos_sistema
 
 logger = logging.getLogger(__name__)
 EMAIL_CONTACTO_RESPALDO = 'contacto@chileavanza.cl'
@@ -16,15 +16,17 @@ def extraer_correo_contacto(texto):
             return correo
         except ValidationError:
             continue
-    return EMAIL_CONTACTO_RESPALDO
+    correos = obtener_correos_sistema()
+    return correos.get('email_contacto', EMAIL_CONTACTO_RESPALDO)
 
 def footer_info_context(request):
     """
     Inyecta la información institucional y de contacto del footer en todos los templates.
     """
+    correos = obtener_correos_sistema()
     lineas_contacto = []
     empresas_list = []
-    contacto_email = EMAIL_CONTACTO_RESPALDO
+    contacto_email = correos.get('email_contacto', EMAIL_CONTACTO_RESPALDO)
 
     try:
         info = InfoContacto.objects.first()

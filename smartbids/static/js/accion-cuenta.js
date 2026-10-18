@@ -4,6 +4,7 @@
  */
 
 import { auth } from './firebase-config.js';
+import { mostrarMensaje } from './mensaje.js';
 import {
     applyActionCode,
     verifyPasswordResetCode,
@@ -189,29 +190,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (resetFeedback) resetFeedback.style.display = 'none';
 
                 if (!newPassword || !confirmPassword) {
+                    const msg = 'Por favor completa ambos campos.';
                     if (resetFeedback) {
                         resetFeedback.className = 'action-feedback action-feedback--error';
-                        resetFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i><span>Por favor completa ambos campos.</span>';
+                        resetFeedback.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i><span>${msg}</span>`;
                         resetFeedback.style.display = 'flex';
                     }
+                    mostrarMensaje(msg, 'error');
                     return;
                 }
 
                 if (newPassword.length < 8) {
+                    const msg = 'La contraseña debe tener al menos 8 caracteres.';
                     if (resetFeedback) {
                         resetFeedback.className = 'action-feedback action-feedback--error';
-                        resetFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i><span>La contraseña debe tener al menos 8 caracteres.</span>';
+                        resetFeedback.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i><span>${msg}</span>`;
                         resetFeedback.style.display = 'flex';
                     }
+                    mostrarMensaje(msg, 'error');
                     return;
                 }
 
                 if (newPassword !== confirmPassword) {
+                    const msg = 'Las contraseñas no coinciden.';
                     if (resetFeedback) {
                         resetFeedback.className = 'action-feedback action-feedback--error';
-                        resetFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i><span>Las contraseñas no coinciden.</span>';
+                        resetFeedback.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i><span>${msg}</span>`;
                         resetFeedback.style.display = 'flex';
                     }
+                    mostrarMensaje(msg, 'error');
                     return;
                 }
 
@@ -232,15 +239,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
 
                     // Mensaje de éxito
+                    const msgExito = '¡Contraseña cambiada correctamente! Te estamos redirigiendo a la pantalla de ingreso...';
                     if (resetFeedback) {
                         resetFeedback.className = 'action-feedback action-feedback--success';
                         resetFeedback.innerHTML = `
                             <i class="fa-solid fa-circle-check"></i>
                             <strong>¡Contraseña cambiada correctamente!</strong>
-                            <p>Tu nueva clave ha sido guardada. Te estamos redirigiendo a la pantalla de ingreso...</p>
+                            <p>${msgExito}</p>
                         `;
                         resetFeedback.style.display = 'flex';
                     }
+                    mostrarMensaje(msgExito, 'exito');
 
                     btnCambiar.style.display = 'none';
                     if (newPasswordInput) newPasswordInput.disabled = true;
@@ -280,6 +289,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         `;
                         resetFeedback.style.display = 'flex';
                     }
+                    mostrarMensaje(errorMsg, 'error');
                 }
             });
         }

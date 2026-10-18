@@ -1221,7 +1221,7 @@ function setupLogoutButton() {
             if (tieneCambiosPendientes()) {
                 const modalSalida = document.getElementById('modal-confirmar-salida-pestana');
                 if (modalSalida) {
-                    abrirModalSalidaPestana('logout', 'Datos con cambios pendientes');
+                    abrirModalSalidaPestana('logout', getNombreSeccionesConCambios());
                     return;
                 }
             }
@@ -1559,7 +1559,7 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
     }
 
     const currentPath = window.location.pathname.toLowerCase();
-    const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard');
+    const esRutaObjetivo = currentPath.includes('/mis-licitaciones') || currentPath.includes('/dashboard') || currentPath.includes('/resumen');
     if (!esRutaObjetivo) return;
 
     let UMBRAL_CONFIGURADO = 90;
@@ -2457,18 +2457,69 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
 // ==========================================================================
 
 // ==========================================================================
-// 10. GESTIÓN DEL MODAL DE SALIDA DE PESTAÑAS
+// 10. GESTIÓN DEL MODAL DE SALIDA DE PESTAÑAS Y NAVEGACIÓN
 // ==========================================================================
 let pestanaDestinoPendiente = null;
 let accionSalidaPendiente = null;
+let urlDestinoPendiente = null;
 
-function abrirModalSalidaPestana(tipoAccion, nombreSeccion, targetTabId = null) {
+export function getNombreSeccionesConCambios() {
+    const nombres = [];
+    if (cambiosSinGuardar.info) nombres.push('Datos Personales');
+    if (cambiosSinGuardar.empresa) nombres.push('Datos de la Empresa');
+    if (cambiosSinGuardar.filtros) nombres.push('Filtros de Licitación');
+    if (cambiosSinGuardar.palabras) nombres.push('Palabras Clave');
+    return nombres.join(', ') || 'Perfil';
+}
+
+function guardarSeccionesModificadas() {
+    if (cambiosSinGuardar.info) {
+        const f = document.getElementById('form-perfil-datos');
+        if (f) f.requestSubmit();
+    }
+    if (cambiosSinGuardar.empresa) {
+        const f = document.getElementById('form-perfil-empresa');
+        if (f) f.requestSubmit();
+    }
+    if (cambiosSinGuardar.filtros) {
+        const f = document.getElementById('form-perfil-preferencias');
+        if (f) f.requestSubmit();
+    }
+    if (cambiosSinGuardar.palabras) {
+        const f = document.getElementById('form-perfil-palabras');
+        if (f) f.requestSubmit();
+    }
+}
+
+function abrirModalSalidaPestana(tipoAccion, nombreSeccion, targetDestino = null) {
     const modal = document.getElementById('modal-confirmar-salida-pestana');
     const labelSeccion = document.getElementById('modal-nombre-seccion-cambios');
+    const avisoWarning = document.getElementById('modal-aviso-descarte-cambios');
+    const btnDescartar = document.getElementById('btn-descartar-cambios-pestana');
+    const btnGuardar = document.getElementById('btn-guardar-cambios-pestana');
     if (!modal) return;
 
     accionSalidaPendiente = tipoAccion;
-    pestanaDestinoPendiente = targetTabId;
+
+    if (tipoAccion === 'tab') {
+        pestanaDestinoPendiente = targetDestino;
+        urlDestinoPendiente = null;
+        if (avisoWarning) avisoWarning.textContent = 'Si cambias de sección sin guardar, tus modificaciones se descartarán.';
+        if (btnDescartar) btnDescartar.textContent = 'Descartar y Cambiar';
+        if (btnGuardar) btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Cambios';
+    } else if (tipoAccion === 'navegar') {
+        urlDestinoPendiente = targetDestino;
+        pestanaDestinoPendiente = null;
+        if (avisoWarning) avisoWarning.textContent = 'Si sales de la página sin guardar, tus modificaciones se descartarán.';
+        if (btnDescartar) btnDescartar.textContent = 'Descartar y Salir';
+        if (btnGuardar) btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar y Salir';
+    } else if (tipoAccion === 'logout') {
+        urlDestinoPendiente = null;
+        pestanaDestinoPendiente = null;
+        if (avisoWarning) avisoWarning.textContent = 'Si cierras sesión sin guardar, tus modificaciones se descartarán.';
+        if (btnDescartar) btnDescartar.textContent = 'Descartar y Salir';
+        if (btnGuardar) btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar y Salir';
+    }
 
     if (labelSeccion) {
         labelSeccion.textContent = nombreSeccion;
@@ -2490,39 +2541,56 @@ function cerrarModalSalidaPestana() {
     setTimeout(() => {
         modal.classList.remove('closing');
         modal.style.display = 'none';
+        pestanaDestinoPendiente = null;
+        accionSalidaPendiente = null;
+        urlDestinoPendiente = null;
     }, 350);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnGuardarModal = document.getElementById('btn-guardar-cambios-pestana');
     const btnDescartarModal = document.getElementById('btn-descartar-cambios-pestana');
+    const btnCerrarModal = document.getElementById('btn-cerrar-salida-pestana');
+    const modalSalida = document.getElementById('modal-confirmar-salida-pestana');
+
+    if (btnCerrarModal && !btnCerrarModal.dataset.bound) {
+        btnCerrarModal.dataset.bound = 'true';
+        btnCerrarModal.addEventListener('click', cerrarModalSalidaPestana);
+    }
+
+    if (modalSalida && !modalSalida.dataset.overlayBound) {
+        modalSalida.dataset.overlayBound = 'true';
+        modalSalida.addEventListener('click', (e) => {
+            if (e.target === modalSalida) cerrarModalSalidaPestana();
+        });
+    }
 
     if (btnGuardarModal && !btnGuardarModal.dataset.bound) {
         btnGuardarModal.dataset.bound = 'true';
         btnGuardarModal.addEventListener('click', async () => {
+            const accion = accionSalidaPendiente;
+            const destUrl = urlDestinoPendiente;
+            const destTab = pestanaDestinoPendiente;
+
             cerrarModalSalidaPestana();
 
-            const pestanaActiva = document.querySelector('.tab-content-panel.active');
-            const idActivo = pestanaActiva ? pestanaActiva.id : '';
+            guardarSeccionesModificadas();
 
-            if (idActivo === 'tab-info') {
-                const f = document.getElementById('form-perfil-datos');
-                if (f) f.requestSubmit();
-            } else if (idActivo === 'tab-empresa') {
-                const f = document.getElementById('form-perfil-empresa');
-                if (f) f.requestSubmit();
-            } else if (idActivo === 'tab-filtros') {
-                const f = document.getElementById('form-perfil-preferencias');
-                if (f) f.requestSubmit();
-            } else if (idActivo === 'tab-palabras') {
-                const f = document.getElementById('form-perfil-palabras');
-                if (f) f.requestSubmit();
-            }
-
-            if (accionSalidaPendiente === 'tab' && pestanaDestinoPendiente) {
+            if (accion === 'tab' && destTab) {
                 setTimeout(() => {
-                    aplicarCambioPestanaDirecto(pestanaDestinoPendiente);
-                }, 300);
+                    aplicarCambioPestanaDirecto(destTab);
+                }, 350);
+            } else if (accion === 'navegar' && destUrl) {
+                setTimeout(() => {
+                    window.location.href = destUrl;
+                }, 450);
+            } else if (accion === 'logout') {
+                setTimeout(async () => {
+                    SessionManager.clearLocalToken();
+                    localStorage.removeItem('smartbids_uid');
+                    await signOut(auth);
+                    window.location.replace('/ingreso');
+                }, 450);
             }
         });
     }
@@ -2530,23 +2598,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnDescartarModal && !btnDescartarModal.dataset.bound) {
         btnDescartarModal.dataset.bound = 'true';
         btnDescartarModal.addEventListener('click', async () => {
+            const accion = accionSalidaPendiente;
+            const destUrl = urlDestinoPendiente;
+            const destTab = pestanaDestinoPendiente;
+
+            limpiarCambio('info');
+            limpiarCambio('empresa');
+            limpiarCambio('filtros');
+            limpiarCambio('palabras');
+
             cerrarModalSalidaPestana();
 
-            const pestanaActiva = document.querySelector('.tab-content-panel.active');
-            const idActivo = pestanaActiva ? pestanaActiva.id : '';
-
-            if (idActivo === 'tab-info') limpiarCambio('info');
-            if (idActivo === 'tab-empresa') limpiarCambio('empresa');
-            if (idActivo === 'tab-filtros') limpiarCambio('filtros');
-            if (idActivo === 'tab-palabras') limpiarCambio('palabras');
-
-            if (accionSalidaPendiente === 'tab' && pestanaDestinoPendiente) {
-                aplicarCambioPestanaDirecto(pestanaDestinoPendiente);
-            } else if (accionSalidaPendiente === 'logout') {
-                limpiarCambio('info');
-                limpiarCambio('empresa');
-                limpiarCambio('filtros');
-                limpiarCambio('palabras');
+            if (accion === 'tab' && destTab) {
+                aplicarCambioPestanaDirecto(destTab);
+            } else if (accion === 'navegar' && destUrl) {
+                window.location.href = destUrl;
+            } else if (accion === 'logout') {
                 SessionManager.clearLocalToken();
                 localStorage.removeItem('smartbids_uid');
                 await signOut(auth);
@@ -2554,6 +2621,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Interceptar clics en enlaces de navegación hacia otras páginas
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('a[href]');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.target === '_blank') return;
+        if (link.dataset.ignoreUnsaved === 'true') return;
+
+        try {
+            const urlDestino = new URL(link.href, window.location.origin);
+            if (urlDestino.origin !== window.location.origin) return;
+            const esMismaPagina = urlDestino.pathname === window.location.pathname && urlDestino.search === window.location.search;
+            if (esMismaPagina) return;
+        } catch (_) {
+            return;
+        }
+
+        if (tieneCambiosPendientes()) {
+            event.preventDefault();
+            event.stopPropagation();
+            abrirModalSalidaPestana('navegar', getNombreSeccionesConCambios(), link.href);
+        }
+    }, true);
+
+    // Diálogo nativo al recargar o cerrar pestaña
+    window.addEventListener('beforeunload', (event) => {
+        if (tieneCambiosPendientes()) {
+            event.preventDefault();
+            event.returnValue = '';
+            return '';
+        }
+    });
 });
 
 function aplicarCambioPestanaDirecto(tabId) {

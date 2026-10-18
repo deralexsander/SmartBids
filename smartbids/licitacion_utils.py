@@ -164,3 +164,79 @@ def generar_excel_response(filename, headers, rows):
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+def generar_excel_multitabla_response(filename, tablas_dict):
+    """
+    Genera un archivo Excel con múltiples hojas formateadas a partir de un diccionario:
+    {
+        'Nombre Hoja': {
+            'encabezados': ['Col1', 'Col2', ...],
+            'filas': [[val1, val2, ...], ...]
+        }
+    }
+    """
+    wb = openpyxl.Workbook()
+    default_sheet = wb.active
+
+    header_fill = PatternFill(start_color="11634E", end_color="11634E", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    thin_border = Border(
+        left=Side(style='thin', color='CBD5E1'),
+        right=Side(style='thin', color='CBD5E1'),
+        top=Side(style='thin', color='CBD5E1'),
+        bottom=Side(style='thin', color='CBD5E1')
+    )
+
+    first = True
+    for sheet_title, data in tablas_dict.items():
+        clean_title = str(sheet_title).replace(':', '').replace('/', '-').replace('?', '')[:31]
+        if first:
+            ws = default_sheet
+            ws.title = clean_title
+            first = False
+        else:
+            ws = wb.create_sheet(title=clean_title)
+
+        headers = data.get('encabezados', [])
+        rows = data.get('filas', [])
+
+        if headers:
+            ws.append(list(headers))
+            for col_idx in range(1, len(headers) + 1):
+                cell = ws.cell(row=1, column=col_idx)
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = header_alignment
+                cell.border = thin_border
+            ws.row_dimensions[1].height = 28
+
+        for row_idx, row in enumerate(rows, start=2 if headers else 1):
+            sanitized_row = [sanitizar_valor_excel(val) for val in row]
+            ws.append(sanitized_row)
+            for col_idx in range(1, len(row) + 1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                cell.border = thin_border
+                cell.alignment = Alignment(vertical="center")
+
+        for col in ws.columns:
+            max_len = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                val_str = str(cell.value or '')
+                if len(val_str) > max_len:
+                    max_len = len(val_str)
+            ws.column_dimensions[col_letter].width = min(max(max_len + 4, 12), 60)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

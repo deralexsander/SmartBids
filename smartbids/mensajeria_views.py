@@ -8,9 +8,13 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models.config import InfoContacto, ParametroGlobal
+from .models.config import (
+    InfoContacto, ParametroGlobal, ConfiguracionCorreo, AuditoriaAdmin,
+    obtener_correos_sistema,
+)
 from .models import Mensajeria, Suscriptor
 from .context_processors import EMAIL_CONTACTO_RESPALDO, extraer_correo_contacto
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +23,8 @@ def enviar_consulta_contacto(request):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
 
-    correo_destino = EMAIL_CONTACTO_RESPALDO
+    correos_cfg = obtener_correos_sistema()
+    correo_destino = correos_cfg.get('email_contacto') or EMAIL_CONTACTO_RESPALDO
     try:
         data = json.loads(request.body.decode('utf-8'))
         if data.get('website'):
@@ -333,3 +338,87 @@ def parametro_alerta_perfil(request):
             return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=400)
 
     return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
+@csrf_exempt
+def administrar_config_correo(request):
+    if not _usuario_es_administrador(request):
+        return _respuesta_acceso_denegado()
+
+    if request.method == 'GET':
+        cfg = obtener_correos_sistema()
+        return JsonResponse({'status': 'ok', 'config': cfg})
+
+    if request.method != 'PATCH':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        email_contacto = (data.get('email_contacto') or '').strip()
+        email_notif = (data.get('email_notificaciones') or '').strip()
+        nombre_rem = (data.get('nombre_remitente') or '').strip()
+        email_auditoria = (data.get('email_seguridad_auditoria') or '').strip()
+
+        if email_contacto:
+            validate_email(email_contacto)
+        if email_notif:
+            validate_email(email_notif)
+        if email_auditoria:
+            validate_email(email_auditoria)
+
+        try:
+            obj = ConfiguracionCorreo.objects.first()
+            if not obj:
+                obj = ConfiguracionCorreo()
+            if email_contacto:
+                obj.email_contacto = email_contacto
+            if email_notif:
+                obj.email_notificaciones = email_notif
+            if nombre_rem:
+                obj.nombre_remitente = nombre_rem
+            if email_auditoria:
+                obj.email_seguridad_auditoria = email_auditoria
+            obj.save()
+        except Exception as db_err:
+            logger.warning(f"[SmartBids] Error al guardar en tabla ConfiguracionCorreo: {db_err}")
+
+        return JsonResponse({
+            'status': 'ok',
+            'mensaje': 'Configuración de correos guardada exitosamente.',
+            'config': {
+                'email_contacto': email_contacto or 'contacto@chileavanza.cl',
+                'email_notificaciones': email_notif or 'smartbids.qa@chileavanza.cl',
+                'nombre_remitente': nombre_rem or 'SmartBids',
+                'email_seguridad_auditoria': email_auditoria or 'contacto@chileavanza.cl',
+            }
+        })
+    except ValidationError as ve:
+        return JsonResponse({'status': 'error', 'mensaje': f'Formato de correo no válido: {ve.message}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=400)
+
+
+@csrf_exempt
+def auditoria_admin_view(request):
+    if not _usuario_es_administrador(request):
+        return _respuesta_acceso_denegado()
+
+    registros = []
+    try:
+        qs = AuditoriaAdmin.objects.all().order_by('-creado_el')[:100]
+        for reg in qs:
+            registros.append({
+                'id': reg.id,
+                'ejecutor_email': reg.ejecutor_email,
+                'ejecutor_nombre': reg.ejecutor_nombre,
+                'afectado_email': reg.afectado_email,
+                'afectado_nombre': reg.afectado_nombre,
+                'accion': reg.accion,
+                'detalle': reg.detalle,
+                'creado_el': timezone.localtime(reg.creado_el).strftime('%d/%m/%Y %H:%M:%S'),
+                'ip_origen': reg.ip_origen or '--',
+            })
+    except Exception as e:
+        logger.warning(f"[SmartBids] Error al listar auditoría de administradores: {e}")
+
+    return JsonResponse({'status': 'ok', 'registros': registros})

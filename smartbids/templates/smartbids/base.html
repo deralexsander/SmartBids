@@ -20,6 +20,8 @@
     <link rel="stylesheet" href="{% static 'css/views/informacion.css' %}">
     {% elif request.resolver_match.url_name == 'dashboard' %}
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    {% elif request.resolver_match.url_name == 'resumen_dia' %}
+    <link rel="stylesheet" href="{% static 'css/views/resumen-dia.css' %}">
     {% elif request.resolver_match.url_name == 'mis_licitaciones' %}
     <link rel="stylesheet" href="{% static 'css/views/mis-licitaciones.css' %}">
     {% elif request.resolver_match.url_name == 'detalle_licitacion' %}
@@ -73,6 +75,9 @@
 
 
             {% if request.resolver_match.url_name not in 'home informacion ingreso registro accion_cuenta firebase_auth_action' %}
+                <li class="{% if request.resolver_match.url_name == 'resumen_dia' %}active{% endif %}">
+                    <a href="{% url 'resumen_dia' %}">Resumen del día</a>
+                </li>
                 <li class="{% if request.resolver_match.url_name == 'mis_licitaciones' %}active{% endif %}">
                     <a href="{% url 'mis_licitaciones' %}">Mis licitaciones</a>
                 </li>
@@ -238,6 +243,8 @@
 
     {% if request.resolver_match.url_name == 'home' %}
     <script type="module" src="{% static 'js/contacto.js' %}"></script>
+    <script type="module" src="{% static 'js/home-slide.js' %}"></script>
+    {% elif request.resolver_match.url_name == 'informacion' %}
     <script type="module" src="{% static 'js/home-slide.js' %}"></script>
     {% elif request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
     <script type="module" src="{% static 'js/accion-cuenta.js' %}"></script>

@@ -132,6 +132,14 @@
     display: none;
 }
 
+.home__contact-card .form-item label {
+    cursor: pointer;
+}
+
+#contact-topic {
+    cursor: pointer;
+}
+
 .home__contact-feedback {
     min-height: 1.4rem;
     margin: 0.8rem 0;

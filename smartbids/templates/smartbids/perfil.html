@@ -619,19 +619,20 @@
 <!-- ========================================================================== -->
 <!-- MODAL DE CONFIRMACIÓN DE CAMBIOS PENDIENTES AL CAMBIAR PESTAÑA / SALIR      -->
 <!-- ========================================================================== -->
-<div id="modal-confirmar-salida-pestana" class="modal-2fa-overlay perfil__exit-dialog-overlay">
+<div id="modal-confirmar-salida-pestana" class="modal-2fa-overlay perfil__exit-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo-salida-cambios">
     <div class="modal-2fa-card perfil__dialog-card">
+        <button type="button" id="btn-cerrar-salida-pestana" class="site-modal__close" aria-label="Permanecer en la página">&times;</button>
         <div class="perfil__dialog-indicator perfil__exit-dialog-icon">
             <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
 
-        <h3 class="modal-2fa-title perfil__dialog-title">¿Guardar los cambios realizados?</h3>
+        <h3 class="modal-2fa-title perfil__dialog-title" id="modal-titulo-salida-cambios">¿Guardar los cambios realizados?</h3>
         
         <p class="modal-2fa-desc perfil__exit-dialog-description">
             Tienes modificaciones sin guardar en: <br><strong id="modal-nombre-seccion-cambios" class="perfil__section-name">--</strong>.
         </p>
 
-        <p class="perfil__exit-dialog-warning">
+        <p class="perfil__exit-dialog-warning" id="modal-aviso-descarte-cambios">
             Si cambias de sección sin guardar, tus modificaciones se descartarán.
         </p>
 

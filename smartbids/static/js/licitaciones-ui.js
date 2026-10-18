@@ -1,3 +1,5 @@
+import { mostrarMensaje } from './mensaje.js';
+
 // ==========================================================================
 // CONTROLES VISUALES DE LICITACIONES
 // ==========================================================================
@@ -21,11 +23,13 @@ function csrfToken() {
 
 function mostrarEstadoSeguimiento(mensaje, error = false) {
     const feedback = document.getElementById('seguimiento-feedback');
-    if (!feedback) return;
-    feedback.textContent = mensaje;
-    feedback.hidden = false;
-    feedback.style.color = error ? '#e53e3e' : 'var(--dark-green)';
-    feedback.style.borderColor = error ? '#e53e3e' : 'var(--border-color)';
+    if (feedback) {
+        feedback.textContent = mensaje;
+        feedback.hidden = false;
+        feedback.style.color = error ? '#e53e3e' : 'var(--dark-green)';
+        feedback.style.borderColor = error ? '#e53e3e' : 'var(--border-color)';
+    }
+    mostrarMensaje(mensaje, error ? 'error' : 'exito');
 }
 
 function actualizarBotonSeguimiento(form, activo) {
