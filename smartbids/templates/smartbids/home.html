@@ -272,19 +272,19 @@
                     <div class="profile-form-grid home__contact-form-grid">
                         <div class="form-item">
                             <label for="contact-name">Nombre *</label>
-                            <input class="form-input" type="text" id="contact-name" name="name" maxlength="100" autocomplete="name" required>
+                            <input class="form-input" type="text" id="contact-name" name="name" maxlength="100" autocomplete="name" aria-label="Nombre" required>
                         </div>
                         <div class="form-item">
                             <label for="contact-email">Correo *</label>
-                            <input class="form-input" type="email" id="contact-email" name="email" maxlength="254" autocomplete="email" required>
+                            <input class="form-input" type="email" id="contact-email" name="email" maxlength="254" autocomplete="email" aria-label="Correo" required>
                         </div>
                         <div class="form-item">
                             <label for="contact-phone">Teléfono</label>
-                            <input class="form-input" type="tel" id="contact-phone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel">
+                            <input class="form-input" type="tel" id="contact-phone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel" aria-label="Teléfono">
                         </div>
                         <div class="form-item">
                             <label for="contact-topic">Tema *</label>
-                            <select class="form-input" id="contact-topic" name="topic" required>
+                            <select class="form-input" id="contact-topic" name="topic" aria-label="Tema" required>
                                 <option value="">Selecciona un tema</option>
                                 <option value="Consulta comercial">Consulta comercial</option>
                                 <option value="Soporte SmartBids">Soporte SmartBids</option>
@@ -294,7 +294,7 @@
                         </div>
                         <div class="form-item grid-full">
                             <label for="contact-message">¿Cómo podemos ayudarte? *</label>
-                            <textarea class="form-input home__contact-message" id="contact-message" name="message" rows="5" minlength="20" maxlength="3000" required></textarea>
+                            <textarea class="form-input home__contact-message" id="contact-message" name="message" rows="5" minlength="20" maxlength="3000" aria-label="¿Cómo podemos ayudarte?" required></textarea>
                         </div>
                     </div>
                     <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="home__contact-honeypot">
