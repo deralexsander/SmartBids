@@ -134,6 +134,30 @@ class VistasExportacionTests(SimpleTestCase):
             self.assertIn('dashboard-smartbids.xlsx', resp['Content-Disposition'])
 
 
+class DashboardDWTests(SimpleTestCase):
+    def setUp(self):
+        from django.test import RequestFactory
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def test_dashboard_page_render(self):
+        from unittest.mock import patch
+        from .dashboard_views import dashboard_view
+        req = self.rf.get('/dashboard/')
+        with patch('smartbids.dashboard_views.render') as mock_render:
+            mock_render.return_value = 'ok'
+            resp = dashboard_view(req)
+            self.assertEqual(resp, 'ok')
+            mock_render.assert_called_once_with(req, 'smartbids/dashboard.html')
+
+    def test_dashboard_periodo_invalido(self):
+        from .dashboard_views import dashboard_kpis
+        req = self.rf.get('/dashboard/kpis/?gran=mensual&periodo=invalido')
+        resp = dashboard_kpis(req)
+        self.assertEqual(resp.status_code, 400)
+
+
 class ReenvioActivacionTests(SimpleTestCase):
     def setUp(self):
         from django.test import RequestFactory
