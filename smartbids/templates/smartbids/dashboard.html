@@ -359,21 +359,21 @@
                 <div class="dashboard-card rk-kpi"><small>${cfg.liderEtiqueta}</small><strong id="${p}-lider" style="font-size:1.15rem;">—</strong><span id="${p}-lider-pct" class="rk-meta" style="font-weight:600;color:var(--accent-green);display:block;margin-top:2px;"></span></div>
             </div>
             <div class="rk-layout">
-                <div class="dashboard-card" style="padding:1.6rem;border-radius:16px;">
+                <div class="dashboard-card" style="padding:1.35rem 1.4rem;border-radius:16px;">
                     <div class="rk-paso" id="${p}-paso" hidden></div>
                     <div class="dash-title" id="${p}-titulo"><i class="fa-solid fa-ranking-star text-accent"></i> Top 10</div>
-                    <p class="rk-meta" id="${p}-pista" style="margin:.3rem 0 0;"></p>
+                    <p class="rk-meta" id="${p}-pista" style="margin:.25rem 0 0;"></p>
                     <p id="${p}-estado" role="status" aria-live="polite" class="rk-meta"></p>
                     <ul class="rk-lista" id="${p}-lista"></ul>
-                    <p class="rk-meta" style="margin-top:1.2rem;font-size:0.78rem;display:flex;align-items:center;gap:6px;">
+                    <p class="rk-meta" style="margin-top:0.85rem;font-size:0.75rem;display:flex;align-items:center;gap:6px;">
                         <i class="fa-solid fa-circle-info" style="color:var(--muted-teal);"></i>
                         La participación se calcula sobre el segmento seleccionado, no sobre el total del DW.
                     </p>
                 </div>
-                <div class="dashboard-card" style="padding:1.6rem;border-radius:16px;">
+                <div class="dashboard-card" style="padding:1.35rem 1.4rem;border-radius:16px;">
                     <div class="dash-title"><i class="fa-solid fa-chart-pie text-accent"></i> ¿Cómo se reparte este segmento?</div>
-                    <p class="rk-meta" style="margin:.3rem 0 0;">Los 5 primeros frente al resto.</p>
-                    <div style="height:360px;position:relative;margin-top:1.2rem;"><canvas id="${p}-participacion"></canvas></div>
+                    <p class="rk-meta" style="margin:.25rem 0 0;">Los 5 primeros frente al resto.</p>
+                    <div style="height:340px;position:relative;margin-top:0.9rem;"><canvas id="${p}-participacion"></canvas></div>
                 </div>
             </div>`;
     }
