@@ -154,10 +154,6 @@ async function loadUsers() {
 }
 
 async function updateUserState(uid, codigoEstado) {
-    const response = await fetch('/api/firebase/usuarios/', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
-async function updateUserState(uid, codigoEstado) {
     const user = users.find((item) => item.uid === uid);
     const response = await fetch('/api/firebase/usuarios/', {
         method: 'PATCH',
