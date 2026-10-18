@@ -83,6 +83,7 @@ export function setupExportModal() {
         modal.classList.add('active');
         modal.setAttribute('aria-hidden', 'false');
     };
+    window.abrirModalExportar = abrirModal;
 
     const descargar = (formato) => {
         if (!currentExportUrl) return;

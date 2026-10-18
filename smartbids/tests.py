@@ -126,12 +126,20 @@ class VistasExportacionTests(SimpleTestCase):
         from unittest.mock import patch
         from .page_views import exportar_dashboard_view
 
-        with patch('smartbids.page_views.Licitacion.objects') as mock_objects:
-            mock_objects.select_related.return_value.filter.return_value.order_by.return_value = []
-            req = self.rf.get('/dashboard/exportar/?formato=xlsx')
-            resp = exportar_dashboard_view(req)
-            self.assertEqual(resp['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            self.assertIn('dashboard-smartbids.xlsx', resp['Content-Disposition'])
+        req = self.rf.get('/dashboard/exportar/?formato=xlsx&gran=mes&periodo=2024-05')
+        resp = exportar_dashboard_view(req)
+        self.assertEqual(resp['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertIn('dashboard-tablas-2024-05.xlsx', resp['Content-Disposition'])
+
+    def test_exportar_dashboard_csv(self):
+        from .page_views import exportar_dashboard_view
+
+        req = self.rf.get('/dashboard/exportar/?formato=csv&gran=mes&periodo=2024-05')
+        resp = exportar_dashboard_view(req)
+        self.assertEqual(resp['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertIn('dashboard-tablas-2024-05.csv', resp['Content-Disposition'])
+        self.assertIn('=== RESUMEN KPIS ===', resp.content.decode('utf-8'))
+
 
 
 class DashboardDWTests(SimpleTestCase):

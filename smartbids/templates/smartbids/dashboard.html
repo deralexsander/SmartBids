@@ -22,9 +22,9 @@
             </h1>
             <div class="dashboard__actions">
                 <div id="per-global"></div>
-                <a href="{% url 'exportar_dashboard' %}" class="btn btn-outline dashboard__export-link" id="btn-exportar-dashboard" title="Exportar reporte del período">
-                    <i class="fa-solid fa-file-arrow-down"></i> <span>Exportar Informe</span>
-                </a>
+                <button type="button" class="btn btn-outline dashboard__export-link" id="btn-exportar-dashboard" title="Descargar tablas y métricas del período">
+                    <i class="fa-solid fa-file-arrow-down"></i> <span>Descargar Tablas</span>
+                </button>
             </div>
         </div>
 
@@ -388,7 +388,12 @@
             <div class="rk-layout">
                 <div class="dashboard-card" style="padding:1.35rem 1.4rem;border-radius:16px;">
                     <div class="rk-paso" id="${p}-paso" hidden></div>
-                    <div class="dash-title" id="${p}-titulo"><i class="fa-solid fa-ranking-star text-accent"></i> Top 10</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                        <div class="dash-title" id="${p}-titulo" style="margin:0;"><i class="fa-solid fa-ranking-star text-accent"></i> Top 10</div>
+                        <button type="button" class="btn btn-outline rk-btn-descargar" data-panel="${p}" title="Descargar datos y tablas del dashboard" style="padding:0.35rem 0.75rem;font-size:0.8rem;border-radius:8px;display:inline-flex;align-items:center;gap:6px;">
+                            <i class="fa-solid fa-file-arrow-down"></i> <span>Descargar</span>
+                        </button>
+                    </div>
                     <p class="rk-meta" id="${p}-pista" style="margin:.25rem 0 0;"></p>
                     <p id="${p}-estado" role="status" aria-live="polite" class="rk-meta"></p>
                     <ul class="rk-lista" id="${p}-lista"></ul>
@@ -1359,6 +1364,25 @@
         perMontar(el('per-global'));
         cargarKpis();
         iniciarTab('tab-productos');
+
+        const abrirExport = (e) => {
+            if (e) e.preventDefault();
+            const targetUrl = "{% url 'exportar_dashboard' %}?" + new URLSearchParams(perParams()).toString();
+            if (typeof window.abrirModalExportar === 'function') {
+                window.abrirModalExportar(targetUrl);
+            } else {
+                window.location.assign(targetUrl + '&formato=xlsx');
+            }
+        };
+
+        const exportBtn = el('btn-exportar-dashboard');
+        if (exportBtn) exportBtn.addEventListener('click', abrirExport);
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.rk-btn-descargar')) {
+                abrirExport(e);
+            }
+        });
     });
 </script>
 
