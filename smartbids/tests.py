@@ -635,5 +635,152 @@ class ResumenDiaTests(SimpleTestCase):
             self.assertEqual(context['total_coincidencias'], 8)
 
 
+class AdminSafetyAndEmailConfigTests(SimpleTestCase):
+    def setUp(self):
+        import json
+        from django.test import RequestFactory
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def test_admin_auto_eliminacion_bloqueada(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from .firebase_policy_views import usuarios_firebase
+
+        mock_susc = MagicMock(sus_nombre1='Admin', sus_apellido1='Uno', sus_nombre_social='')
+
+        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.firebase_policy_views._firebase_admin_session'), \
+             patch('smartbids.firebase_policy_views._firebase_accounts_url'), \
+             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs:
+            
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_susc
+            req = self.rf.delete('/api/firebase/usuarios/?uid=admin_123', HTTP_X_FIREBASE_UID='admin_123')
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 403)
+            data = json.loads(resp.content)
+            self.assertIn('no puede eliminar su propia cuenta', data['mensaje'])
+
+    def test_admin_auto_remocion_bloqueada(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from .firebase_policy_views import usuarios_firebase
+
+        mock_susc = MagicMock(sus_nombre1='Admin', sus_apellido1='Uno', sus_nombre_social='')
+        mock_estado_suscriptor = MagicMock(nombre_estado='suscriptor')
+
+        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.firebase_policy_views._firebase_admin_session'), \
+             patch('smartbids.firebase_policy_views._firebase_accounts_url'), \
+             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_estado_suscriptor)):
+            
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_susc
+            body = json.dumps({'uid': 'admin_123', 'codigo_estado': 2})
+            req = self.rf.patch('/api/firebase/usuarios/', data=body, content_type='application/json', HTTP_X_FIREBASE_UID='admin_123')
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 403)
+            data = json.loads(resp.content)
+            self.assertIn('no puede revocar su propio rol', data['mensaje'])
+
+    def test_admin_eliminar_otro_admin_genera_auditoria_y_correo(self):
+        from unittest.mock import patch, MagicMock
+        from .firebase_policy_views import usuarios_firebase
+
+        mock_target_susc = MagicMock(
+            codigo_estado=MagicMock(nombre_estado='administrador', codigo_estado=5),
+            sus_nombre1='Admin',
+            sus_apellido1='Dos',
+            sus_nombre_social='Admin 2'
+        )
+        mock_session = MagicMock()
+        mock_session.post.return_value = MagicMock(ok=True, status_code=200)
+
+        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.firebase_policy_views.Preferencia.objects'), \
+             patch('smartbids.firebase_policy_views.registrar_auditoria_admin') as mock_registrar, \
+             patch('smartbids.firebase_policy_views.notificar_accion_entre_administradores') as mock_notificar:
+            
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
+            mock_susc_objs.filter.return_value.first.return_value = mock_target_susc
+
+            req = self.rf.delete('/api/firebase/usuarios/?uid=admin_456&email=admin2@empresa.cl', HTTP_X_FIREBASE_UID='admin_123')
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_registrar.called)
+            self.assertEqual(mock_registrar.call_args[1]['accion'], 'ELIMINACION')
+            self.assertTrue(mock_notificar.called)
+            self.assertEqual(mock_notificar.call_args[1]['afectado_email'], 'admin2@empresa.cl')
+
+    def test_config_correo_get_y_patch(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from .mensajeria_views import administrar_config_correo
+
+        with patch('smartbids.mensajeria_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.mensajeria_views.ConfiguracionCorreo.objects') as mock_cfg_objs:
+            
+            mock_cfg = MagicMock(
+                email_contacto='contacto@chileavanza.cl',
+                email_notificaciones='notif@chileavanza.cl',
+                nombre_remitente='SmartBids',
+                email_seguridad_auditoria='auditoria@chileavanza.cl'
+            )
+            mock_cfg_objs.first.return_value = mock_cfg
+
+            # Test GET
+            req_get = self.rf.get('/api/administracion/config-correo/')
+            resp_get = administrar_config_correo(req_get)
+            self.assertEqual(resp_get.status_code, 200)
+            data_get = json.loads(resp_get.content)
+            self.assertEqual(data_get['status'], 'ok')
+
+            # Test PATCH
+            body = json.dumps({
+                'email_contacto': 'nuevo_contacto@smartbids.cl',
+                'email_notificaciones': 'alertas@smartbids.cl',
+                'nombre_remitente': 'SmartBids Admin',
+                'email_seguridad_auditoria': 'seguridad@smartbids.cl'
+            })
+            req_patch = self.rf.patch('/api/administracion/config-correo/', data=body, content_type='application/json')
+            resp_patch = administrar_config_correo(req_patch)
+            self.assertEqual(resp_patch.status_code, 200)
+            data_patch = json.loads(resp_patch.content)
+            self.assertEqual(data_patch['config']['email_contacto'], 'nuevo_contacto@smartbids.cl')
+
+    def test_auditoria_admin_view_retorna_registros(self):
+        import json
+        from django.utils import timezone
+        from unittest.mock import patch, MagicMock
+        from .mensajeria_views import auditoria_admin_view
+
+        mock_reg = MagicMock(
+            id=1,
+            ejecutor_email='admin1@chileavanza.cl',
+            ejecutor_nombre='Admin Uno',
+            afectado_email='admin2@chileavanza.cl',
+            afectado_nombre='Admin Dos',
+            accion='ELIMINACION',
+            detalle='Eliminó admin 2',
+            creado_el=timezone.now(),
+            ip_origen='127.0.0.1'
+        )
+
+        with patch('smartbids.mensajeria_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.mensajeria_views.AuditoriaAdmin.objects.all') as mock_all:
+            mock_all.return_value.order_by.return_value = [mock_reg]
+            req = self.rf.get('/api/administracion/auditoria-admin/')
+            resp = auditoria_admin_view(req)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(len(data['registros']), 1)
+            self.assertEqual(data['registros'][0]['accion'], 'ELIMINACION')
+
+
+
 
 

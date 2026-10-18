@@ -13,6 +13,7 @@ from google.oauth2 import service_account
 
 from .mensajeria_views import _respuesta_acceso_denegado, _usuario_es_administrador
 from .models import EstadoSuscriptor, Preferencia, Suscriptor
+from .models.config import registrar_auditoria_admin, notificar_accion_entre_administradores
 
 
 GOOGLE_CLOUD_SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
@@ -162,7 +163,55 @@ def usuarios_firebase(request):
         if not uid:
             return JsonResponse({'status': 'error', 'mensaje': 'UID requerido.'}, status=400)
 
-        suscriptor = Suscriptor.objects.filter(firebase_uid=uid).first()
+        # Identificar al administrador ejecutor
+        uid_ejecutor = (request.headers.get('X-Firebase-UID') or request.COOKIES.get('sb_firebase_uid') or '').strip()
+        suscriptor_ejecutor = Suscriptor.objects.select_related('codigo_estado').filter(firebase_uid=uid_ejecutor).first() if uid_ejecutor else None
+        email_ejecutor = (
+            request.headers.get('X-Firebase-Email')
+            or (suscriptor_ejecutor.sus_nombre_social if suscriptor_ejecutor else None)
+            or 'Administrador'
+        )
+        nombre_ejecutor = (
+            f"{suscriptor_ejecutor.sus_nombre1} {suscriptor_ejecutor.sus_apellido1 or ''}".strip()
+            if suscriptor_ejecutor and suscriptor_ejecutor.sus_nombre1
+            else email_ejecutor
+        )
+
+        # Regla 1: Bloquear auto-eliminación y auto-remoción de rol administrador
+        if uid and uid_ejecutor and uid == uid_ejecutor:
+            if request.method == 'DELETE':
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'Por motivos de seguridad, un administrador no puede eliminar su propia cuenta desde el panel de control.'
+                }, status=403)
+            if request.method == 'PATCH':
+                estado_id = data.get('codigo_estado')
+                estado = EstadoSuscriptor.objects.filter(codigo_estado=estado_id).first()
+                if estado and estado.nombre_estado.strip().casefold() != 'administrador':
+                    return JsonResponse({
+                        'status': 'error',
+                        'mensaje': 'Por motivos de seguridad, un administrador no puede revocar su propio rol de administrador.'
+                    }, status=403)
+
+        suscriptor = Suscriptor.objects.select_related('codigo_estado').filter(firebase_uid=uid).first()
+        es_admin_afectado = False
+        if suscriptor and suscriptor.codigo_estado:
+            es_admin_afectado = (
+                suscriptor.codigo_estado.nombre_estado.strip().casefold() == 'administrador'
+                or suscriptor.codigo_estado.codigo_estado == 5
+            )
+
+        email_afectado = (
+            data.get('email')
+            or request.GET.get('email')
+            or (suscriptor.sus_nombre_social if suscriptor else '')
+            or 'admin@smartbids.cl'
+        )
+        nombre_afectado = (
+            f"{suscriptor.sus_nombre1} {suscriptor.sus_apellido1 or ''}".strip()
+            if suscriptor and suscriptor.sus_nombre1
+            else email_afectado
+        )
 
         if request.method == 'PATCH':
             estado_id = data.get('codigo_estado')
@@ -174,6 +223,28 @@ def usuarios_firebase(request):
                     'status': 'error',
                     'mensaje': 'No se puede cambiar el estado: el usuario no existe en PostgreSQL.'
                 }, status=404)
+
+            # Si el usuario afectado era admin y cambia a no-admin: notificar y auditar
+            if es_admin_afectado and estado.nombre_estado.strip().casefold() != 'administrador':
+                registrar_auditoria_admin(
+                    ejecutor_uid=uid_ejecutor,
+                    ejecutor_email=email_ejecutor,
+                    ejecutor_nombre=nombre_ejecutor,
+                    afectado_uid=uid,
+                    afectado_email=email_afectado,
+                    afectado_nombre=nombre_afectado,
+                    accion='CAMBIO_ROL',
+                    detalle=f"El administrador {email_ejecutor} modificó el rol de {email_afectado} a '{estado.nombre_estado}'.",
+                    ip_origen=request.META.get('REMOTE_ADDR')
+                )
+                notificar_accion_entre_administradores(
+                    ejecutor_email=email_ejecutor,
+                    ejecutor_nombre=nombre_ejecutor,
+                    afectado_email=email_afectado,
+                    accion=f"Cambio de rol a {estado.nombre_estado}",
+                    detalle=f"Tu rol de administrador fue modificado a '{estado.nombre_estado}' por el administrador {email_ejecutor} ({nombre_ejecutor})."
+                )
+
             suscriptor.codigo_estado = estado
             suscriptor.fecha_actualizacion = timezone.now()
             suscriptor.save(update_fields=['codigo_estado', 'fecha_actualizacion'])
@@ -187,6 +258,27 @@ def usuarios_firebase(request):
             )
             if not response.ok and response.status_code != 404:
                 return JsonResponse(response.json(), status=response.status_code, safe=False)
+
+            if es_admin_afectado:
+                registrar_auditoria_admin(
+                    ejecutor_uid=uid_ejecutor,
+                    ejecutor_email=email_ejecutor,
+                    ejecutor_nombre=nombre_ejecutor,
+                    afectado_uid=uid,
+                    afectado_email=email_afectado,
+                    afectado_nombre=nombre_afectado,
+                    accion='ELIMINACION',
+                    detalle=f"El administrador {email_ejecutor} ({nombre_ejecutor}) eliminó la cuenta del administrador {email_afectado}.",
+                    ip_origen=request.META.get('REMOTE_ADDR')
+                )
+                notificar_accion_entre_administradores(
+                    ejecutor_email=email_ejecutor,
+                    ejecutor_nombre=nombre_ejecutor,
+                    afectado_email=email_afectado,
+                    accion='Eliminación de cuenta de administrador',
+                    detalle=f"Tu cuenta de administrador fue eliminada por el administrador {email_ejecutor} ({nombre_ejecutor})."
+                )
+
             if suscriptor:
                 Preferencia.objects.filter(id_suscriptor=suscriptor).delete()
                 suscriptor.delete()

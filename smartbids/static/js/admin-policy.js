@@ -425,3 +425,103 @@ infoContactoForm?.addEventListener('submit', async (event) => {
         saveInfoContactoButton.innerHTML = originalButtonContent;
     }
 });
+
+// =========================================================================
+// CONFIGURACIÓN DE CORREOS DEL SISTEMA
+// =========================================================================
+const btnAbrirConfigCorreo = document.getElementById('btn-abrir-config-correo');
+const configCorreoModal = document.getElementById('config-correo-modal');
+const btnCerrarConfigCorreo = document.getElementById('btn-cerrar-config-correo');
+const btnCerrarConfigCorreoX = document.getElementById('btn-cerrar-config-correo-x');
+const configCorreoForm = document.getElementById('config-correo-form');
+const configCorreoFeedback = document.getElementById('config-correo-feedback');
+const inputCorreoContacto = document.getElementById('input-correo-contacto');
+const inputCorreoNotif = document.getElementById('input-correo-notif');
+const inputNombreRemitente = document.getElementById('input-nombre-remitente');
+const inputCorreoAuditoria = document.getElementById('input-correo-auditoria');
+const btnGuardarConfigCorreo = document.getElementById('btn-guardar-config-correo');
+
+function setConfigCorreoFeedback(text, isError = false) {
+    if (!configCorreoFeedback) return;
+    configCorreoFeedback.textContent = text;
+    configCorreoFeedback.style.color = isError ? '#c53030' : 'var(--dark-green)';
+}
+
+function closeConfigCorreoModal() {
+    configCorreoModal?.classList.remove('active');
+    setConfigCorreoFeedback('');
+}
+
+async function loadConfigCorreo() {
+    setConfigCorreoFeedback('Cargando configuración...');
+    try {
+        const response = await fetch('/api/administracion/config-correo/', {
+            headers: adminHeaders()
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || 'No se pudo cargar la configuración.');
+        const cfg = data.config || {};
+        if (inputCorreoContacto) inputCorreoContacto.value = cfg.email_contacto || '';
+        if (inputCorreoNotif) inputCorreoNotif.value = cfg.email_notificaciones || '';
+        if (inputNombreRemitente) inputNombreRemitente.value = cfg.nombre_remitente || '';
+        if (inputCorreoAuditoria) inputCorreoAuditoria.value = cfg.email_seguridad_auditoria || '';
+        setConfigCorreoFeedback('');
+    } catch (error) {
+        setConfigCorreoFeedback(error.message || 'Error al cargar datos.', true);
+    }
+}
+
+btnAbrirConfigCorreo?.addEventListener('click', () => {
+    configCorreoModal?.classList.add('active');
+    loadConfigCorreo();
+});
+btnCerrarConfigCorreo?.addEventListener('click', closeConfigCorreoModal);
+btnCerrarConfigCorreoX?.addEventListener('click', closeConfigCorreoModal);
+configCorreoModal?.addEventListener('click', (event) => {
+    if (event.target === configCorreoModal) closeConfigCorreoModal();
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && configCorreoModal?.classList.contains('active')) {
+        closeConfigCorreoModal();
+    }
+});
+
+configCorreoForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!btnGuardarConfigCorreo) return;
+
+    const originalContent = btnGuardarConfigCorreo.innerHTML;
+    btnGuardarConfigCorreo.disabled = true;
+    btnGuardarConfigCorreo.textContent = 'Guardando...';
+    setConfigCorreoFeedback('Guardando correos...');
+
+    try {
+        const response = await fetch('/api/administracion/config-correo/', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...adminHeaders()
+            },
+            body: JSON.stringify({
+                email_contacto: inputCorreoContacto?.value.trim() || '',
+                email_notificaciones: inputCorreoNotif?.value.trim() || '',
+                nombre_remitente: inputNombreRemitente?.value.trim() || '',
+                email_seguridad_auditoria: inputCorreoAuditoria?.value.trim() || '',
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || 'Error al guardar configuración de correos.');
+
+        const msg = data.mensaje || 'Configuración de correos guardada exitosamente.';
+        setConfigCorreoFeedback(msg);
+        mostrarMensaje(msg, 'exito');
+        setTimeout(closeConfigCorreoModal, 900);
+    } catch (error) {
+        const errorMsg = error.message || 'Error al guardar los correos.';
+        setConfigCorreoFeedback(errorMsg, true);
+        mostrarMensaje(errorMsg, 'error');
+    } finally {
+        btnGuardarConfigCorreo.disabled = false;
+        btnGuardarConfigCorreo.innerHTML = originalContent;
+    }
+});

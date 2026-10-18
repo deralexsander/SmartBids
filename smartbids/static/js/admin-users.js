@@ -20,8 +20,12 @@ let pendingDeleteUid = null;
 let pendingRoleChange = null;
 
 function adminHeaders() {
-    const uid = auth.currentUser?.uid;
-    return uid ? { 'X-Firebase-UID': uid } : {};
+    const uid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
+    const email = auth.currentUser?.email || '';
+    const headers = {};
+    if (uid) headers['X-Firebase-UID'] = uid;
+    if (email) headers['X-Firebase-Email'] = email;
+    return headers;
 }
 
 function setUsersMessage(text, type = 'info') {
@@ -60,16 +64,30 @@ function renderUsers() {
         return;
     }
 
+    const currentAdminUid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
+
     filtered.forEach((user) => {
         const row = document.createElement('tr');
         row.style.cssText = 'border-bottom: 1px solid var(--border-color); transition: background-color 0.2s ease;';
         const esAdmin = (user.estado || '').toLowerCase().includes('admin') || user.rol === 'admin';
+        const esUsuarioActual = Boolean(user.uid && currentAdminUid && user.uid === currentAdminUid);
         const estadoTexto = user.estado || (esAdmin ? 'Administrador' : 'Pendiente');
         const opcionesEstado = states.map((state) => `
             <option value="${state.codigo_estado}" ${String(state.codigo_estado) === String(user.codigo_estado) ? 'selected' : ''}>
                 ${state.nombre_estado}
             </option>
         `).join('');
+
+        const selectDisabled = user.codigo_estado === null || esUsuarioActual;
+        const selectTitle = esUsuarioActual
+            ? 'Tu cuenta activa: por motivos de seguridad no puedes revocar tu propio rol de administrador.'
+            : (user.codigo_estado === null ? 'Cuenta sin registro en PostgreSQL' : '');
+
+        const deleteButtonHtml = esUsuarioActual
+            ? `<span class="badge" style="background: rgba(4, 198, 87, 0.15); color: var(--dark-green); padding: 0.4rem 0.65rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Tu sesión de administrador activa"><i class="fa-solid fa-user-check"></i> Tu cuenta</span>`
+            : `<button type="button" class="btn btn-outline btn-delete-user admin-user-delete" data-uid="${user.uid}" title="${esAdmin ? 'Eliminar administrador (requiere auditoría de seguridad)' : 'Eliminar usuario'}" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-color: #feb2b2; color: #e53e3e; background: #fff5f5; border-radius: 8px;">
+                <i class="fa-regular fa-trash-can"></i>
+               </button>`;
 
         row.innerHTML = `
             <!-- Usuario / Correo -->
@@ -105,7 +123,7 @@ function renderUsers() {
             <!-- Selector de Estado con ajuste visual limpio -->
             <td style="padding: 0.9rem 0.6rem; vertical-align: middle;">
                 <div class="form-inline" style="max-width: 100%; margin: 0;">
-                    <select class="user-role-select admin-user-state" data-uid="${user.uid}" ${user.codigo_estado === null ? 'disabled title="Cuenta sin registro en PostgreSQL"' : ''} style="width: 100%; padding: 0.5rem 0.7rem; border-radius: 10px; border: 1.5px solid var(--soft-mint); font-size: 0.85rem; outline: none; background-color: var(--white); color: var(--dark-green); font-weight: 600; cursor: ${user.codigo_estado === null ? 'not-allowed' : 'pointer'}; opacity: ${user.codigo_estado === null ? '0.65' : '1'};">
+                    <select class="user-role-select admin-user-state" data-uid="${user.uid}" ${selectDisabled ? `disabled title="${selectTitle}"` : ''} style="width: 100%; padding: 0.5rem 0.7rem; border-radius: 10px; border: 1.5px solid var(--soft-mint); font-size: 0.85rem; outline: none; background-color: var(--white); color: var(--dark-green); font-weight: 600; cursor: ${selectDisabled ? 'not-allowed' : 'pointer'}; opacity: ${selectDisabled ? '0.7' : '1'};">
                         ${opcionesEstado || `<option selected>${estadoTexto}</option>`}
                     </select>
                 </div>
@@ -113,9 +131,7 @@ function renderUsers() {
 
             <!-- Acciones -->
             <td style="padding: 0.9rem 0.8rem; vertical-align: middle; text-align: center; white-space: nowrap;">
-                <button type="button" class="btn btn-outline btn-delete-user admin-user-delete" data-uid="${user.uid}" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-color: #feb2b2; color: #e53e3e; background: #fff5f5; border-radius: 8px;">
-                    <i class="fa-regular fa-trash-can"></i>
-                </button>
+                ${deleteButtonHtml}
             </td>
         `;
         usersTableBody.appendChild(row);
@@ -141,7 +157,12 @@ async function updateUserState(uid, codigoEstado) {
     const response = await fetch('/api/firebase/usuarios/', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
-        body: JSON.stringify({ uid, codigo_estado: codigoEstado })
+async function updateUserState(uid, codigoEstado) {
+    const user = users.find((item) => item.uid === uid);
+    const response = await fetch('/api/firebase/usuarios/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ uid, codigo_estado: codigoEstado, email: user?.email || '' })
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.mensaje || 'No se pudo actualizar el estado.');
@@ -152,10 +173,17 @@ async function updateUserState(uid, codigoEstado) {
 function closeDeleteModal() {
     deleteUserModal?.classList.remove('active');
     pendingDeleteUid = null;
+    const warningBox = document.getElementById('delete-user-admin-warning');
+    if (warningBox) warningBox.style.display = 'none';
 }
 
 function openDeleteModal(user) {
     pendingDeleteUid = user.uid;
+    const esAdmin = (user.estado || '').toLowerCase().includes('admin') || user.rol === 'admin';
+    const warningBox = document.getElementById('delete-user-admin-warning');
+    if (warningBox) {
+        warningBox.style.display = esAdmin ? 'block' : 'none';
+    }
     if (deleteUserEmail) deleteUserEmail.textContent = user.email || user.uid;
     deleteUserModal?.classList.add('active');
 }
@@ -164,6 +192,8 @@ function closeChangeRoleModal(restore = true) {
     if (restore && pendingRoleChange) {
         pendingRoleChange.select.value = pendingRoleChange.previousValue;
     }
+    const warningBox = document.getElementById('change-role-admin-warning');
+    if (warningBox) warningBox.style.display = 'none';
     changeRoleModal?.classList.remove('active');
     pendingRoleChange = null;
 }
@@ -171,9 +201,16 @@ function closeChangeRoleModal(restore = true) {
 function openChangeRoleModal(select) {
     const user = users.find((item) => item.uid === select.dataset.uid);
     const selectedOption = select.options[select.selectedIndex];
+    const prevEsAdmin = (user?.estado || '').toLowerCase().includes('admin') || user?.rol === 'admin';
+    const nextEsAdmin = selectedOption?.textContent.trim().toLowerCase().includes('admin');
+    const warningBox = document.getElementById('change-role-admin-warning');
+    if (warningBox) {
+        warningBox.style.display = (prevEsAdmin && !nextEsAdmin) ? 'block' : 'none';
+    }
     pendingRoleChange = {
         select,
         uid: select.dataset.uid,
+        userEmail: user?.email || '',
         previousValue: select.dataset.previousValue || String(user?.codigo_estado ?? select.value),
         nextValue: select.value
     };
@@ -183,7 +220,12 @@ function openChangeRoleModal(select) {
 }
 
 async function deleteUser(uid) {
-    const response = await fetch(`/api/firebase/usuarios/?uid=${encodeURIComponent(uid)}`, {
+    const user = users.find(u => u.uid === uid);
+    const params = new URLSearchParams({
+        uid: uid,
+        email: user?.email || '',
+    });
+    const response = await fetch(`/api/firebase/usuarios/?${params.toString()}`, {
         method: 'DELETE',
         headers: { ...adminHeaders() }
     });
@@ -255,4 +297,58 @@ deleteUserModal?.addEventListener('click', (event) => {
 });
 changeRoleModal?.addEventListener('click', (event) => {
     if (event.target === changeRoleModal) closeChangeRoleModal();
+});
+
+// =========================================================================
+// REGISTRO DE AUDITORÍA ENTRE ADMINISTRADORES
+// =========================================================================
+const btnAbrirAuditoria = document.getElementById('btn-abrir-auditoria-admin');
+const modalAuditoria = document.getElementById('auditoria-admin-modal');
+const btnCerrarAuditoria = document.getElementById('btn-cerrar-auditoria-admin');
+const btnCerrarAuditoriaX = document.getElementById('btn-cerrar-auditoria-admin-x');
+const tbodyAuditoria = document.getElementById('auditoria-admin-tbody');
+
+function closeAuditoriaModal() {
+    modalAuditoria?.classList.remove('active');
+}
+
+async function loadAuditoriaAdmin() {
+    if (!tbodyAuditoria) return;
+    tbodyAuditoria.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-text);"><i class="fa-solid fa-circle-notch fa-spin"></i> Cargando registros de auditoría...</td></tr>';
+    try {
+        const resp = await fetch('/api/administracion/auditoria-admin/', { headers: adminHeaders() });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.mensaje || 'Error al cargar bitácora');
+        const items = data.registros || [];
+        if (!items.length) {
+            tbodyAuditoria.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--muted-teal);">No se han registrado modificaciones entre administradores aún.</td></tr>';
+            return;
+        }
+        tbodyAuditoria.innerHTML = items.map(item => `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 0.75rem 0.6rem; white-space: nowrap; font-size: 0.82rem; color: var(--gray-text);">${item.creado_el}</td>
+                <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--dark-green);">${item.ejecutor_email}<br><small style="color:var(--gray-text);">${item.ejecutor_nombre || ''}</small></td>
+                <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: #dc2626;">${item.afectado_email}<br><small style="color:var(--gray-text);">${item.afectado_nombre || ''}</small></td>
+                <td style="padding: 0.75rem 0.6rem;"><span class="badge" style="background: ${item.accion === 'ELIMINACION' ? '#fed7d7; color: #9b2c2c;' : '#feebc8; color: #7b341e;'} font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">${item.accion}</span></td>
+                <td style="padding: 0.75rem 0.6rem; font-size: 0.82rem; color: var(--dark-green);">${item.detalle}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbodyAuditoria.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #c53030;">${e.message}</td></tr>`;
+    }
+}
+
+btnAbrirAuditoria?.addEventListener('click', () => {
+    modalAuditoria?.classList.add('active');
+    loadAuditoriaAdmin();
+});
+btnCerrarAuditoria?.addEventListener('click', closeAuditoriaModal);
+btnCerrarAuditoriaX?.addEventListener('click', closeAuditoriaModal);
+modalAuditoria?.addEventListener('click', (e) => {
+    if (e.target === modalAuditoria) closeAuditoriaModal();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalAuditoria?.classList.contains('active')) {
+        closeAuditoriaModal();
+    }
 });

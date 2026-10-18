@@ -71,6 +71,19 @@
                     </div>
                 </div>
             </button>
+
+            <!-- 5. Configuración de Correos del Sistema -->
+            <button type="button" id="btn-abrir-config-correo" class="dashboard-card admin__quick-action-button">
+                <div class="admin__quick-action-content">
+                    <div class="prop-icon admin__quick-action-icon">
+                        <i class="fa-solid fa-envelope-open-text"></i>
+                    </div>
+                    <div>
+                        <h4 class="admin__quick-action-title">Configuración de Correos</h4>
+                        <p class="admin__quick-action-description">Gestión de correos de soporte, notificaciones y auditoría.</p>
+                    </div>
+                </div>
+            </button>
         </div>
 
         <!-- Modal: Configuración de Alerta de Completitud de Perfil -->
@@ -140,7 +153,10 @@
                     </p>
                 </div>
 
-                <div class="form-inline admin__users-search-form">
+                <div class="form-inline admin__users-search-form" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" id="btn-abrir-auditoria-admin" class="btn btn-outline" style="border-radius:10px; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; padding: 0.6rem 0.9rem;" title="Ver bitácora de auditoría entre administradores">
+                        <i class="fa-solid fa-shield-halved text-accent"></i> <span>Auditoría de Administradores</span>
+                    </button>
                     <div class="admin__search-field">
                         <i class="fa-solid fa-magnifying-glass admin__search-icon"></i>
                         <input type="search" id="admin-users-search" class="form-input admin__search-input" placeholder="Buscar por correo, UID o rol..." aria-label="Buscar usuarios">
@@ -246,6 +262,11 @@
         <h3 id="delete-user-title">Eliminar usuario</h3>
         <p>Esta acción eliminará la cuenta de Firebase Authentication y el registro asociado en PostgreSQL.</p>
         <p id="delete-user-email" class="otp-feedback-msg"></p>
+        <div id="delete-user-admin-warning" style="display: none; background: #fff5f5; border: 1.5px solid #feb2b2; border-radius: 8px; padding: 0.85rem; margin: 0.9rem 0; color: #c53030; font-size: 0.85rem; text-align: left;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <strong>Atención de Seguridad Multi-Administrador:</strong>
+            <p style="margin: 4px 0 0;">El usuario a eliminar tiene rol de <strong>Administrador</strong>. Por seguridad y transparencia absoluta, esta acción quedará registrada en la bitácora de auditoría y se enviará una notificación por correo electrónico inmediata a la persona afectada y a la casilla de seguridad informando quién ejecutó la eliminación.</p>
+        </div>
         <div class="modal-2fa-actions">
             <button type="button" id="btn-confirm-delete-user" class="btn btn-primary">Sí, eliminar</button>
             <button type="button" id="btn-cancel-delete-user" class="btn btn-outline">Cancelar</button>
@@ -260,6 +281,11 @@
         <p>¿Deseas cambiar el estado de este usuario?</p>
         <p id="change-role-user" class="otp-feedback-msg"></p>
         <p class="admin__change-role-summary">Nuevo estado: <span id="change-role-value"></span></p>
+        <div id="change-role-admin-warning" style="display: none; background: #fff5f5; border: 1.5px solid #feb2b2; border-radius: 8px; padding: 0.85rem; margin: 0.9rem 0; color: #c53030; font-size: 0.85rem; text-align: left;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <strong>Atención de Seguridad:</strong>
+            <p style="margin: 4px 0 0;">Estás modificando el rol de un <strong>Administrador</strong>. Esta acción se registrará en la auditoría del sistema y se notificará por correo electrónico a la persona afectada con tu nombre y correo.</p>
+        </div>
         <div class="modal-2fa-actions">
             <button type="button" id="btn-confirm-change-role" class="btn btn-primary">Sí, cambiar</button>
             <button type="button" id="btn-cancel-change-role" class="btn btn-outline">Cancelar</button>
@@ -389,6 +415,116 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal: Configuración de Correos del Sistema -->
+<div id="config-correo-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="config-correo-title">
+    <div class="dashboard-card admin__profile-modal" style="max-width: 600px;">
+        <div class="dashboard-header admin__modal-header">
+            <div>
+                <h2 id="config-correo-title" class="admin__modal-title">
+                    <i class="fa-solid fa-envelope-open-text text-accent"></i> Configuración de Correos del Sistema
+                </h2>
+                <p class="admin__modal-description">
+                    Edita fácilmente las casillas de correo utilizadas para soporte, notificaciones y auditoría.
+                </p>
+            </div>
+            <button type="button" id="btn-cerrar-config-correo-x" aria-label="Cerrar modal" class="admin__modal-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="config-correo-form">
+            <div class="admin__form-section" style="margin-bottom: 1.2rem;">
+                <label for="input-correo-contacto" class="admin__form-label">
+                    Correo de Contacto y Soporte
+                </label>
+                <input type="email" id="input-correo-contacto" class="form-input" placeholder="contacto@chileavanza.cl" required style="width: 100%;">
+                <span class="admin__field-help">Casilla donde se reciben los mensajes del formulario de contacto.</span>
+            </div>
+
+            <div class="admin__form-section" style="margin-bottom: 1.2rem;">
+                <label for="input-correo-notif" class="admin__form-label">
+                    Correo Emisor de Notificaciones
+                </label>
+                <input type="email" id="input-correo-notif" class="form-input" placeholder="smartbids.qa@chileavanza.cl" required style="width: 100%;">
+                <span class="admin__field-help">Dirección remitente desde donde se envían alertas de la plataforma.</span>
+            </div>
+
+            <div class="admin__form-section" style="margin-bottom: 1.2rem;">
+                <label for="input-nombre-remitente" class="admin__form-label">
+                    Nombre Público del Remitente
+                </label>
+                <input type="text" id="input-nombre-remitente" class="form-input" placeholder="SmartBids" required style="width: 100%;">
+                <span class="admin__field-help">Nombre mostrado en la bandeja de entrada de los usuarios.</span>
+            </div>
+
+            <div class="admin__form-section" style="margin-bottom: 1.2rem;">
+                <label for="input-correo-auditoria" class="admin__form-label">
+                    Correo de Seguridad y Auditoría
+                </label>
+                <input type="email" id="input-correo-auditoria" class="form-input" placeholder="contacto@chileavanza.cl" required style="width: 100%;">
+                <span class="admin__field-help">Casilla que recibe copias de respaldo ante eliminaciones o cambios entre administradores.</span>
+            </div>
+
+            <p id="config-correo-feedback" class="admin__modal-feedback"></p>
+
+            <div class="dashboard-header admin__modal-actions">
+                <button type="button" id="btn-cerrar-config-correo" class="btn btn-outline admin__modal-cancel-button">
+                    Cancelar
+                </button>
+                <button type="submit" id="btn-guardar-config-correo" class="btn btn-primary admin__modal-submit-button">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Correos
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Registro de Auditoría de Administradores -->
+<div id="auditoria-admin-modal" class="modal-2fa-overlay" role="dialog" aria-modal="true" aria-labelledby="auditoria-admin-title">
+    <div class="dashboard-card admin__profile-modal" style="max-width: 900px; max-height: 85vh; overflow-y: auto;">
+        <div class="dashboard-header admin__modal-header">
+            <div>
+                <h2 id="auditoria-admin-title" class="admin__modal-title">
+                    <i class="fa-solid fa-shield-halved text-accent"></i> Auditoría de Acciones entre Administradores
+                </h2>
+                <p class="admin__modal-description">
+                    Registro permanente y transparente de eliminaciones y modificaciones de rol entre administradores.
+                </p>
+            </div>
+            <button type="button" id="btn-cerrar-auditoria-admin-x" aria-label="Cerrar modal" class="admin__modal-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div style="margin-top: 1.25rem; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--dark-green); font-weight: 700;">
+                        <th style="padding: 0.75rem 0.6rem;">Fecha</th>
+                        <th style="padding: 0.75rem 0.6rem;">Ejecutor</th>
+                        <th style="padding: 0.75rem 0.6rem;">Afectado</th>
+                        <th style="padding: 0.75rem 0.6rem;">Acción</th>
+                        <th style="padding: 0.75rem 0.6rem;">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody id="auditoria-admin-tbody">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-text);">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando registros de auditoría...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dashboard-header admin__modal-actions" style="margin-top: 1.5rem;">
+            <button type="button" id="btn-cerrar-auditoria-admin" class="btn btn-outline admin__modal-cancel-button">
+                Cerrar
+            </button>
+        </div>
     </div>
 </div>
 {% endblock %}
