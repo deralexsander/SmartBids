@@ -869,6 +869,68 @@
     transform: translateX(2px);
 }
 
+.rk-btn-mas {
+    width: 100%;
+    padding: 0.52rem 1rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    border: 1.5px dashed rgba(17, 99, 78, 0.3);
+    background: rgba(30, 196, 152, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    font-family: inherit;
+}
+
+.rk-btn-mas:hover {
+    background: rgba(30, 196, 152, 0.14);
+    border-color: var(--accent-green);
+    color: var(--dark-green);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(17, 99, 78, 0.06);
+}
+
+.rk-btn-mas:active {
+    transform: translateY(0);
+}
+
+.rk-btn-mas i {
+    font-size: 0.78rem;
+    color: var(--accent-green);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rk-btn-mas.abierto i {
+    transform: rotate(180deg);
+}
+
+/* Contenedor colapsable con animación suave de apertura y cierre */
+.rk-extra-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease, margin 0.35s ease;
+    opacity: 0;
+    margin-top: 0;
+}
+
+.rk-extra-wrap.abierto {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-top: 0.42rem;
+}
+
+.rk-extra-wrap > ul {
+    overflow: hidden;
+    min-height: 0;
+    margin: 0;
+}
+
 /* ===== Paneles de Evolución Mensual ===== */
 .ev-panel-card {
     padding: 1.8rem;

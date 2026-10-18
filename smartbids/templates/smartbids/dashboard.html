@@ -365,6 +365,15 @@
                     <p class="rk-meta" id="${p}-pista" style="margin:.25rem 0 0;"></p>
                     <p id="${p}-estado" role="status" aria-live="polite" class="rk-meta"></p>
                     <ul class="rk-lista" id="${p}-lista"></ul>
+                    <div class="rk-extra-wrap" id="${p}-extra-wrap">
+                        <ul class="rk-lista rk-lista--extra" id="${p}-lista-extra"></ul>
+                    </div>
+                    <div id="${p}-mas-contenedor" style="margin-top:0.6rem;" hidden>
+                        <button type="button" id="${p}-btn-mas" class="rk-btn-mas">
+                            <i class="fa-solid fa-chevron-down" id="${p}-btn-mas-icono"></i>
+                            <span id="${p}-btn-mas-texto">Presiona para mostrar más</span>
+                        </button>
+                    </div>
                     <p class="rk-meta" style="margin-top:0.85rem;font-size:0.75rem;display:flex;align-items:center;gap:6px;">
                         <i class="fa-solid fa-circle-info" style="color:var(--muted-teal);"></i>
                         La participación se calcula sobre el segmento seleccionado, no sobre el total del DW.
@@ -436,15 +445,55 @@
             ? ranking[0].participacion.toLocaleString('es-CL') + '% del segmento' : '';
 
         const lista = el(p + '-lista');
+        const listaExtra = el(p + '-lista-extra');
+        const extraWrap = el(p + '-extra-wrap');
+        const masContenedor = el(p + '-mas-contenedor');
+        const masBtn = el(p + '-btn-mas');
+        const masTexto = el(p + '-btn-mas-texto');
+
         lista.replaceChildren();
+        if (listaExtra) listaExtra.replaceChildren();
+        if (extraWrap) extraWrap.classList.remove('abierto');
+        if (masBtn) masBtn.classList.remove('abierto');
+
         if (!ranking.length) {
             const li = document.createElement('li');
             li.className = 'rk-meta';
             li.textContent = 'Sin datos para esta selección.';
             lista.appendChild(li);
+            if (masContenedor) masContenedor.hidden = true;
         } else {
             const maximo = Math.max(...ranking.map(r => r.monto), 1);
-            ranking.forEach((r, i) => lista.appendChild(rkFila(r, i, maximo, cfg)));
+            let expandido = false;
+
+            ranking.forEach((r, i) => {
+                const li = rkFila(r, i, maximo, cfg);
+                if (i < 4) {
+                    lista.appendChild(li);
+                } else if (listaExtra) {
+                    listaExtra.appendChild(li);
+                }
+            });
+
+            if (masContenedor && masBtn && extraWrap) {
+                if (ranking.length > 4) {
+                    masContenedor.hidden = false;
+                    masTexto.textContent = 'Presiona para mostrar más (' + (ranking.length - 4) + ' adicionales)';
+
+                    masBtn.onclick = () => {
+                        expandido = !expandido;
+                        extraWrap.classList.toggle('abierto', expandido);
+                        masBtn.classList.toggle('abierto', expandido);
+                        if (expandido) {
+                            masTexto.textContent = 'Mostrar menos';
+                        } else {
+                            masTexto.textContent = 'Presiona para mostrar más (' + (ranking.length - 4) + ' adicionales)';
+                        }
+                    };
+                } else {
+                    masContenedor.hidden = true;
+                }
+            }
         }
 
         const top = ranking.slice(0, 5);
