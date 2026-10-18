@@ -28,11 +28,17 @@
 
         <div class="mis-lic__toolbar">
         {% if suscriptor_activo %}
-        <div role="group" aria-label="Filtrar licitaciones por seguimiento" class="mis-lic__follow-filters">
-            <a href="{% url 'mis_licitaciones' %}" aria-current="{% if not solo_seguidas %}page{% endif %}" class="btn {% if not solo_seguidas %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
-                <span>Todas</span>
+        <div role="tablist" aria-label="Filtrar licitaciones por sección" class="mis-lic__follow-filters">
+            <a href="{% url 'mis_licitaciones' %}?tab=todas" role="tab" aria-selected="{% if tab_activa == 'todas' %}true{% else %}false{% endif %}" aria-current="{% if tab_activa == 'todas' %}page{% endif %}" class="btn {% if tab_activa == 'todas' %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
+                <i class="fa-solid fa-list-ul"></i> <span>Todas</span>
             </a>
-            <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" aria-current="{% if solo_seguidas %}page{% endif %}" class="btn {% if solo_seguidas %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
+            <a href="{% url 'mis_licitaciones' %}?tab=claves" role="tab" aria-selected="{% if tab_activa == 'claves' %}true{% else %}false{% endif %}" aria-current="{% if tab_activa == 'claves' %}page{% endif %}" class="btn {% if tab_activa == 'claves' %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
+                <i class="fa-solid fa-key"></i> <span>Con palabras clave</span>
+                {% if match_perfil > 0 %}
+                <span class="mis-lic__badge-count" style="margin-left: 6px; background: rgba(30,196,152,0.2); padding: 2px 7px; border-radius: 10px; font-size: 0.78rem;">{{ match_perfil }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" role="tab" aria-selected="{% if tab_activa == 'seguidas' %}true{% else %}false{% endif %}" aria-current="{% if tab_activa == 'seguidas' %}page{% endif %}" class="btn {% if tab_activa == 'seguidas' %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
                 <i class="fa-solid fa-bookmark"></i> <span>Mis seguidas (<span id="seguimientos-count">{{ cantidad_seguidas }}</span>)</span>
             </a>
         </div>
@@ -43,13 +49,27 @@
                     <i class="fa-solid fa-file-export"></i> Exportar
                 </button>
                 <a href="{% url 'perfil' %}" class="btn btn-primary mis-lic__toolbar-link">
-                    <i class="fa-solid fa-sliders"></i> Ajustar Filtros en Perfil
+                    <i class="fa-solid fa-sliders"></i> Ajustar Palabras Clave
                 </a>
             </div>
         </div>
 
+        {% if tab_activa == 'claves' and not tiene_palabras_perfil %}
+        <div class="dashboard-card mis-lic__empty-card" style="text-align: center; padding: 2.2rem 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--accent-green);">
+            <i class="fa-solid fa-key" style="font-size: 2.2rem; color: var(--accent-green); margin-bottom: 0.8rem; display: inline-block;"></i>
+            <h3 style="color: var(--dark-green); margin-bottom: 0.4rem;">No tienes palabras clave configuradas en tu perfil</h3>
+            <p style="color: var(--gray-text); max-width: 580px; margin: 0 auto 1.2rem; font-size: 0.92rem;">
+                Para filtrar automáticamente las licitaciones según tu rubro en esta pestaña, ingresa a tu perfil y define tus palabras clave y categorías.
+            </p>
+            <a href="{% url 'perfil' %}" class="btn btn-primary">
+                <i class="fa-solid fa-sliders"></i> Configurar en Perfil
+            </a>
+        </div>
+        {% endif %}
+
         <form method="get" action="{% url 'mis_licitaciones' %}" class="dashboard-card mis-lic__search-form">
-            {% if solo_seguidas %}<input type="hidden" name="solo_seguidas" value="1">{% endif %}
+            {% if tab_activa == 'claves' %}<input type="hidden" name="tab" value="claves">{% endif %}
+            {% if tab_activa == 'seguidas' %}<input type="hidden" name="solo_seguidas" value="1">{% endif %}
             <label class="mis-lic__filter-label mis-lic__filter-label--search">
                 Buscar
                 <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Código, nombre o descripción" class="mis-lic__filter-input">
@@ -74,7 +94,9 @@
             </label>
             <div class="mis-lic__filter-actions">
                 <button type="submit" class="btn btn-primary mis-lic__filter-submit"><i class="fa-solid fa-filter"></i> Aplicar</button>
-                {% if solo_seguidas %}
+                {% if tab_activa == 'claves' %}
+                <a href="{% url 'mis_licitaciones' %}?tab=claves" class="btn btn-outline mis-lic__filter-clear">Limpiar</a>
+                {% elif tab_activa == 'seguidas' %}
                 <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" class="btn btn-outline mis-lic__filter-clear">Limpiar</a>
                 {% else %}
                 <a href="{% url 'mis_licitaciones' %}" class="btn btn-outline mis-lic__filter-clear">Limpiar</a>

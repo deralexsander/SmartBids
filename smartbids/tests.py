@@ -495,12 +495,38 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
                 pref_palabras_claves=['servidor', 'computador'],
                 pref_productos=[]
             )
-            req = self.rf.get('/mis-licitaciones/')
+            req = self.rf.get('/mis-licitaciones/?tab=claves')
             qs, match_perfil = filtrar_licitaciones(req, suscriptor=MagicMock())
 
-            # El match con perfil debe ser 42 y el queryset devuelto debe estar filtrado
+            # El match con perfil debe ser 42 y el queryset devuelto debe estar filtrado en pestaña de claves
             self.assertEqual(match_perfil, 42)
             self.assertEqual(qs, mock_filtered_qs)
+
+    def test_filtrar_licitaciones_tab_todas_sin_filtro_de_claves(self):
+        from unittest.mock import patch, MagicMock
+        from .licitaciones_views import filtrar_licitaciones
+
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+
+        with patch('smartbids.licitaciones_views.Licitacion.objects') as mock_licitacion_objects, \
+             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+            mock_licitacion_objects.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+            mock_licitacion_objects.filter.return_value.distinct.return_value.count.return_value = 15
+
+            mock_pref.return_value.first.return_value = MagicMock(
+                pref_comunas=[],
+                pref_tipo_licitacion=[],
+                pref_ucom=[],
+                pref_palabras_claves=['software'],
+                pref_productos=[]
+            )
+            req = self.rf.get('/mis-licitaciones/?tab=todas')
+            qs, match_perfil = filtrar_licitaciones(req, suscriptor=MagicMock())
+
+            # En pestaña Todas, no se aplica el filtro de palabras clave a qs, pero se calcula el match
+            self.assertEqual(match_perfil, 15)
+            self.assertEqual(qs, mock_qs)
 
     def test_mis_licitaciones_view_kpi_match_cero_cuando_perfil_vacio(self):
         from unittest.mock import patch, MagicMock
