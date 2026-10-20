@@ -67,9 +67,14 @@ def resumen_dia_view(request):
         q_perfil |= q_palabras
 
     if productos:
-        subq_prod = LicitacionesProductos.objects.filter(
-            codigo_producto__in=productos
-        ).values('lic_codigo_id')
+        codigos_completos = [p for p in productos if len(p) >= 8]
+        prefijos = [p for p in productos if len(p) < 8]
+        q_prod = Q()
+        if codigos_completos:
+            q_prod |= Q(codigo_producto__in=codigos_completos)
+        for pref in prefijos:
+            q_prod |= Q(codigo_producto__startswith=pref)
+        subq_prod = LicitacionesProductos.objects.filter(q_prod).values('lic_codigo_id')
         q_perfil |= Q(lic_codigo__in=subq_prod)
 
     # Coincidencias de perfil

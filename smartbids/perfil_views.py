@@ -10,8 +10,9 @@ from django.db import DataError, DatabaseError
 from django.db.models import Q, Value
 from django.db.models.functions import Replace, Upper
 
+from django.core.cache import cache
 from .models import Suscriptor, Empresa, Preferencia, EstadoSuscriptor
-from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor
+from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor, GrupoProducto, Nivel1Producto
 from .models.procurement import UnidadCompra
 
 logger = logging.getLogger(__name__)
@@ -73,61 +74,8 @@ ORDEN_GEOGRAFICO_CHILE = {
     '12': 16, 'XII': 16,
 }
 
-NOMBRES_SEGMENTOS_ONU = {
-    '10': 'Material Vivo Animal y Vegetal',
-    '11': 'Materiales de Minerales y Tejidos no Comestibles',
-    '12': 'Productos Químicos y Gases Químicos',
-    '13': 'Resina, Caucho y Espuma',
-    '14': 'Materiales y Productos de Papel',
-    '15': 'Combustibles, Lubricantes y Materiales Anticorrosivos',
-    '20': 'Maquinaria y Accesorios de Minería y Perforación',
-    '21': 'Maquinaria y Accesorios para Agricultura y Pesca',
-    '22': 'Maquinaria pesada de Construcción y Edificación',
-    '23': 'Maquinaria de Procesamiento Industrial',
-    '24': 'Empaque, Envases y Contenedores',
-    '25': 'Vehículos Comerciales, Militares y Privados',
-    '26': 'Sistemas de Potencia y Componentes Eléctricos',
-    '27': 'Herramientas y Maquinaria General',
-    '30': 'Estructuras, Edificación y Materiales de Construcción',
-    '31': 'Artículos de Fabricación y Componentes',
-    '32': 'Componentes Electrónicos',
-    '39': 'Iluminación y Componentes Eléctricos',
-    '40': 'Distribución y Acondicionamiento de Fluidos',
-    '41': 'Equipamiento de Laboratorio y Científico',
-    '42': 'Equipos y Suministros Médicos',
-    '43': 'Tecnología de la Información, Telecomunicaciones y Software',
-    '44': 'Equipos y Suministros de Oficina',
-    '45': 'Equipamiento para Artes, Imprenta y Fotografía',
-    '46': 'Seguridad, Vigilancia y Primeros Auxilios',
-    '47': 'Limpieza y Eliminación de Residuos',
-    '50': 'Alimentos, Bebidas y Tabaco',
-    '51': 'Medicamentos y Productos Farmacéuticos',
-    '52': 'Muebles, Mobiliario y Accesorios Domésticos',
-    '53': 'Ropa, Calzado y Equipaje',
-    '55': 'Publicaciones, Medios Impresos y Audiovisuales',
-    '56': 'Construcciones prefabricadas',
-    '60': 'Instrumentos Musicales, Juegos y Deportes',
-    '70': 'Servicios de Recursos Vivos (Agricultura y Pesca)',
-    '71': 'Servicios de Minería, Petróleo y Gas',
-    '72': 'Servicios de Construcción y Mantenimiento',
-    '73': 'Servicios de Producción y Fabricación Industrial',
-    '76': 'Servicios de Limpieza, Descontaminación y Residuos',
-    '77': 'Servicios de Medio Ambiente',
-    '78': 'Servicios de Transporte, Correo y Almacenamiento',
-    '80': 'Servicios de Gestión, Administración y Consultoría',
-    '81': 'Servicios Profesionales de Ingeniería e Investigación',
-    '82': 'Servicios Editoriales, Diseño y Gráficos',
-    '83': 'Servicios Públicos y de Obras Públicas',
-    '84': 'Servicios Financieros, Seguros y Contables',
-    '85': 'Servicios Sanitarios y de Salud Humana',
-    '86': 'Servicios Educativos y de Capacitación',
-    '90': 'Servicios de Viajes, Alojamiento y Banquetes',
-    '91': 'Servicios Personales y Domésticos',
-    '92': 'Servicios de Seguridad y Defensa',
-    '93': 'Servicios Políticos, Cívicos y Gubernamentales',
-    '94': 'Organizaciones y Clubes',
-    '95': 'Terrenos, Bienes Inmuebles y Estructuras',
-}
+CACHE_KEY_PRODUCTOS_ARBOL = 'catalogos_productos_arbol_v2'
+
 
 
 def normalizar_cadena_simple(texto: str) -> str:
@@ -217,42 +165,162 @@ def catalogos_preferencias(request):
     if tipo == 'productos_arbol':
         try:
             q_filtro = request.GET.get('q', '').strip()
+
+            if not q_filtro:
+                cached_data = cache.get(CACHE_KEY_PRODUCTOS_ARBOL)
+                if cached_data:
+                    return JsonResponse(cached_data)
+
+            # Consultar grupos y niveles desde el catálogo en base de datos
+            grupos_qs = GrupoProducto.objects.all().order_by('codigo_grupo_producto')
+            grupos_map = {}
+            for g in grupos_qs:
+                cod_grp = str(g.codigo_grupo_producto).strip()
+                grupos_map[cod_grp] = {
+                    'codigo_grupo': cod_grp,
+                    'nombre_grupo': g.nombre_grupo_producto.strip(),
+                    'niveles': {}
+                }
+
+            niveles_qs = Nivel1Producto.objects.all().order_by('codigo_nivel1')
+            niveles_map = {}
+            for n in niveles_qs:
+                cod_n1 = str(n.codigo_nivel1).strip()
+                cod_grp = str(n.codigo_grupo_producto_id or '').strip()
+                n_info = {
+                    'codigo_nivel1': cod_n1,
+                    'descripcion': (n.descripcion or f"Nivel {cod_n1}").strip(),
+                    'codigo_grupo': cod_grp,
+                    'productos': []
+                }
+                niveles_map[cod_n1] = n_info
+                if cod_grp in grupos_map:
+                    grupos_map[cod_grp]['niveles'][cod_n1] = n_info
+                else:
+                    # Agrupar en grupo de reserva si existiera
+                    grp_fallback = '21' if '21' in grupos_map else (list(grupos_map.keys())[0] if grupos_map else '00')
+                    if grp_fallback in grupos_map:
+                        grupos_map[grp_fallback]['niveles'][cod_n1] = n_info
+
             query_base = Producto.objects.exclude(descripcion__isnull=True).exclude(descripcion__exact='')
 
             if q_filtro:
                 query_base = query_base.filter(
-                    Q(descripcion__icontains=q_filtro) | Q(codigo_producto__icontains=q_filtro)
-                )[:250]
+                    Q(descripcion__icontains=q_filtro) |
+                    Q(codigo_producto__icontains=q_filtro) |
+                    Q(glosa_nivel2__icontains=q_filtro) |
+                    Q(glosa_nivel3__icontains=q_filtro) |
+                    Q(glosa_nivel4__icontains=q_filtro)
+                )[:400]
             else:
                 query_base = query_base.order_by('codigo_producto')
 
-            prods = list(query_base.values('codigo_producto', 'descripcion'))
+            campos_prod = [
+                'codigo_producto', 'descripcion', 'nivel1_id',
+                'nivel2', 'nivel3', 'nivel4',
+                'glosa_nivel2', 'glosa_nivel3', 'glosa_nivel4'
+            ]
+            prods = list(query_base.values(*campos_prod))
 
-            rubros_map = {}
             for p in prods:
                 cod = str(p['codigo_producto']).strip()
                 desc_raw = str(p['descripcion'] or '').replace('\r', ' ').replace('\n', ' ')
                 desc = re.sub(r'\s+', ' ', desc_raw).strip()
 
-                if not desc or desc in ['1°', '1a S', '1era', '1.1']:
-                    desc = f"Producto ONU {cod}"
+                n1 = str(p.get('nivel1_id') or '').strip()
+                n2 = str(p.get('nivel2') or '').strip()
+                n3 = str(p.get('nivel3') or '').strip()
+                n4 = str(p.get('nivel4') or '').strip()
 
-                seg_code = cod[:2] if len(cod) >= 2 else '00'
-                nombre_seg = NOMBRES_SEGMENTOS_ONU.get(seg_code, f"Segmento ONU {seg_code}")
+                # Descomponer código soportando primer bloque de 3 dígitos (Obras Civiles MOP)
+                # o 2 dígitos (ONU estándar) si viniera sin FK
+                if not n1:
+                    if len(cod) >= 9:
+                        n1 = cod[:3]
+                        n2 = cod[3:5]
+                        n3 = cod[5:7]
+                        n4 = cod[7:9]
+                    else:
+                        n1 = cod[:2]
+                        n2 = cod[2:4]
+                        n3 = cod[4:6]
+                        n4 = cod[6:8]
 
-                if seg_code not in rubros_map:
-                    rubros_map[seg_code] = {
-                        'codigo_rubro': seg_code,
-                        'nombre_rubro': f"{seg_code} – {nombre_seg}",
-                        'productos': []
-                    }
-                rubros_map[seg_code]['productos'].append({
+                cod_fmt = f"{n1}-{n2}-{n3}-{n4}" if (n1 and n2 and n3 and n4) else cod
+
+                if not desc:
+                    desc = p.get('glosa_nivel4') or p.get('glosa_nivel3') or f"Producto {cod_fmt}"
+
+                prod_item = {
                     'codigo_producto': cod,
-                    'descripcion': desc
-                })
+                    'codigo_formateado': cod_fmt,
+                    'descripcion': desc,
+                    'nivel1': n1,
+                    'nivel2': n2,
+                    'nivel3': n3,
+                    'nivel4': n4,
+                    'glosa_nivel2': (p.get('glosa_nivel2') or '').strip(),
+                    'glosa_nivel3': (p.get('glosa_nivel3') or '').strip(),
+                    'glosa_nivel4': (p.get('glosa_nivel4') or '').strip(),
+                }
 
-            rubros_list = sorted(list(rubros_map.values()), key=lambda r: r['codigo_rubro'])
-            return JsonResponse({'status': 'ok', 'rubros': rubros_list})
+                if n1 in niveles_map:
+                    niveles_map[n1]['productos'].append(prod_item)
+                else:
+                    # En caso de nivel no registrado explícitamente en catálogo
+                    grp_key = '12' if n1 in ('101', '102', '103', '104') else '21'
+                    if grp_key not in grupos_map and grupos_map:
+                        grp_key = list(grupos_map.keys())[0]
+                    if grp_key in grupos_map:
+                        if n1 not in grupos_map[grp_key]['niveles']:
+                            grupos_map[grp_key]['niveles'][n1] = {
+                                'codigo_nivel1': n1,
+                                'descripcion': f"Nivel {n1}",
+                                'codigo_grupo': grp_key,
+                                'productos': []
+                            }
+                        grupos_map[grp_key]['niveles'][n1]['productos'].append(prod_item)
+
+            grupos_list = []
+            for grp_data in sorted(grupos_map.values(), key=lambda g: g['codigo_grupo']):
+                niveles_del_grupo = []
+                for niv_data in sorted(grp_data['niveles'].values(), key=lambda n: n['codigo_nivel1']):
+                    if niv_data['productos']:
+                        niveles_del_grupo.append({
+                            'codigo_nivel1': niv_data['codigo_nivel1'],
+                            'descripcion': niv_data['descripcion'],
+                            'productos': niv_data['productos']
+                        })
+
+                if niveles_del_grupo:
+                    grupos_list.append({
+                        'codigo_grupo': grp_data['codigo_grupo'],
+                        'nombre_grupo': grp_data['nombre_grupo'],
+                        'niveles': niveles_del_grupo
+                    })
+
+            # Formato de retrocompatibilidad plana para componentes anteriores
+            rubros_compat = []
+            for g in grupos_list:
+                for niv in g['niveles']:
+                    rubros_compat.append({
+                        'codigo_rubro': niv['codigo_nivel1'],
+                        'nombre_rubro': f"{niv['codigo_nivel1']} – {niv['descripcion']}",
+                        'codigo_grupo': g['codigo_grupo'],
+                        'nombre_grupo': g['nombre_grupo'],
+                        'productos': niv['productos']
+                    })
+
+            resp_data = {
+                'status': 'ok',
+                'grupos': grupos_list,
+                'rubros': rubros_compat
+            }
+
+            if not q_filtro:
+                cache.set(CACHE_KEY_PRODUCTOS_ARBOL, resp_data, 86400)
+
+            return JsonResponse(resp_data)
         except Exception as e:
             logger.error(f"[SmartBids] Error al generar árbol de productos: {str(e)}")
             return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
@@ -430,11 +498,46 @@ def obtener_perfil_suscriptor(request):
         comunas_detalle = [{'code': cod, 'label': mapa_comunas.get(cod, cod)} for cod in raw_comunas]
 
         raw_prods = to_list(pref.pref_productos) if pref else []
-        mapa_prods = {
-            str(p['codigo_producto']).strip(): p['descripcion']
-            for p in Producto.objects.filter(codigo_producto__in=raw_prods).values('codigo_producto', 'descripcion')
-        }
-        productos_detalle = [{'code': cod, 'label': f"{mapa_prods.get(cod, cod)} ({cod})" if cod in mapa_prods else cod} for cod in raw_prods]
+        mapa_prods = {}
+        if raw_prods:
+            prods_db = Producto.objects.filter(codigo_producto__in=raw_prods).values(
+                'codigo_producto', 'descripcion', 'nivel1_id', 'nivel2', 'nivel3', 'nivel4',
+                'glosa_nivel4', 'glosa_nivel3'
+            )
+            for p in prods_db:
+                cod = str(p['codigo_producto']).strip()
+                desc = (p.get('descripcion') or '').strip()
+                n1 = str(p.get('nivel1_id') or '').strip()
+                n2 = str(p.get('nivel2') or '').strip()
+                n3 = str(p.get('nivel3') or '').strip()
+                n4 = str(p.get('nivel4') or '').strip()
+                if not n1:
+                    n1 = cod[:3] if len(cod) >= 9 else cod[:2]
+                    n2 = cod[3:5] if len(cod) >= 9 else cod[2:4]
+                    n3 = cod[5:7] if len(cod) >= 9 else cod[4:6]
+                    n4 = cod[7:9] if len(cod) >= 9 else cod[6:8]
+                cod_fmt = f"{n1}-{n2}-{n3}-{n4}" if (n1 and n2 and n3 and n4) else cod
+                desc_final = desc or p.get('glosa_nivel4') or p.get('glosa_nivel3') or f"Producto {cod_fmt}"
+                mapa_prods[cod] = {
+                    'descripcion': desc_final,
+                    'formateado': cod_fmt
+                }
+
+        productos_detalle = []
+        for cod in raw_prods:
+            cod_str = str(cod).strip()
+            info = mapa_prods.get(cod_str)
+            if info:
+                label = f"{info['descripcion']} ({info['formateado']})"
+            else:
+                if len(cod_str) == 9:
+                    fmt = f"{cod_str[:3]}-{cod_str[3:5]}-{cod_str[5:7]}-{cod_str[7:9]}"
+                elif len(cod_str) == 8:
+                    fmt = f"{cod_str[:2]}-{cod_str[2:4]}-{cod_str[4:6]}-{cod_str[6:8]}"
+                else:
+                    fmt = cod_str
+                label = f"Producto {fmt}" if fmt != cod_str else cod_str
+            productos_detalle.append({'code': cod_str, 'label': label})
 
         raw_ucom = to_list(pref.pref_ucom) if pref else []
         ucom_ids = [int(x) for x in raw_ucom if str(x).isdigit()]

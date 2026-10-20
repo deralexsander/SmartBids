@@ -780,6 +780,248 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             self.assertEqual(len(data['registros']), 1)
             self.assertEqual(data['registros'][0]['accion'], 'ELIMINACION')
 
+    def test_producto_codigo_formateado_standard_y_obras_civiles(self):
+        """Verifica que el código se formatee con guiones y soporte primer nivel de 3 dígitos (Obras Civiles)."""
+        from .models.catalog import Producto
+
+        p_standard = Producto(
+            codigo_producto='50193001',
+            descripcion='Comida para bebés',
+            nivel1_id='50',
+            nivel2='19',
+            nivel3='30',
+            nivel4='01'
+        )
+        self.assertEqual(p_standard.codigo_formateado, '50-19-30-01')
+        self.assertIn('50-19-30-01', str(p_standard))
+
+        p_obras = Producto(
+            codigo_producto='101101131',
+            descripcion='1era',
+            nivel1_id='101',
+            nivel2='10',
+            nivel3='11',
+            nivel4='31',
+            glosa_nivel2='Obras Mayores',
+            glosa_nivel3='Obra Civil',
+            glosa_nivel4='1era'
+        )
+        self.assertEqual(p_obras.codigo_formateado, '101-10-11-31')
+        self.assertIn('101-10-11-31', str(p_obras))
+
+    def test_catalogos_preferencias_productos_arbol_jerarquia(self):
+        """Verifica la jerarquía Grupo -> Nivel 1 -> Productos y la ausencia de textos erróneos."""
+        import json
+        from unittest.mock import patch, MagicMock
+        from .perfil_views import catalogos_preferencias
+        from .models.catalog import GrupoProducto, Nivel1Producto
+
+        mock_grupos = [
+            GrupoProducto(codigo_grupo_producto='01', nombre_grupo_producto='Alimentos'),
+            GrupoProducto(codigo_grupo_producto='12', nombre_grupo_producto='Obras Públicas')
+        ]
+        mock_niveles = [
+            Nivel1Producto(codigo_nivel1='50', descripcion='Alimentos, bebidas y tabaco', codigo_grupo_producto_id='01'),
+            Nivel1Producto(codigo_nivel1='101', descripcion='Obras', codigo_grupo_producto_id='12')
+        ]
+        mock_prods = [
+            {
+                'codigo_producto': '50193001',
+                'descripcion': 'Comida para bebés',
+                'nivel1_id': '50',
+                'nivel2': '19',
+                'nivel3': '30',
+                'nivel4': '01',
+                'glosa_nivel2': 'Alimentos preparados',
+                'glosa_nivel3': 'Bebidas infantiles',
+                'glosa_nivel4': 'Comida para bebés'
+            },
+            {
+                'codigo_producto': '101101131',
+                'descripcion': '1era',
+                'nivel1_id': '101',
+                'nivel2': '10',
+                'nivel3': '11',
+                'nivel4': '31',
+                'glosa_nivel2': 'Obras Mayores',
+                'glosa_nivel3': 'Obra Civil',
+                'glosa_nivel4': '1era'
+            }
+        ]
+
+        with patch('smartbids.perfil_views.GrupoProducto.objects.all') as m_g_all, \
+             patch('smartbids.perfil_views.Nivel1Producto.objects.all') as m_n_all, \
+             patch('smartbids.perfil_views.Producto.objects.exclude') as m_p_exc:
+
+            m_g_all.return_value.order_by.return_value = mock_grupos
+            m_n_all.return_value.order_by.return_value = mock_niveles
+
+            m_p_exc.return_value.exclude.return_value.order_by.return_value.values.return_value = mock_prods
+
+            req = self.rf.get('/api/catalogos-preferencias/?tipo=productos_arbol')
+            resp = catalogos_preferencias(req)
+            self.assertEqual(resp.status_code, 200)
+
+            data = json.loads(resp.content)
+            self.assertEqual(data.get('status'), 'ok')
+            self.assertIn('grupos', data)
+            self.assertIn('rubros', data)
+
+            grupos = data['grupos']
+            self.assertEqual(len(grupos), 2)
+
+            nombres_grupos = [g['nombre_grupo'] for g in grupos]
+            self.assertIn('Alimentos', nombres_grupos)
+            self.assertIn('Obras Públicas', nombres_grupos)
+
+            # Verificar Obras Civiles con código de 9 dígitos y primer nivel de 3 dígitos (101)
+            grupo_obras = next((g for g in grupos if g['nombre_grupo'] == 'Obras Públicas'), None)
+            self.assertIsNotNone(grupo_obras)
+            self.assertEqual(grupo_obras['niveles'][0]['codigo_nivel1'], '101')
+            prod_obras = grupo_obras['niveles'][0]['productos'][0]
+            self.assertEqual(prod_obras['codigo_producto'], '101101131')
+            self.assertEqual(prod_obras['codigo_formateado'], '101-10-11-31')
+            self.assertEqual(prod_obras['descripcion'], '1era')
+
+            # Verificar estándar ONU 8 dígitos
+            grupo_alimentos = next((g for g in grupos if g['nombre_grupo'] == 'Alimentos'), None)
+            self.assertIsNotNone(grupo_alimentos)
+            prod_alim = grupo_alimentos['niveles'][0]['productos'][0]
+            self.assertEqual(prod_alim['codigo_producto'], '50193001')
+            self.assertEqual(prod_alim['codigo_formateado'], '50-19-30-01')
+
+            # Verificar que no existan textos erróneos
+            texto_completo = json.dumps(data)
+            self.assertNotIn('Marvel', texto_completo)
+            self.assertNotIn('Segmento ONU Marvel', texto_completo)
+            self.assertNotIn('Segmento ONU 48', texto_completo)
+            self.assertNotIn('Segmento ONU 54', texto_completo)
+
+    def test_catalogos_preferencias_busqueda_productos(self):
+        """Verifica que el filtrado por q busque en descripciones y códigos de productos."""
+        import json
+        from unittest.mock import patch
+        from .perfil_views import catalogos_preferencias
+        from .models.catalog import GrupoProducto, Nivel1Producto
+
+        mock_grupos = [GrupoProducto(codigo_grupo_producto='01', nombre_grupo_producto='Alimentos')]
+        mock_niveles = [Nivel1Producto(codigo_nivel1='50', descripcion='Alimentos, bebidas y tabaco', codigo_grupo_producto_id='01')]
+        mock_prods = [{
+            'codigo_producto': '50193001',
+            'descripcion': 'Comida para bebés',
+            'nivel1_id': '50',
+            'nivel2': '19',
+            'nivel3': '30',
+            'nivel4': '01',
+            'glosa_nivel2': '',
+            'glosa_nivel3': '',
+            'glosa_nivel4': ''
+        }]
+
+        with patch('smartbids.perfil_views.GrupoProducto.objects.all') as m_g_all, \
+             patch('smartbids.perfil_views.Nivel1Producto.objects.all') as m_n_all, \
+             patch('smartbids.perfil_views.Producto.objects.exclude') as m_p_exc:
+
+            m_g_all.return_value.order_by.return_value = mock_grupos
+            m_n_all.return_value.order_by.return_value = mock_niveles
+            m_p_exc.return_value.exclude.return_value.filter.return_value.__getitem__.return_value.values.return_value = mock_prods
+
+            req = self.rf.get('/api/catalogos-preferencias/?tipo=productos_arbol&q=beb%C3%A9s')
+            resp = catalogos_preferencias(req)
+            self.assertEqual(resp.status_code, 200)
+
+            data = json.loads(resp.content)
+            self.assertEqual(data.get('status'), 'ok')
+            self.assertIn('grupos', data)
+            self.assertEqual(len(data['grupos']), 1)
+            self.assertEqual(data['grupos'][0]['niveles'][0]['productos'][0]['codigo_producto'], '50193001')
+
+    def test_obtener_perfil_productos_detalle_formato(self):
+        """Verifica que productos_detalle entregue etiquetas con código formateado y descripción adecuada."""
+        import json
+        from unittest.mock import patch, MagicMock
+        from .perfil_views import obtener_perfil_suscriptor
+
+        mock_susc = MagicMock(
+            id_suscriptor=10,
+            firebase_uid='uid_test_10',
+            sus_nombre1='Test',
+            sus_nombre2='',
+            sus_apellido1='User',
+            sus_apellido2='',
+            sus_nombre_social='',
+            sus_iniciales='TU',
+            sus_rut_empresa=None,
+            token_sesion='',
+            codigo_estado=None,
+            codigo_estado_id=None,
+            fecha_registro=None,
+            fecha_actualizacion=None
+        )
+        mock_pref = MagicMock(
+            pref_comunas=[],
+            pref_tipo_licitacion=[],
+            pref_ucom=[],
+            pref_palabras_claves=[],
+            pref_productos=['50193001', '101101131']
+        )
+        mock_prods = [
+            {
+                'codigo_producto': '50193001',
+                'descripcion': 'Comida para bebés',
+                'nivel1_id': '50',
+                'nivel2': '19',
+                'nivel3': '30',
+                'nivel4': '01',
+                'glosa_nivel3': '',
+                'glosa_nivel4': ''
+            },
+            {
+                'codigo_producto': '101101131',
+                'descripcion': '1era',
+                'nivel1_id': '101',
+                'nivel2': '10',
+                'nivel3': '11',
+                'nivel4': '31',
+                'glosa_nivel3': 'Obra Civil',
+                'glosa_nivel4': '1era'
+            }
+        ]
+
+        m_susc_qs = MagicMock()
+        m_susc_qs.select_related.return_value.filter.return_value.first.return_value = mock_susc
+        m_pref_qs = MagicMock()
+        m_pref_qs.filter.return_value.first.return_value = mock_pref
+        m_com_qs = MagicMock()
+        m_com_qs.filter.return_value.values.return_value = []
+        m_ucom_qs = MagicMock()
+        m_ucom_qs.filter.return_value.values.return_value = []
+        m_prod_qs = MagicMock()
+        m_prod_qs.filter.return_value.values.return_value = mock_prods
+
+        with patch('smartbids.perfil_views.Suscriptor.objects', m_susc_qs), \
+             patch('smartbids.perfil_views.Preferencia.objects', m_pref_qs), \
+             patch('smartbids.perfil_views.Comuna.objects', m_com_qs), \
+             patch('smartbids.perfil_views.UnidadCompra.objects', m_ucom_qs), \
+             patch('smartbids.perfil_views.Producto.objects', m_prod_qs):
+
+            req = self.rf.post('/api/perfil/obtener/', data=b'{"uid": "uid_test_10"}', content_type='application/json')
+            resp = obtener_perfil_suscriptor(req)
+            self.assertEqual(resp.status_code, 200)
+
+            data = json.loads(resp.content)
+            self.assertEqual(data.get('status'), 'ok')
+            prods_det = data['datos']['preferencias']['productos_detalle']
+            self.assertEqual(len(prods_det), 2)
+
+            self.assertEqual(prods_det[0]['code'], '50193001')
+            self.assertEqual(prods_det[0]['label'], 'Comida para bebés (50-19-30-01)')
+
+            self.assertEqual(prods_det[1]['code'], '101101131')
+            self.assertEqual(prods_det[1]['label'], '1era (101-10-11-31)')
+
+
+
 
 
 
