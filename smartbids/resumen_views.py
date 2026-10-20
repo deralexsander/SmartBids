@@ -53,9 +53,12 @@ def resumen_dia_view(request):
     preferencias = Preferencia.objects.filter(id_suscriptor=suscriptor).first() if suscriptor else None
     palabras = preferencias.pref_palabras_claves if preferencias and preferencias.pref_palabras_claves else []
     productos = preferencias.pref_productos if preferencias and preferencias.pref_productos else []
-    tiene_palabras_perfil = bool(palabras or productos)
+    tipos = [str(t).strip() for t in (preferencias.pref_tipo_licitacion or []) if str(t).strip()] if preferencias else []
+    comunas = [str(c).strip() for c in (preferencias.pref_comunas or []) if str(c).strip()] if preferencias else []
+    ucom_ids = [int(u) for u in (preferencias.pref_ucom or []) if str(u).strip().isdigit()] if preferencias else []
+    tiene_palabras_perfil = bool(palabras or productos or tipos or comunas or ucom_ids)
 
-    q_perfil = Q()
+    q_contenido = Q()
     if palabras:
         q_palabras = Q()
         for palabra in palabras:
@@ -64,7 +67,7 @@ def resumen_dia_view(request):
                 | Q(lic_nombre__icontains=palabra)
                 | Q(lic_descripcion__icontains=palabra)
             )
-        q_perfil |= q_palabras
+        q_contenido |= q_palabras
 
     if productos:
         codigos_completos = [p for p in productos if len(p) >= 8]
@@ -75,7 +78,24 @@ def resumen_dia_view(request):
         for pref in prefijos:
             q_prod |= Q(codigo_producto__startswith=pref)
         subq_prod = LicitacionesProductos.objects.filter(q_prod).values('lic_codigo_id')
-        q_perfil |= Q(lic_codigo__in=subq_prod)
+        q_contenido |= Q(lic_codigo__in=subq_prod)
+
+    condiciones_perfil = []
+    if q_contenido:
+        condiciones_perfil.append(q_contenido)
+    if comunas:
+        condiciones_perfil.append(Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas))
+    if ucom_ids:
+        condiciones_perfil.append(Q(lic_codigo_ucom_id__in=ucom_ids))
+    if tipos:
+        condiciones_perfil.append(Q(lic_tipo_licitacion__in=tipos))
+
+    if condiciones_perfil:
+        q_perfil = condiciones_perfil[0]
+        for cond in condiciones_perfil[1:]:
+            q_perfil &= cond
+    else:
+        q_perfil = Q()
 
     # Coincidencias de perfil
     if q_perfil:

@@ -430,6 +430,59 @@
     letter-spacing: 0.5px;
 }
 
+/* 1.2 Tipo de Procedimiento: Licitaciones Públicas y Privadas */
+.perfil__tender-type-section {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--soft-mint);
+}
+
+.perfil__tender-group {
+    background: #fafbfc;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.perfil__tender-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.perfil__tender-group-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.perfil__tender-group-icon {
+    font-size: 0.95rem;
+}
+
+.perfil__tender-group-icon--private {
+    color: var(--muted-teal);
+}
+
+.perfil__tender-group-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(30, 196, 152, 0.12);
+    color: var(--dark-green);
+    padding: 2px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+}
+
+.perfil__tender-group-badge--private {
+    background: #e2e8f0;
+    color: #475569;
+}
+
 .perfil__tender-type-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -446,6 +499,12 @@
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.perfil__tender-type-option:hover {
+    border-color: var(--accent-green);
+    background: rgba(30, 196, 152, 0.04);
+    transform: translateY(-1px);
 }
 
 .perfil__tender-type-checkbox {

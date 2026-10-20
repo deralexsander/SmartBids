@@ -129,6 +129,13 @@ def catalogos_preferencias(request):
 
         return JsonResponse({'status': 'ok', 'sugerencia': sugerencia})
 
+    if tipo == 'tipos_licitacion':
+        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+        return JsonResponse({
+            'status': 'ok',
+            'datos': obtener_catalogo_tipos_licitacion()
+        })
+
     if tipo == 'territorio':
         regiones_query = list(Region.objects.values('codigo_region', 'nombre_region'))
         provincias = list(

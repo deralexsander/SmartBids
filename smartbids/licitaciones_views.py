@@ -16,6 +16,7 @@ from .licitacion_utils import (
     estado_qs,
     generar_excel_response,
     resolver_suscriptor,
+    obtener_catalogo_tipos_licitacion,
 )
 
 
@@ -39,14 +40,13 @@ def filtrar_licitaciones(request, suscriptor):
     solo_seguidas = request.GET.get('solo_seguidas') == '1'
     solo_claves = (tab == 'claves' or request.GET.get('solo_claves') == '1') and not solo_seguidas
 
-    q_palabras = Q()
+    q_contenido = Q()
     if palabras:
+        q_palabras = Q()
         for palabra in palabras:
             q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra) | Q(lic_descripcion__icontains=palabra)
+        q_contenido |= q_palabras
 
-    q_perfil = Q()
-    if q_palabras:
-        q_perfil |= q_palabras
     if productos:
         codigos_completos = [p for p in productos if len(p) >= 8]
         prefijos = [p for p in productos if len(p) < 8]
@@ -56,18 +56,32 @@ def filtrar_licitaciones(request, suscriptor):
         for pref in prefijos:
             q_prod |= Q(codigo_producto__startswith=pref)
         subq_productos = LicitacionesProductos.objects.filter(q_prod).values('lic_codigo_id')
-        q_perfil |= Q(lic_codigo__in=subq_productos)
+        q_contenido |= Q(lic_codigo__in=subq_productos)
+
+    # El tipo de procedimiento, comunas y unidades de compra actúan como filtros restrictivos (AND / Intersección)
+    condiciones_perfil = []
+    if q_contenido:
+        condiciones_perfil.append(q_contenido)
     if comunas:
-        q_perfil |= Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas)
+        condiciones_perfil.append(Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas))
     if ucom_ids:
-        q_perfil |= Q(lic_codigo_ucom_id__in=ucom_ids)
+        condiciones_perfil.append(Q(lic_codigo_ucom_id__in=ucom_ids))
     if tipos:
-        q_perfil |= Q(lic_tipo_licitacion__in=tipos)
+        condiciones_perfil.append(Q(lic_tipo_licitacion__in=tipos))
+
+    if condiciones_perfil:
+        q_perfil = condiciones_perfil[0]
+        for cond in condiciones_perfil[1:]:
+            q_perfil &= cond
+    else:
+        q_perfil = Q()
 
     if q_perfil:
         match_perfil = Licitacion.objects.filter(q_perfil).distinct().count()
     else:
         match_perfil = 0
+
+    request._q_perfil = q_perfil
 
     if solo_seguidas:
         if suscriptor:
@@ -148,14 +162,39 @@ def mis_licitaciones_view(request):
         ),
         86400
     )
-    paginator = Paginator(qs, 20)
-    licitaciones = paginator.get_page(request.GET.get('page'))
-    for licitacion in licitaciones:
-        licitacion.estado_proceso, licitacion.estado_proceso_label = estado_licitacion(licitacion)
+
     tab = request.GET.get('tab', '').strip().lower()
     solo_seguidas = request.GET.get('solo_seguidas') == '1'
     solo_claves = (tab == 'claves' or request.GET.get('solo_claves') == '1') and not solo_seguidas
     tab_activa = 'seguidas' if solo_seguidas else ('claves' if solo_claves else 'todas')
+
+    # Separar las licitaciones de Match con Perfil de los Procesos de Compra Disponibles en la vista principal
+    q_perfil = getattr(request, '_q_perfil', None)
+    licitaciones_perfil = []
+    tiene_filtro_manual = bool(request.GET.get('q') or request.GET.get('tipo') or request.GET.get('estado'))
+    if q_perfil and match_perfil > 0 and not solo_seguidas and not tiene_filtro_manual:
+        try:
+            qs_perfil = (
+                Licitacion.objects
+                .select_related('lic_codigo_ucom')
+                .filter(q_perfil)
+                .distinct()
+                .order_by('-lic_fecha_public')
+            )
+            licitaciones_perfil = list(qs_perfil[:50])
+            for lic in licitaciones_perfil:
+                lic.estado_proceso, lic.estado_proceso_label = estado_licitacion(lic)
+
+            # Excluir de Procesos Disponibles para que queden estrictamente separados
+            codigos_perfil = [l.lic_codigo for l in licitaciones_perfil]
+            qs = qs.exclude(lic_codigo__in=codigos_perfil)
+        except Exception:
+            licitaciones_perfil = []
+
+    paginator = Paginator(qs, 20)
+    licitaciones = paginator.get_page(request.GET.get('page'))
+    for licitacion in licitaciones:
+        licitacion.estado_proceso, licitacion.estado_proceso_label = estado_licitacion(licitacion)
 
     export_params = request.GET.copy()
     if 'page' in export_params:
@@ -164,11 +203,18 @@ def mis_licitaciones_view(request):
 
     preferencias = Preferencia.objects.filter(id_suscriptor=suscriptor).first() if suscriptor else None
     tiene_palabras_perfil = bool(
-        preferencias and (preferencias.pref_palabras_claves or preferencias.pref_productos)
+        preferencias and (
+            preferencias.pref_palabras_claves
+            or preferencias.pref_productos
+            or preferencias.pref_tipo_licitacion
+            or preferencias.pref_comunas
+            or preferencias.pref_ucom
+        )
     ) if suscriptor else False
 
     return render(request, 'smartbids/Mis_licitaciones.html', {
         'licitaciones': licitaciones,
+        'licitaciones_perfil': licitaciones_perfil,
         'total_licitaciones': total_licitaciones,
         'match_perfil': match_perfil,
         'cierre_proximo': cierre_proximo,
@@ -176,6 +222,7 @@ def mis_licitaciones_view(request):
         'seguidos': seguidos,
         'cantidad_seguidas': len(seguidos),
         'tipos_licitacion': tipos,
+        'tipos_procedimiento': obtener_catalogo_tipos_licitacion(),
         'estados': (
             ('publicada', 'Publicada'),
             ('preguntas', 'Período de preguntas'),

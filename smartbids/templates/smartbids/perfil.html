@@ -360,60 +360,108 @@
                             </div>
                             <input type="hidden" id="pref-productos" name="pref_productos">
 
-                            <!-- Checkboxes de Tipo de Procedimiento -->
-                            <div class="form-item grid-full">
+                            <!-- Checkboxes de Tipo de Procedimiento (Organizado en Públicas y Privadas) -->
+                            <div class="form-item grid-full perfil__tender-type-section">
                                 <label class="perfil__tender-type-label">
                                     <i class="fa-solid fa-list-check perfil__section-icon"></i> Tipo de Procedimiento (Selección múltiple)
                                 </label>
+                                <p class="perfil__field-hint" style="font-size: 0.82rem; color: var(--muted-teal); margin-top: -2px; margin-bottom: 12px;">
+                                    Monitorea oportunidades según los tramos oficiales de la normativa de compras públicas.
+                                </p>
 
-                                <div id="contenedor-tipo-licitacion" class="perfil__tender-type-grid">
-                                    <label class="perfil__tender-type-option">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="L1" class="perfil__tender-type-checkbox">
-                                        <div class="perfil__tender-type-details">
-                                            <strong class="perfil__tender-type-name">L1</strong>
-                                            <small class="perfil__tender-type-limit">Menor a 100 UTM</small>
+                                <div id="contenedor-tipo-licitacion" class="perfil__tender-blocks">
+                                    <!-- Bloque 1: Licitaciones Públicas (4 tramos - Categorías 1 y 6) -->
+                                    <div class="perfil__tender-group">
+                                        <div class="perfil__tender-group-header">
+                                            <span class="perfil__tender-group-title">
+                                                <i class="fa-solid fa-bullhorn perfil__tender-group-icon"></i> Licitaciones Públicas
+                                            </span>
+                                            <span class="perfil__tender-group-badge">{% if tipos_procedimiento.publicas %}{{ tipos_procedimiento.publicas|length }} tramos{% else %}4 tramos{% endif %}</span>
                                         </div>
-                                    </label>
+                                        <div class="perfil__tender-type-grid">
+                                            {% for item in tipos_procedimiento.publicas %}
+                                            <label class="perfil__tender-type-option" title="{{ item.glosa }}">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="{{ item.codigo }}" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">{{ item.nombre }}</strong>
+                                                    <small class="perfil__tender-type-limit">{{ item.tramo }}</small>
+                                                </div>
+                                            </label>
+                                            {% empty %}
+                                            <label class="perfil__tender-type-option" title="Licitación pública inferior a 100 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="L1" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">L1</strong>
+                                                    <small class="perfil__tender-type-limit">Menor a 100 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Pública igual o superior a 100 UTM e inferior a 1.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="LE" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">LE</strong>
+                                                    <small class="perfil__tender-type-limit">100 a 1.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Pública igual o superior a 1.000 UTM e inferior a 2.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="LP" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">LP</strong>
+                                                    <small class="perfil__tender-type-limit">1.000 a 5.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Pública Mayor a 5.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="LR" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">LR</strong>
+                                                    <small class="perfil__tender-type-limit">Mayor a 5.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
 
-                                    <label class="perfil__tender-type-option">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="LE" class="perfil__tender-type-checkbox">
-                                        <div class="perfil__tender-type-details">
-                                            <strong class="perfil__tender-type-name">LE</strong>
-                                            <small class="perfil__tender-type-limit">100 a 1.000 UTM</small>
+                                    <!-- Bloque 2: Licitaciones Privadas (3 tramos - Categorías 2 y 7) -->
+                                    <div class="perfil__tender-group" style="margin-top: 14px;">
+                                        <div class="perfil__tender-group-header">
+                                            <span class="perfil__tender-group-title">
+                                                <i class="fa-solid fa-lock perfil__tender-group-icon perfil__tender-group-icon--private"></i> Licitaciones Privadas
+                                            </span>
+                                            <span class="perfil__tender-group-badge perfil__tender-group-badge--private">{% if tipos_procedimiento.privadas %}{{ tipos_procedimiento.privadas|length }} tramos{% else %}3 tramos{% endif %}</span>
                                         </div>
-                                    </label>
-
-                                    <label class="perfil__tender-type-option">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="LP" class="perfil__tender-type-checkbox">
-                                        <div class="perfil__tender-type-details">
-                                            <strong class="perfil__tender-type-name">LP</strong>
-                                            <small class="perfil__tender-type-limit">1.000 a 5.000 UTM</small>
+                                        <div class="perfil__tender-type-grid">
+                                            {% for item in tipos_procedimiento.privadas %}
+                                            <label class="perfil__tender-type-option" title="{{ item.glosa }}">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="{{ item.codigo }}" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">{{ item.nombre }}</strong>
+                                                    <small class="perfil__tender-type-limit">{{ item.tramo }}</small>
+                                                </div>
+                                            </label>
+                                            {% empty %}
+                                            <label class="perfil__tender-type-option" title="Licitación Privada Inferior a 100 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="E2" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">E2</strong>
+                                                    <small class="perfil__tender-type-limit">Menor a 100 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Privada igual o superior a 100 UTM e inferior a 1.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="CO" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">CO</strong>
+                                                    <small class="perfil__tender-type-limit">100 a 1.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Privada igual o superior a 1.000 UTM e inferior a 2.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="B2" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">B2</strong>
+                                                    <small class="perfil__tender-type-limit">Mayor a 1.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            {% endfor %}
                                         </div>
-                                    </label>
-
-                                    <label class="perfil__tender-type-option">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="LR" class="perfil__tender-type-checkbox">
-                                        <div class="perfil__tender-type-details">
-                                            <strong class="perfil__tender-type-name">LR</strong>
-                                            <small class="perfil__tender-type-limit">Mayor a 5.000 UTM</small>
-                                        </div>
-                                    </label>
-
-                                    <label class="perfil__tender-type-option">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="CM" class="perfil__tender-type-checkbox">
-                                        <div class="perfil__tender-type-details">
-                                            <strong class="perfil__tender-type-name">CM</strong>
-                                            <small class="perfil__tender-type-limit">Convenio Marco</small>
-                                        </div>
-                                    </label>
-
-                                    <label class="perfil__tender-type-option">
-                                        <input type="checkbox" name="pref_tipo_lic_check" value="B2" class="perfil__tender-type-checkbox">
-                                        <div class="perfil__tender-type-details">
-                                            <strong class="perfil__tender-type-name">B2</strong>
-                                            <small class="perfil__tender-type-limit">Compra Ágil</small>
-                                        </div>
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

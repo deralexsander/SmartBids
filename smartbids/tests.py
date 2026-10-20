@@ -1021,6 +1021,297 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             self.assertEqual(prods_det[1]['label'], '1era (101-10-11-31)')
 
 
+class TipoProcedimientoLicitacionTests(SimpleTestCase):
+    def setUp(self):
+        from django.test import RequestFactory
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def tearDown(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def test_obtener_catalogo_tipos_licitacion_estructura_y_clasificacion(self):
+        """Verifica que el catálogo organice 4 tramos públicos y 3 privados, y B2 sea Licitación Privada."""
+        from unittest.mock import patch, MagicMock
+        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+
+        mock_cat_pub = MagicMock(codigo_cat_licitacion=1, nombre_cat_licitacion='Pública')
+        mock_cat_priv = MagicMock(codigo_cat_licitacion=2, nombre_cat_licitacion='Privada')
+        mock_tramo_100 = MagicMock(codigo_tramo_licitacion=2, nombre_tramo_licitacion='menor a 100 UTM')
+        mock_tramo_1000 = MagicMock(codigo_tramo_licitacion=3, nombre_tramo_licitacion='100 a 1000 UTM')
+        mock_tramo_2000 = MagicMock(codigo_tramo_licitacion=4, nombre_tramo_licitacion='1000 a 2000 UTM')
+        mock_tramo_5000 = MagicMock(codigo_tramo_licitacion=6, nombre_tramo_licitacion='mayor a 5000 UTM')
+
+        mock_tl_list = [
+            MagicMock(codigo_tipo_licitacion='L1', glosa='Licitación pública inferior a 100 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_100),
+            MagicMock(codigo_tipo_licitacion='LE', glosa='Licitación Pública igual o superior a 100 UTM e inferior a 1.000 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_1000),
+            MagicMock(codigo_tipo_licitacion='LP', glosa='Licitación Pública igual o superior a 1.000 UTM e inferior a 2.000 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_2000),
+            MagicMock(codigo_tipo_licitacion='LR', glosa='Licitación Pública Mayor a 5000 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_5000),
+            MagicMock(codigo_tipo_licitacion='E2', glosa='Licitación Privada Inferior a 100 UTM', codigo_cat_licitacion=mock_cat_priv, codigo_cat_licitacion_id=2, codigo_tramo_licitacion=mock_tramo_100),
+            MagicMock(codigo_tipo_licitacion='CO', glosa='Licitación Privada igual o superior a 100 UTM e inferior a 1000 UTM', codigo_cat_licitacion=mock_cat_priv, codigo_cat_licitacion_id=2, codigo_tramo_licitacion=mock_tramo_1000),
+            MagicMock(codigo_tipo_licitacion='B2', glosa='Licitación Privada igual o superior a 1000 UTM e inferior a 2000 UTM', codigo_cat_licitacion=mock_cat_priv, codigo_cat_licitacion_id=2, codigo_tramo_licitacion=mock_tramo_2000),
+        ]
+
+        with patch('smartbids.models.catalog.TipoLicitacion.objects') as m_tl_objects:
+            m_tl_objects.select_related.return_value.filter.return_value = mock_tl_list
+            catalogo = obtener_catalogo_tipos_licitacion()
+
+        self.assertIn('publicas', catalogo)
+        self.assertIn('privadas', catalogo)
+        self.assertIn('todos_codigos', catalogo)
+        self.assertEqual(catalogo['categorias_publicas_ids'], [1, 6])
+        self.assertEqual(catalogo['categorias_privadas_ids'], [2, 7])
+
+        # 4 públicas: L1, LE, LP, LR
+        codigos_pub = [item['codigo'] for item in catalogo['publicas']]
+        self.assertEqual(codigos_pub, ['L1', 'LE', 'LP', 'LR'])
+        for item in catalogo['publicas']:
+            self.assertEqual(item['categoria'], 'Pública')
+
+        # 3 privadas: E2, CO, B2
+        codigos_priv = [item['codigo'] for item in catalogo['privadas']]
+        self.assertEqual(codigos_priv, ['E2', 'CO', 'B2'])
+        for item in catalogo['privadas']:
+            self.assertEqual(item['categoria'], 'Privada')
+
+        # B2 debe ser Licitación Privada, nunca pública ni 'Compra Ágil'
+        item_b2 = next(item for item in catalogo['privadas'] if item['codigo'] == 'B2')
+        self.assertEqual(item_b2['categoria'], 'Privada')
+        self.assertIn('1.000 UTM', item_b2['tramo'])
+        self.assertIn('Licitación Privada', item_b2['glosa'])
+
+        # No deben estar Tratos Directos, Órdenes de Compra ni Convenio Marco erróneo (CM)
+        for excluido in ['CM', 'A2', 'C2', 'D1', 'F2', 'C1', 'F3', 'G1', 'R1', 'SE', 'A1', 'B1', 'E1', 'F1', 'J1']:
+            self.assertNotIn(excluido, catalogo['todos_codigos'])
+
+    def test_obtener_catalogo_tipos_licitacion_fallback(self):
+        """Verifica que si la base de datos no está disponible, el fallback funcione con los 7 tipos requeridos."""
+        from unittest.mock import patch
+        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+
+        with patch('smartbids.models.catalog.TipoLicitacion.objects') as m_tl_objects:
+            m_tl_objects.select_related.side_effect = Exception("Error simulado DB")
+            catalogo = obtener_catalogo_tipos_licitacion()
+
+        self.assertEqual(len(catalogo['publicas']), 4)
+        self.assertEqual(len(catalogo['privadas']), 3)
+        self.assertIn('B2', [p['codigo'] for p in catalogo['privadas']])
+
+    def test_api_catalogos_preferencias_tipos_licitacion(self):
+        """Verifica el endpoint /api/catalogos-preferencias/?tipo=tipos_licitacion."""
+        import json
+        from unittest.mock import patch
+        from .perfil_views import catalogos_preferencias
+
+        mock_catalogo = {
+            'publicas': [{'codigo': 'L1'}, {'codigo': 'LE'}, {'codigo': 'LP'}, {'codigo': 'LR'}],
+            'privadas': [{'codigo': 'E2'}, {'codigo': 'CO'}, {'codigo': 'B2'}],
+            'todos_codigos': ['L1', 'LE', 'LP', 'LR', 'E2', 'CO', 'B2']
+        }
+
+        with patch('smartbids.licitacion_utils.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo):
+            req = self.rf.get('/api/catalogos-preferencias/?tipo=tipos_licitacion')
+            resp = catalogos_preferencias(req)
+            self.assertEqual(resp.status_code, 200)
+
+            data = json.loads(resp.content)
+            self.assertEqual(data.get('status'), 'ok')
+            self.assertEqual(len(data['datos']['publicas']), 4)
+            self.assertEqual(len(data['datos']['privadas']), 3)
+            self.assertEqual(data['datos']['privadas'][2]['codigo'], 'B2')
+
+    def test_perfil_view_incluye_tipos_procedimiento_en_contexto(self):
+        """Verifica que perfil_view pase tipos_procedimiento al contexto de la plantilla."""
+        from unittest.mock import patch
+        from .page_views import perfil_view
+
+        mock_catalogo = {
+            'publicas': [{'codigo': 'L1'}],
+            'privadas': [{'codigo': 'B2'}],
+            'todos_codigos': ['L1', 'B2']
+        }
+
+        with patch('smartbids.page_views.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo), \
+             patch('smartbids.page_views.render') as mock_render:
+            mock_render.return_value = 'render_result'
+            req = self.rf.get('/perfil/')
+            resp = perfil_view(req)
+            self.assertEqual(resp, 'render_result')
+            mock_render.assert_called_once()
+            args, kwargs = mock_render.call_args
+            context = args[2] if len(args) > 2 else kwargs.get('context', {})
+            self.assertIn('tipos_procedimiento', context)
+            self.assertEqual(context['tipos_procedimiento'], mock_catalogo)
+
+
+
+
+
+    def test_mis_licitaciones_view_incluye_tipos_procedimiento_en_contexto(self):
+        """Verifica que mis_licitaciones_view pase tipos_procedimiento al contexto de la plantilla."""
+        from unittest.mock import patch, MagicMock
+        from .licitaciones_views import mis_licitaciones_view
+
+        mock_catalogo = {
+            'publicas': [{'codigo': 'L1', 'tramo': 'Menor a 100 UTM'}],
+            'privadas': [{'codigo': 'B2', 'tramo': 'Mayor a 1.000 UTM'}],
+            'todos_codigos': ['L1', 'B2']
+        }
+
+        mock_paginator = MagicMock()
+        mock_paginator.get_page.return_value = []
+
+        m_lic_qs = MagicMock()
+        m_lic_qs.count.return_value = 50
+        m_lic_qs.exclude.return_value.exclude.return_value.values_list.return_value.distinct.return_value.order_by.return_value = ['L1', 'B2']
+
+        m_qs = MagicMock()
+        m_qs.aggregate.return_value = {'cierre_proximo': 2, 'convenio_marco': 0}
+
+        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(m_qs, 0)), \
+             patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_qs), \
+             patch('smartbids.licitaciones_views.Paginator', return_value=mock_paginator), \
+             patch('smartbids.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo), \
+             patch('smartbids.licitaciones_views.render') as mock_render:
+            mock_render.return_value = 'render_result'
+            req = self.rf.get('/mis-licitaciones/')
+            resp = mis_licitaciones_view(req)
+            self.assertEqual(resp, 'render_result')
+            mock_render.assert_called_once()
+            args, kwargs = mock_render.call_args
+            context = args[2] if len(args) > 2 else kwargs.get('context', {})
+            self.assertIn('tipos_procedimiento', context)
+            self.assertEqual(context['tipos_procedimiento'], mock_catalogo)
+            self.assertIn('licitaciones_perfil', context)
+
+    def test_mis_licitaciones_view_separa_match_con_perfil_de_procesos_disponibles(self):
+        """Verifica que en pestaña Todas, las licitaciones de Match con Perfil se separen de Procesos Disponibles."""
+        from unittest.mock import patch, MagicMock
+        from django.db.models import Q
+        from .licitaciones_views import mis_licitaciones_view
+
+        mock_lic_match = MagicMock(lic_codigo='1075963-374-LE26', lic_tipo_licitacion='LE')
+        mock_qs_match = MagicMock()
+        mock_qs_match.__iter__.return_value = [mock_lic_match]
+        mock_qs_match.__getitem__.return_value = [mock_lic_match]
+
+        mock_qs_general = MagicMock()
+        mock_qs_general.exclude.return_value = mock_qs_general
+        mock_qs_general.aggregate.return_value = {'cierre_proximo': 0, 'convenio_marco': 0}
+
+        mock_paginator = MagicMock()
+        mock_paginator.get_page.return_value = []
+
+        m_lic_objects = MagicMock()
+        m_lic_objects.count.return_value = 50
+        m_lic_objects.exclude.return_value.exclude.return_value.values_list.return_value.distinct.return_value.order_by.return_value = ['LE']
+        m_lic_objects.select_related.return_value.filter.return_value.distinct.return_value.order_by.return_value = mock_qs_match
+
+        req = self.rf.get('/mis-licitaciones/')
+        req._q_perfil = Q(lic_tipo_licitacion__in=['LE'])
+
+        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
+             patch('smartbids.tracking_views._sincronizar_seguimientos'), \
+             patch('smartbids.models.tracking.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.licitaciones_views.Preferencia.objects') as m_pref, \
+             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
+             patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_objects), \
+             patch('smartbids.licitaciones_views.Paginator', return_value=mock_paginator), \
+             patch('smartbids.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value={'publicas': [], 'privadas': []}), \
+             patch('smartbids.licitaciones_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
+             patch('smartbids.licitaciones_views.render') as mock_render:
+            m_seg.filter.return_value.values_list.return_value = []
+            m_pref.filter.return_value.first.return_value = None
+            mock_render.return_value = 'render_result'
+            resp = mis_licitaciones_view(req)
+            self.assertEqual(resp, 'render_result')
+
+            # Debe haber excluido el código de match ('1075963-374-LE26') del queryset general
+            mock_qs_general.exclude.assert_called_with(lic_codigo__in=['1075963-374-LE26'])
+
+            context = mock_render.call_args[0][2]
+            self.assertEqual(len(context['licitaciones_perfil']), 1)
+            self.assertEqual(context['licitaciones_perfil'][0].lic_codigo, '1075963-374-LE26')
+            self.assertEqual(context['match_perfil'], 1)
+
+    def test_filtrar_licitaciones_tipo_procedimiento_interseccion_and(self):
+        """Verifica que el tipo de procedimiento actúe como filtro restrictivo (AND) y no unión (OR)."""
+        from unittest.mock import patch, MagicMock
+        from django.db.models import Q
+        from .licitaciones_views import filtrar_licitaciones
+
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+
+        with patch('smartbids.licitaciones_views.Licitacion.objects', mock_qs), \
+             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+
+            # Caso 1: Solo tiene tipo LE seleccionado (como en la captura del usuario)
+            mock_pref.return_value.first.return_value = MagicMock(
+                pref_comunas=[],
+                pref_tipo_licitacion=['LE'],
+                pref_ucom=[],
+                pref_palabras_claves=[],
+                pref_productos=[]
+            )
+            req = self.rf.get('/mis-licitaciones/?tab=claves')
+            filtrar_licitaciones(req, suscriptor=MagicMock())
+
+            self.assertTrue(mock_qs.filter.called)
+            filter_arg = mock_qs.filter.call_args[0][0]
+            self.assertIn(('lic_tipo_licitacion__in', ['LE']), filter_arg.children)
+
+            # Caso 2: Tiene palabras clave Y tipo LE (deben unirse con AND, no con OR)
+            mock_qs.reset_mock()
+            mock_pref.return_value.first.return_value = MagicMock(
+                pref_comunas=[],
+                pref_tipo_licitacion=['LE'],
+                pref_ucom=[],
+                pref_palabras_claves=['servidor'],
+                pref_productos=[]
+            )
+            req2 = self.rf.get('/mis-licitaciones/?tab=claves')
+            filtrar_licitaciones(req2, suscriptor=MagicMock())
+
+            self.assertTrue(mock_qs.filter.called)
+            filter_arg2 = mock_qs.filter.call_args[0][0]
+            self.assertEqual(filter_arg2.connector, Q.AND)
+            self.assertIn(('lic_tipo_licitacion__in', ['LE']), filter_arg2.children)
+
+    def test_filtrar_licitaciones_asigna_q_perfil_en_request(self):
+        """Verifica que filtrar_licitaciones guarde _q_perfil en el objeto request."""
+        from unittest.mock import patch, MagicMock
+        from .licitaciones_views import filtrar_licitaciones
+
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
+
+        with patch('smartbids.licitaciones_views.Licitacion.objects', mock_qs), \
+             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+            mock_pref.return_value.first.return_value = MagicMock(
+                pref_comunas=[],
+                pref_tipo_licitacion=['LE'],
+                pref_ucom=[],
+                pref_palabras_claves=[],
+                pref_productos=[]
+            )
+            req = self.rf.get('/mis-licitaciones/')
+            filtrar_licitaciones(req, suscriptor=MagicMock())
+            self.assertTrue(hasattr(req, '_q_perfil'))
+            self.assertIn(('lic_tipo_licitacion__in', ['LE']), req._q_perfil.children)
+
+
+
+
+
+
+
+
+
+
 
 
 

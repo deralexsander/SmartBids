@@ -1891,6 +1891,16 @@ export async function inicializarVistaPerfil(user) {
         });
     }
 
+    const contTipoLic = document.getElementById('contenedor-tipo-licitacion');
+    if (contTipoLic) {
+        contTipoLic.addEventListener('change', (e) => {
+            if (e.target && e.target.matches('input[name="pref_tipo_lic_check"]')) {
+                registrarCambio('filtros');
+                actualizarPorcentajePerfil();
+            }
+        });
+    }
+
     document.querySelectorAll('input[name="pref_tipo_lic_check"]').forEach(cb => {
         cb.addEventListener('change', () => {
             registrarCambio('filtros');

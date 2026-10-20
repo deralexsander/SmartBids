@@ -11,6 +11,7 @@ from .licitacion_utils import (
     generar_excel_response,
     generar_excel_multitabla_response,
     resolver_suscriptor,
+    obtener_catalogo_tipos_licitacion,
 )
 from .models.procurement import Licitacion
 from .dashboard_views import (
@@ -38,7 +39,10 @@ def accion_cuenta_view(request):
     })
 
 def perfil_view(request):
-    return render(request, 'smartbids/perfil.html')
+    tipos_procedimiento = obtener_catalogo_tipos_licitacion()
+    return render(request, 'smartbids/perfil.html', {
+        'tipos_procedimiento': tipos_procedimiento
+    })
 
 def mensajeria_view(request):
     return render(request, 'smartbids/mensajeria.html')
