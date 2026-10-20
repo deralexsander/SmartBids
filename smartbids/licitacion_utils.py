@@ -10,6 +10,8 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from .models.core import Suscriptor
+from .models.catalog import Sector, Organismo
+from .models.procurement import UnidadCompra
 
 CACHE_KEY_CATALOGO_TIPOS_LICITACION = 'sb_catalogo_tipos_licitacion_v1'
 
@@ -144,6 +146,186 @@ def obtener_catalogo_tipos_licitacion():
         pass
 
     return resultado
+
+
+CACHE_KEY_CATALOGO_UCOM_ARBOL = 'sb_catalogo_ucom_arbol_v2'
+
+
+def obtener_catalogo_organismos_ucom(sector_codigo=None, q=None):
+    """
+    Retorna el catálogo jerárquico completo de Entidades Públicas y Unidades de Compra:
+      Sector -> Organismo -> Unidades de Compra
+    Basado en las tablas maestras:
+      - catalog.sector (30 sectores oficiales: Municipio, Hospital, Salud, Seguridad, etc.)
+      - catalog.organismo (1.324 organismos del Estado)
+      - procurement.unidad_compra (7.411 unidades de compra vinculadas por ucom_codigo_organismo)
+    Permite filtrado previo por código de sector y búsqueda textual ágil por nombre de
+    organismo, sigla o unidad de compra sin truncar resultados.
+    """
+    from collections import defaultdict
+    from django.core.cache import cache
+
+    cached_data = cache.get(CACHE_KEY_CATALOGO_UCOM_ARBOL)
+    if not cached_data:
+        from .models.catalog import Sector, Organismo
+        from .models.procurement import UnidadCompra
+
+        try:
+            sectores_qs = Sector.objects.values('codigo_sector', 'nombre_sector').order_by('nombre_sector')
+            sectores_raw = list(sectores_qs)
+        except Exception:
+            sectores_raw = []
+
+        try:
+            organismos_qs = Organismo.objects.values(
+                'codigo_organismo', 'org_nombre', 'org_sigla', 'org_codigo_sector_id'
+            ).order_by('org_nombre')
+            organismos_raw = list(organismos_qs)
+        except Exception:
+            organismos_raw = []
+
+        try:
+            ucoms_qs = UnidadCompra.objects.values(
+                'codigo_unidad_compra', 'ucom_descripcion', 'ucom_codigo_organismo'
+            ).order_by('ucom_descripcion')
+            ucoms_raw = list(ucoms_qs)
+        except Exception:
+            ucoms_raw = []
+
+        # Agrupar unidades por organismo
+        ucoms_por_org = defaultdict(list)
+        for u in ucoms_raw:
+            org_id = u.get('ucom_codigo_organismo')
+            if org_id is not None:
+                ucoms_por_org[org_id].append({
+                    'codigo_ucom': u['codigo_unidad_compra'],
+                    'descripcion': (u.get('ucom_descripcion') or f"Unidad {u['codigo_unidad_compra']}").strip()
+                })
+
+        # Mapeo de sectores
+        sec_map = {str(s['codigo_sector']).strip(): (s.get('nombre_sector') or '').strip() for s in sectores_raw}
+        orgs_por_sec = defaultdict(list)
+
+        for o in organismos_raw:
+            org_id = o['codigo_organismo']
+            sec_id = str(o.get('org_codigo_sector_id') or '0').strip()
+            org_nom = (o.get('org_nombre') or f"Organismo {org_id}").strip()
+            org_sigla = (o.get('org_sigla') or '').strip()
+            sec_nom = sec_map.get(sec_id) or f"Sector {sec_id}"
+
+            unidades = ucoms_por_org.get(org_id, [])
+            if not unidades:
+                unidades = [{
+                    'codigo_ucom': org_id,
+                    'descripcion': f"{org_nom} (Institución / Sede Central)"
+                }]
+
+            orgs_por_sec[sec_id].append({
+                'codigo_organismo': str(org_id),
+                'nombre_organismo': org_nom,
+                'sigla': org_sigla,
+                'codigo_sector': sec_id,
+                'nombre_sector': sec_nom,
+                'unidades': unidades
+            })
+
+        sectores_arbol = []
+        sectores_resumen = []
+
+        for s in sectores_raw:
+            sec_id = str(s['codigo_sector']).strip()
+            sec_nom = (s.get('nombre_sector') or f"Sector {sec_id}").strip()
+            orgs_sec = sorted(orgs_por_sec.get(sec_id, []), key=lambda x: x['nombre_organismo'])
+            total_ucoms_sec = sum(len(o['unidades']) for o in orgs_sec)
+
+            sectores_arbol.append({
+                'codigo_sector': sec_id,
+                'nombre_sector': sec_nom,
+                'organismos_count': len(orgs_sec),
+                'unidades_count': total_ucoms_sec,
+                'organismos': orgs_sec
+            })
+
+            sectores_resumen.append({
+                'codigo_sector': sec_id,
+                'nombre_sector': sec_nom,
+                'organismos_count': len(orgs_sec),
+                'unidades_count': total_ucoms_sec,
+            })
+
+        if '0' in orgs_por_sec and '0' not in sec_map:
+            orgs_sec = sorted(orgs_por_sec['0'], key=lambda x: x['nombre_organismo'])
+            sectores_arbol.append({
+                'codigo_sector': '0',
+                'nombre_sector': 'Organismos Públicos Centralizados',
+                'organismos_count': len(orgs_sec),
+                'unidades_count': sum(len(o['unidades']) for o in orgs_sec),
+                'organismos': orgs_sec
+            })
+            sectores_resumen.append({
+                'codigo_sector': '0',
+                'nombre_sector': 'Organismos Públicos Centralizados',
+                'organismos_count': len(orgs_sec),
+                'unidades_count': sum(len(o['unidades']) for o in orgs_sec),
+            })
+
+        sectores_arbol = sorted(sectores_arbol, key=lambda x: x['nombre_sector'])
+        sectores_resumen = sorted(sectores_resumen, key=lambda x: x['nombre_sector'])
+
+        cached_data = {
+            'sectores': sectores_arbol,
+            'sectores_lista': sectores_resumen,
+            'total_sectores': len(sectores_arbol),
+            'total_organismos': len(organismos_raw),
+            'total_unidades': len(ucoms_raw),
+        }
+        try:
+            cache.set(CACHE_KEY_CATALOGO_UCOM_ARBOL, cached_data, 86400)
+        except Exception:
+            pass
+
+    sectores_resultado = cached_data['sectores']
+    if sector_codigo:
+        sec_str = str(sector_codigo).strip()
+        sectores_resultado = [s for s in sectores_resultado if s['codigo_sector'] == sec_str]
+
+    if q:
+        q_norm = q.lower().strip()
+        sectores_con_match = []
+        for sec in sectores_resultado:
+            match_sector = q_norm in sec['nombre_sector'].lower()
+            orgs_match = []
+            for org in sec['organismos']:
+                match_org = (
+                    q_norm in org['nombre_organismo'].lower()
+                    or (org['sigla'] and q_norm in org['sigla'].lower())
+                    or q_norm in str(org['codigo_organismo'])
+                )
+                if match_org or match_sector:
+                    orgs_match.append(org)
+                else:
+                    ucoms_match = [
+                        u for u in org['unidades']
+                        if q_norm in u['descripcion'].lower() or q_norm in str(u['codigo_ucom'])
+                    ]
+                    if ucoms_match:
+                        org_copy = dict(org)
+                        org_copy['unidades'] = ucoms_match
+                        orgs_match.append(org_copy)
+            if orgs_match:
+                sec_copy = dict(sec)
+                sec_copy['organismos'] = orgs_match
+                sectores_con_match.append(sec_copy)
+        sectores_resultado = sectores_con_match
+
+    return {
+        'status': 'ok',
+        'sectores': sectores_resultado,
+        'sectores_lista': cached_data['sectores_lista'],
+        'total_sectores': cached_data['total_sectores'],
+        'total_organismos': cached_data['total_organismos'],
+        'total_unidades': cached_data['total_unidades'],
+    }
 
 
 ESTADOS_LICITACION = {

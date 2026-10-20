@@ -1,5 +1,5 @@
 import csv
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.core.cache import cache
 from django.db.models import Count, Q
@@ -65,7 +65,9 @@ def filtrar_licitaciones(request, suscriptor):
     if comunas:
         condiciones_perfil.append(Q(lic_codigo_ucom__ucom_codigo_comuna__in=comunas))
     if ucom_ids:
-        condiciones_perfil.append(Q(lic_codigo_ucom_id__in=ucom_ids))
+        condiciones_perfil.append(
+            Q(lic_codigo_ucom_id__in=ucom_ids) | Q(lic_codigo_ucom__ucom_codigo_organismo__in=ucom_ids)
+        )
     if tipos:
         condiciones_perfil.append(Q(lic_tipo_licitacion__in=tipos))
 
@@ -122,6 +124,15 @@ def filtrar_licitaciones(request, suscriptor):
     return qs, match_perfil
 
 
+def _calcular_cierre_proximo(lic, hoy, plazo_tres_dias):
+    fecha = getattr(lic, 'lic_fecha_cierre', None)
+    if isinstance(fecha, datetime):
+        fecha = fecha.date()
+    if isinstance(fecha, date):
+        return hoy <= fecha <= plazo_tres_dias
+    return bool(getattr(lic, 'es_cierre_proximo', False))
+
+
 def mis_licitaciones_view(request):
     suscriptor = resolver_suscriptor(request)
     if suscriptor:
@@ -168,6 +179,9 @@ def mis_licitaciones_view(request):
     solo_claves = (tab == 'claves' or request.GET.get('solo_claves') == '1') and not solo_seguidas
     tab_activa = 'seguidas' if solo_seguidas else ('claves' if solo_claves else 'todas')
 
+    pagina_actual = request.GET.get('page', '1')
+    es_primera_pagina = str(pagina_actual).strip() in ('1', '', 'None')
+
     # Separar las licitaciones de Match con Perfil de los Procesos de Compra Disponibles en la vista principal
     q_perfil = getattr(request, '_q_perfil', None)
     licitaciones_perfil = []
@@ -181,20 +195,25 @@ def mis_licitaciones_view(request):
                 .distinct()
                 .order_by('-lic_fecha_public')
             )
-            licitaciones_perfil = list(qs_perfil[:50])
-            for lic in licitaciones_perfil:
-                lic.estado_proceso, lic.estado_proceso_label = estado_licitacion(lic)
+            # Optimización de rendimiento: cargar en la primera página un bloque de hasta 10 oportunidades
+            if es_primera_pagina:
+                licitaciones_perfil = list(qs_perfil[:10])
+                for lic in licitaciones_perfil:
+                    lic.estado_proceso, lic.estado_proceso_label = estado_licitacion(lic)
+                    lic.es_cierre_proximo = _calcular_cierre_proximo(lic, hoy, plazo_tres_dias)
 
             # Excluir de Procesos Disponibles para que queden estrictamente separados
-            codigos_perfil = [l.lic_codigo for l in licitaciones_perfil]
+            codigos_perfil = [l.lic_codigo for l in licitaciones_perfil] if es_primera_pagina else list(qs_perfil.values_list('lic_codigo', flat=True)[:10])
             qs = qs.exclude(lic_codigo__in=codigos_perfil)
         except Exception:
             licitaciones_perfil = []
 
-    paginator = Paginator(qs, 20)
-    licitaciones = paginator.get_page(request.GET.get('page'))
+    # Optimización de carga: 10 procesos disponibles por página (reduce la sobrecarga del DOM y tiempo de render)
+    paginator = Paginator(qs, 10)
+    licitaciones = paginator.get_page(pagina_actual)
     for licitacion in licitaciones:
         licitacion.estado_proceso, licitacion.estado_proceso_label = estado_licitacion(licitacion)
+        licitacion.es_cierre_proximo = _calcular_cierre_proximo(licitacion, hoy, plazo_tres_dias)
 
     export_params = request.GET.copy()
     if 'page' in export_params:

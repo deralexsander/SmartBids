@@ -398,6 +398,15 @@
     margin-top: 4px;
 }
 
+.mis-lic__closing-date--urgent {
+    color: #e53e3e !important;
+    font-weight: 700;
+}
+
+.mis-lic__closing-date--urgent i {
+    color: #e53e3e !important;
+}
+
 .mis-lic__card-buttons {
     display: flex;
     gap: .5rem;

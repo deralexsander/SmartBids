@@ -1008,6 +1008,7 @@ async function setupUcomTree() {
     const closeBtn = document.getElementById('btn-cerrar-ucom');
     const closeX = document.getElementById('btn-cerrar-ucom-x');
     const saveBtn = document.getElementById('btn-guardar-ucom');
+    const sectorSelect = document.getElementById('ucom-sector-select');
     const searchInput = document.getElementById('ucom-tree-search');
     const searchLoader = document.getElementById('ucom-search-loader');
     const counter = document.getElementById('ucom-counter');
@@ -1038,6 +1039,86 @@ async function setupUcomTree() {
         }
     }
 
+    function populateSectorSelect(sectoresLista) {
+        if (!sectorSelect || !sectoresLista || !sectoresLista.length) return;
+        const currentVal = sectorSelect.value;
+        let optionsHtml = '<option value="">🏛️ Todos los Sectores del Estado (30)</option>';
+        sectoresLista.forEach(s => {
+            optionsHtml += `<option value="${s.codigo_sector}">${s.nombre_sector} (${s.organismos_count} orgs)</option>`;
+        });
+        sectorSelect.innerHTML = optionsHtml;
+        if (currentVal) sectorSelect.value = currentVal;
+    }
+
+    function applyFilters() {
+        const selectedSec = sectorSelect ? sectorSelect.value.trim() : '';
+        const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+        tree.querySelectorAll('.tree-sector').forEach(secNode => {
+            const secCode = secNode.dataset.sectorCode || '';
+            const secTitle = secNode.querySelector('.sec-title')?.textContent.toLowerCase() || '';
+
+            // Si hay un sector seleccionado y no coincide, ocultar este sector
+            if (selectedSec && secCode !== selectedSec) {
+                secNode.style.display = 'none';
+                return;
+            }
+
+            const matchSectorName = term && secTitle.includes(term);
+            let secTieneHijosCoincidentes = false;
+
+            secNode.querySelectorAll('.tree-organismo').forEach(orgNode => {
+                const orgTitle = orgNode.querySelector('.org-title')?.textContent.toLowerCase() || '';
+                const orgSigla = orgNode.dataset.orgSigla || '';
+                const orgCode = orgNode.dataset.orgCode || '';
+                const matchOrganismo = term && (orgTitle.includes(term) || orgSigla.includes(term) || orgCode.includes(term));
+
+                let orgTieneUcomCoincidente = false;
+
+                orgNode.querySelectorAll('.tree-item-ucom').forEach(uNode => {
+                    const desc = uNode.querySelector('.ucom-desc')?.textContent.toLowerCase() || '';
+                    const code = uNode.querySelector('.ucom-code')?.textContent.toLowerCase() || '';
+                    const matchUcom = !term || desc.includes(term) || code.includes(term);
+
+                    const visible = !term || matchSectorName || matchOrganismo || matchUcom;
+                    uNode.style.display = visible ? 'flex' : 'none';
+
+                    if (matchUcom && term) orgTieneUcomCoincidente = true;
+                });
+
+                const debeMostrarOrg = !term || matchSectorName || matchOrganismo || orgTieneUcomCoincidente;
+                orgNode.style.display = debeMostrarOrg ? 'block' : 'none';
+
+                if (debeMostrarOrg && term) secTieneHijosCoincidentes = true;
+
+                const orgChildren = orgNode.querySelector('.tree-children');
+                const orgIcon = orgNode.querySelector('.toggle-icon');
+                if (term && debeMostrarOrg) {
+                    if (orgChildren) orgChildren.style.display = 'block';
+                    if (orgIcon) orgIcon.style.transform = 'rotate(90deg)';
+                } else if (!term) {
+                    if (orgChildren) orgChildren.style.display = 'none';
+                    if (orgIcon) orgIcon.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            const debeMostrarSector = !term || matchSectorName || secTieneHijosCoincidentes;
+            secNode.style.display = debeMostrarSector ? 'block' : 'none';
+
+            const secChildren = secNode.querySelector('.tree-children');
+            const secIcon = secNode.querySelector('.toggle-icon');
+            if ((term && debeMostrarSector) || (selectedSec && !term)) {
+                if (secChildren) secChildren.style.display = 'block';
+                if (secIcon) secIcon.style.transform = 'rotate(90deg)';
+            } else if (!term && !selectedSec) {
+                if (secChildren) secChildren.style.display = 'none';
+                if (secIcon) secIcon.style.transform = 'rotate(0deg)';
+            }
+        });
+
+        if (searchLoader) searchLoader.style.display = 'none';
+    }
+
     function renderTree(data) {
         const currentCodes = ucomManager ? ucomManager.getCodes() : [];
         const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
@@ -1066,13 +1147,15 @@ async function setupUcomTree() {
                     `;
                 });
 
+                const displayTitle = org.sigla ? `${org.nombre_organismo} (${org.sigla})` : org.nombre_organismo;
+
                 orgsHtml += `
-                    <div class="tree-node tree-organismo" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
+                    <div class="tree-node tree-organismo" data-org-code="${org.codigo_organismo}" data-org-sigla="${String(org.sigla || '').toLowerCase()}" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
                         <div class="tree-header tree-toggle-btn" data-target="${orgId}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none;">
                             <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green); font-size: 0.9rem;">
                                 <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.75rem; color: var(--muted-teal); transition: transform 0.2s ease;"></i>
                                 <i class="fa-solid fa-building-columns" style="color: var(--muted-teal); font-size: 0.85rem;"></i>
-                                <span class="org-title">${org.nombre_organismo}</span>
+                                <span class="org-title">${displayTitle}</span>
                                 <span style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600;">${(org.unidades || []).length}</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px;" onclick="event.stopPropagation();">
@@ -1092,7 +1175,7 @@ async function setupUcomTree() {
             });
 
             html += `
-                <div class="tree-node tree-sector" style="margin-bottom: 12px; background: #ffffff; border-radius: 12px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 8px rgba(0,0,0,0.02); overflow: hidden;">
+                <div class="tree-node tree-sector" data-sector-code="${sec.codigo_sector}" style="margin-bottom: 12px; background: #ffffff; border-radius: 12px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 8px rgba(0,0,0,0.02); overflow: hidden;">
                     <div class="tree-header tree-toggle-btn" data-target="${secId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.05); cursor: pointer; user-select: none;">
                         <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">
                             <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease;"></i>
@@ -1180,6 +1263,7 @@ async function setupUcomTree() {
             updateParentState(s, '.tree-children input.ucom-check', ':scope > .tree-header input.sec-check');
         });
         updateCounter();
+        applyFilters();
     }
 
     if (openBtn && openBtn.dataset.bound !== 'true') {
@@ -1189,6 +1273,7 @@ async function setupUcomTree() {
             modal.style.display = 'flex';
             modal.style.zIndex = '99999';
 
+            if (sectorSelect) sectorSelect.value = '';
             if (searchInput) searchInput.value = '';
 
             if (!ucomData) {
@@ -1208,12 +1293,14 @@ async function setupUcomTree() {
                     }
 
                     ucomData = jsonRes;
+                    populateSectorSelect(ucomData.sectores_lista);
                     renderTree(ucomData);
                 } catch (err) {
                     console.error('[SmartBids] Error al cargar unidades de compra:', err);
                     tree.innerHTML = `<p style="color: #e53e3e; text-align: center; padding: 2rem;">Error al cargar catálogo de unidades: ${err.message}</p>`;
                 }
             } else {
+                populateSectorSelect(ucomData.sectores_lista);
                 renderTree(ucomData);
             }
         });
@@ -1222,67 +1309,19 @@ async function setupUcomTree() {
     closeBtn.addEventListener('click', closeModal);
     if (closeX) closeX.addEventListener('click', closeModal);
 
+    if (sectorSelect) {
+        sectorSelect.addEventListener('change', () => {
+            applyFilters();
+        });
+    }
+
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             clearTimeout(debounceTimer);
             if (searchLoader) searchLoader.style.display = 'block';
 
             debounceTimer = setTimeout(() => {
-                const term = searchInput.value.toLowerCase().trim();
-
-                tree.querySelectorAll('.tree-sector').forEach(secNode => {
-                    const secTitle = secNode.querySelector('.sec-title')?.textContent.toLowerCase() || '';
-                    const matchSector = term && secTitle.includes(term);
-                    let secTieneHijosCoincidentes = false;
-
-                    secNode.querySelectorAll('.tree-organismo').forEach(orgNode => {
-                        const orgTitle = orgNode.querySelector('.org-title')?.textContent.toLowerCase() || '';
-                        const matchOrganismo = term && orgTitle.includes(term);
-
-                        let orgTieneUcomCoincidente = false;
-
-                        orgNode.querySelectorAll('.tree-item-ucom').forEach(uNode => {
-                            const desc = uNode.querySelector('.ucom-desc')?.textContent.toLowerCase() || '';
-                            const code = uNode.querySelector('.ucom-code')?.textContent.toLowerCase() || '';
-                            const matchUcom = !term || desc.includes(term) || code.includes(term);
-
-                            const visible = !term || matchSector || matchOrganismo || matchUcom;
-                            uNode.style.display = visible ? 'flex' : 'none';
-
-                            if (matchUcom && term) orgTieneUcomCoincidente = true;
-                        });
-
-                        const debeMostrarOrg = !term || matchSector || matchOrganismo || orgTieneUcomCoincidente;
-                        orgNode.style.display = debeMostrarOrg ? 'block' : 'none';
-
-                        if (debeMostrarOrg && term) secTieneHijosCoincidentes = true;
-
-                        const orgChildren = orgNode.querySelector('.tree-children');
-                        const orgIcon = orgNode.querySelector('.toggle-icon');
-                        if (term && debeMostrarOrg) {
-                            if (orgChildren) orgChildren.style.display = 'block';
-                            if (orgIcon) orgIcon.style.transform = 'rotate(90deg)';
-                        } else if (!term) {
-                            if (orgChildren) orgChildren.style.display = 'none';
-                            if (orgIcon) orgIcon.style.transform = 'rotate(0deg)';
-                        }
-                    });
-
-                    const debeMostrarSector = !term || matchSector || secTieneHijosCoincidentes;
-                    secNode.style.display = debeMostrarSector ? 'block' : 'none';
-
-                    const secChildren = secNode.querySelector('.tree-children');
-                    const secIcon = secNode.querySelector('.toggle-icon');
-                    if (term && debeMostrarSector) {
-                        if (secChildren) secChildren.style.display = 'block';
-                        if (secIcon) secIcon.style.transform = 'rotate(90deg)';
-                    } else if (!term) {
-                        if (secChildren) secChildren.style.display = 'none';
-                        if (secIcon) secIcon.style.transform = 'rotate(0deg)';
-                    }
-                });
-
-                if (searchLoader) searchLoader.style.display = 'none';
+                applyFilters();
             }, 120);
         });
     }
@@ -2727,6 +2766,10 @@ document.addEventListener('DOMContentLoaded', () => {
             cerrarModalSalidaPestana();
 
             guardarSeccionesModificadas();
+            limpiarCambio('info');
+            limpiarCambio('empresa');
+            limpiarCambio('filtros');
+            limpiarCambio('palabras');
 
             if (accion === 'tab' && destTab) {
                 setTimeout(() => {
@@ -2798,15 +2841,6 @@ document.addEventListener('DOMContentLoaded', () => {
             abrirModalSalidaPestana('navegar', getNombreSeccionesConCambios(), link.href);
         }
     }, true);
-
-    // Diálogo nativo al recargar o cerrar pestaña
-    window.addEventListener('beforeunload', (event) => {
-        if (tieneCambiosPendientes()) {
-            event.preventDefault();
-            event.returnValue = '';
-            return '';
-        }
-    });
 });
 
 function aplicarCambioPestanaDirecto(tabId) {

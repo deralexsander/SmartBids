@@ -800,10 +800,27 @@
             Explora las instituciones del Estado organizadas jerárquicamente por Sector y Organismo. Puedes marcar un Sector o una Institución completa, o seleccionar Unidades de Compra individuales.
         </p>
 
-        <div class="perfil__dialog-search-field perfil__selection-search-field">
-            <input type="text" id="ucom-tree-search" class="form-input perfil__selection-search-input" placeholder="🔍 Filtrar por nombre de sector, organismo o unidad de compra...">
-            <div id="ucom-search-loader" class="perfil__selection-search-loading">
-                <i class="fa-solid fa-circle-notch fa-spin"></i>
+        <!-- Barra de Filtros: Selector de Sector del Estado y Buscador Textual -->
+        <div class="perfil__ucom-filter-controls">
+            <div class="perfil__ucom-filter-group perfil__ucom-filter-group--sector">
+                <label for="ucom-sector-select" class="perfil__ucom-filter-label">
+                    <i class="fa-solid fa-filter" style="color: var(--accent-green);"></i> Selector por Sector:
+                </label>
+                <select id="ucom-sector-select" class="form-input perfil__selection-sector-select">
+                    <option value="">🏛️ Todos los Sectores del Estado (30)</option>
+                </select>
+            </div>
+
+            <div class="perfil__ucom-filter-group perfil__ucom-filter-group--search">
+                <label for="ucom-tree-search" class="perfil__ucom-filter-label">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--accent-green);"></i> Buscar Organismo o Unidad:
+                </label>
+                <div class="perfil__dialog-search-field perfil__selection-search-field" style="margin: 0; position: relative;">
+                    <input type="text" id="ucom-tree-search" class="form-input perfil__selection-search-input" placeholder="🔍 Ej: Carabineros, PDI, Viña del Mar, Gustavo Fricke...">
+                    <div id="ucom-search-loader" class="perfil__selection-search-loading" style="position: absolute; right: 12px; top: 11px; display: none;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent-green);"></i>
+                    </div>
+                </div>
             </div>
         </div>
 

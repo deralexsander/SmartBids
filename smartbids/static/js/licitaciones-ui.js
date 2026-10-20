@@ -37,20 +37,35 @@ function actualizarBotonSeguimiento(form, activo) {
     const boton = form.querySelector('button[type="submit"]');
     const icono = form.querySelector('[data-seguimiento-icon]');
     const etiqueta = form.querySelector('[data-seguimiento-label]');
-    if (!accion || !boton || !icono || !etiqueta) return;
+    if (!accion || !boton) return;
 
     accion.value = activo ? 'dejar' : 'seguir';
-    etiqueta.textContent = activo ? boton.dataset.dejarLabel : boton.dataset.seguirLabel;
-    icono.classList.toggle('fa-solid', activo);
-    icono.classList.toggle('fa-regular', !activo);
-    boton.classList.remove('btn-primary', 'btn-outline');
-    boton.classList.add(activo ? boton.dataset.siguiendoClass : boton.dataset.noSiguiendoClass);
+    if (etiqueta) {
+        etiqueta.textContent = activo ? (boton.dataset.dejarLabel || 'Dejar de seguir') : (boton.dataset.seguirLabel || 'Seguir');
+    }
+    if (icono) {
+        // Remover spinner y aplicar ícono bookmark con estilo relleno (solid) o contorno (regular)
+        icono.className = `${activo ? 'fa-solid' : 'fa-regular'} fa-bookmark`;
+    }
+    if (boton.dataset.siguiendoClass && boton.dataset.noSiguiendoClass) {
+        boton.classList.remove('btn-primary', 'btn-outline');
+        boton.classList.add(activo ? boton.dataset.siguiendoClass : boton.dataset.noSiguiendoClass);
+    }
 }
 
 async function actualizarSeguimiento(form) {
     const boton = form.querySelector('button[type="submit"]');
     if (!boton) return;
+    const icono = form.querySelector('[data-seguimiento-icon]');
+    const etiqueta = form.querySelector('[data-seguimiento-label]');
+    const accion = form.querySelector('input[name="accion"]')?.value;
+    const actionUrl = form.getAttribute('action') || form.action;
+
     boton.disabled = true;
+    boton.style.pointerEvents = 'none';
+    boton.style.opacity = '0.85';
+    if (icono) icono.className = 'fa-solid fa-circle-notch fa-spin';
+    if (etiqueta) etiqueta.textContent = accion === 'dejar' ? 'Dejando de seguir...' : 'Siguiendo...';
 
     try {
         const response = await fetch(form.action, {
@@ -66,7 +81,11 @@ async function actualizarSeguimiento(form) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status} al actualizar seguimiento`);
 
-        actualizarBotonSeguimiento(form, data.seguimiento_activo);
+        // Sincronizar todos los botones de esta licitación en la página
+        document.querySelectorAll(`form[data-seguimiento-form][action="${actionUrl}"]`).forEach(f => {
+            actualizarBotonSeguimiento(f, data.seguimiento_activo);
+        });
+
         const contador = document.getElementById('seguimientos-count');
         if (contador) contador.textContent = String(data.cantidad_seguidas);
 
@@ -89,8 +108,19 @@ async function actualizarSeguimiento(form) {
     } catch (error) {
         console.error(error);
         mostrarEstadoSeguimiento(error.message || 'No se pudo actualizar el seguimiento. Intenta nuevamente.', true);
+        const accionActual = form.querySelector('input[name="accion"]')?.value;
+        document.querySelectorAll(`form[data-seguimiento-form][action="${actionUrl}"]`).forEach(f => {
+            actualizarBotonSeguimiento(f, accionActual === 'dejar');
+        });
     } finally {
-        boton.disabled = false;
+        document.querySelectorAll(`form[data-seguimiento-form][action="${actionUrl}"]`).forEach(f => {
+            const btn = f.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.disabled = false;
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+            }
+        });
     }
 }
 
@@ -214,8 +244,44 @@ function iniciarFiltrosDetalleLicitacion() {
     configurarFiltro('filtro-preguntas', '[data-qa-item]');
 }
 
+function iniciarCargaVerFicha() {
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('.mis-lic__detail-link, a[data-ver-ficha]');
+        if (!link || link.dataset.loading === 'true') return;
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0 || link.target === '_blank') return;
+        if (link.closest('.mis-lic__pagination') || link.closest('.mis-lic__filter-link')) return;
+
+        link.dataset.loading = 'true';
+        link.style.pointerEvents = 'none';
+        link.style.opacity = '0.85';
+        link.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Cargando...';
+    });
+}
+
+function iniciarToggleMatchCards() {
+    const btn = document.getElementById('btn-toggle-match-cards');
+    if (!btn) return;
+    let expandido = false;
+    btn.addEventListener('click', () => {
+        expandido = !expandido;
+        const extras = document.querySelectorAll('.mis-lic__card--match-extra');
+        extras.forEach(card => {
+            card.style.display = expandido ? 'block' : 'none';
+        });
+        const totalExtras = extras.length;
+        if (expandido) {
+            btn.innerHTML = '<i class="fa-solid fa-chevron-up me-1"></i> Mostrar menos';
+        } else {
+            btn.innerHTML = `<i class="fa-solid fa-chevron-down me-1"></i> Mostrar ${totalExtras} más con match`;
+            document.getElementById('seccion-match-perfil')?.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     iniciarSeguimientoAsincrono();
     iniciarNotificacionesLicitacion();
     iniciarFiltrosDetalleLicitacion();
+    iniciarCargaVerFicha();
+    iniciarToggleMatchCards();
 });

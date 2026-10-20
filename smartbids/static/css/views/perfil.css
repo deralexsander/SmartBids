@@ -818,6 +818,48 @@
     flex: 1;
 }
 
+/* 1.3 Selector previo por Sector y Buscador de Organismos/Unidades */
+.perfil__ucom-filter-controls {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 680px) {
+    .perfil__ucom-filter-controls {
+        grid-template-columns: 1fr;
+    }
+}
+
+.perfil__ucom-filter-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    margin-bottom: 4px;
+}
+
+.perfil__selection-sector-select {
+    width: 100%;
+    height: 42px;
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    font-weight: 600;
+    color: var(--dark-green);
+    background-color: #f8fafc;
+    padding: 0 10px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: border-color 0.15s ease;
+}
+
+.perfil__selection-sector-select:focus {
+    border-color: var(--accent-green);
+    outline: none;
+    background-color: #ffffff;
+}
+
 .prod-code {
     font-family: 'JetBrains Mono', monospace, ui-monospace;
     letter-spacing: 0.3px;

@@ -334,120 +334,14 @@ def catalogos_preferencias(request):
 
     if tipo == 'ucom_arbol':
         try:
+            from .licitacion_utils import obtener_catalogo_organismos_ucom
+            sector_filtro = request.GET.get('sector', '').strip()
             q_filtro = request.GET.get('q', '').strip()
-
-            ucom_cols = [f.name for f in UnidadCompra._meta.concrete_fields]
-            campo_org_ucom = None
-            for c in ['codigo_organismo', 'codigo_organismo_id', 'org_codigo', 'ucom_codigo_organismo']:
-                if c in ucom_cols:
-                    campo_org_ucom = c
-                    break
-
-            campos_ucom = ['codigo_unidad_compra', 'ucom_descripcion']
-            if campo_org_ucom:
-                campos_ucom.append(campo_org_ucom)
-
-            ucom_qs = UnidadCompra.objects.all()
-            if q_filtro:
-                ucom_qs = ucom_qs.filter(ucom_descripcion__icontains=q_filtro)[:350]
-            else:
-                ucom_qs = ucom_qs.order_by('codigo_unidad_compra')[:500]
-
-            ucom_list = list(ucom_qs.values(*campos_ucom))
-
-            org_cols = [f.name for f in Organismo._meta.concrete_fields]
-            campo_sec_org = None
-            for c in ['org_codigo_sector', 'org_codigo_sector_id', 'codigo_sector', 'codigo_sector_id']:
-                if c in org_cols:
-                    campo_sec_org = c
-                    break
-
-            campos_org = ['codigo_organismo', 'org_nombre']
-            if campo_sec_org:
-                campos_org.append(campo_sec_org)
-
-            org_map = {}
-            for o in Organismo.objects.values(*campos_org):
-                cod_str = str(o['codigo_organismo']).strip()
-                sec_val = o.get(campo_sec_org)
-                sec_val_str = str(sec_val).strip() if sec_val is not None else '0'
-                org_map[cod_str] = {
-                    'codigo_organismo': cod_str,
-                    'org_nombre': (o.get('org_nombre') or f"Organismo {cod_str}").strip(),
-                    'codigo_sector': sec_val_str
-                }
-
-            sec_map = {}
-            for s in Sector.objects.values('codigo_sector', 'nombre_sector'):
-                sec_map[str(s['codigo_sector']).strip()] = (s.get('nombre_sector') or '').strip()
-
-            sectores_dict = {}
-
-            if not ucom_list:
-                for org_id, org_info in org_map.items():
-                    sec_key = org_info['codigo_sector']
-                    sec_nombre = sec_map.get(sec_key) or ("Organismos Centralizados" if sec_key == '0' else f"Sector {sec_key}")
-                    if sec_key not in sectores_dict:
-                        sectores_dict[sec_key] = {
-                            'codigo_sector': sec_key,
-                            'nombre_sector': sec_nombre,
-                            'organismos_map': {}
-                        }
-                    sectores_dict[sec_key]['organismos_map'][org_id] = {
-                        'codigo_organismo': org_id,
-                        'nombre_organismo': org_info['org_nombre'],
-                        'unidades': [{
-                            'codigo_ucom': org_id,
-                            'descripcion': f"{org_info['org_nombre']} (Unidad Central)"
-                        }]
-                    }
-            else:
-                for u in ucom_list:
-                    cod_ucom = u['codigo_unidad_compra']
-                    desc_ucom = (u.get('ucom_descripcion') or f"Unidad {cod_ucom}").strip()
-                    org_key = str(u.get(campo_org_ucom) or '0').strip() if campo_org_ucom else '0'
-
-                    org_info = org_map.get(org_key)
-                    if org_info:
-                        org_nombre = org_info['org_nombre']
-                        sec_key = org_info['codigo_sector']
-                    else:
-                        org_nombre = f"Organismo {org_key}" if org_key != '0' else "Organismos Generales del Estado"
-                        sec_key = '0'
-
-                    sec_nombre = sec_map.get(sec_key) or ("Organismos Públicos Centralizados" if sec_key == '0' else f"Sector {sec_key}")
-
-                    if sec_key not in sectores_dict:
-                        sectores_dict[sec_key] = {
-                            'codigo_sector': sec_key,
-                            'nombre_sector': sec_nombre,
-                            'organismos_map': {}
-                        }
-
-                    orgs_dict = sectores_dict[sec_key]['organismos_map']
-                    if org_key not in orgs_dict:
-                        orgs_dict[org_key] = {
-                            'codigo_organismo': org_key,
-                            'nombre_organismo': org_nombre,
-                            'unidades': []
-                        }
-
-                    orgs_dict[org_key]['unidades'].append({
-                        'codigo_ucom': cod_ucom,
-                        'descripcion': desc_ucom
-                    })
-
-            sectores_final = []
-            for sec_data in sectores_dict.values():
-                organismos_list = sorted(list(sec_data['organismos_map'].values()), key=lambda o: o['nombre_organismo'])
-                sectores_final.append({
-                    'codigo_sector': sec_data['codigo_sector'],
-                    'nombre_sector': sec_data['nombre_sector'],
-                    'organismos': organismos_list
-                })
-
-            sectores_final = sorted(sectores_final, key=lambda s: s['nombre_sector'])
-            return JsonResponse({'status': 'ok', 'sectores': sectores_final})
+            data_ucom = obtener_catalogo_organismos_ucom(sector_codigo=sector_filtro or None, q=q_filtro or None)
+            return JsonResponse(data_ucom)
+        except Exception as e:
+            logger.error(f"[SmartBids] Error al generar árbol de unidades de compra: {str(e)}")
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
 
         except Exception as e:
             logger.error(f"[SmartBids] Error al generar árbol de unidades de compra: {str(e)}")
@@ -552,6 +446,10 @@ def obtener_perfil_suscriptor(request):
             str(u['codigo_unidad_compra']): u['ucom_descripcion']
             for u in UnidadCompra.objects.filter(codigo_unidad_compra__in=ucom_ids).values('codigo_unidad_compra', 'ucom_descripcion')
         }
+        faltantes = [cod for cod in ucom_ids if str(cod) not in mapa_ucom]
+        if faltantes:
+            for org in Organismo.objects.filter(codigo_organismo__in=faltantes).values('codigo_organismo', 'org_nombre'):
+                mapa_ucom[str(org['codigo_organismo'])] = org['org_nombre']
         ucom_detalle = [{'code': str(cod), 'label': mapa_ucom.get(str(cod), f"Unidad {cod}")} for cod in raw_ucom]
 
         nom_comuna_emp = ''

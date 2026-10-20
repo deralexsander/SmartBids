@@ -37,6 +37,27 @@ class Licitacion(models.Model):
     lic_url = models.TextField(blank=True, null=True)
     lic_plazo = models.IntegerField(blank=True, null=True)
 
+    @property
+    def es_cierre_proximo(self):
+        """Retorna True si la licitación cierra dentro de los próximos 3 días a contar de hoy."""
+        if hasattr(self, '_es_cierre_proximo'):
+            return self._es_cierre_proximo
+        if not self.lic_fecha_cierre:
+            return False
+        from datetime import date, datetime, timedelta
+        from django.utils import timezone
+        fecha = self.lic_fecha_cierre
+        if isinstance(fecha, datetime):
+            fecha = fecha.date()
+        if not isinstance(fecha, date):
+            return False
+        hoy = timezone.localdate()
+        return hoy <= fecha <= hoy + timedelta(days=3)
+
+    @es_cierre_proximo.setter
+    def es_cierre_proximo(self, valor):
+        self._es_cierre_proximo = bool(valor)
+
     class Meta:
         managed = False
         db_table = '"procurement"."licitacion"'
