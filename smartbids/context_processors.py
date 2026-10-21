@@ -1,5 +1,6 @@
 import logging
 import re
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 # Importación correcta según tu estructura de carpetas
@@ -47,4 +48,5 @@ def footer_info_context(request):
         'footer_contacto_lineas': lineas_contacto,
         'footer_empresas': empresas_list,
         'contacto_email': contacto_email,
+        'app_version': getattr(settings, 'APP_VERSION', 'v1.0.0'),
     }

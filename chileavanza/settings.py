@@ -27,6 +27,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
+# Versión de la plataforma
+APP_VERSION = os.getenv('APP_VERSION', 'v1.0.0')
+
 # ==============================================================================
 # HOSTS Y CSRF DINÁMICOS DESDE EL ENTORNO (.env / Railway)
 # ==============================================================================

@@ -298,6 +298,38 @@ class TemplateIngresoTests(SimpleTestCase):
         self.assertIn('Reenviar activación', html)
 
 
+class FooterVersionamientoTests(SimpleTestCase):
+    def test_footer_info_context_provee_version(self):
+        """Verifica que footer_info_context entregue app_version al contexto global."""
+        from unittest.mock import patch
+        from django.test import RequestFactory
+        from smartbids.context_processors import footer_info_context
+
+        rf = RequestFactory()
+        req = rf.get('/')
+        with patch('smartbids.context_processors.obtener_correos_sistema', return_value={}), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            ctx = footer_info_context(req)
+
+        self.assertIn('app_version', ctx)
+        self.assertEqual(ctx['app_version'], 'v1.0.0')
+
+    def test_footer_template_renderiza_versionamiento_sutil(self):
+        """Verifica que el footer incluya la clase site-footer__version y el texto de versión."""
+        from unittest.mock import patch
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get('/')
+        with patch('smartbids.context_processors.obtener_correos_sistema', return_value={}), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            html = render_to_string('smartbids/includes/footer.html', {'app_version': 'v1.0.0'}, request=req)
+
+        self.assertIn('site-footer__version', html)
+        self.assertIn('v1.0.0', html)
+
+
 class AdministracionGeneralTests(SimpleTestCase):
     def test_navbar_no_contiene_administracion_general(self):
         from unittest.mock import patch
