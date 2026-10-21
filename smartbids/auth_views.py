@@ -173,7 +173,7 @@ def enviar_codigo_login(request):
             'creado_el': timezone.now()
         }
 
-        asunto = f'🔐 Tu código de acceso SmartBids: {codigo_seguridad}'
+        asunto = 'Tu código de acceso SmartBids'
         mensaje_plano = f'Tu código de verificación para SmartBids es: {codigo_seguridad}\n\nExpira en 10 minutos.'
 
         html_mensaje = f"""
@@ -353,14 +353,13 @@ def _enviar_email_activacion(email_destinatario, app=None, request=None):
     )
     enlace_activacion = _construir_enlace_accion_web(enlace_firebase, request=request, mode_override='verifyEmail')
 
-    asunto = 'Activa tu cuenta SmartBids y comienza a ganar licitaciones'
+    asunto = 'Activa tu cuenta en SmartBids'
     mensaje_plano = (
         f'¡Hola!\n\n'
         f'Te damos la bienvenida a SmartBids. Activa tu cuenta ({email_destinatario}) '
         f'abriendo este enlace:\n{enlace_activacion}\n\n'
         f'Una vez activada, podrás comenzar a usar la plataforma.\n\n'
-        f'Nota importante: Si no encuentras este correo en tu bandeja principal, '
-        f'por favor revisa tu carpeta de SPAM o correo no deseado.'
+        f'Nota: Si no ves este correo en tu bandeja principal, revisa la carpeta de correo no deseado.'
     )
 
     html_mensaje = f"""
@@ -547,7 +546,7 @@ def reenviar_correo_activacion(request):
         return JsonResponse({'status': 'error', 'mensaje': f'Error en el servidor: {str(e)}'}, status=500)
 
 def _enviar_email_recuperacion_password(email_destinatario, enlace_reset):
-    asunto = '🔒 Restablece tu contraseña en SmartBids'
+    asunto = 'Restablece tu contraseña en SmartBids'
     mensaje_plano = (
         f'¡Hola!\n\n'
         f'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta ({email_destinatario}).\n\n'
@@ -556,8 +555,7 @@ def _enviar_email_recuperacion_password(email_destinatario, enlace_reset):
         f'Por seguridad, este enlace es de un solo uso y expirará pronto.\n'
         f'Si tú no realizaste esta solicitud, puedes ignorar este correo de forma segura; '
         f'tu contraseña actual no cambiará.\n\n'
-        f'Nota importante: Si no encuentras este correo en tu bandeja principal, '
-        f'por favor revisa tu carpeta de SPAM o correo no deseado.\n\n'
+        f'Nota: Si no ves este correo en tu bandeja principal, revisa la carpeta de correo no deseado.\n\n'
         f'Saludos cordiales,\n'
         f'El equipo de Seguridad de SmartBids'
     )
@@ -708,7 +706,7 @@ def enviar_correo_cambio_password(request):
         except ValidationError:
             return JsonResponse({'status': 'error', 'mensaje': 'El formato del correo ingresado no es válido.'}, status=400)
 
-        asunto = '🔒 Tu contraseña en SmartBids ha sido modificada'
+        asunto = 'Tu contraseña en SmartBids ha sido modificada'
         mensaje_plano = (
             f"Hola,\n\n"
             f"Te informamos que la contraseña de tu cuenta ({email_destinatario}) ha sido actualizada exitosamente.\n\n"
