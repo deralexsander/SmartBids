@@ -1775,6 +1775,189 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
             self.assertContains(resp, 'https://www.mercadopublico.cl/adjuntos-oficiales')
 
 
+class Seguridad2FAYCredencialesTests(SimpleTestCase):
+    def setUp(self):
+        import json
+        from django.test import RequestFactory
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def test_enviar_codigo_login_no_expone_otp_en_respuesta_json(self):
+        """Verifica que enviar_codigo_login no exponga el código OTP ni contraseñas en el JSON devuelto."""
+        import json
+        from unittest.mock import patch
+        from smartbids.auth_views import enviar_codigo_login, CODIGOS_OTP_TEMPORALES
+
+        req = self.rf.post(
+            '/api/enviar-codigo-login/',
+            data=json.dumps({'email': 'usuario.seguro@smartbids.cl'}).encode('utf-8'),
+            content_type='application/json'
+        )
+
+        with patch('smartbids.auth_views.send_mail') as mock_send_mail:
+            resp = enviar_codigo_login(req)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content.decode('utf-8'))
+
+            # La respuesta solo debe indicar el estado ok y mensaje de éxito
+            self.assertEqual(data.get('status'), 'ok')
+            self.assertIn('mensaje', data)
+
+            # NUNCA debe contener la clave 'codigo', 'otp' ni 'password'
+            self.assertNotIn('codigo', data)
+            self.assertNotIn('otp', data)
+            self.assertNotIn('password', data)
+
+            # El código debe almacenarse de forma segura (hasheado con salt)
+            self.assertIn('usuario.seguro@smartbids.cl', CODIGOS_OTP_TEMPORALES)
+            registro = CODIGOS_OTP_TEMPORALES['usuario.seguro@smartbids.cl']
+            self.assertIn('hash', registro)
+            self.assertNotIn('codigo', registro)  # Nunca en texto plano
+
+            # El correo debe haberse despachado con el código en el cuerpo del email
+            self.assertTrue(mock_send_mail.called)
+            cuerpo_mail = mock_send_mail.call_args[1]['message']
+            self.assertIn('Tu código de verificación para SmartBids es:', cuerpo_mail)
+
+    def test_validar_codigo_login_flujo_seguridad_y_eliminacion_otp(self):
+        """Verifica que validar_codigo_login elimine el OTP inmediatamente para prevenir ataques de repetición."""
+        import json
+        from unittest.mock import patch, MagicMock
+        from django.utils import timezone
+        from smartbids.auth_views import validar_codigo_login, CODIGOS_OTP_TEMPORALES, _calcular_hash_otp
+
+        email_prueba = 'usuario.otp@smartbids.cl'
+        CODIGOS_OTP_TEMPORALES[email_prueba] = {
+            'hash': _calcular_hash_otp(email_prueba, '987654'),
+            'creado_el': timezone.now(),
+            'intentos_fallidos': 0
+        }
+
+        mock_susc = MagicMock()
+
+        req = self.rf.post(
+            '/api/validar-codigo-login/',
+            data=json.dumps({
+                'email': email_prueba,
+                'uid': 'FIREBASE_UID_TEST_123',
+                'codigo': '987654',
+                'session_token': 'TOKEN_SESION_ABC'
+            }).encode('utf-8'),
+            content_type='application/json'
+        )
+
+        with patch('smartbids.auth_views.Suscriptor.objects.get_or_create', return_value=(mock_susc, False)), \
+             patch('smartbids.auth_views.EstadoSuscriptor.objects.filter'):
+            resp = validar_codigo_login(req)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content.decode('utf-8'))
+
+            self.assertEqual(data.get('status'), 'ok')
+            self.assertNotIn('codigo', data)
+            self.assertNotIn('password', data)
+
+            # El token de sesión debe haberse asignado al suscriptor
+            self.assertEqual(mock_susc.token_sesion, 'TOKEN_SESION_ABC')
+            self.assertTrue(mock_susc.save.called)
+
+            # El código OTP debe haberse eliminado de la memoria para evitar reuso
+            self.assertNotIn(email_prueba, CODIGOS_OTP_TEMPORALES)
+
+            # Un segundo intento con el mismo código debe ser rechazado
+            req_reintento = self.rf.post(
+                '/api/validar-codigo-login/',
+                data=json.dumps({
+                    'email': email_prueba,
+                    'uid': 'FIREBASE_UID_TEST_123',
+                    'codigo': '987654',
+                    'session_token': 'TOKEN_SESION_ABC'
+                }).encode('utf-8'),
+                content_type='application/json'
+            )
+            resp_reintento = validar_codigo_login(req_reintento)
+            self.assertEqual(resp_reintento.status_code, 400)
+
+    def test_purgar_codigos_otp_expirados(self):
+        """Verifica que purgar_codigos_otp_expirados elimine los códigos que superaron los 10 minutos."""
+        from datetime import timedelta
+        from django.utils import timezone
+        from smartbids.auth_views import purgar_codigos_otp_expirados, CODIGOS_OTP_TEMPORALES, revocar_codigo_otp
+
+        ahora = timezone.now()
+        CODIGOS_OTP_TEMPORALES['expirado@smartbids.cl'] = {
+            'hash': 'hash1',
+            'creado_el': ahora - timedelta(seconds=601),
+            'intentos_fallidos': 0
+        }
+        CODIGOS_OTP_TEMPORALES['vigente@smartbids.cl'] = {
+            'hash': 'hash2',
+            'creado_el': ahora - timedelta(seconds=300),
+            'intentos_fallidos': 0
+        }
+
+        eliminados = purgar_codigos_otp_expirados()
+        self.assertEqual(eliminados, 1)
+        self.assertNotIn('expirado@smartbids.cl', CODIGOS_OTP_TEMPORALES)
+        self.assertIn('vigente@smartbids.cl', CODIGOS_OTP_TEMPORALES)
+
+        # Probar revocación explícita
+        self.assertTrue(revocar_codigo_otp('vigente@smartbids.cl'))
+        self.assertNotIn('vigente@smartbids.cl', CODIGOS_OTP_TEMPORALES)
+
+    def test_validar_codigo_login_limite_intentos_fallidos_bloqueo(self):
+        """Verifica que tras 5 intentos fallidos el OTP sea destruido por protección contra fuerza bruta."""
+        import json
+        from django.utils import timezone
+        from smartbids.auth_views import validar_codigo_login, CODIGOS_OTP_TEMPORALES, _calcular_hash_otp
+
+        email = 'bruteforce@smartbids.cl'
+        CODIGOS_OTP_TEMPORALES[email] = {
+            'hash': _calcular_hash_otp(email, '123456'),
+            'creado_el': timezone.now(),
+            'intentos_fallidos': 4
+        }
+
+        # Intento número 5 (debe fallar y destruir el código)
+        req = self.rf.post(
+            '/api/validar-codigo-login/',
+            data=json.dumps({
+                'email': email,
+                'uid': 'UID_TEST',
+                'codigo': '000000',
+                'session_token': 'TOKEN_TEST'
+            }).encode('utf-8'),
+            content_type='application/json'
+        )
+        resp = validar_codigo_login(req)
+        self.assertEqual(resp.status_code, 429)
+        self.assertNotIn(email, CODIGOS_OTP_TEMPORALES)
+
+    def test_archivos_javascript_no_almacenan_passwords_en_variables_globales(self):
+        """Verifica estáticamente que los archivos JavaScript no almacenen variables pendingPassword."""
+        import os
+
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        js_dir = os.path.join(base_dir, 'static', 'js')
+
+        archivos_analizados = 0
+        for root, _, files in os.walk(js_dir):
+            for file in files:
+                if file.endswith('.js'):
+                    path_file = os.path.join(root, file)
+                    with open(path_file, 'r', encoding='utf-8') as f:
+                        contenido = f.read()
+                        self.assertNotIn(
+                            'pendingPassword',
+                            contenido,
+                            f'Se detectó variable de contraseña en JavaScript en {file}'
+                        )
+                    archivos_analizados += 1
+
+        self.assertGreater(archivos_analizados, 0, 'Deben haberse analizado archivos JS.')
+
+
+
 
 
 

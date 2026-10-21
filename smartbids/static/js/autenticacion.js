@@ -42,7 +42,6 @@ if (registeredEmail) {
 }
 
 let pendingEmail = null;
-let pendingPassword = null;
 let pendingUid = null;
 
 // ==========================================================================
@@ -147,7 +146,8 @@ if (loginForm) {
         limpiarMensaje();
 
         const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
+        const passwordInput = document.getElementById('password');
+        const password = passwordInput ? passwordInput.value : '';
 
         if (!email || !password) {
             mostrarMensaje(MENSAJES.validacion.camposRequeridos, 'error');
@@ -167,6 +167,11 @@ if (loginForm) {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+
+            // Limpieza inmediata del input de contraseña en el DOM para máxima seguridad
+            if (passwordInput) {
+                passwordInput.value = '';
+            }
 
             if (!user.emailVerified) {
                 await signOut(auth);
@@ -189,21 +194,24 @@ if (loginForm) {
 
             const resData = await response.json();
             if (!response.ok || resData.status !== 'ok') {
+                await signOut(auth);
                 const error = new Error(resData.mensaje || 'Error al enviar el código de verificación.');
                 error.status = response.status;
                 throw error;
             }
 
             pendingEmail = email;
-            pendingPassword = password;
             pendingUid = user.uid;
 
-            await signOut(auth);
-
+            // Se mantiene la sesión autenticada en Firebase durante el desafío OTP
+            // sin almacenar nunca la contraseña en variables de JavaScript.
             abrirModal2FA();
             iniciarCooldownReenvio();
 
         } catch (error) {
+            if (passwordInput) {
+                passwordInput.value = '';
+            }
             if (error.status === 429) {
                 await signOut(auth);
                 mostrarMensaje(error.message, 'error');
@@ -221,7 +229,7 @@ if (loginForm) {
 // Validar código OTP del Modal y fijar el Token
 if (btnVerificarOtp) {
     btnVerificarOtp.addEventListener('click', async () => {
-        if (!pendingEmail || !pendingPassword || !pendingUid) {
+        if (!pendingEmail || !pendingUid) {
             otpMessage.textContent = 'Sesión expirada. Por favor, ingresa nuevamente.';
             return;
         }
@@ -259,18 +267,17 @@ if (btnVerificarOtp) {
                 return;
             }
 
-            // 3. Autenticar en Firebase Auth
-            AuthState.isSubmittingAuth = true;
-            const userCredential = await signInWithEmailAndPassword(auth, pendingEmail, pendingPassword);
-            const user = userCredential?.user;
+            // 3. Confirmar usuario activo en Firebase Auth (autenticado previamente sin retener credenciales)
+            const user = auth.currentUser;
+            const targetUid = user?.uid || pendingUid;
 
             // 4. Guardar token en LocalStorage y mostrarlo en la consola
             SessionManager.setLocalToken(tokenID);
             console.log(`tokenID: ${tokenID}`);
 
-            if (user?.uid) {
-                localStorage.setItem('smartbids_uid', user.uid);
-                document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
+            if (targetUid) {
+                localStorage.setItem('smartbids_uid', targetUid);
+                document.cookie = `sb_firebase_uid=${targetUid}; path=/; max-age=604800; SameSite=Lax`;
             }
 
             sessionStorage.setItem('flash_message', JSON.stringify({
@@ -279,7 +286,6 @@ if (btnVerificarOtp) {
             }));
 
             pendingEmail = null;
-            pendingPassword = null;
             pendingUid = null;
 
             AuthState.isSubmittingAuth = false;
@@ -332,7 +338,6 @@ if (btnCancelarOtp) {
         cerrarModal2FA();
         AuthState.isSubmittingAuth = false;
         pendingEmail = null;
-        pendingPassword = null;
         pendingUid = null;
         await signOut(auth);
     });
