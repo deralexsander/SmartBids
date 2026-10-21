@@ -135,6 +135,14 @@ onAuthStateChanged(auth, async (user) => {
 
     // 2. Si ya está autenticado e intenta ir a login o registro
     if (pageRule?.guestOnly && !AuthState.isSubmittingAuth) {
+        const tokenActual = SessionManager.getLocalToken();
+        if (!tokenActual) {
+            // Usuario con sesión Firebase residual pero sin 2FA completado
+            await signOut(auth);
+            updateNavButtons(null);
+            hidePageLoader();
+            return;
+        }
         window.location.replace('/');
         return;
     }

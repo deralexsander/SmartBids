@@ -430,6 +430,59 @@
     letter-spacing: 0.5px;
 }
 
+/* 1.2 Tipo de Procedimiento: Licitaciones Públicas y Privadas */
+.perfil__tender-type-section {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--soft-mint);
+}
+
+.perfil__tender-group {
+    background: #fafbfc;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.perfil__tender-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.perfil__tender-group-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.perfil__tender-group-icon {
+    font-size: 0.95rem;
+}
+
+.perfil__tender-group-icon--private {
+    color: var(--muted-teal);
+}
+
+.perfil__tender-group-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(30, 196, 152, 0.12);
+    color: var(--dark-green);
+    padding: 2px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+}
+
+.perfil__tender-group-badge--private {
+    background: #e2e8f0;
+    color: #475569;
+}
+
 .perfil__tender-type-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -446,6 +499,12 @@
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.perfil__tender-type-option:hover {
+    border-color: var(--accent-green);
+    background: rgba(30, 196, 152, 0.04);
+    transform: translateY(-1px);
 }
 
 .perfil__tender-type-checkbox {
@@ -723,6 +782,91 @@
     border-radius: 10px;
     background: #fafafa;
     font-size: 0.92rem;
+}
+
+/* 1.1 Catálogo ONU: Jerarquía de 3 niveles y truncamiento */
+.tree-grupo {
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.tree-grupo:hover {
+    box-shadow: 0 4px 12px rgba(17, 99, 78, 0.06);
+}
+
+.tree-nivel {
+    transition: background-color 0.15s ease;
+}
+
+.tree-nivel:hover {
+    background-color: #f1f5f9;
+}
+
+.tree-item-prod {
+    min-width: 0;
+}
+
+.tree-item-prod:hover {
+    background-color: #f8fafc !important;
+    border-color: var(--soft-mint) !important;
+}
+
+.prod-desc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+}
+
+/* 1.3 Selector previo por Sector y Buscador de Organismos/Unidades */
+.perfil__ucom-filter-controls {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 680px) {
+    .perfil__ucom-filter-controls {
+        grid-template-columns: 1fr;
+    }
+}
+
+.perfil__ucom-filter-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    margin-bottom: 4px;
+}
+
+.perfil__selection-sector-select {
+    width: 100%;
+    height: 42px;
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    font-weight: 600;
+    color: var(--dark-green);
+    background-color: #f8fafc;
+    padding: 0 10px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: border-color 0.15s ease;
+}
+
+.perfil__selection-sector-select:focus {
+    border-color: var(--accent-green);
+    outline: none;
+    background-color: #ffffff;
+}
+
+.prod-code {
+    font-family: 'JetBrains Mono', monospace, ui-monospace;
+    letter-spacing: 0.3px;
+}
+
+.tree-badge-count {
+    transition: background-color 0.15s ease;
 }
 
 .perfil__tree-loading {

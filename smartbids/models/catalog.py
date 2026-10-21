@@ -127,6 +127,24 @@ class Producto(models.Model):
     class Meta:
         managed = False
         db_table = '"catalog"."producto"'
+
+    @property
+    def codigo_formateado(self):
+        n1 = str(self.nivel1_id or '').strip()
+        n2 = str(self.nivel2 or '').strip()
+        n3 = str(self.nivel3 or '').strip()
+        n4 = str(self.nivel4 or '').strip()
+        if n1 and n2 and n3 and n4:
+            return f"{n1}-{n2}-{n3}-{n4}"
+        cod = str(self.codigo_producto or '').strip()
+        if len(cod) >= 9:
+            return f"{cod[:3]}-{cod[3:5]}-{cod[5:7]}-{cod[7:9]}"
+        elif len(cod) >= 8:
+            return f"{cod[:2]}-{cod[2:4]}-{cod[4:6]}-{cod[6:8]}"
+        return cod
+
+    def __str__(self):
+        return f"{self.codigo_formateado} - {self.descripcion}"
         
 class Proveedor(models.Model):
     pk = models.CompositePrimaryKey('prov_codigo_proveedor', 'prov_codigo_sucursal')

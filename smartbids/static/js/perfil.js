@@ -285,18 +285,35 @@ class TagManager {
             return;
         }
 
-        codes.forEach(code => {
+        const maxChipsVisibles = 60;
+        const visibleCodes = codes.slice(0, maxChipsVisibles);
+
+        visibleCodes.forEach(code => {
             const label = this.items.get(code) || code;
             const chip = document.createElement('div');
             chip.className = 'dash-badge';
-            chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: 0.83rem; background: var(--white); border: 1.5px solid var(--accent-green); color: var(--dark-green); border-radius: 20px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.04);';
+            chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.82rem; background: var(--white); border: 1.5px solid var(--accent-green); color: var(--dark-green); border-radius: 20px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.04); max-width: 280px;';
+            chip.title = label;
             chip.innerHTML = `
-                <span>${label}</span>
-                <i class="fa-solid fa-xmark" style="cursor: pointer; color: #e53e3e; margin-left: 4px;" title="Eliminar"></i>
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px;" title="${label}">${label}</span>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; color: #e53e3e; margin-left: 4px; flex-shrink: 0;" title="Eliminar"></i>
             `;
-            chip.querySelector('i').addEventListener('click', () => this.remove(code));
+            chip.querySelector('i').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.remove(code);
+            });
             this.container.appendChild(chip);
         });
+
+        if (codes.length > maxChipsVisibles) {
+            const rem = codes.length - maxChipsVisibles;
+            const moreBadge = document.createElement('div');
+            moreBadge.className = 'dash-badge';
+            moreBadge.style.cssText = 'display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.8rem; background: #e2e8f0; color: #475569; border-radius: 20px; font-weight: 700;';
+            moreBadge.textContent = `+${rem} más...`;
+            moreBadge.title = `${codes.length} seleccionados en total`;
+            this.container.appendChild(moreBadge);
+        }
 
         actualizarPorcentajePerfil();
     }
@@ -667,15 +684,27 @@ async function setupProductsTree() {
         if (counter) counter.textContent = `${total} productos seleccionados`;
     }
 
-    function updateParentState(rubroNode) {
-        const children = [...rubroNode.querySelectorAll('.tree-children input.prod-check')];
+    function updateParentNivelState(nivelNode) {
+        const children = [...nivelNode.querySelectorAll('.tree-children input.prod-check')];
         if (!children.length) return;
 
         const checkedCount = children.filter(c => c.checked).length;
-        const parentCheck = rubroNode.querySelector('.tree-header input.rubro-check');
+        const parentCheck = nivelNode.querySelector('.tree-header input.nivel-check');
         if (parentCheck) {
-            parentCheck.checked = checkedCount === children.length;
-            parentCheck.indeterminate = checkedCount > 0 && checkedCount < children.length;
+            parentCheck.checked = (checkedCount === children.length && children.length > 0);
+            parentCheck.indeterminate = (checkedCount > 0 && checkedCount < children.length);
+        }
+    }
+
+    function updateParentGrupoState(grupoNode) {
+        const children = [...grupoNode.querySelectorAll('.tree-children input.prod-check')];
+        if (!children.length) return;
+
+        const checkedCount = children.filter(c => c.checked).length;
+        const parentCheck = grupoNode.querySelector('.tree-header input.grupo-check');
+        if (parentCheck) {
+            parentCheck.checked = (checkedCount === children.length && children.length > 0);
+            parentCheck.indeterminate = (checkedCount > 0 && checkedCount < children.length);
         }
     }
 
@@ -684,44 +713,88 @@ async function setupProductsTree() {
         const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
         let html = '';
 
-        (data.rubros || []).forEach(rubro => {
-            const rubroId = `rubro-onu-${String(rubro.codigo_rubro || rubro.nombre_rubro).replace(/[^a-zA-Z0-9]/g, '_')}`;
-            const prods = rubro.productos || [];
-            let prodsHtml = '';
+        // Si la respuesta viene agrupada en "grupos", usar la jerarquía de 3 niveles
+        const grupos = data.grupos || (data.rubros ? [{
+            codigo_grupo: '00',
+            nombre_grupo: 'Catálogo General ONU',
+            niveles: data.rubros.map(r => ({
+                codigo_nivel1: r.codigo_rubro,
+                descripcion: r.nombre_rubro,
+                productos: r.productos || []
+            }))
+        }] : []);
 
-            prods.forEach(p => {
-                const cod = String(p.codigo_producto).trim();
-                const isChecked = selectedSet.has(cod) ? 'checked' : '';
+        grupos.forEach(grp => {
+            const grpId = `grp-${String(grp.codigo_grupo).replace(/[^a-zA-Z0-9]/g, '_')}`;
+            let nivelesHtml = '';
+            let totalProdsGrupo = 0;
 
-                prodsHtml += `
-                    <div class="tree-item-prod" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #f1f5f9; background: #ffffff; margin-bottom: 4px; display: flex; align-items: center; transition: all 0.15s ease;">
-                        <label style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; width: 100%;">
-                            <input type="checkbox" class="prod-check" value="${cod}" data-label="${p.descripcion}" ${isChecked} style="accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0;">
-                            <span class="prod-desc" style="color: var(--dark-green); font-weight: 500; line-height: 1.3;">${p.descripcion}</span>
-                            <small class="prod-code" style="color: var(--muted-teal); font-size: 0.8rem; margin-left: auto; white-space: nowrap; font-family: monospace;">[${cod}]</small>
-                        </label>
+            (grp.niveles || []).forEach(niv => {
+                const nivId = `niv-${String(niv.codigo_nivel1).replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const prods = niv.productos || [];
+                totalProdsGrupo += prods.length;
+                let prodsHtml = '';
+
+                prods.forEach(p => {
+                    const cod = String(p.codigo_producto).trim();
+                    const codFmt = String(p.codigo_formateado || cod).trim();
+                    const desc = String(p.descripcion || `Producto ${codFmt}`).trim();
+                    const isChecked = selectedSet.has(cod) ? 'checked' : '';
+
+                    prodsHtml += `
+                        <div class="tree-item-prod" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #f1f5f9; background: #ffffff; margin-bottom: 4px; display: flex; align-items: center; transition: all 0.15s ease;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; width: 100%; margin: 0; min-width: 0;">
+                                <input type="checkbox" class="prod-check" value="${cod}" data-label="${desc}" data-formatted="${codFmt}" ${isChecked} style="accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0; width: 16px; height: 16px;">
+                                <span class="prod-desc" style="color: var(--dark-green); font-weight: 500; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;" title="${desc}">${desc}</span>
+                                <small class="prod-code" style="color: var(--muted-teal); font-size: 0.8rem; margin-left: 8px; white-space: nowrap; font-family: monospace; flex-shrink: 0;">[${codFmt}]</small>
+                            </label>
+                        </div>
+                    `;
+                });
+
+                nivelesHtml += `
+                    <div class="tree-node tree-nivel" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
+                        <div class="tree-header tree-toggle-btn" data-target="${nivId}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green); font-size: 0.88rem; min-width: 0; flex: 1;">
+                                <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.75rem; color: var(--muted-teal); transition: transform 0.2s ease; flex-shrink: 0;"></i>
+                                <i class="fa-solid fa-tag" style="color: var(--muted-teal); font-size: 0.85rem; flex-shrink: 0;"></i>
+                                <span class="nivel-title" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;" title="${niv.codigo_nivel1} – ${niv.descripcion}">${niv.codigo_nivel1} – ${niv.descripcion}</span>
+                                <span class="tree-badge-count" style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600; flex-shrink: 0;">${prods.length}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; margin-left: 10px; flex-shrink: 0;" onclick="event.stopPropagation();">
+                                <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--muted-teal); margin: 0; font-weight: 600;">
+                                    <input type="checkbox" class="nivel-check" style="accent-color: var(--accent-green); cursor: pointer;">
+                                    <span>Todos</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="${nivId}" class="tree-children" style="display: none; padding: 8px; border-top: 1px dashed #e2e8f0; background: #ffffff; max-height: 320px; overflow-y: auto;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                ${prodsHtml}
+                            </div>
+                        </div>
                     </div>
                 `;
             });
 
             html += `
-                <div class="tree-node tree-rubro" style="margin-bottom: 10px; background: #ffffff; border-radius: 10px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 6px rgba(0,0,0,0.02); overflow: hidden;">
-                    <div class="tree-header tree-toggle-btn" data-target="${rubroId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.06); cursor: pointer; user-select: none;">
-                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--dark-green); font-size: 0.93rem;">
-                            <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease;"></i>
-                            <i class="fa-solid fa-folder" style="color: var(--soft-mint); font-size: 0.95rem;"></i>
-                            <span class="rubro-title">${rubro.nombre_rubro}</span>
-                            <span class="rubro-badge-count" style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600;">${prods.length}</span>
+                <div class="tree-node tree-grupo" style="margin-bottom: 10px; background: #ffffff; border-radius: 10px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 6px rgba(0,0,0,0.02); overflow: hidden;">
+                    <div class="tree-header tree-toggle-btn" data-target="${grpId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.07); cursor: pointer; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--dark-green); font-size: 0.94rem; min-width: 0; flex: 1;">
+                            <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease; flex-shrink: 0;"></i>
+                            <i class="fa-solid fa-layer-group" style="color: var(--soft-mint); font-size: 1rem; flex-shrink: 0;"></i>
+                            <span class="grupo-title" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;" title="${grp.codigo_grupo} – ${grp.nombre_grupo}">${grp.codigo_grupo} – ${grp.nombre_grupo}</span>
+                            <span class="tree-badge-count" style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-weight: 700; flex-shrink: 0;">${totalProdsGrupo}</span>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
-                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; color: var(--dark-green);">
-                                <input type="checkbox" class="rubro-check" style="accent-color: var(--accent-green);">
-                                <span>Marcar Todo</span>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px; flex-shrink: 0;" onclick="event.stopPropagation();">
+                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; color: var(--dark-green); margin: 0;">
+                                <input type="checkbox" class="grupo-check" style="accent-color: var(--accent-green); cursor: pointer;">
+                                <span>Marcar Grupo</span>
                             </label>
                         </div>
                     </div>
-                    <div id="${rubroId}" class="tree-children" style="display: none; padding: 10px 14px; background: #fafbfc; max-height: 320px; overflow-y: auto;">
-                        ${prodsHtml}
+                    <div id="${grpId}" class="tree-children" style="display: none; padding: 10px 14px; background: #f8fafc; border-top: 1px solid var(--soft-mint);">
+                        ${nivelesHtml}
                     </div>
                 </div>
             `;
@@ -744,13 +817,33 @@ async function setupProductsTree() {
             });
         });
 
-        tree.querySelectorAll('.tree-rubro').forEach(rubroNode => {
-            const check = rubroNode.querySelector('.tree-header input.rubro-check');
-            if (check) {
-                check.addEventListener('change', () => {
-                    rubroNode.querySelectorAll('.tree-children input.prod-check').forEach(c => {
-                        c.checked = check.checked;
+        tree.querySelectorAll('.tree-grupo').forEach(grupoNode => {
+            const grupoCheck = grupoNode.querySelector('.tree-header input.grupo-check');
+            if (grupoCheck) {
+                grupoCheck.addEventListener('change', () => {
+                    const isChecked = grupoCheck.checked;
+                    grupoNode.querySelectorAll('.nivel-check').forEach(c => {
+                        c.checked = isChecked;
+                        c.indeterminate = false;
                     });
+                    grupoNode.querySelectorAll('.prod-check').forEach(c => {
+                        c.checked = isChecked;
+                    });
+                    updateCounter();
+                });
+            }
+        });
+
+        tree.querySelectorAll('.tree-nivel').forEach(nivelNode => {
+            const nivelCheck = nivelNode.querySelector('.tree-header input.nivel-check');
+            const grupoNode = nivelNode.closest('.tree-grupo');
+            if (nivelCheck) {
+                nivelCheck.addEventListener('change', () => {
+                    const isChecked = nivelCheck.checked;
+                    nivelNode.querySelectorAll('.prod-check').forEach(c => {
+                        c.checked = isChecked;
+                    });
+                    if (grupoNode) updateParentGrupoState(grupoNode);
                     updateCounter();
                 });
             }
@@ -758,13 +851,16 @@ async function setupProductsTree() {
 
         tree.querySelectorAll('.prod-check').forEach(check => {
             check.addEventListener('change', () => {
-                const rubroNode = check.closest('.tree-rubro');
-                if (rubroNode) updateParentState(rubroNode);
+                const nivelNode = check.closest('.tree-nivel');
+                const grupoNode = check.closest('.tree-grupo');
+                if (nivelNode) updateParentNivelState(nivelNode);
+                if (grupoNode) updateParentGrupoState(grupoNode);
                 updateCounter();
             });
         });
 
-        tree.querySelectorAll('.tree-rubro').forEach(updateParentState);
+        tree.querySelectorAll('.tree-nivel').forEach(updateParentNivelState);
+        tree.querySelectorAll('.tree-grupo').forEach(updateParentGrupoState);
         updateCounter();
     }
 
@@ -810,34 +906,80 @@ async function setupProductsTree() {
             searchDebounceTimer = setTimeout(() => {
                 const term = searchInput.value.toLowerCase().trim();
 
-                tree.querySelectorAll('.tree-rubro').forEach(rubroNode => {
-                    const titleText = rubroNode.querySelector('.rubro-title')?.textContent.toLowerCase() || '';
-                    const matchRubroTitle = titleText.includes(term);
+                let totalGruposVisibles = 0;
 
-                    let prodsCoincidentes = 0;
-                    rubroNode.querySelectorAll('.tree-item-prod').forEach(prodNode => {
-                        const desc = prodNode.querySelector('.prod-desc')?.textContent.toLowerCase() || '';
-                        const code = prodNode.querySelector('.prod-code')?.textContent.toLowerCase() || '';
-                        const matchProd = !term || desc.includes(term) || code.includes(term);
+                tree.querySelectorAll('.tree-grupo').forEach(grupoNode => {
+                    const grupoTitle = grupoNode.querySelector('.grupo-title')?.textContent.toLowerCase() || '';
+                    const matchGrupoTitle = Boolean(term && grupoTitle.includes(term));
 
-                        prodNode.style.display = matchProd ? 'flex' : 'none';
-                        if (matchProd) prodsCoincidentes++;
+                    let nivelesVisibles = 0;
+                    let prodsEnGrupoCoincidentes = 0;
+
+                    grupoNode.querySelectorAll('.tree-nivel').forEach(nivelNode => {
+                        const nivelTitle = nivelNode.querySelector('.nivel-title')?.textContent.toLowerCase() || '';
+                        const matchNivelTitle = Boolean(term && nivelTitle.includes(term));
+
+                        let prodsEnNivelCoincidentes = 0;
+                        nivelNode.querySelectorAll('.tree-item-prod').forEach(prodNode => {
+                            const desc = prodNode.querySelector('.prod-desc')?.textContent.toLowerCase() || '';
+                            const code = prodNode.querySelector('.prod-code')?.textContent.toLowerCase() || '';
+                            const val = prodNode.querySelector('.prod-check')?.value.toLowerCase() || '';
+                            const matchProd = !term || matchGrupoTitle || matchNivelTitle || desc.includes(term) || code.includes(term) || val.includes(term);
+
+                            prodNode.style.display = matchProd ? 'flex' : 'none';
+                            if (matchProd) {
+                                prodsEnNivelCoincidentes++;
+                                prodsEnGrupoCoincidentes++;
+                            }
+                        });
+
+                        const debeMostrarNivel = !term || matchGrupoTitle || matchNivelTitle || prodsEnNivelCoincidentes > 0;
+                        nivelNode.style.display = debeMostrarNivel ? 'block' : 'none';
+                        if (debeMostrarNivel) nivelesVisibles++;
+
+                        const nivelChildren = nivelNode.querySelector('.tree-children');
+                        const nivelToggleIcon = nivelNode.querySelector('.toggle-icon');
+
+                        if (term && debeMostrarNivel && (prodsEnNivelCoincidentes > 0 || matchNivelTitle || matchGrupoTitle)) {
+                            if (nivelChildren) nivelChildren.style.display = 'block';
+                            if (nivelToggleIcon) nivelToggleIcon.style.transform = 'rotate(90deg)';
+                        } else if (!term) {
+                            if (nivelChildren) nivelChildren.style.display = 'none';
+                            if (nivelToggleIcon) nivelToggleIcon.style.transform = 'rotate(0deg)';
+                        }
                     });
 
-                    const debeMostrarRubro = !term || matchRubroTitle || prodsCoincidentes > 0;
-                    rubroNode.style.display = debeMostrarRubro ? 'block' : 'none';
+                    const debeMostrarGrupo = !term || matchGrupoTitle || nivelesVisibles > 0;
+                    grupoNode.style.display = debeMostrarGrupo ? 'block' : 'none';
+                    if (debeMostrarGrupo) totalGruposVisibles++;
 
-                    const childrenContainer = rubroNode.querySelector('.tree-children');
-                    const toggleIcon = rubroNode.querySelector('.toggle-icon');
+                    const grupoChildren = grupoNode.querySelector('.tree-children');
+                    const grupoToggleIcon = grupoNode.querySelector('.toggle-icon');
 
-                    if (term && debeMostrarRubro && prodsCoincidentes > 0) {
-                        if (childrenContainer) childrenContainer.style.display = 'block';
-                        if (toggleIcon) toggleIcon.style.transform = 'rotate(90deg)';
+                    if (term && debeMostrarGrupo && (nivelesVisibles > 0 || matchGrupoTitle)) {
+                        if (grupoChildren) grupoChildren.style.display = 'block';
+                        if (grupoToggleIcon) grupoToggleIcon.style.transform = 'rotate(90deg)';
                     } else if (!term) {
-                        if (childrenContainer) childrenContainer.style.display = 'none';
-                        if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
+                        if (grupoChildren) grupoChildren.style.display = 'none';
+                        if (grupoToggleIcon) grupoToggleIcon.style.transform = 'rotate(0deg)';
                     }
                 });
+
+                const noResultsMsg = tree.querySelector('.tree-no-results');
+                if (totalGruposVisibles === 0 && term) {
+                    if (!noResultsMsg) {
+                        const msg = document.createElement('p');
+                        msg.className = 'tree-no-results';
+                        msg.style.cssText = 'text-align: center; color: var(--muted-teal); padding: 2rem; font-weight: 500;';
+                        msg.textContent = `No se encontraron productos coincidentes con "${searchInput.value}".`;
+                        tree.appendChild(msg);
+                    } else {
+                        noResultsMsg.style.display = 'block';
+                        noResultsMsg.textContent = `No se encontraron productos coincidentes con "${searchInput.value}".`;
+                    }
+                } else if (noResultsMsg) {
+                    noResultsMsg.style.display = 'none';
+                }
 
                 if (searchLoader) searchLoader.style.display = 'none';
             }, 120);
@@ -848,7 +990,7 @@ async function setupProductsTree() {
         const checkedProds = [...tree.querySelectorAll('.prod-check:checked')];
         const selected = checkedProds.map(p => ({
             code: String(p.value).trim(),
-            label: `${p.dataset.label} (${p.value})`
+            label: `${p.dataset.label} (${p.dataset.formatted || p.value})`
         }));
 
         if (productosManager) {
@@ -866,6 +1008,7 @@ async function setupUcomTree() {
     const closeBtn = document.getElementById('btn-cerrar-ucom');
     const closeX = document.getElementById('btn-cerrar-ucom-x');
     const saveBtn = document.getElementById('btn-guardar-ucom');
+    const sectorSelect = document.getElementById('ucom-sector-select');
     const searchInput = document.getElementById('ucom-tree-search');
     const searchLoader = document.getElementById('ucom-search-loader');
     const counter = document.getElementById('ucom-counter');
@@ -896,6 +1039,86 @@ async function setupUcomTree() {
         }
     }
 
+    function populateSectorSelect(sectoresLista) {
+        if (!sectorSelect || !sectoresLista || !sectoresLista.length) return;
+        const currentVal = sectorSelect.value;
+        let optionsHtml = '<option value="">🏛️ Todos los Sectores del Estado (30)</option>';
+        sectoresLista.forEach(s => {
+            optionsHtml += `<option value="${s.codigo_sector}">${s.nombre_sector} (${s.organismos_count} orgs)</option>`;
+        });
+        sectorSelect.innerHTML = optionsHtml;
+        if (currentVal) sectorSelect.value = currentVal;
+    }
+
+    function applyFilters() {
+        const selectedSec = sectorSelect ? sectorSelect.value.trim() : '';
+        const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+        tree.querySelectorAll('.tree-sector').forEach(secNode => {
+            const secCode = secNode.dataset.sectorCode || '';
+            const secTitle = secNode.querySelector('.sec-title')?.textContent.toLowerCase() || '';
+
+            // Si hay un sector seleccionado y no coincide, ocultar este sector
+            if (selectedSec && secCode !== selectedSec) {
+                secNode.style.display = 'none';
+                return;
+            }
+
+            const matchSectorName = term && secTitle.includes(term);
+            let secTieneHijosCoincidentes = false;
+
+            secNode.querySelectorAll('.tree-organismo').forEach(orgNode => {
+                const orgTitle = orgNode.querySelector('.org-title')?.textContent.toLowerCase() || '';
+                const orgSigla = orgNode.dataset.orgSigla || '';
+                const orgCode = orgNode.dataset.orgCode || '';
+                const matchOrganismo = term && (orgTitle.includes(term) || orgSigla.includes(term) || orgCode.includes(term));
+
+                let orgTieneUcomCoincidente = false;
+
+                orgNode.querySelectorAll('.tree-item-ucom').forEach(uNode => {
+                    const desc = uNode.querySelector('.ucom-desc')?.textContent.toLowerCase() || '';
+                    const code = uNode.querySelector('.ucom-code')?.textContent.toLowerCase() || '';
+                    const matchUcom = !term || desc.includes(term) || code.includes(term);
+
+                    const visible = !term || matchSectorName || matchOrganismo || matchUcom;
+                    uNode.style.display = visible ? 'flex' : 'none';
+
+                    if (matchUcom && term) orgTieneUcomCoincidente = true;
+                });
+
+                const debeMostrarOrg = !term || matchSectorName || matchOrganismo || orgTieneUcomCoincidente;
+                orgNode.style.display = debeMostrarOrg ? 'block' : 'none';
+
+                if (debeMostrarOrg && term) secTieneHijosCoincidentes = true;
+
+                const orgChildren = orgNode.querySelector('.tree-children');
+                const orgIcon = orgNode.querySelector('.toggle-icon');
+                if (term && debeMostrarOrg) {
+                    if (orgChildren) orgChildren.style.display = 'block';
+                    if (orgIcon) orgIcon.style.transform = 'rotate(90deg)';
+                } else if (!term) {
+                    if (orgChildren) orgChildren.style.display = 'none';
+                    if (orgIcon) orgIcon.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            const debeMostrarSector = !term || matchSectorName || secTieneHijosCoincidentes;
+            secNode.style.display = debeMostrarSector ? 'block' : 'none';
+
+            const secChildren = secNode.querySelector('.tree-children');
+            const secIcon = secNode.querySelector('.toggle-icon');
+            if ((term && debeMostrarSector) || (selectedSec && !term)) {
+                if (secChildren) secChildren.style.display = 'block';
+                if (secIcon) secIcon.style.transform = 'rotate(90deg)';
+            } else if (!term && !selectedSec) {
+                if (secChildren) secChildren.style.display = 'none';
+                if (secIcon) secIcon.style.transform = 'rotate(0deg)';
+            }
+        });
+
+        if (searchLoader) searchLoader.style.display = 'none';
+    }
+
     function renderTree(data) {
         const currentCodes = ucomManager ? ucomManager.getCodes() : [];
         const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
@@ -924,13 +1147,15 @@ async function setupUcomTree() {
                     `;
                 });
 
+                const displayTitle = org.sigla ? `${org.nombre_organismo} (${org.sigla})` : org.nombre_organismo;
+
                 orgsHtml += `
-                    <div class="tree-node tree-organismo" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
+                    <div class="tree-node tree-organismo" data-org-code="${org.codigo_organismo}" data-org-sigla="${String(org.sigla || '').toLowerCase()}" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
                         <div class="tree-header tree-toggle-btn" data-target="${orgId}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none;">
                             <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green); font-size: 0.9rem;">
                                 <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.75rem; color: var(--muted-teal); transition: transform 0.2s ease;"></i>
                                 <i class="fa-solid fa-building-columns" style="color: var(--muted-teal); font-size: 0.85rem;"></i>
-                                <span class="org-title">${org.nombre_organismo}</span>
+                                <span class="org-title">${displayTitle}</span>
                                 <span style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600;">${(org.unidades || []).length}</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px;" onclick="event.stopPropagation();">
@@ -950,7 +1175,7 @@ async function setupUcomTree() {
             });
 
             html += `
-                <div class="tree-node tree-sector" style="margin-bottom: 12px; background: #ffffff; border-radius: 12px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 8px rgba(0,0,0,0.02); overflow: hidden;">
+                <div class="tree-node tree-sector" data-sector-code="${sec.codigo_sector}" style="margin-bottom: 12px; background: #ffffff; border-radius: 12px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 8px rgba(0,0,0,0.02); overflow: hidden;">
                     <div class="tree-header tree-toggle-btn" data-target="${secId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.05); cursor: pointer; user-select: none;">
                         <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">
                             <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease;"></i>
@@ -1038,6 +1263,7 @@ async function setupUcomTree() {
             updateParentState(s, '.tree-children input.ucom-check', ':scope > .tree-header input.sec-check');
         });
         updateCounter();
+        applyFilters();
     }
 
     if (openBtn && openBtn.dataset.bound !== 'true') {
@@ -1047,6 +1273,7 @@ async function setupUcomTree() {
             modal.style.display = 'flex';
             modal.style.zIndex = '99999';
 
+            if (sectorSelect) sectorSelect.value = '';
             if (searchInput) searchInput.value = '';
 
             if (!ucomData) {
@@ -1066,12 +1293,14 @@ async function setupUcomTree() {
                     }
 
                     ucomData = jsonRes;
+                    populateSectorSelect(ucomData.sectores_lista);
                     renderTree(ucomData);
                 } catch (err) {
                     console.error('[SmartBids] Error al cargar unidades de compra:', err);
                     tree.innerHTML = `<p style="color: #e53e3e; text-align: center; padding: 2rem;">Error al cargar catálogo de unidades: ${err.message}</p>`;
                 }
             } else {
+                populateSectorSelect(ucomData.sectores_lista);
                 renderTree(ucomData);
             }
         });
@@ -1080,67 +1309,19 @@ async function setupUcomTree() {
     closeBtn.addEventListener('click', closeModal);
     if (closeX) closeX.addEventListener('click', closeModal);
 
+    if (sectorSelect) {
+        sectorSelect.addEventListener('change', () => {
+            applyFilters();
+        });
+    }
+
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             clearTimeout(debounceTimer);
             if (searchLoader) searchLoader.style.display = 'block';
 
             debounceTimer = setTimeout(() => {
-                const term = searchInput.value.toLowerCase().trim();
-
-                tree.querySelectorAll('.tree-sector').forEach(secNode => {
-                    const secTitle = secNode.querySelector('.sec-title')?.textContent.toLowerCase() || '';
-                    const matchSector = term && secTitle.includes(term);
-                    let secTieneHijosCoincidentes = false;
-
-                    secNode.querySelectorAll('.tree-organismo').forEach(orgNode => {
-                        const orgTitle = orgNode.querySelector('.org-title')?.textContent.toLowerCase() || '';
-                        const matchOrganismo = term && orgTitle.includes(term);
-
-                        let orgTieneUcomCoincidente = false;
-
-                        orgNode.querySelectorAll('.tree-item-ucom').forEach(uNode => {
-                            const desc = uNode.querySelector('.ucom-desc')?.textContent.toLowerCase() || '';
-                            const code = uNode.querySelector('.ucom-code')?.textContent.toLowerCase() || '';
-                            const matchUcom = !term || desc.includes(term) || code.includes(term);
-
-                            const visible = !term || matchSector || matchOrganismo || matchUcom;
-                            uNode.style.display = visible ? 'flex' : 'none';
-
-                            if (matchUcom && term) orgTieneUcomCoincidente = true;
-                        });
-
-                        const debeMostrarOrg = !term || matchSector || matchOrganismo || orgTieneUcomCoincidente;
-                        orgNode.style.display = debeMostrarOrg ? 'block' : 'none';
-
-                        if (debeMostrarOrg && term) secTieneHijosCoincidentes = true;
-
-                        const orgChildren = orgNode.querySelector('.tree-children');
-                        const orgIcon = orgNode.querySelector('.toggle-icon');
-                        if (term && debeMostrarOrg) {
-                            if (orgChildren) orgChildren.style.display = 'block';
-                            if (orgIcon) orgIcon.style.transform = 'rotate(90deg)';
-                        } else if (!term) {
-                            if (orgChildren) orgChildren.style.display = 'none';
-                            if (orgIcon) orgIcon.style.transform = 'rotate(0deg)';
-                        }
-                    });
-
-                    const debeMostrarSector = !term || matchSector || secTieneHijosCoincidentes;
-                    secNode.style.display = debeMostrarSector ? 'block' : 'none';
-
-                    const secChildren = secNode.querySelector('.tree-children');
-                    const secIcon = secNode.querySelector('.toggle-icon');
-                    if (term && debeMostrarSector) {
-                        if (secChildren) secChildren.style.display = 'block';
-                        if (secIcon) secIcon.style.transform = 'rotate(90deg)';
-                    } else if (!term) {
-                        if (secChildren) secChildren.style.display = 'none';
-                        if (secIcon) secIcon.style.transform = 'rotate(0deg)';
-                    }
-                });
-
-                if (searchLoader) searchLoader.style.display = 'none';
+                applyFilters();
             }, 120);
         });
     }
@@ -1746,6 +1927,16 @@ export async function inicializarVistaPerfil(user) {
                 registrarCambio('filtros');
                 actualizarPorcentajePerfil();
             });
+        });
+    }
+
+    const contTipoLic = document.getElementById('contenedor-tipo-licitacion');
+    if (contTipoLic) {
+        contTipoLic.addEventListener('change', (e) => {
+            if (e.target && e.target.matches('input[name="pref_tipo_lic_check"]')) {
+                registrarCambio('filtros');
+                actualizarPorcentajePerfil();
+            }
         });
     }
 
@@ -2382,7 +2573,7 @@ if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
         const razonSocial = document.getElementById('empresa-razon-social')?.value.trim();
         const fantasia = document.getElementById('empresa-fantasia')?.value.trim();
         const correo = document.getElementById('empresa-correo')?.value.trim();
-        const comuna = document.getElementById('empresa-comuna')?.value.trim();
+        const comuna = document.getElementById('empresa-comuna')?.value.trim() || document.getElementById('empresa-comuna-label')?.value.trim() || '';
         const telefono = inputTelefonoEmpresa?.value.trim() || '';
 
         const rutFormateado = formatearRutChileno(rut, true);
@@ -2416,6 +2607,18 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
         const targetUid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
 
         try {
+            let comunaVal = document.getElementById('empresa-comuna')?.value.trim() || '';
+            const labelVal = document.getElementById('empresa-comuna-label')?.value.trim() || '';
+            if (!comunaVal && labelVal) {
+                const match = labelVal.match(/\b(\d{5})\b/);
+                comunaVal = match ? match[1] : labelVal;
+            } else if (comunaVal) {
+                const match = comunaVal.match(/\b(\d{5})\b/);
+                if (match) {
+                    comunaVal = match[1];
+                }
+            }
+
             const resp = await fetch('/api/actualizar-empresa/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2428,7 +2631,7 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
                     emp_contacto_correo: document.getElementById('empresa-correo')?.value.trim() || '',
                     emp_iniciales: document.getElementById('empresa-iniciales')?.value.trim() || '',
                     emp_contacto_telefono: document.getElementById('empresa-telefono')?.value.trim() || '',
-                    emp_codigo_comuna: document.getElementById('empresa-comuna')?.value.trim() || '',
+                    emp_codigo_comuna: comunaVal,
                     emp_direccion: document.getElementById('empresa-direccion')?.value.trim() || '',
                 })
             });
@@ -2575,6 +2778,10 @@ document.addEventListener('DOMContentLoaded', () => {
             cerrarModalSalidaPestana();
 
             guardarSeccionesModificadas();
+            limpiarCambio('info');
+            limpiarCambio('empresa');
+            limpiarCambio('filtros');
+            limpiarCambio('palabras');
 
             if (accion === 'tab' && destTab) {
                 setTimeout(() => {
@@ -2646,15 +2853,6 @@ document.addEventListener('DOMContentLoaded', () => {
             abrirModalSalidaPestana('navegar', getNombreSeccionesConCambios(), link.href);
         }
     }, true);
-
-    // Diálogo nativo al recargar o cerrar pestaña
-    window.addEventListener('beforeunload', (event) => {
-        if (tieneCambiosPendientes()) {
-            event.preventDefault();
-            event.returnValue = '';
-            return '';
-        }
-    });
 });
 
 function aplicarCambioPestanaDirecto(tabId) {

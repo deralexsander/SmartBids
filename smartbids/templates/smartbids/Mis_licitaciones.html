@@ -29,16 +29,10 @@
         <div class="mis-lic__toolbar">
         {% if suscriptor_activo %}
         <div role="tablist" aria-label="Filtrar licitaciones por sección" class="mis-lic__follow-filters">
-            <a href="{% url 'mis_licitaciones' %}?tab=todas" role="tab" aria-selected="{% if tab_activa == 'todas' %}true{% else %}false{% endif %}" aria-current="{% if tab_activa == 'todas' %}page{% endif %}" class="btn {% if tab_activa == 'todas' %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
-                <i class="fa-solid fa-list-ul"></i> <span>Todas</span>
+            <a href="{% url 'mis_licitaciones' %}" role="tab" aria-selected="{% if not solo_seguidas %}true{% else %}false{% endif %}" aria-current="{% if not solo_seguidas %}page{% endif %}" class="btn {% if not solo_seguidas %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
+                <i class="fa-solid fa-list-ul"></i> <span>Todos</span>
             </a>
-            <a href="{% url 'mis_licitaciones' %}?tab=claves" role="tab" aria-selected="{% if tab_activa == 'claves' %}true{% else %}false{% endif %}" aria-current="{% if tab_activa == 'claves' %}page{% endif %}" class="btn {% if tab_activa == 'claves' %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
-                <i class="fa-solid fa-key"></i> <span>Con palabras clave</span>
-                {% if match_perfil > 0 %}
-                <span class="mis-lic__badge-count" style="margin-left: 6px; background: rgba(30,196,152,0.2); padding: 2px 7px; border-radius: 10px; font-size: 0.78rem;">{{ match_perfil }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" role="tab" aria-selected="{% if tab_activa == 'seguidas' %}true{% else %}false{% endif %}" aria-current="{% if tab_activa == 'seguidas' %}page{% endif %}" class="btn {% if tab_activa == 'seguidas' %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
+            <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" role="tab" aria-selected="{% if solo_seguidas %}true{% else %}false{% endif %}" aria-current="{% if solo_seguidas %}page{% endif %}" class="btn {% if solo_seguidas %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
                 <i class="fa-solid fa-bookmark"></i> <span>Mis seguidas (<span id="seguimientos-count">{{ cantidad_seguidas }}</span>)</span>
             </a>
         </div>
@@ -54,22 +48,8 @@
             </div>
         </div>
 
-        {% if tab_activa == 'claves' and not tiene_palabras_perfil %}
-        <div class="dashboard-card mis-lic__empty-card" style="text-align: center; padding: 2.2rem 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--accent-green);">
-            <i class="fa-solid fa-key" style="font-size: 2.2rem; color: var(--accent-green); margin-bottom: 0.8rem; display: inline-block;"></i>
-            <h3 style="color: var(--dark-green); margin-bottom: 0.4rem;">No tienes palabras clave configuradas en tu perfil</h3>
-            <p style="color: var(--gray-text); max-width: 580px; margin: 0 auto 1.2rem; font-size: 0.92rem;">
-                Para filtrar automáticamente las licitaciones según tu rubro en esta pestaña, ingresa a tu perfil y define tus palabras clave y categorías.
-            </p>
-            <a href="{% url 'perfil' %}" class="btn btn-primary">
-                <i class="fa-solid fa-sliders"></i> Configurar en Perfil
-            </a>
-        </div>
-        {% endif %}
-
         <form method="get" action="{% url 'mis_licitaciones' %}" class="dashboard-card mis-lic__search-form">
-            {% if tab_activa == 'claves' %}<input type="hidden" name="tab" value="claves">{% endif %}
-            {% if tab_activa == 'seguidas' %}<input type="hidden" name="solo_seguidas" value="1">{% endif %}
+            {% if solo_seguidas %}<input type="hidden" name="solo_seguidas" value="1">{% endif %}
             <label class="mis-lic__filter-label mis-lic__filter-label--search">
                 Buscar
                 <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Código, nombre o descripción" class="mis-lic__filter-input">
@@ -87,16 +67,31 @@
                 Tipo
                 <select name="tipo" class="mis-lic__filter-input">
                     <option value="">Todos</option>
-                    {% for tipo_licitacion in tipos_licitacion %}
-                    <option value="{{ tipo_licitacion }}" {% if request.GET.tipo == tipo_licitacion %}selected{% endif %}>{{ tipo_licitacion }}</option>
-                    {% endfor %}
+                    <optgroup label="Licitaciones Públicas">
+                        {% for item in tipos_procedimiento.publicas %}
+                        <option value="{{ item.codigo }}" {% if request.GET.tipo == item.codigo %}selected{% endif %}>{{ item.codigo }} – {{ item.tramo }}</option>
+                        {% empty %}
+                        <option value="L1" {% if request.GET.tipo == 'L1' %}selected{% endif %}>L1 – Menor a 100 UTM</option>
+                        <option value="LE" {% if request.GET.tipo == 'LE' %}selected{% endif %}>LE – 100 a 1.000 UTM</option>
+                        <option value="LP" {% if request.GET.tipo == 'LP' %}selected{% endif %}>LP – 1.000 a 2.000 UTM</option>
+                        <option value="LQ" {% if request.GET.tipo == 'LQ' %}selected{% endif %}>LQ – 2.000 a 5.000 UTM</option>
+                        <option value="LR" {% if request.GET.tipo == 'LR' %}selected{% endif %}>LR – Mayor a 5.000 UTM</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="Licitaciones Privadas">
+                        {% for item in tipos_procedimiento.privadas %}
+                        <option value="{{ item.codigo }}" {% if request.GET.tipo == item.codigo %}selected{% endif %}>{{ item.codigo }} – {{ item.tramo }}</option>
+                        {% empty %}
+                        <option value="E2" {% if request.GET.tipo == 'E2' %}selected{% endif %}>E2 – Menor a 100 UTM</option>
+                        <option value="CO" {% if request.GET.tipo == 'CO' %}selected{% endif %}>CO – 100 a 1.000 UTM</option>
+                        <option value="B2" {% if request.GET.tipo == 'B2' %}selected{% endif %}>B2 – Mayor a 1.000 UTM</option>
+                        {% endfor %}
+                    </optgroup>
                 </select>
             </label>
             <div class="mis-lic__filter-actions">
                 <button type="submit" class="btn btn-primary mis-lic__filter-submit"><i class="fa-solid fa-filter"></i> Aplicar</button>
-                {% if tab_activa == 'claves' %}
-                <a href="{% url 'mis_licitaciones' %}?tab=claves" class="btn btn-outline mis-lic__filter-clear">Limpiar</a>
-                {% elif tab_activa == 'seguidas' %}
+                {% if solo_seguidas %}
                 <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" class="btn btn-outline mis-lic__filter-clear">Limpiar</a>
                 {% else %}
                 <a href="{% url 'mis_licitaciones' %}" class="btn btn-outline mis-lic__filter-clear">Limpiar</a>
@@ -124,7 +119,7 @@
                 </div>
 
                 <!-- KPI 2: Match con Perfil -->
-                <div class="mis-lic__metric mis-lic__metric--divided">
+                <a href="{% if match_perfil > 0 %}#seccion-match-perfil{% else %}{% url 'perfil' %}{% endif %}" class="mis-lic__metric mis-lic__metric--divided mis-lic__metric-clickable" style="text-decoration: none; color: inherit;" title="Ver procesos que hacen Match con tu Perfil">
                     <div class="profile-avatar-circle mis-lic__metric-icon mis-lic__metric-icon--primary">
                         <i class="fa-solid fa-bullseye"></i>
                     </div>
@@ -134,10 +129,10 @@
                         </span>
                         <div class="mis-lic__metric-caption">
                             <span class="mis-lic__metric-value mis-lic__metric-value--accent">{{ match_perfil|default:0 }}</span>
-                            <span class="mis-lic__metric-unit">Filtradas</span>
+                            <span class="mis-lic__metric-unit">Filtrada{{ match_perfil|pluralize:"s" }}</span>
                         </div>
                     </div>
-                </div>
+                </a>
 
                 <!-- KPI 3: Cierre Próximo -->
                 <div class="mis-lic__metric mis-lic__metric--divided">
@@ -174,13 +169,151 @@
             </div>
         </div>
 
-        <!-- Encabezado de la Sección de Oportunidades -->
+        <!-- SECCIÓN 1: Match con Perfil (Separada de Procesos de Compra Disponibles) -->
+        {% if not solo_seguidas and licitaciones_perfil %}
+        <div class="mis-lic__match-section" id="seccion-match-perfil">
+            <div class="mis-lic__match-header">
+                <div class="mis-lic__match-title">
+                    <i class="fa-solid fa-bullseye" style="color: var(--accent-green);"></i>
+                    Match con Perfil
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="mis-lic__match-badge">
+                        <i class="fa-solid fa-check-double"></i> {{ match_perfil }} Filtrada{{ match_perfil|pluralize:"s" }} para tu empresa
+                    </span>
+                </div>
+            </div>
+
+            <div class="mis-lic__list">
+                {% for lic in licitaciones_perfil %}
+                <div class="dashboard-card mis-lic__card mis-lic__card--match{% if forloop.counter > 5 %} mis-lic__card--match-extra{% endif %}" data-licitacion-card{% if forloop.counter > 5 %} style="display: none;"{% endif %}>
+                    <div class="mis-lic__card-layout">
+                        
+                        <!-- Información Principal (Izquierda) -->
+                        <div class="mis-lic__card-main">
+                            
+                            <!-- Badges y Código -->
+                            <div class="mis-lic__card-badges">
+                                <span class="mis-lic__code">
+                                    {{ lic.lic_codigo }}
+                                </span>
+                                <span class="mis-lic__badge-match-pill">
+                                    <i class="fa-solid fa-bullseye"></i> Match Perfil
+                                </span>
+                                <span class="dash-badge mis-lic__type-badge">
+                                    {{ lic.lic_tipo_licitacion|default:"N/D" }}
+                                </span>
+                                <span class="dash-badge licitacion-state-badge{% if lic.estado_proceso == 'cerrada' %} licitacion-state-badge--closed{% endif %}">{{ lic.estado_proceso_label }}</span>
+                                <span class="mis-lic__organization">
+                                    • {{ lic.lic_codigo_ucom.ucom_descripcion|default:"Unidad de Compra" }}
+                                </span>
+                            </div>
+
+                            <!-- Nombre / Título -->
+                            <h3 class="mis-lic__card-title">
+                                {{ lic.lic_nombre }}
+                            </h3>
+
+                            <!-- Descripción desplegable limpia -->
+                            {% if lic.lic_descripcion %}
+                            <details class="mis-lic__description-details">
+                                <summary class="mis-lic__description-summary">
+                                    <i class="fa-solid fa-angle-right mis-lic__description-icon"></i> Ver descripción completa
+                                </summary>
+                                <p class="mis-lic__description">
+                                    {{ lic.lic_descripcion }}
+                                </p>
+                            </details>
+                            {% endif %}
+
+                            <!-- Metadata Adicional -->
+                            <div class="mis-lic__metadata">
+                                <span>
+                                    <i class="fa-solid fa-location-dot mis-lic__icon"></i>
+                                    {{ lic.lic_codigo_ucom.ucom_codigo_comuna|default:"Chile" }}
+                                </span>
+                                <span>
+                                    <i class="fa-solid fa-building mis-lic__icon"></i>
+                                    {{ lic.lic_codigo_ucom.ucom_direccion|default:"Sin dirección" }}
+                                </span>
+                                {% if lic.lic_codigo_ucom.ucom_rut %}
+                                <span>
+                                    <strong>RUT:</strong> {{ lic.lic_codigo_ucom.ucom_rut }}
+                                </span>
+                                {% endif %}
+                            </div>
+
+                        </div>
+
+                        <!-- Presupuesto y Botón de Acción (Derecha) -->
+                        <div class="mis-lic__card-actions">
+                            <div class="mis-lic__budget">
+                                <span class="mis-lic__budget-label">
+                                    Presupuesto
+                                </span>
+                                <div class="mis-lic__budget-value">
+                                    {% if lic.lic_presupuesto %}
+                                        ${{ lic.lic_presupuesto|miles_chilenos }}
+                                    {% else %}
+                                        S/M
+                                    {% endif %}
+                                </div>
+                                <small class="mis-lic__closing-date{% if lic.es_cierre_proximo %} mis-lic__closing-date--urgent{% endif %}">
+                                    <i class="{% if lic.es_cierre_proximo %}fa-solid fa-circle-exclamation{% else %}fa-regular fa-clock{% endif %}"></i> Cierre: {{ lic.lic_fecha_cierre|default:"Pendiente" }}
+                                </small>
+                            </div>
+
+                            <div class="mis-lic__card-buttons">
+                                {% if suscriptor_activo and lic.lic_codigo in seguidos %}
+                                <form method="post" action="{% url 'seguimiento_licitacion' lic.lic_codigo %}" data-seguimiento-form>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="return_to" value="{{ request.get_full_path }}">
+                                    <input type="hidden" name="accion" value="dejar">
+                                    <button type="submit" class="btn btn-outline mis-lic__follow-button" data-seguir-label="Seguir" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-outline"><i class="fa-solid fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Dejar de seguir</span></button>
+                                </form>
+                                {% elif suscriptor_activo and lic.estado_proceso != 'cerrada' %}
+                                <form method="post" action="{% url 'seguimiento_licitacion' lic.lic_codigo %}" data-seguimiento-form>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="return_to" value="{{ request.get_full_path }}">
+                                    <input type="hidden" name="accion" value="seguir">
+                                    <button type="submit" class="btn btn-outline mis-lic__follow-button" data-seguir-label="Seguir" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-outline"><i class="fa-regular fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Seguir</span></button>
+                                </form>
+                                {% endif %}
+                                <a href="{% url 'detalle_licitacion' lic.lic_codigo %}?return_to={{ request.get_full_path|urlencode }}" class="btn btn-primary mis-lic__detail-link">
+                                    <i class="fa-solid fa-eye"></i> Ver ficha
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if licitaciones_perfil|length > 5 %}
+            <div class="mis-lic__match-toggle-wrap" style="text-align: center; margin-top: 1.25rem;">
+                <button type="button" class="btn btn-outline" id="btn-toggle-match-cards" style="font-size: 0.85rem; padding: 0.5rem 1.4rem; border-radius: 20px; font-weight: 600;">
+                    <i class="fa-solid fa-chevron-down me-1"></i> Mostrar {{ licitaciones_perfil|length|add:"-5" }} más con match
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- SECCIÓN 2: Procesos de Compra Disponibles -->
         <div class="dashboard-header mis-lic__section-header">
             <div class="dash-title mis-lic__section-title">
                 <i class="fa-solid fa-list-check mis-lic__icon"></i>
                 Procesos de Compra Disponibles
             </div>
-            <span class="dash-badge">{% if solo_seguidas %}Tus procesos seguidos{% elif request.GET.q or request.GET.estado or request.GET.tipo %}Resultados filtrados{% else %}Todos los procesos{% endif %}</span>
+            <span class="dash-badge">
+                {% if solo_seguidas %}
+                    Tus procesos seguidos
+                {% elif request.GET.q or request.GET.estado or request.GET.tipo %}
+                    Resultados filtrados
+                {% else %}
+                    Todos los procesos
+                {% endif %}
+            </span>
         </div>
         <div id="seguimiento-feedback" role="status" aria-live="polite" hidden class="mis-lic__feedback"></div>
 
@@ -256,8 +389,8 @@
                                     S/M
                                 {% endif %}
                             </div>
-                            <small class="mis-lic__closing-date">
-                                <i class="fa-regular fa-clock"></i> Cierre: {{ lic.lic_fecha_cierre|default:"Pendiente" }}
+                            <small class="mis-lic__closing-date{% if lic.es_cierre_proximo %} mis-lic__closing-date--urgent{% endif %}">
+                                <i class="{% if lic.es_cierre_proximo %}fa-solid fa-circle-exclamation{% else %}fa-regular fa-clock{% endif %}"></i> Cierre: {{ lic.lic_fecha_cierre|default:"Pendiente" }}
                             </small>
                         </div>
 

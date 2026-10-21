@@ -26,9 +26,37 @@ from .models import Suscriptor, Mensajeria, Empresa, Preferencia, EstadoSuscript
 logger = logging.getLogger(__name__)
 
 CODIGOS_OTP_TEMPORALES = {}
-OTP_EXPIRACION_SEGUNDOS = 600
-OTP_REENVIO_SEGUNDOS = 60
-OTP_MAXIMOS_POR_HORA = 5
+OTP_EXPIRACION_SEGUNDOS = 600   # 10 minutos de validez máxima
+OTP_MAX_INTENTOS_FALLIDOS = 5    # Máximo 5 intentos antes de revocar el código
+OTP_REENVIO_SEGUNDOS = 60        # 60 segundos de enfriamiento entre solicitudes
+OTP_MAXIMOS_POR_HORA = 5         # Límite de 5 envíos por hora por cliente/IP
+
+
+def _calcular_hash_otp(email: str, codigo: str) -> str:
+    """Calcula un hash criptográfico SHA-256 con salt para nunca almacenar OTPs en texto claro en memoria."""
+    salt = getattr(settings, 'SECRET_KEY', 'smartbids_salt_otp')[:32]
+    payload = f"{str(email).strip().lower()}:{str(codigo).strip()}:{salt}".encode('utf-8')
+    return hashlib.sha256(payload).hexdigest()
+
+
+def purgar_codigos_otp_expirados() -> int:
+    """Elimina proactivamente de la memoria todos los códigos OTP que hayan superado los 10 minutos de expiración."""
+    ahora = timezone.now()
+    limite = timedelta(seconds=OTP_EXPIRACION_SEGUNDOS)
+    expirados = [
+        email for email, reg in list(CODIGOS_OTP_TEMPORALES.items())
+        if ahora - reg.get('creado_el', ahora) > limite
+    ]
+    for email in expirados:
+        CODIGOS_OTP_TEMPORALES.pop(email, None)
+    return len(expirados)
+
+
+def revocar_codigo_otp(email: str) -> bool:
+    """Revoca e invalida inmediatamente cualquier código OTP activo para el correo indicado."""
+    if not email:
+        return False
+    return CODIGOS_OTP_TEMPORALES.pop(str(email).strip().lower(), None) is not None
 
 
 def _firebase_admin_app():
@@ -166,14 +194,20 @@ def enviar_codigo_login(request):
                 'mensaje': f'Espera {segundos_espera} segundos antes de solicitar otro código.'
             }, status=429, headers={'Retry-After': str(segundos_espera)})
 
-        # Generar código criptográfico de 6 dígitos
+        # Purgar códigos viejos expirados antes de generar uno nuevo
+        purgar_codigos_otp_expirados()
+
+        # Generar código criptográfico seguro de 6 dígitos
         codigo_seguridad = f"{secrets.randbelow(900000) + 100000}"
+        hash_seguridad = _calcular_hash_otp(email_destinatario, codigo_seguridad)
+
         CODIGOS_OTP_TEMPORALES[email_destinatario] = {
-            'codigo': codigo_seguridad,
-            'creado_el': timezone.now()
+            'hash': hash_seguridad,
+            'creado_el': timezone.now(),
+            'intentos_fallidos': 0,
         }
 
-        asunto = f'🔐 Tu código de acceso SmartBids: {codigo_seguridad}'
+        asunto = 'Tu código de acceso SmartBids'
         mensaje_plano = f'Tu código de verificación para SmartBids es: {codigo_seguridad}\n\nExpira en 10 minutos.'
 
         html_mensaje = f"""
@@ -246,24 +280,71 @@ def validar_codigo_login(request):
         return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
 
     try:
+        purgar_codigos_otp_expirados()
+
         data = json.loads(request.body.decode('utf-8'))
-        email = data.get('email')
+        email_raw = data.get('email')
         uid = data.get('uid')
         codigo = data.get('codigo')
         session_token = data.get('session_token')
 
+        if not email_raw or not uid or not codigo or not session_token:
+            return JsonResponse({'status': 'error', 'mensaje': 'Parámetros incompletos.'}, status=400)
+
+        email = str(email_raw).strip().lower()
+        codigo_limpio = str(codigo).strip()
+
+        # Validación estricta de formato: exactamente 6 dígitos numéricos
+        if not re.fullmatch(r'\d{6}', codigo_limpio):
+            return JsonResponse({'status': 'error', 'mensaje': 'El código debe tener exactamente 6 dígitos numéricos.'}, status=400)
+
         # 1. Validar OTP en memoria
         registro = CODIGOS_OTP_TEMPORALES.get(email)
-        if not registro or registro['codigo'] != str(codigo):
+        if not registro:
             return JsonResponse({'status': 'error', 'mensaje': 'Código incorrecto o expirado.'}, status=400)
 
-        if timezone.now() - registro['creado_el'] > timedelta(seconds=OTP_EXPIRACION_SEGUNDOS):
+        # 2. Comprobar expiración (10 minutos)
+        if timezone.now() - registro.get('creado_el', timezone.now()) > timedelta(seconds=OTP_EXPIRACION_SEGUNDOS):
             CODIGOS_OTP_TEMPORALES.pop(email, None)
-            return JsonResponse({'status': 'error', 'mensaje': 'Código incorrecto o expirado.'}, status=400)
+            return JsonResponse({'status': 'error', 'mensaje': 'El código ha expirado. Solicita uno nuevo.'}, status=400)
 
+        # 3. Comprobar intentos fallidos previos (Anti-Brute Force)
+        intentos = registro.get('intentos_fallidos', 0)
+        if intentos >= OTP_MAX_INTENTOS_FALLIDOS:
+            CODIGOS_OTP_TEMPORALES.pop(email, None)
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'Has superado el número máximo de intentos permitidos. Solicita un nuevo código por seguridad.'
+            }, status=429)
+
+        # 4. Comparación en tiempo constante con hash criptográfico
+        hash_calculado = _calcular_hash_otp(email, codigo_limpio)
+        hash_esperado = registro.get('hash')
+
+        # Compatibilidad si el registro almacena 'codigo' plano (e.g. tests legados)
+        if not hash_esperado and 'codigo' in registro:
+            hash_esperado = _calcular_hash_otp(email, registro['codigo'])
+
+        coincide = secrets.compare_digest(hash_esperado, hash_calculado) if hash_esperado else False
+
+        if not coincide:
+            registro['intentos_fallidos'] = intentos + 1
+            restantes = OTP_MAX_INTENTOS_FALLIDOS - registro['intentos_fallidos']
+            if restantes <= 0:
+                CODIGOS_OTP_TEMPORALES.pop(email, None)
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'Has superado el número máximo de intentos permitidos. Solicita un nuevo código por seguridad.'
+                }, status=429)
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Código incorrecto. Te quedan {restantes} intento{"s" if restantes > 1 else ""}.'
+            }, status=400)
+
+        # 5. Código válido: Invalidador inmediato de un solo uso (One-Time-Use / Anti-Replay)
         CODIGOS_OTP_TEMPORALES.pop(email, None)
 
-        # 2. Guardar token en PostgreSQL (crear si no existe por algún fallo previo)
+        # 6. Guardar token en PostgreSQL (crear si no existe por algún fallo previo)
         ahora = timezone.now()
         estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=2).first()
 
@@ -353,14 +434,13 @@ def _enviar_email_activacion(email_destinatario, app=None, request=None):
     )
     enlace_activacion = _construir_enlace_accion_web(enlace_firebase, request=request, mode_override='verifyEmail')
 
-    asunto = 'Activa tu cuenta SmartBids y comienza a ganar licitaciones'
+    asunto = 'Activa tu cuenta en SmartBids'
     mensaje_plano = (
         f'¡Hola!\n\n'
         f'Te damos la bienvenida a SmartBids. Activa tu cuenta ({email_destinatario}) '
         f'abriendo este enlace:\n{enlace_activacion}\n\n'
         f'Una vez activada, podrás comenzar a usar la plataforma.\n\n'
-        f'Nota importante: Si no encuentras este correo en tu bandeja principal, '
-        f'por favor revisa tu carpeta de SPAM o correo no deseado.'
+        f'Nota: Si no ves este correo en tu bandeja principal, revisa la carpeta de correo no deseado.'
     )
 
     html_mensaje = f"""
@@ -547,7 +627,7 @@ def reenviar_correo_activacion(request):
         return JsonResponse({'status': 'error', 'mensaje': f'Error en el servidor: {str(e)}'}, status=500)
 
 def _enviar_email_recuperacion_password(email_destinatario, enlace_reset):
-    asunto = '🔒 Restablece tu contraseña en SmartBids'
+    asunto = 'Restablece tu contraseña en SmartBids'
     mensaje_plano = (
         f'¡Hola!\n\n'
         f'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta ({email_destinatario}).\n\n'
@@ -556,8 +636,7 @@ def _enviar_email_recuperacion_password(email_destinatario, enlace_reset):
         f'Por seguridad, este enlace es de un solo uso y expirará pronto.\n'
         f'Si tú no realizaste esta solicitud, puedes ignorar este correo de forma segura; '
         f'tu contraseña actual no cambiará.\n\n'
-        f'Nota importante: Si no encuentras este correo en tu bandeja principal, '
-        f'por favor revisa tu carpeta de SPAM o correo no deseado.\n\n'
+        f'Nota: Si no ves este correo en tu bandeja principal, revisa la carpeta de correo no deseado.\n\n'
         f'Saludos cordiales,\n'
         f'El equipo de Seguridad de SmartBids'
     )
@@ -708,7 +787,7 @@ def enviar_correo_cambio_password(request):
         except ValidationError:
             return JsonResponse({'status': 'error', 'mensaje': 'El formato del correo ingresado no es válido.'}, status=400)
 
-        asunto = '🔒 Tu contraseña en SmartBids ha sido modificada'
+        asunto = 'Tu contraseña en SmartBids ha sido modificada'
         mensaje_plano = (
             f"Hola,\n\n"
             f"Te informamos que la contraseña de tu cuenta ({email_destinatario}) ha sido actualizada exitosamente.\n\n"

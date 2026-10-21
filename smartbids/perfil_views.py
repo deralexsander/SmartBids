@@ -10,8 +10,9 @@ from django.db import DataError, DatabaseError
 from django.db.models import Q, Value
 from django.db.models.functions import Replace, Upper
 
+from django.core.cache import cache
 from .models import Suscriptor, Empresa, Preferencia, EstadoSuscriptor
-from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor
+from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor, GrupoProducto, Nivel1Producto
 from .models.procurement import UnidadCompra
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,35 @@ def _buscar_empresa_por_rut(rut):
         rut_normalizado=rut_db_normalizado
     ).filter(rut_normalizado__iexact=rut_normalizado).first()
 
+
+def _normalizar_codigo_comuna(valor):
+    """
+    Normaliza el valor recibido para la comuna a su código oficial de 5 dígitos.
+    Maneja formatos como:
+      - '13101'
+      - '13101 - Santiago'
+      - 'Santiago (13101)'
+      - 'Santiago' (búsqueda por nombre)
+    Garantiza que nunca exceda 5 caracteres para evitar DataError en PostgreSQL.
+    """
+    if not valor:
+        return ''
+    val = str(valor).strip()
+    match = re.search(r'\b(\d{5})\b', val)
+    if match:
+        codigo = match.group(1)
+        if Comuna.objects.filter(codigo_comuna=codigo).exists():
+            return codigo
+    if len(val) == 5 and Comuna.objects.filter(codigo_comuna=val).exists():
+        return val
+    comuna_obj = Comuna.objects.filter(nombre_comuna__iexact=val).first()
+    if comuna_obj:
+        return comuna_obj.codigo_comuna
+    comuna_flex = Comuna.objects.filter(nombre_comuna__icontains=val).first()
+    if comuna_flex:
+        return comuna_flex.codigo_comuna
+    return val[:5]
+
 ORDEN_GEOGRAFICO_CHILE = {
     '15': 1, 'XV': 1,
     '01': 2, '1': 2, 'I': 2,
@@ -73,61 +103,8 @@ ORDEN_GEOGRAFICO_CHILE = {
     '12': 16, 'XII': 16,
 }
 
-NOMBRES_SEGMENTOS_ONU = {
-    '10': 'Material Vivo Animal y Vegetal',
-    '11': 'Materiales de Minerales y Tejidos no Comestibles',
-    '12': 'Productos Químicos y Gases Químicos',
-    '13': 'Resina, Caucho y Espuma',
-    '14': 'Materiales y Productos de Papel',
-    '15': 'Combustibles, Lubricantes y Materiales Anticorrosivos',
-    '20': 'Maquinaria y Accesorios de Minería y Perforación',
-    '21': 'Maquinaria y Accesorios para Agricultura y Pesca',
-    '22': 'Maquinaria pesada de Construcción y Edificación',
-    '23': 'Maquinaria de Procesamiento Industrial',
-    '24': 'Empaque, Envases y Contenedores',
-    '25': 'Vehículos Comerciales, Militares y Privados',
-    '26': 'Sistemas de Potencia y Componentes Eléctricos',
-    '27': 'Herramientas y Maquinaria General',
-    '30': 'Estructuras, Edificación y Materiales de Construcción',
-    '31': 'Artículos de Fabricación y Componentes',
-    '32': 'Componentes Electrónicos',
-    '39': 'Iluminación y Componentes Eléctricos',
-    '40': 'Distribución y Acondicionamiento de Fluidos',
-    '41': 'Equipamiento de Laboratorio y Científico',
-    '42': 'Equipos y Suministros Médicos',
-    '43': 'Tecnología de la Información, Telecomunicaciones y Software',
-    '44': 'Equipos y Suministros de Oficina',
-    '45': 'Equipamiento para Artes, Imprenta y Fotografía',
-    '46': 'Seguridad, Vigilancia y Primeros Auxilios',
-    '47': 'Limpieza y Eliminación de Residuos',
-    '50': 'Alimentos, Bebidas y Tabaco',
-    '51': 'Medicamentos y Productos Farmacéuticos',
-    '52': 'Muebles, Mobiliario y Accesorios Domésticos',
-    '53': 'Ropa, Calzado y Equipaje',
-    '55': 'Publicaciones, Medios Impresos y Audiovisuales',
-    '56': 'Construcciones prefabricadas',
-    '60': 'Instrumentos Musicales, Juegos y Deportes',
-    '70': 'Servicios de Recursos Vivos (Agricultura y Pesca)',
-    '71': 'Servicios de Minería, Petróleo y Gas',
-    '72': 'Servicios de Construcción y Mantenimiento',
-    '73': 'Servicios de Producción y Fabricación Industrial',
-    '76': 'Servicios de Limpieza, Descontaminación y Residuos',
-    '77': 'Servicios de Medio Ambiente',
-    '78': 'Servicios de Transporte, Correo y Almacenamiento',
-    '80': 'Servicios de Gestión, Administración y Consultoría',
-    '81': 'Servicios Profesionales de Ingeniería e Investigación',
-    '82': 'Servicios Editoriales, Diseño y Gráficos',
-    '83': 'Servicios Públicos y de Obras Públicas',
-    '84': 'Servicios Financieros, Seguros y Contables',
-    '85': 'Servicios Sanitarios y de Salud Humana',
-    '86': 'Servicios Educativos y de Capacitación',
-    '90': 'Servicios de Viajes, Alojamiento y Banquetes',
-    '91': 'Servicios Personales y Domésticos',
-    '92': 'Servicios de Seguridad y Defensa',
-    '93': 'Servicios Políticos, Cívicos y Gubernamentales',
-    '94': 'Organizaciones y Clubes',
-    '95': 'Terrenos, Bienes Inmuebles y Estructuras',
-}
+CACHE_KEY_PRODUCTOS_ARBOL = 'catalogos_productos_arbol_v2'
+
 
 
 def normalizar_cadena_simple(texto: str) -> str:
@@ -181,6 +158,13 @@ def catalogos_preferencias(request):
 
         return JsonResponse({'status': 'ok', 'sugerencia': sugerencia})
 
+    if tipo == 'tipos_licitacion':
+        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+        return JsonResponse({
+            'status': 'ok',
+            'datos': obtener_catalogo_tipos_licitacion()
+        })
+
     if tipo == 'territorio':
         regiones_query = list(Region.objects.values('codigo_region', 'nombre_region'))
         provincias = list(
@@ -217,162 +201,176 @@ def catalogos_preferencias(request):
     if tipo == 'productos_arbol':
         try:
             q_filtro = request.GET.get('q', '').strip()
+
+            if not q_filtro:
+                cached_data = cache.get(CACHE_KEY_PRODUCTOS_ARBOL)
+                if cached_data:
+                    return JsonResponse(cached_data)
+
+            # Consultar grupos y niveles desde el catálogo en base de datos
+            grupos_qs = GrupoProducto.objects.all().order_by('codigo_grupo_producto')
+            grupos_map = {}
+            for g in grupos_qs:
+                cod_grp = str(g.codigo_grupo_producto).strip()
+                grupos_map[cod_grp] = {
+                    'codigo_grupo': cod_grp,
+                    'nombre_grupo': g.nombre_grupo_producto.strip(),
+                    'niveles': {}
+                }
+
+            niveles_qs = Nivel1Producto.objects.all().order_by('codigo_nivel1')
+            niveles_map = {}
+            for n in niveles_qs:
+                cod_n1 = str(n.codigo_nivel1).strip()
+                cod_grp = str(n.codigo_grupo_producto_id or '').strip()
+                n_info = {
+                    'codigo_nivel1': cod_n1,
+                    'descripcion': (n.descripcion or f"Nivel {cod_n1}").strip(),
+                    'codigo_grupo': cod_grp,
+                    'productos': []
+                }
+                niveles_map[cod_n1] = n_info
+                if cod_grp in grupos_map:
+                    grupos_map[cod_grp]['niveles'][cod_n1] = n_info
+                else:
+                    # Agrupar en grupo de reserva si existiera
+                    grp_fallback = '21' if '21' in grupos_map else (list(grupos_map.keys())[0] if grupos_map else '00')
+                    if grp_fallback in grupos_map:
+                        grupos_map[grp_fallback]['niveles'][cod_n1] = n_info
+
             query_base = Producto.objects.exclude(descripcion__isnull=True).exclude(descripcion__exact='')
 
             if q_filtro:
                 query_base = query_base.filter(
-                    Q(descripcion__icontains=q_filtro) | Q(codigo_producto__icontains=q_filtro)
-                )[:250]
+                    Q(descripcion__icontains=q_filtro) |
+                    Q(codigo_producto__icontains=q_filtro) |
+                    Q(glosa_nivel2__icontains=q_filtro) |
+                    Q(glosa_nivel3__icontains=q_filtro) |
+                    Q(glosa_nivel4__icontains=q_filtro)
+                )[:400]
             else:
                 query_base = query_base.order_by('codigo_producto')
 
-            prods = list(query_base.values('codigo_producto', 'descripcion'))
+            campos_prod = [
+                'codigo_producto', 'descripcion', 'nivel1_id',
+                'nivel2', 'nivel3', 'nivel4',
+                'glosa_nivel2', 'glosa_nivel3', 'glosa_nivel4'
+            ]
+            prods = list(query_base.values(*campos_prod))
 
-            rubros_map = {}
             for p in prods:
                 cod = str(p['codigo_producto']).strip()
                 desc_raw = str(p['descripcion'] or '').replace('\r', ' ').replace('\n', ' ')
                 desc = re.sub(r'\s+', ' ', desc_raw).strip()
 
-                if not desc or desc in ['1°', '1a S', '1era', '1.1']:
-                    desc = f"Producto ONU {cod}"
+                n1 = str(p.get('nivel1_id') or '').strip()
+                n2 = str(p.get('nivel2') or '').strip()
+                n3 = str(p.get('nivel3') or '').strip()
+                n4 = str(p.get('nivel4') or '').strip()
 
-                seg_code = cod[:2] if len(cod) >= 2 else '00'
-                nombre_seg = NOMBRES_SEGMENTOS_ONU.get(seg_code, f"Segmento ONU {seg_code}")
+                # Descomponer código soportando primer bloque de 3 dígitos (Obras Civiles MOP)
+                # o 2 dígitos (ONU estándar) si viniera sin FK
+                if not n1:
+                    if len(cod) >= 9:
+                        n1 = cod[:3]
+                        n2 = cod[3:5]
+                        n3 = cod[5:7]
+                        n4 = cod[7:9]
+                    else:
+                        n1 = cod[:2]
+                        n2 = cod[2:4]
+                        n3 = cod[4:6]
+                        n4 = cod[6:8]
 
-                if seg_code not in rubros_map:
-                    rubros_map[seg_code] = {
-                        'codigo_rubro': seg_code,
-                        'nombre_rubro': f"{seg_code} – {nombre_seg}",
-                        'productos': []
-                    }
-                rubros_map[seg_code]['productos'].append({
+                cod_fmt = f"{n1}-{n2}-{n3}-{n4}" if (n1 and n2 and n3 and n4) else cod
+
+                if not desc:
+                    desc = p.get('glosa_nivel4') or p.get('glosa_nivel3') or f"Producto {cod_fmt}"
+
+                prod_item = {
                     'codigo_producto': cod,
-                    'descripcion': desc
-                })
+                    'codigo_formateado': cod_fmt,
+                    'descripcion': desc,
+                    'nivel1': n1,
+                    'nivel2': n2,
+                    'nivel3': n3,
+                    'nivel4': n4,
+                    'glosa_nivel2': (p.get('glosa_nivel2') or '').strip(),
+                    'glosa_nivel3': (p.get('glosa_nivel3') or '').strip(),
+                    'glosa_nivel4': (p.get('glosa_nivel4') or '').strip(),
+                }
 
-            rubros_list = sorted(list(rubros_map.values()), key=lambda r: r['codigo_rubro'])
-            return JsonResponse({'status': 'ok', 'rubros': rubros_list})
+                if n1 in niveles_map:
+                    niveles_map[n1]['productos'].append(prod_item)
+                else:
+                    # En caso de nivel no registrado explícitamente en catálogo
+                    grp_key = '12' if n1 in ('101', '102', '103', '104') else '21'
+                    if grp_key not in grupos_map and grupos_map:
+                        grp_key = list(grupos_map.keys())[0]
+                    if grp_key in grupos_map:
+                        if n1 not in grupos_map[grp_key]['niveles']:
+                            grupos_map[grp_key]['niveles'][n1] = {
+                                'codigo_nivel1': n1,
+                                'descripcion': f"Nivel {n1}",
+                                'codigo_grupo': grp_key,
+                                'productos': []
+                            }
+                        grupos_map[grp_key]['niveles'][n1]['productos'].append(prod_item)
+
+            grupos_list = []
+            for grp_data in sorted(grupos_map.values(), key=lambda g: g['codigo_grupo']):
+                niveles_del_grupo = []
+                for niv_data in sorted(grp_data['niveles'].values(), key=lambda n: n['codigo_nivel1']):
+                    if niv_data['productos']:
+                        niveles_del_grupo.append({
+                            'codigo_nivel1': niv_data['codigo_nivel1'],
+                            'descripcion': niv_data['descripcion'],
+                            'productos': niv_data['productos']
+                        })
+
+                if niveles_del_grupo:
+                    grupos_list.append({
+                        'codigo_grupo': grp_data['codigo_grupo'],
+                        'nombre_grupo': grp_data['nombre_grupo'],
+                        'niveles': niveles_del_grupo
+                    })
+
+            # Formato de retrocompatibilidad plana para componentes anteriores
+            rubros_compat = []
+            for g in grupos_list:
+                for niv in g['niveles']:
+                    rubros_compat.append({
+                        'codigo_rubro': niv['codigo_nivel1'],
+                        'nombre_rubro': f"{niv['codigo_nivel1']} – {niv['descripcion']}",
+                        'codigo_grupo': g['codigo_grupo'],
+                        'nombre_grupo': g['nombre_grupo'],
+                        'productos': niv['productos']
+                    })
+
+            resp_data = {
+                'status': 'ok',
+                'grupos': grupos_list,
+                'rubros': rubros_compat
+            }
+
+            if not q_filtro:
+                cache.set(CACHE_KEY_PRODUCTOS_ARBOL, resp_data, 86400)
+
+            return JsonResponse(resp_data)
         except Exception as e:
             logger.error(f"[SmartBids] Error al generar árbol de productos: {str(e)}")
             return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
 
     if tipo == 'ucom_arbol':
         try:
+            from .licitacion_utils import obtener_catalogo_organismos_ucom
+            sector_filtro = request.GET.get('sector', '').strip()
             q_filtro = request.GET.get('q', '').strip()
-
-            ucom_cols = [f.name for f in UnidadCompra._meta.concrete_fields]
-            campo_org_ucom = None
-            for c in ['codigo_organismo', 'codigo_organismo_id', 'org_codigo', 'ucom_codigo_organismo']:
-                if c in ucom_cols:
-                    campo_org_ucom = c
-                    break
-
-            campos_ucom = ['codigo_unidad_compra', 'ucom_descripcion']
-            if campo_org_ucom:
-                campos_ucom.append(campo_org_ucom)
-
-            ucom_qs = UnidadCompra.objects.all()
-            if q_filtro:
-                ucom_qs = ucom_qs.filter(ucom_descripcion__icontains=q_filtro)[:350]
-            else:
-                ucom_qs = ucom_qs.order_by('codigo_unidad_compra')[:500]
-
-            ucom_list = list(ucom_qs.values(*campos_ucom))
-
-            org_cols = [f.name for f in Organismo._meta.concrete_fields]
-            campo_sec_org = None
-            for c in ['org_codigo_sector', 'org_codigo_sector_id', 'codigo_sector', 'codigo_sector_id']:
-                if c in org_cols:
-                    campo_sec_org = c
-                    break
-
-            campos_org = ['codigo_organismo', 'org_nombre']
-            if campo_sec_org:
-                campos_org.append(campo_sec_org)
-
-            org_map = {}
-            for o in Organismo.objects.values(*campos_org):
-                cod_str = str(o['codigo_organismo']).strip()
-                sec_val = o.get(campo_sec_org)
-                sec_val_str = str(sec_val).strip() if sec_val is not None else '0'
-                org_map[cod_str] = {
-                    'codigo_organismo': cod_str,
-                    'org_nombre': (o.get('org_nombre') or f"Organismo {cod_str}").strip(),
-                    'codigo_sector': sec_val_str
-                }
-
-            sec_map = {}
-            for s in Sector.objects.values('codigo_sector', 'nombre_sector'):
-                sec_map[str(s['codigo_sector']).strip()] = (s.get('nombre_sector') or '').strip()
-
-            sectores_dict = {}
-
-            if not ucom_list:
-                for org_id, org_info in org_map.items():
-                    sec_key = org_info['codigo_sector']
-                    sec_nombre = sec_map.get(sec_key) or ("Organismos Centralizados" if sec_key == '0' else f"Sector {sec_key}")
-                    if sec_key not in sectores_dict:
-                        sectores_dict[sec_key] = {
-                            'codigo_sector': sec_key,
-                            'nombre_sector': sec_nombre,
-                            'organismos_map': {}
-                        }
-                    sectores_dict[sec_key]['organismos_map'][org_id] = {
-                        'codigo_organismo': org_id,
-                        'nombre_organismo': org_info['org_nombre'],
-                        'unidades': [{
-                            'codigo_ucom': org_id,
-                            'descripcion': f"{org_info['org_nombre']} (Unidad Central)"
-                        }]
-                    }
-            else:
-                for u in ucom_list:
-                    cod_ucom = u['codigo_unidad_compra']
-                    desc_ucom = (u.get('ucom_descripcion') or f"Unidad {cod_ucom}").strip()
-                    org_key = str(u.get(campo_org_ucom) or '0').strip() if campo_org_ucom else '0'
-
-                    org_info = org_map.get(org_key)
-                    if org_info:
-                        org_nombre = org_info['org_nombre']
-                        sec_key = org_info['codigo_sector']
-                    else:
-                        org_nombre = f"Organismo {org_key}" if org_key != '0' else "Organismos Generales del Estado"
-                        sec_key = '0'
-
-                    sec_nombre = sec_map.get(sec_key) or ("Organismos Públicos Centralizados" if sec_key == '0' else f"Sector {sec_key}")
-
-                    if sec_key not in sectores_dict:
-                        sectores_dict[sec_key] = {
-                            'codigo_sector': sec_key,
-                            'nombre_sector': sec_nombre,
-                            'organismos_map': {}
-                        }
-
-                    orgs_dict = sectores_dict[sec_key]['organismos_map']
-                    if org_key not in orgs_dict:
-                        orgs_dict[org_key] = {
-                            'codigo_organismo': org_key,
-                            'nombre_organismo': org_nombre,
-                            'unidades': []
-                        }
-
-                    orgs_dict[org_key]['unidades'].append({
-                        'codigo_ucom': cod_ucom,
-                        'descripcion': desc_ucom
-                    })
-
-            sectores_final = []
-            for sec_data in sectores_dict.values():
-                organismos_list = sorted(list(sec_data['organismos_map'].values()), key=lambda o: o['nombre_organismo'])
-                sectores_final.append({
-                    'codigo_sector': sec_data['codigo_sector'],
-                    'nombre_sector': sec_data['nombre_sector'],
-                    'organismos': organismos_list
-                })
-
-            sectores_final = sorted(sectores_final, key=lambda s: s['nombre_sector'])
-            return JsonResponse({'status': 'ok', 'sectores': sectores_final})
+            data_ucom = obtener_catalogo_organismos_ucom(sector_codigo=sector_filtro or None, q=q_filtro or None)
+            return JsonResponse(data_ucom)
+        except Exception as e:
+            logger.error(f"[SmartBids] Error al generar árbol de unidades de compra: {str(e)}")
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
 
         except Exception as e:
             logger.error(f"[SmartBids] Error al generar árbol de unidades de compra: {str(e)}")
@@ -430,11 +428,46 @@ def obtener_perfil_suscriptor(request):
         comunas_detalle = [{'code': cod, 'label': mapa_comunas.get(cod, cod)} for cod in raw_comunas]
 
         raw_prods = to_list(pref.pref_productos) if pref else []
-        mapa_prods = {
-            str(p['codigo_producto']).strip(): p['descripcion']
-            for p in Producto.objects.filter(codigo_producto__in=raw_prods).values('codigo_producto', 'descripcion')
-        }
-        productos_detalle = [{'code': cod, 'label': f"{mapa_prods.get(cod, cod)} ({cod})" if cod in mapa_prods else cod} for cod in raw_prods]
+        mapa_prods = {}
+        if raw_prods:
+            prods_db = Producto.objects.filter(codigo_producto__in=raw_prods).values(
+                'codigo_producto', 'descripcion', 'nivel1_id', 'nivel2', 'nivel3', 'nivel4',
+                'glosa_nivel4', 'glosa_nivel3'
+            )
+            for p in prods_db:
+                cod = str(p['codigo_producto']).strip()
+                desc = (p.get('descripcion') or '').strip()
+                n1 = str(p.get('nivel1_id') or '').strip()
+                n2 = str(p.get('nivel2') or '').strip()
+                n3 = str(p.get('nivel3') or '').strip()
+                n4 = str(p.get('nivel4') or '').strip()
+                if not n1:
+                    n1 = cod[:3] if len(cod) >= 9 else cod[:2]
+                    n2 = cod[3:5] if len(cod) >= 9 else cod[2:4]
+                    n3 = cod[5:7] if len(cod) >= 9 else cod[4:6]
+                    n4 = cod[7:9] if len(cod) >= 9 else cod[6:8]
+                cod_fmt = f"{n1}-{n2}-{n3}-{n4}" if (n1 and n2 and n3 and n4) else cod
+                desc_final = desc or p.get('glosa_nivel4') or p.get('glosa_nivel3') or f"Producto {cod_fmt}"
+                mapa_prods[cod] = {
+                    'descripcion': desc_final,
+                    'formateado': cod_fmt
+                }
+
+        productos_detalle = []
+        for cod in raw_prods:
+            cod_str = str(cod).strip()
+            info = mapa_prods.get(cod_str)
+            if info:
+                label = f"{info['descripcion']} ({info['formateado']})"
+            else:
+                if len(cod_str) == 9:
+                    fmt = f"{cod_str[:3]}-{cod_str[3:5]}-{cod_str[5:7]}-{cod_str[7:9]}"
+                elif len(cod_str) == 8:
+                    fmt = f"{cod_str[:2]}-{cod_str[2:4]}-{cod_str[4:6]}-{cod_str[6:8]}"
+                else:
+                    fmt = cod_str
+                label = f"Producto {fmt}" if fmt != cod_str else cod_str
+            productos_detalle.append({'code': cod_str, 'label': label})
 
         raw_ucom = to_list(pref.pref_ucom) if pref else []
         ucom_ids = [int(x) for x in raw_ucom if str(x).isdigit()]
@@ -442,6 +475,10 @@ def obtener_perfil_suscriptor(request):
             str(u['codigo_unidad_compra']): u['ucom_descripcion']
             for u in UnidadCompra.objects.filter(codigo_unidad_compra__in=ucom_ids).values('codigo_unidad_compra', 'ucom_descripcion')
         }
+        faltantes = [cod for cod in ucom_ids if str(cod) not in mapa_ucom]
+        if faltantes:
+            for org in Organismo.objects.filter(codigo_organismo__in=faltantes).values('codigo_organismo', 'org_nombre'):
+                mapa_ucom[str(org['codigo_organismo'])] = org['org_nombre']
         ucom_detalle = [{'code': str(cod), 'label': mapa_ucom.get(str(cod), f"Unidad {cod}")} for cod in raw_ucom]
 
         nom_comuna_emp = ''
@@ -658,26 +695,42 @@ def actualizar_empresa_suscriptor(request):
                     'mensaje': f'Te has vinculado a la empresa. Administrada por {empresa_existente.emp_contacto_correo}. Solo lectura.'
                 })
 
-        codigo_comuna = (data.get('emp_codigo_comuna') or '').strip()
-        comuna_guardada = str(empresa_existente.emp_codigo_comuna_id or '').strip() if empresa_existente else ''
-        if comuna_guardada and codigo_comuna != comuna_guardada:
+        codigo_comuna_raw = (data.get('emp_codigo_comuna') or '').strip()
+        codigo_comuna = _normalizar_codigo_comuna(codigo_comuna_raw)
+
+        comuna_guardada_raw = getattr(empresa_existente, 'emp_codigo_comuna_id', None) if empresa_existente else None
+        if not comuna_guardada_raw and empresa_existente and hasattr(empresa_existente, 'emp_codigo_comuna'):
+            c_inst = empresa_existente.emp_codigo_comuna
+            comuna_guardada_raw = getattr(c_inst, 'codigo_comuna', None) if c_inst else None
+        comuna_guardada = _normalizar_codigo_comuna(comuna_guardada_raw) if comuna_guardada_raw else ''
+
+        if comuna_guardada and codigo_comuna and codigo_comuna != comuna_guardada:
             return JsonResponse({
                 'status': 'error',
                 'mensaje': 'La comuna de una empresa registrada no se puede modificar.'
             }, status=400)
 
+        emp_comuna_final = comuna_guardada or codigo_comuna or None
+        if emp_comuna_final:
+            emp_comuna_final = str(emp_comuna_final)[:5]
+            if not Comuna.objects.filter(codigo_comuna=emp_comuna_final).exists():
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': f'La comuna ingresada ("{codigo_comuna_raw}") no es válida. Selecciona una comuna oficial.'
+                }, status=400)
+
         # Si es el primer usuario o la cuenta administradora oficial, guarda y actualiza los campos permitidos
         empresa, _ = Empresa.objects.update_or_create(
             emp_rut=empresa_existente.emp_rut if empresa_existente else rut,
             defaults={
-                'emp_razon_social': (data.get('emp_razon_social') or '').strip(),
-                'emp_nombre_fantasia': (data.get('emp_nombre_fantasia') or '').strip(),
-                'emp_contacto_nombre': (data.get('emp_contacto_nombre') or '').strip(),
-                'emp_iniciales': (data.get('emp_iniciales') or '').strip(),
-                'emp_contacto_correo': (data.get('emp_contacto_correo') or '').strip(),
-                'emp_direccion': (data.get('emp_direccion') or '').strip(),
-                'emp_codigo_comuna_id': comuna_guardada or codigo_comuna or None,
-                'emp_contacto_telefono': telefono,
+                'emp_razon_social': (data.get('emp_razon_social') or '').strip()[:200],
+                'emp_nombre_fantasia': (data.get('emp_nombre_fantasia') or '').strip()[:200],
+                'emp_contacto_nombre': (data.get('emp_contacto_nombre') or '').strip()[:100],
+                'emp_iniciales': (data.get('emp_iniciales') or '').strip()[:20],
+                'emp_contacto_correo': (data.get('emp_contacto_correo') or '').strip()[:254],
+                'emp_direccion': (data.get('emp_direccion') or '').strip()[:300],
+                'emp_codigo_comuna_id': emp_comuna_final,
+                'emp_contacto_telefono': telefono[:20],
             }
         )
 
@@ -688,11 +741,11 @@ def actualizar_empresa_suscriptor(request):
             'es_dueno': True,
             'mensaje': 'Datos de la empresa actualizados correctamente.'
         })
-    except DataError:
-        logger.warning('[SmartBids] Se rechazaron datos que exceden el tamaño de las columnas de empresa.')
+    except DataError as de:
+        logger.warning(f'[SmartBids] Se rechazaron datos que exceden el tamaño de las columnas de empresa: {str(de)}')
         return JsonResponse({
             'status': 'error',
-            'mensaje': 'El RUT o teléfono supera el largo permitido. Verifica el formato del RUT y que el teléfono no exceda 20 caracteres.'
+            'mensaje': f'Uno de los campos supera la longitud permitida por la base de datos: {str(de)}'
         }, status=400)
     except Exception as e:
         logger.error(f"[SmartBids] Error al actualizar empresa: {str(e)}")
@@ -717,8 +770,12 @@ def buscar_empresa_por_rut(request):
         emp_existente = _buscar_empresa_por_rut(rut_raw)
 
         if emp_existente:
-            cod_c = getattr(emp_existente, 'emp_codigo_comuna_id', getattr(emp_existente, 'emp_codigo_comuna', '')) or ''
-            com_obj = Comuna.objects.filter(codigo_comuna=cod_c).first()
+            cod_c_raw = getattr(emp_existente, 'emp_codigo_comuna_id', None)
+            if not cod_c_raw and hasattr(emp_existente, 'emp_codigo_comuna'):
+                c_inst = emp_existente.emp_codigo_comuna
+                cod_c_raw = getattr(c_inst, 'codigo_comuna', '') if c_inst else ''
+            cod_c = _normalizar_codigo_comuna(cod_c_raw)
+            com_obj = Comuna.objects.filter(codigo_comuna=cod_c).first() if cod_c else None
 
             return JsonResponse({
                 'status': 'ok',
@@ -761,8 +818,14 @@ def buscar_empresa_por_rut(request):
         codigo_comuna = ''
         nombre_comuna = ''
         if proveedor.prov_codigo_comuna:
-            codigo_comuna = getattr(proveedor.prov_codigo_comuna, 'codigo_comuna', '') or ''
-            nombre_comuna = getattr(proveedor.prov_codigo_comuna, 'nombre_comuna', '') or ''
+            c_val = getattr(proveedor, 'prov_codigo_comuna_id', None)
+            if not c_val:
+                c_obj = proveedor.prov_codigo_comuna
+                c_val = getattr(c_obj, 'codigo_comuna', '') if c_obj else ''
+            codigo_comuna = _normalizar_codigo_comuna(c_val)
+            com_obj = Comuna.objects.filter(codigo_comuna=codigo_comuna).first() if codigo_comuna else None
+            if com_obj:
+                nombre_comuna = com_obj.nombre_comuna
 
         datos_empresa = {
             'emp_rut': proveedor.prov_rut or rut_raw,

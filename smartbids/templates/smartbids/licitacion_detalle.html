@@ -135,6 +135,11 @@
                         <i class="fa-solid fa-location-dot"></i>
                         <span>Dirección del organismo: <strong>{{ licitacion.lic_codigo_ucom.ucom_direccion }}</strong></span>
                     </div>
+                    {% elif direccion_fallback %}
+                    <div class="lic-detalle__comprador-footer">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>Dirección del organismo: <strong>{{ direccion_fallback }}</strong></span>
+                    </div>
                     {% endif %}
                 </section>
 

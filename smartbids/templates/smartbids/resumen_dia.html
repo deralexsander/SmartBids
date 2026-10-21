@@ -1,12 +1,12 @@
 {% extends 'smartbids/base.html' %}
-{% load static %}
+{% load static montos %}
 
 {% block nombrePag %}
 <title>Resumen del Día - SmartBids</title>
 {% endblock %}
 
 {% block contenido %}
-<section class="value-prop resumen__page">
+<section class="resumen__page">
     <div class="resumen__container">
 
         <!-- ============================================================ -->
@@ -91,10 +91,10 @@
                         <i class="fa-solid fa-fire"></i> Oportunidades del Día
                     </h2>
                     <div style="display: flex; gap: 10px;">
-                        <a href="{% url 'mis_licitaciones' %}?tab=claves" class="resumen__card-link" title="Ver con palabras clave">
-                            Palabras Clave <i class="fa-solid fa-arrow-right"></i>
+                        <a href="{% url 'mis_licitaciones' %}#seccion-match-perfil" class="resumen__card-link" title="Ver oportunidades con match de tu perfil">
+                            Match con Perfil <i class="fa-solid fa-bullseye"></i>
                         </a>
-                        <a href="{% url 'mis_licitaciones' %}?tab=todas" class="resumen__card-link" title="Ver todas las licitaciones">
+                        <a href="{% url 'mis_licitaciones' %}" class="resumen__card-link" title="Ver todas las licitaciones">
                             Ver Todas <i class="fa-solid fa-arrow-right"></i>
                         </a>
                     </div>
@@ -136,54 +136,69 @@
                         <div class="resumen__lic-side">
                             <span class="resumen__lic-monto">
                                 {% if lic.lic_presupuesto %}
-                                    ${{ lic.lic_presupuesto|floatformat:0 }} {{ lic.lic_moneda|default:"CLP" }}
+                                    {% if lic.lic_moneda and lic.lic_moneda != '$' and lic.lic_moneda != 'CLP' %}
+                                        {{ lic.lic_moneda }} {{ lic.lic_presupuesto|miles_chilenos }}
+                                    {% else %}
+                                        ${{ lic.lic_presupuesto|miles_chilenos }}
+                                    {% endif %}
                                 {% else %}
                                     No informado
                                 {% endif %}
                             </span>
-                            <span class="resumen__lic-cierre">
-                                <i class="fa-regular fa-clock"></i> Cierra: {{ lic.lic_fecha_cierre|date:"d/m/Y"|default:"Por definir" }}
+                            <span class="resumen__lic-cierre{% if lic.es_cierre_proximo %} resumen__lic-cierre--urgente{% endif %}">
+                                <i class="{% if lic.es_cierre_proximo %}fa-solid fa-circle-exclamation{% else %}fa-regular fa-clock{% endif %}"></i> Cierra: {{ lic.lic_fecha_cierre|date:"d/m/Y"|default:"Por definir" }}
                             </span>
-                            <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" class="btn btn-outline" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; border-radius: 8px; margin-top: 4px;">
-                                Ver Ficha
+                            <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" class="btn btn-outline mis-lic__detail-link" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; border-radius: 8px; margin-top: 4px;">
+                                <i class="fa-solid fa-eye"></i> Ver Ficha
                             </a>
                         </div>
                     </div>
                     {% empty %}
                     <div class="resumen__empty-state">
-                        <i class="fa-solid fa-magnifying-glass resumen__empty-icon"></i>
-                        <p>No se encontraron licitaciones recientes con los criterios actuales.</p>
-                        <a href="{% url 'mis_licitaciones' %}?tab=todas" class="btn btn-primary" style="margin-top: 0.5rem;">Explorar todas las licitaciones</a>
+                        <i class="fa-solid fa-bullseye resumen__empty-icon" style="color: var(--accent-green);"></i>
+                        <p>No tienes licitaciones que hagan match con tu perfil en este momento.</p>
+                        <a href="{% url 'perfil' %}" class="btn btn-primary" style="margin-top: 0.5rem;"><i class="fa-solid fa-sliders"></i> Configurar Filtros de Perfil</a>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
             <!-- Columna Lateral: Cierres Urgentes y Seguimiento -->
-            <div>
+            <div class="resumen__side-col">
                 <!-- Cierres Próximos -->
                 <div class="resumen__card">
                     <div class="resumen__card-header">
-                        <h2 class="resumen__card-title" style="font-size: 1.1rem;">
-                            <i class="fa-solid fa-hourglass-half" style="color: #dc2626;"></i> Cierran Pronto
-                        </h2>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h2 class="resumen__card-title" style="font-size: 1.1rem;">
+                                <i class="fa-solid fa-hourglass-half" style="color: #dc2626;"></i> Cierran Pronto
+                            </h2>
+                            {% if cierre_es_general %}
+                            <span class="dash-badge" style="font-size: 0.68rem; font-weight: 700; background: rgba(14, 116, 144, 0.1); color: #0e7490;">
+                                Mercado
+                            </span>
+                            {% else %}
+                            <span class="dash-badge" style="font-size: 0.68rem; font-weight: 700; background: rgba(4, 198, 87, 0.12); color: var(--dark-green);">
+                                Tu Perfil
+                            </span>
+                            {% endif %}
+                        </div>
                         <a href="{% url 'mis_licitaciones' %}" class="resumen__card-link">Ver más</a>
                     </div>
-                    <div class="resumen__lic-list">
+                    <div class="resumen__side-list">
                         {% for lic in licitaciones_urgentes %}
-                        <div style="padding: 0.75rem 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <div class="resumen__side-item">
+                            <div class="resumen__side-item-top">
                                 <span class="resumen__lic-code" style="font-size: 0.75rem;">{{ lic.lic_codigo }}</span>
                                 <span class="resumen__lic-cierre resumen__lic-cierre--urgente">
                                     <i class="fa-solid fa-circle-exclamation"></i> {{ lic.lic_fecha_cierre|date:"d/m/Y" }}
                                 </span>
                             </div>
-                            <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" style="color: var(--dark-green); font-weight: 600; font-size: 0.88rem; text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" class="resumen__side-item-title">
                                 {{ lic.lic_nombre|default:lic.lic_codigo }}
                             </a>
                         </div>
                         {% empty %}
-                        <p style="font-size: 0.85rem; color: var(--gray-text); margin: 0; text-align: center; padding: 1rem 0;">
+                        <p style="font-size: 0.85rem; color: var(--gray-text); margin: 0; text-align: center; padding: 1.2rem 0;">
                             No hay licitaciones cerrando en las próximas 72 horas.
                         </p>
                         {% endfor %}
@@ -191,7 +206,7 @@
                 </div>
 
                 <!-- Licitaciones Seguidas -->
-                <div class="resumen__card" style="margin-top: 1.5rem;">
+                <div class="resumen__card">
                     <div class="resumen__card-header">
                         <h2 class="resumen__card-title" style="font-size: 1.1rem;">
                             <i class="fa-solid fa-bookmark" style="color: #0e7490;"></i> Mis Seguidas
@@ -199,23 +214,23 @@
                         <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" class="resumen__card-link">Ir a seguidas</a>
                     </div>
                     {% if licitaciones_seguidas_preview %}
-                        <div class="resumen__lic-list">
+                        <div class="resumen__side-list">
                             {% for lic in licitaciones_seguidas_preview %}
-                            <div style="padding: 0.65rem 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05);">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                            <div class="resumen__side-item">
+                                <div class="resumen__side-item-top">
                                     <span class="resumen__lic-code" style="font-size: 0.75rem;">{{ lic.lic_codigo }}</span>
-                                    <span class="resumen__badge resumen__badge--{{ lic.estado_proceso }}" style="font-size: 0.7rem;">
+                                    <span class="resumen__badge resumen__badge--{{ lic.estado_proceso }}" style="font-size: 0.68rem;">
                                         {{ lic.estado_proceso_label }}
                                     </span>
                                 </div>
-                                <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" style="color: var(--dark-green); font-weight: 600; font-size: 0.86rem; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">
+                                <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" class="resumen__side-item-title">
                                     {{ lic.lic_nombre|default:lic.lic_codigo }}
                                 </a>
                             </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <div style="text-align: center; padding: 1rem 0; color: var(--gray-text); font-size: 0.85rem;">
+                        <div style="text-align: center; padding: 1.2rem 0; color: var(--gray-text); font-size: 0.85rem;">
                             <i class="fa-regular fa-bookmark" style="font-size: 1.5rem; color: #0e7490; margin-bottom: 6px; display: block;"></i>
                             Aún no sigues ninguna licitación. Marca la estrella o botón de seguimiento para recibir alertas automáticas.
                         </div>
