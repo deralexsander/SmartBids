@@ -55,6 +55,35 @@ def _buscar_empresa_por_rut(rut):
         rut_normalizado=rut_db_normalizado
     ).filter(rut_normalizado__iexact=rut_normalizado).first()
 
+
+def _normalizar_codigo_comuna(valor):
+    """
+    Normaliza el valor recibido para la comuna a su código oficial de 5 dígitos.
+    Maneja formatos como:
+      - '13101'
+      - '13101 - Santiago'
+      - 'Santiago (13101)'
+      - 'Santiago' (búsqueda por nombre)
+    Garantiza que nunca exceda 5 caracteres para evitar DataError en PostgreSQL.
+    """
+    if not valor:
+        return ''
+    val = str(valor).strip()
+    match = re.search(r'\b(\d{5})\b', val)
+    if match:
+        codigo = match.group(1)
+        if Comuna.objects.filter(codigo_comuna=codigo).exists():
+            return codigo
+    if len(val) == 5 and Comuna.objects.filter(codigo_comuna=val).exists():
+        return val
+    comuna_obj = Comuna.objects.filter(nombre_comuna__iexact=val).first()
+    if comuna_obj:
+        return comuna_obj.codigo_comuna
+    comuna_flex = Comuna.objects.filter(nombre_comuna__icontains=val).first()
+    if comuna_flex:
+        return comuna_flex.codigo_comuna
+    return val[:5]
+
 ORDEN_GEOGRAFICO_CHILE = {
     '15': 1, 'XV': 1,
     '01': 2, '1': 2, 'I': 2,
@@ -666,26 +695,42 @@ def actualizar_empresa_suscriptor(request):
                     'mensaje': f'Te has vinculado a la empresa. Administrada por {empresa_existente.emp_contacto_correo}. Solo lectura.'
                 })
 
-        codigo_comuna = (data.get('emp_codigo_comuna') or '').strip()
-        comuna_guardada = str(empresa_existente.emp_codigo_comuna_id or '').strip() if empresa_existente else ''
-        if comuna_guardada and codigo_comuna != comuna_guardada:
+        codigo_comuna_raw = (data.get('emp_codigo_comuna') or '').strip()
+        codigo_comuna = _normalizar_codigo_comuna(codigo_comuna_raw)
+
+        comuna_guardada_raw = getattr(empresa_existente, 'emp_codigo_comuna_id', None) if empresa_existente else None
+        if not comuna_guardada_raw and empresa_existente and hasattr(empresa_existente, 'emp_codigo_comuna'):
+            c_inst = empresa_existente.emp_codigo_comuna
+            comuna_guardada_raw = getattr(c_inst, 'codigo_comuna', None) if c_inst else None
+        comuna_guardada = _normalizar_codigo_comuna(comuna_guardada_raw) if comuna_guardada_raw else ''
+
+        if comuna_guardada and codigo_comuna and codigo_comuna != comuna_guardada:
             return JsonResponse({
                 'status': 'error',
                 'mensaje': 'La comuna de una empresa registrada no se puede modificar.'
             }, status=400)
 
+        emp_comuna_final = comuna_guardada or codigo_comuna or None
+        if emp_comuna_final:
+            emp_comuna_final = str(emp_comuna_final)[:5]
+            if not Comuna.objects.filter(codigo_comuna=emp_comuna_final).exists():
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': f'La comuna ingresada ("{codigo_comuna_raw}") no es válida. Selecciona una comuna oficial.'
+                }, status=400)
+
         # Si es el primer usuario o la cuenta administradora oficial, guarda y actualiza los campos permitidos
         empresa, _ = Empresa.objects.update_or_create(
             emp_rut=empresa_existente.emp_rut if empresa_existente else rut,
             defaults={
-                'emp_razon_social': (data.get('emp_razon_social') or '').strip(),
-                'emp_nombre_fantasia': (data.get('emp_nombre_fantasia') or '').strip(),
-                'emp_contacto_nombre': (data.get('emp_contacto_nombre') or '').strip(),
-                'emp_iniciales': (data.get('emp_iniciales') or '').strip(),
-                'emp_contacto_correo': (data.get('emp_contacto_correo') or '').strip(),
-                'emp_direccion': (data.get('emp_direccion') or '').strip(),
-                'emp_codigo_comuna_id': comuna_guardada or codigo_comuna or None,
-                'emp_contacto_telefono': telefono,
+                'emp_razon_social': (data.get('emp_razon_social') or '').strip()[:200],
+                'emp_nombre_fantasia': (data.get('emp_nombre_fantasia') or '').strip()[:200],
+                'emp_contacto_nombre': (data.get('emp_contacto_nombre') or '').strip()[:100],
+                'emp_iniciales': (data.get('emp_iniciales') or '').strip()[:20],
+                'emp_contacto_correo': (data.get('emp_contacto_correo') or '').strip()[:254],
+                'emp_direccion': (data.get('emp_direccion') or '').strip()[:300],
+                'emp_codigo_comuna_id': emp_comuna_final,
+                'emp_contacto_telefono': telefono[:20],
             }
         )
 
@@ -696,11 +741,11 @@ def actualizar_empresa_suscriptor(request):
             'es_dueno': True,
             'mensaje': 'Datos de la empresa actualizados correctamente.'
         })
-    except DataError:
-        logger.warning('[SmartBids] Se rechazaron datos que exceden el tamaño de las columnas de empresa.')
+    except DataError as de:
+        logger.warning(f'[SmartBids] Se rechazaron datos que exceden el tamaño de las columnas de empresa: {str(de)}')
         return JsonResponse({
             'status': 'error',
-            'mensaje': 'El RUT o teléfono supera el largo permitido. Verifica el formato del RUT y que el teléfono no exceda 20 caracteres.'
+            'mensaje': f'Uno de los campos supera la longitud permitida por la base de datos: {str(de)}'
         }, status=400)
     except Exception as e:
         logger.error(f"[SmartBids] Error al actualizar empresa: {str(e)}")
@@ -725,8 +770,12 @@ def buscar_empresa_por_rut(request):
         emp_existente = _buscar_empresa_por_rut(rut_raw)
 
         if emp_existente:
-            cod_c = getattr(emp_existente, 'emp_codigo_comuna_id', getattr(emp_existente, 'emp_codigo_comuna', '')) or ''
-            com_obj = Comuna.objects.filter(codigo_comuna=cod_c).first()
+            cod_c_raw = getattr(emp_existente, 'emp_codigo_comuna_id', None)
+            if not cod_c_raw and hasattr(emp_existente, 'emp_codigo_comuna'):
+                c_inst = emp_existente.emp_codigo_comuna
+                cod_c_raw = getattr(c_inst, 'codigo_comuna', '') if c_inst else ''
+            cod_c = _normalizar_codigo_comuna(cod_c_raw)
+            com_obj = Comuna.objects.filter(codigo_comuna=cod_c).first() if cod_c else None
 
             return JsonResponse({
                 'status': 'ok',
@@ -769,8 +818,14 @@ def buscar_empresa_por_rut(request):
         codigo_comuna = ''
         nombre_comuna = ''
         if proveedor.prov_codigo_comuna:
-            codigo_comuna = getattr(proveedor.prov_codigo_comuna, 'codigo_comuna', '') or ''
-            nombre_comuna = getattr(proveedor.prov_codigo_comuna, 'nombre_comuna', '') or ''
+            c_val = getattr(proveedor, 'prov_codigo_comuna_id', None)
+            if not c_val:
+                c_obj = proveedor.prov_codigo_comuna
+                c_val = getattr(c_obj, 'codigo_comuna', '') if c_obj else ''
+            codigo_comuna = _normalizar_codigo_comuna(c_val)
+            com_obj = Comuna.objects.filter(codigo_comuna=codigo_comuna).first() if codigo_comuna else None
+            if com_obj:
+                nombre_comuna = com_obj.nombre_comuna
 
         datos_empresa = {
             'emp_rut': proveedor.prov_rut or rut_raw,

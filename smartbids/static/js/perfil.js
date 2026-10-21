@@ -2573,7 +2573,7 @@ if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
         const razonSocial = document.getElementById('empresa-razon-social')?.value.trim();
         const fantasia = document.getElementById('empresa-fantasia')?.value.trim();
         const correo = document.getElementById('empresa-correo')?.value.trim();
-        const comuna = document.getElementById('empresa-comuna')?.value.trim();
+        const comuna = document.getElementById('empresa-comuna')?.value.trim() || document.getElementById('empresa-comuna-label')?.value.trim() || '';
         const telefono = inputTelefonoEmpresa?.value.trim() || '';
 
         const rutFormateado = formatearRutChileno(rut, true);
@@ -2607,6 +2607,18 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
         const targetUid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
 
         try {
+            let comunaVal = document.getElementById('empresa-comuna')?.value.trim() || '';
+            const labelVal = document.getElementById('empresa-comuna-label')?.value.trim() || '';
+            if (!comunaVal && labelVal) {
+                const match = labelVal.match(/\b(\d{5})\b/);
+                comunaVal = match ? match[1] : labelVal;
+            } else if (comunaVal) {
+                const match = comunaVal.match(/\b(\d{5})\b/);
+                if (match) {
+                    comunaVal = match[1];
+                }
+            }
+
             const resp = await fetch('/api/actualizar-empresa/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2619,7 +2631,7 @@ if (btnAceptarEmpresa && btnAceptarEmpresa.dataset.bound !== 'true') {
                     emp_contacto_correo: document.getElementById('empresa-correo')?.value.trim() || '',
                     emp_iniciales: document.getElementById('empresa-iniciales')?.value.trim() || '',
                     emp_contacto_telefono: document.getElementById('empresa-telefono')?.value.trim() || '',
-                    emp_codigo_comuna: document.getElementById('empresa-comuna')?.value.trim() || '',
+                    emp_codigo_comuna: comunaVal,
                     emp_direccion: document.getElementById('empresa-direccion')?.value.trim() || '',
                 })
             });
