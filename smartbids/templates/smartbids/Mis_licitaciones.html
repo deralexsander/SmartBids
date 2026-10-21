@@ -73,7 +73,8 @@
                         {% empty %}
                         <option value="L1" {% if request.GET.tipo == 'L1' %}selected{% endif %}>L1 – Menor a 100 UTM</option>
                         <option value="LE" {% if request.GET.tipo == 'LE' %}selected{% endif %}>LE – 100 a 1.000 UTM</option>
-                        <option value="LP" {% if request.GET.tipo == 'LP' %}selected{% endif %}>LP – 1.000 a 5.000 UTM</option>
+                        <option value="LP" {% if request.GET.tipo == 'LP' %}selected{% endif %}>LP – 1.000 a 2.000 UTM</option>
+                        <option value="LQ" {% if request.GET.tipo == 'LQ' %}selected{% endif %}>LQ – 2.000 a 5.000 UTM</option>
                         <option value="LR" {% if request.GET.tipo == 'LR' %}selected{% endif %}>LR – Mayor a 5.000 UTM</option>
                         {% endfor %}
                     </optgroup>

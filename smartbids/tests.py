@@ -1126,7 +1126,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         cache.clear()
 
     def test_obtener_catalogo_tipos_licitacion_estructura_y_clasificacion(self):
-        """Verifica que el catálogo organice 4 tramos públicos y 3 privados, y B2 sea Licitación Privada."""
+        """Verifica que el catálogo organice 5 tramos públicos (L1, LE, LP, LQ, LR) y 3 privados (E2, CO, B2)."""
         from unittest.mock import patch, MagicMock
         from .licitacion_utils import obtener_catalogo_tipos_licitacion
 
@@ -1135,12 +1135,14 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         mock_tramo_100 = MagicMock(codigo_tramo_licitacion=2, nombre_tramo_licitacion='menor a 100 UTM')
         mock_tramo_1000 = MagicMock(codigo_tramo_licitacion=3, nombre_tramo_licitacion='100 a 1000 UTM')
         mock_tramo_2000 = MagicMock(codigo_tramo_licitacion=4, nombre_tramo_licitacion='1000 a 2000 UTM')
+        mock_tramo_5000_tramo = MagicMock(codigo_tramo_licitacion=5, nombre_tramo_licitacion='2000 a 5000 UTM')
         mock_tramo_5000 = MagicMock(codigo_tramo_licitacion=6, nombre_tramo_licitacion='mayor a 5000 UTM')
 
         mock_tl_list = [
             MagicMock(codigo_tipo_licitacion='L1', glosa='Licitación pública inferior a 100 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_100),
             MagicMock(codigo_tipo_licitacion='LE', glosa='Licitación Pública igual o superior a 100 UTM e inferior a 1.000 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_1000),
             MagicMock(codigo_tipo_licitacion='LP', glosa='Licitación Pública igual o superior a 1.000 UTM e inferior a 2.000 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_2000),
+            MagicMock(codigo_tipo_licitacion='LQ', glosa='Licitación Pública igual o superior a 2.000 UTM e inferior a 5.000 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_5000_tramo),
             MagicMock(codigo_tipo_licitacion='LR', glosa='Licitación Pública Mayor a 5000 UTM', codigo_cat_licitacion=mock_cat_pub, codigo_cat_licitacion_id=1, codigo_tramo_licitacion=mock_tramo_5000),
             MagicMock(codigo_tipo_licitacion='E2', glosa='Licitación Privada Inferior a 100 UTM', codigo_cat_licitacion=mock_cat_priv, codigo_cat_licitacion_id=2, codigo_tramo_licitacion=mock_tramo_100),
             MagicMock(codigo_tipo_licitacion='CO', glosa='Licitación Privada igual o superior a 100 UTM e inferior a 1000 UTM', codigo_cat_licitacion=mock_cat_priv, codigo_cat_licitacion_id=2, codigo_tramo_licitacion=mock_tramo_1000),
@@ -1157,11 +1159,20 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         self.assertEqual(catalogo['categorias_publicas_ids'], [1, 6])
         self.assertEqual(catalogo['categorias_privadas_ids'], [2, 7])
 
-        # 4 públicas: L1, LE, LP, LR
+        # 5 públicas: L1, LE, LP, LQ, LR
         codigos_pub = [item['codigo'] for item in catalogo['publicas']]
-        self.assertEqual(codigos_pub, ['L1', 'LE', 'LP', 'LR'])
+        self.assertEqual(codigos_pub, ['L1', 'LE', 'LP', 'LQ', 'LR'])
         for item in catalogo['publicas']:
             self.assertEqual(item['categoria'], 'Pública')
+
+        # Verificar tramos específicos de LP y LQ
+        item_lp = next(item for item in catalogo['publicas'] if item['codigo'] == 'LP')
+        self.assertEqual(item_lp['tramo'], '1.000 a 2.000 UTM')
+        self.assertIn('1.000 UTM e inferior a 2.000 UTM', item_lp['glosa'])
+
+        item_lq = next(item for item in catalogo['publicas'] if item['codigo'] == 'LQ')
+        self.assertEqual(item_lq['tramo'], '2.000 a 5.000 UTM')
+        self.assertIn('2.000 UTM e inferior a 5.000 UTM', item_lq['glosa'])
 
         # 3 privadas: E2, CO, B2
         codigos_priv = [item['codigo'] for item in catalogo['privadas']]
@@ -1180,7 +1191,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             self.assertNotIn(excluido, catalogo['todos_codigos'])
 
     def test_obtener_catalogo_tipos_licitacion_fallback(self):
-        """Verifica que si la base de datos no está disponible, el fallback funcione con los 7 tipos requeridos."""
+        """Verifica que si la base de datos no está disponible, el fallback funcione con los 8 tipos requeridos."""
         from unittest.mock import patch
         from .licitacion_utils import obtener_catalogo_tipos_licitacion
 
@@ -1188,8 +1199,11 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             m_tl_objects.select_related.side_effect = Exception("Error simulado DB")
             catalogo = obtener_catalogo_tipos_licitacion()
 
-        self.assertEqual(len(catalogo['publicas']), 4)
+        self.assertEqual(len(catalogo['publicas']), 5)
         self.assertEqual(len(catalogo['privadas']), 3)
+        self.assertIn('LQ', [p['codigo'] for p in catalogo['publicas']])
+        self.assertEqual(next(p for p in catalogo['publicas'] if p['codigo'] == 'LP')['tramo'], '1.000 a 2.000 UTM')
+        self.assertEqual(next(p for p in catalogo['publicas'] if p['codigo'] == 'LQ')['tramo'], '2.000 a 5.000 UTM')
         self.assertIn('B2', [p['codigo'] for p in catalogo['privadas']])
 
     def test_api_catalogos_preferencias_tipos_licitacion(self):
@@ -1199,9 +1213,9 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         from .perfil_views import catalogos_preferencias
 
         mock_catalogo = {
-            'publicas': [{'codigo': 'L1'}, {'codigo': 'LE'}, {'codigo': 'LP'}, {'codigo': 'LR'}],
+            'publicas': [{'codigo': 'L1'}, {'codigo': 'LE'}, {'codigo': 'LP'}, {'codigo': 'LQ'}, {'codigo': 'LR'}],
             'privadas': [{'codigo': 'E2'}, {'codigo': 'CO'}, {'codigo': 'B2'}],
-            'todos_codigos': ['L1', 'LE', 'LP', 'LR', 'E2', 'CO', 'B2']
+            'todos_codigos': ['L1', 'LE', 'LP', 'LQ', 'LR', 'E2', 'CO', 'B2']
         }
 
         with patch('smartbids.licitacion_utils.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo):
@@ -1211,8 +1225,9 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
 
             data = json.loads(resp.content)
             self.assertEqual(data.get('status'), 'ok')
-            self.assertEqual(len(data['datos']['publicas']), 4)
+            self.assertEqual(len(data['datos']['publicas']), 5)
             self.assertEqual(len(data['datos']['privadas']), 3)
+            self.assertEqual(data['datos']['publicas'][3]['codigo'], 'LQ')
             self.assertEqual(data['datos']['privadas'][2]['codigo'], 'B2')
 
     def test_perfil_view_incluye_tipos_procedimiento_en_contexto(self):
@@ -1237,6 +1252,46 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             context = args[2] if len(args) > 2 else kwargs.get('context', {})
             self.assertIn('tipos_procedimiento', context)
             self.assertEqual(context['tipos_procedimiento'], mock_catalogo)
+
+    def test_tramos_lp_lq_lr_exactos_en_catalogo_y_plantillas(self):
+        """Verifica que LP, LQ y LR reflejen fielmente los tramos de 1.000-2.000, 2.000-5.000 y >5.000 UTM."""
+        from unittest.mock import patch
+        from django.template.loader import render_to_string
+        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+
+        catalogo = obtener_catalogo_tipos_licitacion()
+        publicas_dict = {item['codigo']: item for item in catalogo['publicas']}
+
+        # Verificar LP
+        self.assertIn('LP', publicas_dict)
+        self.assertEqual(publicas_dict['LP']['tramo'], '1.000 a 2.000 UTM')
+        self.assertIn('1.000 UTM e inferior a 2.000 UTM', publicas_dict['LP']['glosa'])
+
+        # Verificar LQ
+        self.assertIn('LQ', publicas_dict)
+        self.assertEqual(publicas_dict['LQ']['tramo'], '2.000 a 5.000 UTM')
+        self.assertIn('2.000 UTM e inferior a 5.000 UTM', publicas_dict['LQ']['glosa'])
+
+        # Verificar LR
+        self.assertIn('LR', publicas_dict)
+        self.assertEqual(publicas_dict['LR']['tramo'], 'Mayor a 5.000 UTM')
+
+        with patch('smartbids.context_processors.obtener_correos_sistema', return_value={}), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            # Verificar renderizado de fallback en perfil.html
+            req = self.rf.get('/perfil/')
+            rendered_perfil = render_to_string('smartbids/perfil.html', {'tipos_procedimiento': {'publicas': [], 'privadas': []}}, request=req)
+            self.assertIn('value="LP"', rendered_perfil)
+            self.assertIn('1.000 a 2.000 UTM', rendered_perfil)
+            self.assertIn('value="LQ"', rendered_perfil)
+            self.assertIn('2.000 a 5.000 UTM', rendered_perfil)
+
+            # Verificar renderizado de fallback en Mis_licitaciones.html
+            req_mis_lic = self.rf.get('/mis-licitaciones/')
+            rendered_mis_lic = render_to_string('smartbids/Mis_licitaciones.html', {'tipos_procedimiento': {'publicas': [], 'privadas': []}, 'estados': []}, request=req_mis_lic)
+            self.assertIn('LP – 1.000 a 2.000 UTM', rendered_mis_lic)
+            self.assertIn('LQ – 2.000 a 5.000 UTM', rendered_mis_lic)
+            self.assertIn('LR – Mayor a 5.000 UTM', rendered_mis_lic)
 
 
 
