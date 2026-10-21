@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, time, timedelta
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -24,6 +25,8 @@ from .models.tracking import (
     NotificacionLicitacion,
     SeguimientoLicitacion,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def detalle_licitacion_view(request, codigo):
@@ -65,12 +68,15 @@ def detalle_licitacion_view(request, codigo):
         if fecha
     ]
 
-    datos_externos = obtener_datos_externos_licitacion(licitacion.lic_codigo)
-    url_adjuntos = datos_externos.get('url_adjuntos')
-    url_preguntas = datos_externos.get('url_preguntas')
+    # --- Prioridad Base de Datos vs. Mercado Público ---
+    # 1. Documentos oficiales: se priorizan los registrados en la BD
+    documentos = list(LicitacionDocumento.objects.filter(licitacion=licitacion))
+    tiene_documentos_db = bool(documentos)
 
+    # 2. Preguntas y respuestas oficiales: se priorizan las registradas en la BD
     preguntas_db = list(LicitacionPregunta.objects.filter(licitacion=licitacion))
-    if preguntas_db:
+    tiene_preguntas_db = bool(preguntas_db)
+    if tiene_preguntas_db:
         preguntas = [
             {
                 'numero': idx + 1,
@@ -82,18 +88,70 @@ def detalle_licitacion_view(request, codigo):
             for idx, p in enumerate(preguntas_db)
         ]
     else:
-        preguntas = datos_externos.get('preguntas', [])
+        preguntas = []
+
+    # 3. Descripción del proceso: se prioriza la registrada en la BD
+    tiene_descripcion_db = bool(
+        (licitacion.lic_descripcion and licitacion.lic_descripcion.strip())
+        or (licitacion.lic_texto and licitacion.lic_texto.strip())
+    )
+
+    # 4. Llamado diferido / condicional a Mercado Público:
+    # Solo si la base de datos no contiene algún dato requerido se consulta externamente
+    url_adjuntos = None
+    url_preguntas = None
+    direccion_fallback = None
+
+    necesita_datos_externos = (
+        not tiene_descripcion_db
+        or not tiene_documentos_db
+        or not tiene_preguntas_db
+    )
+
+    if necesita_datos_externos:
+        datos_externos = obtener_datos_externos_licitacion(
+            licitacion.lic_codigo,
+            url_licitacion=licitacion.lic_url,
+        )
+
+        # Si no había descripción en la BD, usamos la rescatada desde Mercado Público
+        if not tiene_descripcion_db:
+            desc_externa = (datos_externos.get('descripcion') or '').strip()
+            if desc_externa:
+                licitacion.lic_descripcion = desc_externa
+                try:
+                    Licitacion.objects.filter(lic_codigo=licitacion.lic_codigo).update(lic_descripcion=desc_externa)
+                except Exception as ex_db:
+                    logger.warning('Error guardando descripción externa en BD para %s: %s', licitacion.lic_codigo, ex_db)
+
+        # Si no había documentos en la BD, proveemos el enlace oficial al repositorio de adjuntos
+        if not tiene_documentos_db:
+            url_adjuntos = datos_externos.get('url_adjuntos')
+
+        # Si no había preguntas en la BD, proveemos las del foro oficial y su enlace
+        if not tiene_preguntas_db:
+            preguntas = datos_externos.get('preguntas', [])
+            url_preguntas = datos_externos.get('url_preguntas')
+
+        # Si la unidad de compra no tiene dirección en BD, usamos el fallback
+        if not (licitacion.lic_codigo_ucom and licitacion.lic_codigo_ucom.ucom_direccion):
+            direccion_fallback = datos_externos.get('direccion')
+
+    url_externa = _url_http(licitacion.lic_url)
+    if not url_externa and licitacion.lic_codigo:
+        url_externa = f'https://www.mercadopublico.cl/fichaLicitacion.html?idLicitacion={licitacion.lic_codigo}'
 
     return render(request, 'smartbids/licitacion_detalle.html', {
         'licitacion': licitacion,
-        'url_externa': _url_http(licitacion.lic_url),
+        'url_externa': url_externa,
         'url_adjuntos': url_adjuntos,
         'url_preguntas': url_preguntas,
+        'direccion_fallback': direccion_fallback,
         'estado': estado,
         'estado_label': estado_label,
         'seguimiento_activo': seguimiento is not None,
         'suscriptor_activo': suscriptor is not None,
-        'documentos': LicitacionDocumento.objects.filter(licitacion=licitacion),
+        'documentos': documentos,
         'preguntas': preguntas,
         'hitos': hitos,
         'return_to': return_to,

@@ -2,7 +2,7 @@ import csv
 from datetime import date, datetime, time, timezone as datetime_timezone
 from io import StringIO
 
-from django.test import SimpleTestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 
 from .licitacion_utils import estado_licitacion, escribir_fila_csv
 from .models.procurement import Licitacion
@@ -1608,6 +1608,174 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             # Debe contener la condición para lic_codigo_ucom_id o ucom_codigo_organismo
             children_keys = [c[0] for c in filter_arg.children if isinstance(c, tuple)]
             self.assertTrue('lic_codigo_ucom_id__in' in children_keys or any('ucom_codigo_organismo' in str(c) for c in filter_arg.children))
+
+
+class DetalleLicitacionPrioridadTests(SimpleTestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        self.rf = RequestFactory()
+        cache.clear()
+
+    def tearDown(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def test_detalle_licitacion_prioriza_datos_db_completos_sin_llamar_mercado_publico(self):
+        """Verifica que si la BD ya tiene descripción, documentos y preguntas, no llame a Mercado Público."""
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        from smartbids.tracking_views import detalle_licitacion_view
+
+        req = self.rf.get('/licitaciones/1000-1-LE26/')
+
+        ucom = SimpleNamespace(
+            ucom_descripcion='Hospital Base',
+            ucom_direccion='Calle Principal 123',
+            ucom_rut='70.000.000-1',
+            ucom_codigo_comuna='13101',
+        )
+        lic = SimpleNamespace(
+            lic_codigo='1000-1-LE26',
+            lic_nombre='Servicio de Mantención',
+            lic_descripcion='Descripción completa almacenada en BD',
+            lic_texto='Texto alternativo',
+            lic_fecha_public=None,
+            lic_fecha_preguntas=None,
+            lic_fecha_respuestas=None,
+            lic_fecha_cierre=None,
+            lic_codigo_ucom=ucom,
+            lic_url='https://www.mercadopublico.cl/fichaLicitacion.html?idLicitacion=1000-1-LE26',
+            lic_tipo_licitacion='LE',
+            lic_presupuesto=1000000,
+            lic_moneda='CLP',
+            lic_items_cantidad=3,
+        )
+
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.tracking_views.get_object_or_404', return_value=lic), \
+             patch('smartbids.tracking_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.tracking_views.LicitacionDocumento.objects.filter') as mock_docs, \
+             patch('smartbids.tracking_views.LicitacionPregunta.objects.filter') as mock_pregs, \
+             patch('smartbids.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
+
+            mock_docs.return_value = [
+                SimpleNamespace(nombre='Bases.pdf', url='http://bases.pdf', extension='pdf', descripcion='Bases', fecha=None)
+            ]
+            mock_pregs.return_value = [
+                SimpleNamespace(pregunta='¿Plazo?', respuesta='30 días', fecha_pregunta=None, fecha_respuesta=None)
+            ]
+
+            resp = detalle_licitacion_view(req, '1000-1-LE26')
+            self.assertEqual(resp.status_code, 200)
+            # Como la BD tenía toda la información, no debe llamar a Mercado Público
+            self.assertFalse(mock_ext.called)
+            self.assertContains(resp, 'Descripción completa almacenada en BD')
+
+    def test_detalle_licitacion_llama_mercado_publico_si_falta_descripcion(self):
+        """Verifica que si la BD NO tiene descripción, se llame a Mercado Público y se actualice en BD."""
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        from smartbids.tracking_views import detalle_licitacion_view
+
+        req = self.rf.get('/licitaciones/1000-2-LE26/')
+
+        lic = SimpleNamespace(
+            lic_codigo='1000-2-LE26',
+            lic_nombre='Adquisición Insumos',
+            lic_descripcion='',  # Vacía en BD
+            lic_texto='',        # Vacía en BD
+            lic_fecha_public=None,
+            lic_fecha_preguntas=None,
+            lic_fecha_respuestas=None,
+            lic_fecha_cierre=None,
+            lic_codigo_ucom=None,
+            lic_url='',
+            lic_tipo_licitacion='LE',
+            lic_presupuesto=500000,
+            lic_moneda='CLP',
+            lic_items_cantidad=1,
+        )
+
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.tracking_views.get_object_or_404', return_value=lic), \
+             patch('smartbids.tracking_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.tracking_views.LicitacionDocumento.objects.filter', return_value=[]), \
+             patch('smartbids.tracking_views.LicitacionPregunta.objects.filter', return_value=[]), \
+             patch('smartbids.tracking_views.Licitacion.objects.filter') as mock_lic_filter, \
+             patch('smartbids.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
+
+            mock_ext.return_value = {
+                'descripcion': 'Descripción recuperada desde la ficha oficial de Mercado Público',
+                'url_adjuntos': 'https://www.mercadopublico.cl/adjuntos',
+                'url_preguntas': 'https://www.mercadopublico.cl/preguntas',
+                'preguntas': [],
+                'direccion': 'Dirección externa',
+            }
+
+            resp = detalle_licitacion_view(req, '1000-2-LE26')
+            self.assertEqual(resp.status_code, 200)
+            # Verificamos que se haya llamado a Mercado Público porque faltaba la descripción
+            self.assertTrue(mock_ext.called)
+            # Verificamos que se haya intentado actualizar la BD con la descripción recuperada
+            mock_lic_filter.return_value.update.assert_called_with(
+                lic_descripcion='Descripción recuperada desde la ficha oficial de Mercado Público'
+            )
+            self.assertContains(resp, 'Descripción recuperada desde la ficha oficial de Mercado Público')
+
+    def test_detalle_licitacion_preserva_descripcion_db_al_consultar_adjuntos_externos(self):
+        """Verifica que si la BD ya tiene descripción pero faltan adjuntos, mantenga la descripción de la BD."""
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        from smartbids.tracking_views import detalle_licitacion_view
+
+        req = self.rf.get('/licitaciones/1000-3-LE26/')
+
+        lic = SimpleNamespace(
+            lic_codigo='1000-3-LE26',
+            lic_nombre='Servicio Especializado',
+            lic_descripcion='Descripción propia y única de la Base de Datos',
+            lic_texto='Texto alternativo',
+            lic_fecha_public=None,
+            lic_fecha_preguntas=None,
+            lic_fecha_respuestas=None,
+            lic_fecha_cierre=None,
+            lic_codigo_ucom=None,
+            lic_url='',
+            lic_tipo_licitacion='LE',
+            lic_presupuesto=100000,
+            lic_moneda='CLP',
+            lic_items_cantidad=1,
+        )
+
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.tracking_views.get_object_or_404', return_value=lic), \
+             patch('smartbids.tracking_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.tracking_views.LicitacionDocumento.objects.filter', return_value=[]), \
+             patch('smartbids.tracking_views.LicitacionPregunta.objects.filter', return_value=[]), \
+             patch('smartbids.tracking_views.Licitacion.objects.filter') as mock_lic_filter, \
+             patch('smartbids.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
+
+            mock_ext.return_value = {
+                'descripcion': 'Otra descripcion de mercado publico que NO debe sobreescribir la BD',
+                'url_adjuntos': 'https://www.mercadopublico.cl/adjuntos-oficiales',
+                'url_preguntas': 'https://www.mercadopublico.cl/preguntas-oficiales',
+                'preguntas': [],
+                'direccion': 'Dirección externa',
+            }
+
+            resp = detalle_licitacion_view(req, '1000-3-LE26')
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_ext.called)
+            # Como la BD ya tenía descripción, NUNCA debe sobreescribirla en la base de datos
+            self.assertFalse(mock_lic_filter.return_value.update.called)
+            # La respuesta debe contener la descripción de la BD
+            self.assertContains(resp, 'Descripción propia y única de la Base de Datos')
+            self.assertNotContains(resp, 'Otra descripcion de mercado publico que NO debe sobreescribir la BD')
+            # Y debe contener el enlace de adjuntos externos rescatado
+            self.assertContains(resp, 'https://www.mercadopublico.cl/adjuntos-oficiales')
+
+
+
 
 
 
