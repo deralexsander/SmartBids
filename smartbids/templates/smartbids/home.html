@@ -43,7 +43,7 @@
             <div class="dashboard-card">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-magnifying-glass-chart" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-magnifying-glass-chart home__preview-icon"></i>
                         Licitación #7382-21-LR24
                     </div>
                     <span class="dash-badge">Alta Coincidencia</span>
@@ -69,7 +69,7 @@
         </div>
     </section>
 
-    <section class="value-prop" id="propuesta">
+    <section class="value-prop home-slide-section" id="propuesta">
         <div class="section-header">
             <span class="section-subtitle">¿Por qué elegir SmartBids?</span>
             <h2 class="section-title">Diseñado específicamente para impulsar la participación de las MiPyMEs</h2>
@@ -95,8 +95,8 @@
         </div>
     </section>
 
-    <section class="features" id="funcionalidades">
-        <div class="section-header" style="text-align: center; margin-bottom: 5rem;">
+    <section class="features home-slide-section" id="funcionalidades">
+        <div class="section-header home__features-heading">
             <span class="section-subtitle">Módulos de la Plataforma</span>
             <h2 class="section-title">Todo lo que necesitas para dominar Mercado Público</h2>
         </div>
@@ -110,7 +110,7 @@
                     <li><i class="fa-solid fa-check"></i> Filtros por región, monto estimado e institución</li>
                     <li><i class="fa-solid fa-check"></i> Autenticación segura y protección de datos empresarial (2FA)</li>
                 </ul>
-                <a href="#registro" class="btn btn-outline">Probar Módulo SaaS</a>
+                <a href="{% url 'registro' %}" class="btn btn-outline">Probar Módulo SaaS</a>
             </div>
             <div class="feature-graphic">
                 <div class="graphic-mockup">
@@ -141,14 +141,14 @@
                     <li><i class="fa-solid fa-check"></i> Registro completo de bases, adjuntos y aclaraciones</li>
                     <li><i class="fa-solid fa-check"></i> Recordatorios automáticos de fechas clave para presentar oferta</li>
                 </ul>
-                <a href="#registro" class="btn btn-outline">Ver Módulo Seguimiento</a>
+                <a href="{% url 'registro' %}" class="btn btn-outline">Ver Módulo Seguimiento</a>
             </div>
             <div class="feature-graphic">
                 <div class="graphic-mockup">
-                    <div style="background: var(--white); padding: 1.2rem; border-radius: 12px; text-align: center;">
-                        <i class="fa-solid fa-bell" style="font-size: 2rem; color: var(--accent-green); margin-bottom: 0.5rem;"></i>
-                        <h6 style="color: var(--dark-green); font-weight: 700;">Alerta de Hito Próximo</h6>
-                        <p style="font-size: 0.85rem; color: var(--gray-text); margin-bottom: 0;">Faltan 24 hrs para el cierre de preguntas en Licitación #5021</p>
+                    <div class="home__milestone-alert">
+                        <i class="fa-solid fa-bell home__milestone-icon"></i>
+                        <h6 class="home__milestone-title">Alerta de Hito Próximo</h6>
+                        <p class="home__milestone-description">Faltan 24 hrs para el cierre de preguntas en Licitación #5021</p>
                     </div>
                 </div>
             </div>
@@ -163,27 +163,27 @@
                     <li><i class="fa-solid fa-check"></i> Panel de Competencia: Tasas de adjudicación de otros oferentes</li>
                     <li><i class="fa-solid fa-check"></i> Exportación fácil de reportes consolidados en Excel (.xlsx) y CSV</li>
                 </ul>
-                <a href="#registro" class="btn btn-outline">Explorar Dashboards</a>
+                <a href="{% url 'registro' %}" class="btn btn-outline">Explorar Dashboards</a>
             </div>
             <div class="feature-graphic">
                 <div class="graphic-mockup">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; height: 120px; padding: 1rem; background: var(--white); border-radius: 12px;">
-                        <div style="width: 20%; background: var(--soft-mint); height: 40%; border-radius: 6px;"></div>
-                        <div style="width: 20%; background: var(--muted-teal); height: 75%; border-radius: 6px;"></div>
-                        <div style="width: 20%; background: var(--accent-green); height: 100%; border-radius: 6px;"></div>
-                        <div style="width: 20%; background: var(--dark-green); height: 60%; border-radius: 6px;"></div>
+                    <div class="home__analytics-chart">
+                        <div class="home__chart-bar--first"></div>
+                        <div class="home__chart-bar--second"></div>
+                        <div class="home__chart-bar--third"></div>
+                        <div class="home__chart-bar--fourth"></div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="ml-section" id="inteligencia">
+    <section class="ml-section home-slide-section" id="inteligencia">
         <div class="ml-grid">
             <div class="ml-text">
                 <h2>Potenciado por <span>Modelos Predictivos</span> de Adjudicación</h2>
                 <p>Nuestra plataforma aplica algoritmos de Scikit-Learn y XGBoost entrenados con el historial de compras públicas para darte una ventaja competitiva real.</p>
-                <a href="#registro" class="btn btn-primary btn-large">Probar Evaluación Predictiva</a>
+                <a href="{% url 'registro' %}" class="btn btn-primary btn-large">Probar Evaluación Predictiva</a>
             </div>
             <div class="ml-cards">
                 <div class="ml-card-item">
@@ -211,7 +211,7 @@
         </div>
     </section>
 
-    <section class="benefits-banner" id="beneficios">
+    <section class="benefits-banner home-slide-section" id="beneficios">
         <div class="section-header">
             <span class="section-subtitle">Beneficios Tangibles</span>
             <h2 class="section-title">Resultados reales para tu gestión comercial</h2>
@@ -237,6 +237,72 @@
                 <i class="fa-solid fa-eye"></i>
                 <h4>Visibilidad Total</h4>
                 <p>Conoce los precios reales y estrategias con las que opera tu competencia en tu rubro.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="features home-slide-section" id="contacto" aria-labelledby="contacto-title">
+        <div class="feature-row home__contact-row">
+            <div class="feature-text">
+                <span class="section-subtitle">Contacto SmartBids</span>
+                <h3 id="contacto-title">Hablemos de tu proyecto</h3>
+                <p>Cuéntanos qué necesitas. Nuestro equipo puede orientarte sobre la plataforma, una consulta comercial o soporte técnico.</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-comments"></i> Consultas comerciales y demostraciones</li>
+                    <li><i class="fa-solid fa-life-ring"></i> Ayuda para usar SmartBids</li>
+                    <li><i class="fa-solid fa-lightbulb"></i> Ideas e integraciones para tu equipo</li>
+                </ul>
+                <div class="stat-mini-card home__contact-email-card">
+                    <label>También puedes escribirnos</label>
+                    <a href="mailto:{{ contacto_email }}" class="home__contact-email">{{ contacto_email }}</a>
+                </div>
+            </div>
+
+            <div class="dashboard-card home__contact-card">
+                <div class="dashboard-header home__contact-header">
+                    <div>
+                        <h3 class="dash-title home__contact-title">Conversemos</h3>
+                        <p class="home__contact-description">Completa tus datos y envíanos tu consulta.</p>
+                    </div>
+                    <i class="fa-regular fa-paper-plane home__contact-send-icon" aria-hidden="true"></i>
+                </div>
+
+                <form id="contact-form" novalidate>
+                    {% csrf_token %}
+                    <div class="profile-form-grid home__contact-form-grid">
+                        <div class="form-item">
+                            <label for="contact-name">Nombre *</label>
+                            <input class="form-input" type="text" id="contact-name" name="name" maxlength="100" autocomplete="name" aria-label="Nombre" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="contact-email">Correo *</label>
+                            <input class="form-input" type="email" id="contact-email" name="email" maxlength="254" autocomplete="email" aria-label="Correo" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="contact-phone">Teléfono</label>
+                            <input class="form-input" type="tel" id="contact-phone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel" aria-label="Teléfono">
+                        </div>
+                        <div class="form-item">
+                            <label for="contact-topic">Tema *</label>
+                            <select class="form-input" id="contact-topic" name="topic" aria-label="Tema" required>
+                                <option value="">Selecciona un tema</option>
+                                <option value="Consulta comercial">Consulta comercial</option>
+                                <option value="Soporte SmartBids">Soporte SmartBids</option>
+                                <option value="Integraciones">Integraciones</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-item grid-full">
+                            <label for="contact-message">¿Cómo podemos ayudarte? *</label>
+                            <textarea class="form-input home__contact-message" id="contact-message" name="message" rows="5" minlength="20" maxlength="3000" aria-label="¿Cómo podemos ayudarte?" required></textarea>
+                        </div>
+                    </div>
+                    <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="home__contact-honeypot">
+                    <p id="contact-feedback" role="status" aria-live="polite" class="home__contact-feedback"></p>
+                    <button type="submit" class="btn btn-primary" id="contact-submit">
+                        <i class="fa-regular fa-paper-plane"></i> Enviar consulta
+                    </button>
+                </form>
             </div>
         </div>
     </section>

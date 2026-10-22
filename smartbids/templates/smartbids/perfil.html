@@ -6,361 +6,573 @@
 {% endblock %}
 
 {% block contenido %}
+<style>
+    .perfil__selection-chips {
+        max-height: 120px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        align-content: flex-start !important;
+        scrollbar-width: thin;
+        scrollbar-color: var(--muted-teal) #f1f5f9;
+    }
+    .perfil__selection-chips::-webkit-scrollbar {
+        width: 6px;
+        display: block;
+    }
+    .perfil__selection-chips::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    .perfil__selection-chips::-webkit-scrollbar-thumb {
+        background: var(--muted-teal);
+        border-radius: 4px;
+    }
+    .perfil__selection-chips::-webkit-scrollbar-thumb:hover {
+        background: var(--dark-green);
+    }
+</style>
 <div class="profile-container">
     <div class="profile-layout">
 
-        <!-- Barra Lateral de Navegación -->
+        <!-- Barra Lateral -->
         <aside class="profile-sidebar">
-            <div class="dashboard-card" style="text-align: center;">
-                <div class="profile-avatar-circle">
-                    <span id="profile-initials">--</span>
-                    <div class="status-indicator" title="Usuario activo"></div>
+            <div class="dashboard-card perfil__sidebar-card">
+                
+                <!-- Avatar Adaptable -->
+                <div class="prediction-box perfil__avatar">
+                    <span id="profile-initials" class="perfil__avatar-initials">--</span>
+                    <div class="status-indicator perfil__avatar-status" title="Usuario activo"></div>
                 </div>
-                <h3 id="profile-fullname-header" style="color: var(--dark-green); font-size: 1.35rem; font-weight: 800; margin-bottom: 2px;">
+
+                <h3 id="profile-fullname-header" class="perfil__user-name">
                     Cargando...
                 </h3>
-                <p id="profile-username-header" style="color: var(--muted-teal); font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem;">
-                    @usuario
+                <p id="profile-social-header" class="perfil__user-handle">
+                    @suscriptor
                 </p>
 
-                <div class="dash-badge" style="display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase;">
+                <div class="dash-badge perfil__role-badge">
                     <i class="fa-solid fa-shield-halved"></i> Estado: <span id="profile-role-badge">--</span>
                 </div>
 
                 <ul class="profile-menu">
                     <li>
-                        <button type="button" class="profile-menu-btn active" onclick="cambiarPestana(event, 'tab-info')">
-                            <i class="fa-solid fa-user-pen"></i> Datos Personales
+                        <button type="button" class="profile-menu-btn active" data-profile-tab="tab-info">
+                            <i class="fa-solid fa-id-card"></i> Datos Personales
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-empresa-view')">
-                            <i class="fa-solid fa-building"></i> Empresa y Negocio
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-empresa">
+                            <i class="fa-solid fa-building"></i> Datos Empresa
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-preferencias')">
-                            <i class="fa-solid fa-sliders"></i> Preferencias y Reportes
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-filtros">
+                            <i class="fa-solid fa-sliders"></i> Filtros de Licitación
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-filtros-catalogo')">
-                            <i class="fa-solid fa-filter"></i> Filtros de Licitación
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-palabras">
+                            <i class="fa-solid fa-tags"></i> Palabras Clave
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-seguridad')">
-                            <i class="fa-solid fa-lock"></i> Contraseña y Seguridad
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-seguridad">
+                            <i class="fa-solid fa-lock"></i> Seguridad y Clave
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="profile-menu-btn" onclick="cambiarPestana(event, 'tab-sesiones')">
-                            <i class="fa-solid fa-circle-info"></i> Estado del Sistema
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-sesiones">
+                            <i class="fa-solid fa-circle-info"></i> Sesión y Auditoría
                         </button>
                     </li>
                 </ul>
 
-                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);">
+                <hr class="perfil__sidebar-divider">
 
-                <button id="logout-button" type="button" class="btn btn-outline" style="width: 100%;">
+                <button id="logout-button" type="button" class="btn btn-outline perfil__logout-button">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
                 </button>
             </div>
         </aside>
 
-        <!-- Contenido Principal de Pestañas -->
+        <!-- Contenido Principal -->
         <main class="profile-main-content">
 
-            <div class="prediction-box">
-                <div class="pred-text">
-                    <h5>Panel de Administración de Perfil</h5>
-                    <p>Gestiona los parámetros de tu empresa, preferencias de búsqueda de licitaciones y configuración de seguridad.</p>
+            <!-- Banner Dinámico: Barra de Porcentaje con Semáforo -->
+            <div class="dashboard-card perfil__progress-card">
+                <div class="perfil__progress-header">
+                    <div>
+                        <h5 class="perfil__progress-title">Panel de Administración y Preferencias</h5>
+                        <p id="profile-progress-status" class="perfil__progress-status">
+                            Calculando completitud del perfil...
+                        </p>
+                    </div>
+                    <div class="perfil__progress-summary">
+                        <span id="profile-progress-number" class="perfil__progress-number">0%</span>
+                        <small class="perfil__progress-label">completado</small>
+                    </div>
                 </div>
-                <div class="pred-score">
-                    <i class="fa-solid fa-circle-check"></i>
+
+                <div class="perfil__progress-track">
+                    <div id="profile-progress-fill" class="perfil__progress-fill"></div>
                 </div>
             </div>
 
-            <!-- Pestaña 1: Datos Personales -->
+            <!-- 1. Datos Personales -->
             <div id="tab-info" class="dashboard-card tab-content-panel active">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-id-card" style="color: var(--accent-green);"></i>
-                        Información Personal
+                        <i class="fa-solid fa-id-card perfil__section-icon"></i>
+                        Información del Suscriptor
                     </div>
-                    <span class="dash-badge">UID: <span id="profile-uid-header">--</span></span>
+                    <span id="profile-id-suscriptor" class="perfil__subscriber-id">--</span>
+                    <span class="dash-badge">Perfil Verificado</span>
                 </div>
 
                 <form id="form-perfil-datos">
                     <div class="profile-form-grid">
                         <div class="form-item">
-                            <label for="profile-pnombre">Primer Nombre (pnombre)</label>
-                            <input type="text" class="form-input" id="profile-pnombre" name="pnombre" required>
+                            <label for="profile-nombre1">Primer Nombre *</label>
+                            <input type="text" class="form-input" id="profile-nombre1" name="sus_nombre1" required>
                         </div>
                         <div class="form-item">
-                            <label for="profile-snombre">Segundo Nombre (snombre)</label>
-                            <input type="text" class="form-input" id="profile-snombre" name="snombre">
+                            <label for="profile-nombre2">Segundo Nombre</label>
+                            <input type="text" class="form-input" id="profile-nombre2" name="sus_nombre2">
                         </div>
                         <div class="form-item">
-                            <label for="profile-appaterno">Apellido Paterno (appaterno)</label>
-                            <input type="text" class="form-input" id="profile-appaterno" name="appaterno" required>
+                            <label for="profile-apellido1">Apellido 1 *</label>
+                            <input type="text" class="form-input" id="profile-apellido1" name="sus_apellido1" required>
                         </div>
                         <div class="form-item">
-                            <label for="profile-apmaterno">Apellido Materno (apmaterno)</label>
-                            <input type="text" class="form-input" id="profile-apmaterno" name="apmaterno">
+                            <label for="profile-apellido2">Apellido 2</label>
+                            <input type="text" class="form-input" id="profile-apellido2" name="sus_apellido2">
                         </div>
                         <div class="form-item">
-                            <label for="profile-username">Nombre de Usuario (username)</label>
-                            <input type="text" class="form-input" id="profile-username" name="username" required>
+                            <label for="profile-nombre-social">Nombre Social / Apodo</label>
+                            <input type="text" class="form-input" id="profile-nombre-social" name="sus_nombre_social">
                         </div>
                         <div class="form-item">
-                            <label for="profile-telefono">Teléfono de Contacto</label>
-                            <input type="tel" class="form-input" id="profile-telefono" name="telefono">
-                        </div>
-                        <div class="form-item grid-full">
-                            <label for="profile-email">Correo Electrónico (email)</label>
-                            <input type="email" class="form-input" id="profile-email" name="email" readonly>
+                            <label for="profile-email">Correo Electrónico</label>
+                            <input type="email" class="form-input" id="profile-email" readonly>
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                        <button type="reset" class="btn btn-outline">Restablecer</button>
+                    <div class="perfil__personal-form-actions">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Datos Personales
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Pestaña 2: Empresa y Negocio -->
-            <div id="tab-empresa-view" class="dashboard-card tab-content-panel">
+            <!-- 2. Información de Empresa -->
+            <div id="tab-empresa" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-building" style="color: var(--accent-green);"></i>
-                        Información de la Empresa (core.empresa)
+                        <i class="fa-solid fa-building perfil__section-icon"></i>
+                        Información de la Empresa
                     </div>
-                    <span class="dash-badge">Suscriptor ID: <span id="empresa-suscriptor-id">--</span></span>
+                    <span class="dash-badge">Tributaria</span>
                 </div>
 
                 <form id="form-perfil-empresa">
                     <div class="profile-form-grid">
                         <div class="form-item grid-full">
-                            <label for="empresa-rut">RUT Empresa (rut)</label>
-                            <div style="display: flex; gap: 0.75rem;">
-                                <input type="text" class="form-input" id="empresa-rut" name="rut" placeholder="76.xxx.xxx-k" required style="flex: 1;">
-                                <button type="button" class="btn btn-outline" id="btn-buscar-rut" style="white-space: nowrap;">
-                                    <i class="fa-solid fa-magnifying-glass"></i> Buscar RUT
+                            <label for="empresa-rut">RUT Empresa *</label>
+                            <div class="perfil__rut-lookup">
+                                <input type="text" class="form-input perfil__rut-input" id="empresa-rut" name="emp_rut" placeholder="76.123.456-K" maxlength="12" pattern="[0-9]{1,2}[.][0-9]{3}[.][0-9]{3}-[0-9Kk]" title="Ingresa un RUT válido, por ejemplo 76.123.456-K." autocomplete="off" required>
+                                <button type="button" class="btn btn-outline perfil__rut-lookup-button" id="btn-buscar-rut-empresa">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Buscar por RUT
                                 </button>
                             </div>
                         </div>
 
                         <div class="form-item">
-                            <label for="empresa-nombre">Nombre Comercial (nombre_empresa)</label>
-                            <input type="text" class="form-input" id="empresa-nombre" name="nombre_empresa" placeholder="Autocompletado por RUT" readonly required>
+                            <label for="empresa-fantasia">Nombre Fantasía *</label>
+                            <input type="text" class="form-input" id="empresa-fantasia" name="emp_nombre_fantasia" placeholder="Nombre comercial" required>
+                        </div>
+                        <div class="form-item">
+                            <label for="empresa-razon-social">Razón Social *</label>
+                            <input type="text" class="form-input" id="empresa-razon-social" name="emp_razon_social" placeholder="Razón legal completa" required>
+                        </div>
+                        
+                        <div class="form-item">
+                            <label for="empresa-contacto-nombre">Nombre de Contacto / Encargado</label>
+                            <input type="text" class="form-input" id="empresa-contacto-nombre" name="emp_contacto_nombre" placeholder="Ej: Juan Pérez">
                         </div>
 
                         <div class="form-item">
-                            <label for="empresa-razon-social">Razón Social (razon_social)</label>
-                            <input type="text" class="form-input" id="empresa-razon-social" name="razon_social" placeholder="Autocompletado por RUT" readonly>
+                            <label for="empresa-correo">Correo Notificaciones *</label>
+                            <input type="email" class="form-input" id="empresa-correo" name="emp_contacto_correo" placeholder="alertas@empresa.cl" required>
+                        </div>
+                        
+                        <!-- SIGLAS / INICIALES BLOQUEADAS (SOLO LECTURA) -->
+                        <div class="form-item">
+                            <label for="empresa-iniciales">Siglas / Iniciales</label>
+                            <input type="text" class="form-input perfil__company-initials" id="empresa-iniciales" name="emp_iniciales" maxlength="20" readonly title="Iniciales generadas automáticamente a partir de la Razón Social o Nombre Fantasía.">
                         </div>
 
                         <div class="form-item">
-                            <label for="empresa-actividad">Actividad Económica (actividad_economica)</label>
-                            <input type="text" class="form-input" id="empresa-actividad" name="actividad_economica" placeholder="Rubro principal" readonly>
+                            <label for="empresa-telefono">Teléfono Empresa</label>
+                            <input type="tel" class="form-input" id="empresa-telefono" name="emp_contacto_telefono" placeholder="+56 9 1234 5678" maxlength="20" pattern="[+]?[0-9() .-]{7,20}" title="Usa solo números, espacios y los símbolos + ( ) . -. Máximo 20 caracteres." inputmode="tel" autocomplete="tel">
                         </div>
-
                         <div class="form-item">
-                            <label for="empresa-inicial">Sigla / Iniciales (inicial_empresa)</label>
-                            <input type="text" class="form-input" id="empresa-inicial" name="inicial_empresa" placeholder="Ej: ABC">
+                            <label for="empresa-comuna-label">Comuna Casa Matriz *</label>
+                            <div class="perfil__commune-field">
+                                <input type="text" class="form-input perfil__commune-input" id="empresa-comuna-label" placeholder="Selecciona una comuna..." readonly>
+                                <input type="hidden" id="empresa-comuna" name="emp_codigo_comuna">
+                                
+                                <button type="button" class="btn btn-outline perfil__commune-picker-button" id="btn-seleccionar-comuna-empresa" title="Abrir selector de comuna">
+                                    <i class="fa-solid fa-map-location-dot"></i>
+                                </button>
+                            </div>
                         </div>
-
                         <div class="form-item">
-                            <label for="empresa-correo">Correo Notificaciones (correo_destinatario)</label>
-                            <input type="email" class="form-input" id="empresa-correo" name="correo_destinatario" placeholder="alertas@empresa.cl" required>
+                            <label for="empresa-direccion">Dirección Casa Matriz</label>
+                            <input type="text" class="form-input" id="empresa-direccion" name="emp_direccion" placeholder="Calle, número, oficina">
                         </div>
-
-                        <div class="form-item">
-                            <label for="empresa-correo-copia">Correos en Copia (core.empresa_correo_copia)</label>
-                            <input type="text" class="form-input" id="empresa-correo-copia" name="correo_copia" placeholder="copia1@empresa.cl, copia2@empresa.cl">
-                        </div>
-
-                        <div class="form-item">
-                            <label for="empresa-comuna">Comuna / Código Comuna (codigo_comuna)</label>
-                            <input type="text" class="form-input" id="empresa-comuna" name="codigo_comuna" placeholder="Ej: 05101 (Valparaíso)">
-                        </div>
-
-                        <div class="form-item grid-full">
-                            <label for="empresa-direccion">Dirección Casa Matriz (direccion)</label>
-                            <input type="text" class="form-input" id="empresa-direccion" name="direccion" placeholder="Calle, número, oficina o departamento">
-                        </div>
-
-                        <input type="hidden" id="empresa-id-suscriptor" name="id_suscriptor">
                     </div>
 
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                        <button type="reset" class="btn btn-outline">Restablecer</button>
-                        <button type="submit" class="btn btn-primary">
+                    <div class="perfil__form-actions" style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; align-items: center;">
+                        <button type="button" class="btn btn-outline perfil__unlink-button" id="btn-desvincular-empresa" style="display: none;">
+                            <i class="fa-solid fa-link-slash"></i> Desvincular de la Empresa
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="btn-guardar-empresa">
                             <i class="fa-solid fa-floppy-disk"></i> Guardar Empresa
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Pestaña 3: Preferencias y Reportes -->
-            <div id="tab-preferencias" class="dashboard-card tab-content-panel">
+            <!-- Modal de Confirmación Guardar Empresa -->
+            <div id="modal-confirmar-empresa" class="modal-2fa-overlay perfil__company-dialog-overlay">
+                <div class="modal-2fa-card perfil__dialog-card">
+                    <div class="perfil__dialog-indicator perfil__dialog-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+
+                    <h3 class="modal-2fa-title perfil__dialog-title">Confirmar Datos de Empresa</h3>
+                    
+                    <p class="modal-2fa-desc perfil__dialog-description">
+                        Verifica que los antecedentes tributarios ingresados sean correctos:
+                    </p>
+
+                    <div class="perfil__company-summary">
+                        <div><strong>• RUT:</strong> <span id="modal-confirm-rut">--</span></div>
+                        <div><strong>• Razón Social:</strong> <span id="modal-confirm-razon">--</span></div>
+                        <div><strong>• Nombre Comercial:</strong> <span id="modal-confirm-fantasia">--</span></div>
+                    </div>
+
+                    <p class="perfil__dialog-note">
+                        <i class="fa-solid fa-circle-info perfil__dialog-note-icon"></i> Una vez guardados, los datos quedarán registrados y protegidos contra modificaciones.
+                    </p>
+
+                    <div class="perfil__company-dialog-actions">
+                        <button type="button" id="btn-cancelar-modal-empresa" class="btn btn-outline perfil__company-review-button">
+                            Revisar o Cambiar
+                        </button>
+                        <button type="button" id="btn-aceptar-modal-empresa" class="btn btn-primary perfil__company-confirm-button">
+                            <i class="fa-solid fa-check"></i> Confirmar y Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Confirmación Desvincular Empresa -->
+            <div id="modal-desvincular-empresa" class="modal-2fa-overlay perfil__company-dialog-overlay">
+                <div class="modal-2fa-card perfil__dialog-card">
+                    <div class="perfil__dialog-indicator perfil__dialog-indicator--danger">
+                        <i class="fa-solid fa-building-circle-xmark"></i>
+                    </div>
+
+                    <h3 class="modal-2fa-title perfil__dialog-title">Desvinculación Corporativa</h3>
+                    
+                    <p class="modal-2fa-desc perfil__dialog-description">
+                        ¿Está seguro de que desea desvincular su cuenta de la entidad corporativa asociada?
+                    </p>
+
+                    <div class="perfil__company-summary">
+                        <div><strong>• Empresa:</strong> <span id="modal-desvincular-nombre">--</span></div>
+                        <div><strong>• RUT Corporativo:</strong> <span id="modal-desvincular-rut">--</span></div>
+                        <div><strong>• Rol Registrado:</strong> <span id="modal-desvincular-rol">--</span></div>
+                    </div>
+
+                    <p class="perfil__dialog-note" style="color: #64748b; line-height: 1.5; text-align: left;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #dd6b20;"></i>
+                        <strong>Alcance de la acción:</strong> Su perfil personal dejará de tener acceso a los antecedentes tributarios y al historial compartido de esta entidad. Para operar nuevamente con una empresa, deberá vincularse mediante su RUT corporativo o registrar una nueva organización.
+                    </p>
+
+                    <div class="perfil__company-dialog-actions">
+                        <button type="button" id="btn-cancelar-modal-desvincular" class="btn btn-outline perfil__company-review-button">
+                            Mantener Vinculación
+                        </button>
+                        <button type="button" id="btn-confirmar-modal-desvincular" class="btn perfil__btn-danger">
+                            <i class="fa-solid fa-link-slash"></i> Confirmar Desvinculación
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Filtros de Licitación -->
+            <div id="tab-filtros" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-sliders" style="color: var(--accent-green);"></i>
-                        Parámetros de Búsqueda y Reportes
+                        <i class="fa-solid fa-sliders perfil__section-icon"></i>
+                        Filtros de Búsqueda y Mercado
                     </div>
-                    <span class="dash-badge">Configuración Alertas</span>
+                    <span class="dash-badge">Selección No Lineal</span>
                 </div>
 
                 <form id="form-perfil-preferencias">
-                    <div class="profile-form-grid">
-                        <div class="form-item">
-                            <label for="pref-frecuencia">Frecuencia de Envío de Reporte</label>
-                            <select class="form-input" id="pref-frecuencia" name="frecuencia_reporte">
-                                <option value="diario">Diario</option>
-                                <option value="tres_veces">Tres veces por semana</option>
-                                <option value="dos_veces">Dos veces por semana</option>
-                                <option value="semanal">Semanal</option>
-                                <option value="quincenal">Quincenal</option>
-                                <option value="mensual">Mensual</option>
-                            </select>
+                    <div class="perfil__preference-sections">
+                        
+                        <!-- Eje 1: Cobertura Territorial -->
+                        <div class="stat-mini-card perfil__territory-card">
+                            <div class="perfil__preference-header">
+                                <div class="perfil__preference-title">
+                                    <i class="fa-solid fa-map-location-dot perfil__section-icon"></i> 1. Cobertura Territorial
+                                </div>
+                                <button type="button" id="btn-ajustar-cobertura" class="btn btn-outline perfil__preference-action">
+                                    <i class="fa-solid fa-diagram-project"></i> Explorar Árbol Geográfico
+                                </button>
+                            </div>
+                            
+                            <div id="chips-comunas" class="perfil__selection-chips" style="max-height: 120px; overflow-y: auto; overflow-x: hidden;">
+                                <span class="perfil__selection-placeholder">Sin comunas seleccionadas (Aplica cobertura nacional)</span>
+                            </div>
+                            <input type="hidden" id="pref-comunas" name="pref_comunas">
                         </div>
 
-                        <div class="form-item">
-                            <label for="pref-plazo-min">Plazo Mínimo (Días de Postulación)</label>
-                            <input type="number" class="form-input" id="pref-plazo-min" name="plazominimo" placeholder="Ej: 5" min="0">
+                        <!-- Eje 2: Catálogo y Productos ONU -->
+                        <div class="stat-mini-card perfil__products-card">
+                            <div class="perfil__preference-header">
+                                <div class="perfil__preference-title">
+                                    <i class="fa-solid fa-boxes-stacked perfil__products-heading-icon"></i> 2. Catálogo de Bienes y Servicios (ONU)
+                                </div>
+                                <button type="button" id="btn-ajustar-productos" class="btn btn-outline perfil__preference-action">
+                                    <i class="fa-solid fa-folder-tree"></i> Explorar Catálogo ONU
+                                </button>
+                            </div>
+
+                            <div id="chips-productos" class="perfil__selection-chips perfil__product-chips" style="max-height: 120px; overflow-y: auto; overflow-x: hidden;">
+                                <span class="perfil__selection-placeholder">Sin filtros de productos (Aplica a todos los rubros)</span>
+                            </div>
+                            <input type="hidden" id="pref-productos" name="pref_productos">
+
+                            <!-- Checkboxes de Tipo de Procedimiento (Organizado en Públicas y Privadas) -->
+                            <div class="form-item grid-full perfil__tender-type-section">
+                                <label class="perfil__tender-type-label">
+                                    <i class="fa-solid fa-list-check perfil__section-icon"></i> Tipo de Procedimiento (Selección múltiple)
+                                </label>
+                                <p class="perfil__field-hint" style="font-size: 0.82rem; color: var(--muted-teal); margin-top: -2px; margin-bottom: 12px;">
+                                    Monitorea oportunidades según los tramos oficiales de la normativa de compras públicas.
+                                </p>
+
+                                <div id="contenedor-tipo-licitacion" class="perfil__tender-blocks">
+                                    <!-- Bloque 1: Licitaciones Públicas (5 tramos - Categorías 1 y 6) -->
+                                    <div class="perfil__tender-group">
+                                        <div class="perfil__tender-group-header">
+                                            <span class="perfil__tender-group-title">
+                                                <i class="fa-solid fa-bullhorn perfil__tender-group-icon"></i> Licitaciones Públicas
+                                            </span>
+                                            <span class="perfil__tender-group-badge">{% if tipos_procedimiento.publicas %}{{ tipos_procedimiento.publicas|length }} tramos{% else %}5 tramos{% endif %}</span>
+                                        </div>
+                                        <div class="perfil__tender-type-grid">
+                                            {% for item in tipos_procedimiento.publicas %}
+                                            <label class="perfil__tender-type-option" title="{{ item.glosa }}">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="{{ item.codigo }}" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">{{ item.nombre }}</strong>
+                                                    <small class="perfil__tender-type-limit">{{ item.tramo }}</small>
+                                                </div>
+                                            </label>
+                                            {% empty %}
+                                            <label class="perfil__tender-type-option" title="Licitación pública inferior a 100 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="L1" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">L1</strong>
+                                                    <small class="perfil__tender-type-limit">Menor a 100 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Pública igual o superior a 100 UTM e inferior a 1.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="LE" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">LE</strong>
+                                                    <small class="perfil__tender-type-limit">100 a 1.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Pública igual o superior a 1.000 UTM e inferior a 2.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="LP" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">LP</strong>
+                                                    <small class="perfil__tender-type-limit">1.000 a 2.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Pública igual o superior a 2.000 UTM e inferior a 5.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="LQ" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">LQ</strong>
+                                                    <small class="perfil__tender-type-limit">2.000 a 5.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Pública Mayor a 5.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="LR" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">LR</strong>
+                                                    <small class="perfil__tender-type-limit">Mayor a 5.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Bloque 2: Licitaciones Privadas (3 tramos - Categorías 2 y 7) -->
+                                    <div class="perfil__tender-group" style="margin-top: 14px;">
+                                        <div class="perfil__tender-group-header">
+                                            <span class="perfil__tender-group-title">
+                                                <i class="fa-solid fa-lock perfil__tender-group-icon perfil__tender-group-icon--private"></i> Licitaciones Privadas
+                                            </span>
+                                            <span class="perfil__tender-group-badge perfil__tender-group-badge--private">{% if tipos_procedimiento.privadas %}{{ tipos_procedimiento.privadas|length }} tramos{% else %}3 tramos{% endif %}</span>
+                                        </div>
+                                        <div class="perfil__tender-type-grid">
+                                            {% for item in tipos_procedimiento.privadas %}
+                                            <label class="perfil__tender-type-option" title="{{ item.glosa }}">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="{{ item.codigo }}" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">{{ item.nombre }}</strong>
+                                                    <small class="perfil__tender-type-limit">{{ item.tramo }}</small>
+                                                </div>
+                                            </label>
+                                            {% empty %}
+                                            <label class="perfil__tender-type-option" title="Licitación Privada Inferior a 100 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="E2" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">E2</strong>
+                                                    <small class="perfil__tender-type-limit">Menor a 100 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Privada igual o superior a 100 UTM e inferior a 1.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="CO" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">CO</strong>
+                                                    <small class="perfil__tender-type-limit">100 a 1.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            <label class="perfil__tender-type-option" title="Licitación Privada igual o superior a 1.000 UTM e inferior a 2.000 UTM">
+                                                <input type="checkbox" name="pref_tipo_lic_check" value="B2" class="perfil__tender-type-checkbox">
+                                                <div class="perfil__tender-type-details">
+                                                    <strong class="perfil__tender-type-name">B2</strong>
+                                                    <small class="perfil__tender-type-limit">Mayor a 1.000 UTM</small>
+                                                </div>
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="form-item">
-                            <label for="pref-dias-restantes">Mínimo de Días Restantes</label>
-                            <input type="number" class="form-input" id="pref-dias-restantes" name="minimo_dias_restantes" placeholder="Ej: 2" min="0">
+                        <!-- Eje 3: Entidades Públicas y Unidades de Compra -->
+                        <div class="stat-mini-card perfil__entities-card">
+                            <div class="perfil__preference-header">
+                                <div class="perfil__preference-title">
+                                    <i class="fa-solid fa-landmark perfil__entity-icon"></i> 3. Entidades Públicas y Unidades de Compra
+                                </div>
+                                <button type="button" id="btn-ajustar-ucom" class="btn btn-outline perfil__preference-action">
+                                    <i class="fa-solid fa-sitemap"></i> Explorar Organismos y Unidades
+                                </button>
+                            </div>
+
+                            <div id="chips-ucom" class="perfil__selection-chips" style="max-height: 120px; overflow-y: auto; overflow-x: hidden;">
+                                <span class="perfil__selection-placeholder">Sin entidades específicas (Monitorea todo el Estado)</span>
+                            </div>
+                            <input type="hidden" id="pref-ucom" name="pref_ucom">
                         </div>
 
-                        <div class="form-item">
-                            <label for="pref-ano-licitacion">Año de Licitación</label>
-                            <select class="form-input" id="pref-ano-licitacion" name="ano_licitacion">
-                                <option value="2026">2026</option>
-                                <option value="2025">2025</option>
-                                <option value="2024">2024</option>
-                                <option value="2020">2020</option>
-                                <option value="2016">2016</option>
-                                <option value="2010">2010</option>
-                            </select>
-                        </div>
-
-                        <div class="form-item">
-                            <label for="pref-monto-corte">Criterio Corte / Monto Mínimo</label>
-                            <select class="form-input" id="pref-monto-corte" name="criterio_monto">
-                                <option value="todos">Todos los montos</option>
-                                <option value="500k">&gt;= $500.000</option>
-                                <option value="1m">&gt; $1.000.000</option>
-                                <option value="10m">&gt;= $10.000.000</option>
-                            </select>
-                        </div>
-
-                        <div class="form-item">
-                            <label for="pref-convenio-marco">Filtro Convenio Marco</label>
-                            <select class="form-input" id="pref-convenio-marco" name="convenio_marco">
-                                <option value="sin_convenio">Sin Convenio Marco</option>
-                                <option value="con_convenio">Solo Convenio Marco</option>
-                                <option value="tecnologia">Tecnología (Data Center)</option>
-                                <option value="todos">Indiferente</option>
-                            </select>
-                        </div>
-
-                        <div class="form-item grid-full">
-                            <label for="pref-palabras-clave">Palabras Clave de Interés (core.empresa_palabra_clave)</label>
-                            <input type="text" class="form-input" id="pref-palabras-clave" name="palabras_clave" placeholder="Ej: Servidores, Consultoría, Computadores, Soporte TI (separados por coma)">
-                        </div>
-
-                        <div class="form-item grid-full">
-                            <label for="pref-saludo-reporte">Destinatarios de Saludo en Reporte</label>
-                            <input type="text" class="form-input" id="pref-saludo-reporte" name="saludo_reporte" placeholder="Ej: Andrés, Ignacio, Rosario">
-                        </div>
                     </div>
 
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                        <button type="reset" class="btn btn-outline">Restablecer</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk"></i> Guardar Preferencias
+                    <div class="perfil__form-footer">
+                        <button type="submit" class="btn btn-primary perfil__submit-button">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Filtros de Licitación
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Pestaña 4: Filtros de Licitación y Catálogo -->
-            <div id="tab-filtros-catalogo" class="dashboard-card tab-content-panel">
+            <!-- 4. Palabras Clave -->
+            <div id="tab-palabras" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-layer-group" style="color: var(--accent-green);"></i>
-                        Filtros de Catálogo y Mercado Público
+                        <i class="fa-solid fa-tags perfil__section-icon"></i>
+                        Palabras Clave de Búsqueda
                     </div>
-                    <span class="dash-badge">Segmentación</span>
+                    <span class="dash-badge">Monitoreo Específico</span>
                 </div>
 
-                <form id="form-perfil-filtros">
-                    <div class="profile-form-grid">
-                        <div class="form-item">
-                            <label for="filtro-actividad-econ">Giro / Actividad Económica (catalog.actividad_economica)</label>
-                            <select class="form-input" id="filtro-actividad-econ" name="actividad_economica">
-                                <option value="">-- Seleccionar Rubro --</option>
-                                <option value="620100">Actividades de programación informática</option>
-                                <option value="620200">Consultoría de informática y gestión de instalaciones</option>
-                                <option value="465100">Venta al por mayor de computadores y equipo periférico</option>
-                                <option value="todos">Todos los rubros</option>
-                            </select>
-                        </div>
+                <form id="form-perfil-palabras">
+                    <div class="perfil__preference-sections">
+                        <div class="stat-mini-card" style="border-left: 4px solid var(--accent-green); padding: 1.4rem; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <div class="perfil__preference-header" style="margin-bottom: 0.8rem;">
+                                <div class="perfil__preference-title" style="font-weight: 800; color: var(--dark-green); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-key" style="color: var(--accent-green);"></i> Términos y Criterios de Adquisición
+                                </div>
+                            </div>
 
-                        <div class="form-item">
-                            <label for="filtro-tipo-licitacion">Tipo de Licitación (catalog.tipo_licitacion)</label>
-                            <select class="form-input" id="filtro-tipo-licitacion" name="tipo_licitacion">
-                                <option value="todas">Todas las licitaciones</option>
-                                <option value="L1">L1 - Licitación Pública Menor a 100 UTM</option>
-                                <option value="LE">LE - Licitación Pública Entre 100 y 1.000 UTM</option>
-                                <option value="LP">LP - Licitación Pública Mayor a 1.000 UTM</option>
-                                <option value="LR">LR - Licitación Pública Mayor a 5.000 UTM</option>
-                            </select>
-                        </div>
+                            <p style="font-size: 0.88rem; color: var(--gray-text); margin-top: 0; margin-bottom: 1.2rem; line-height: 1.5;">
+                                Define palabras clave o frases exactas para identificar oportunidades relevantes en licitaciones del Estado. Se evalúan contra los títulos, rubros y descripciones de las adquisiciones publicadas.
+                            </p>
 
-                        <div class="form-item">
-                            <label for="filtro-region">Región de Cobertura (catalog.region)</label>
-                            <select class="form-input" id="filtro-region" name="region">
-                                <option value="todas">Todas las regiones (Nacional)</option>
-                                <option value="13">Región Metropolitana</option>
-                                <option value="05">Región de Valparaíso</option>
-                                <option value="08">Región del Biobío</option>
-                            </select>
-                        </div>
+                            <div class="form-item grid-full perfil__keyword-field">
+                                <div class="perfil__keyword-header">
+                                    <label for="pref-palabras" class="perfil__keyword-label">Palabras Clave (Separadas por coma)</label>
+                                    <small class="perfil__keyword-hint">(Se guardan en minúsculas y sin acentos)</small>
+                                </div>
+                                <input type="text" id="pref-palabras" name="pref_palabras" class="form-input" placeholder="Ej: Mantención, Cloud, Seguridad, Insumos médicos, Climatización" autocomplete="off">
 
-                        <div class="form-item">
-                            <label for="filtro-organismos">Organismos Objetivo (core.empresa_organismo)</label>
-                            <input type="text" class="form-input" id="filtro-organismos" name="organismos_objetivo" placeholder="Ej: Municipalidades, Hospitales, Ministerios">
-                        </div>
+                                <div id="palabras-sugerencia-box" class="perfil__suggestion" style="display: none; cursor: pointer;">
+                                    <i class="fa-solid fa-wand-magic-sparkles perfil__suggestion-icon"></i>
+                                    <span>¿Quisiste decir <strong id="palabra-sugerida-texto" class="perfil__suggestion-text"></strong>?</span>
+                                    <span class="perfil__suggestion-hint">(Haz clic para corregir)</span>
+                                </div>
+                            </div>
 
-                        <div class="form-item grid-full">
-                            <label for="filtro-cod-productos">Productos ONU / Códigos de Mercado Público (catalog.producto)</label>
-                            <input type="text" class="form-input" id="filtro-cod-productos" name="codigos_productos" placeholder="Ej: 43211507 (Computadores portátiles), 81111812 (Mantenimiento TI)">
+                            <!-- Chips de previsualización dinámica -->
+                            <div style="margin-top: 1.2rem;">
+                                <label style="font-size: 0.86rem; font-weight: 700; color: var(--dark-green); margin-bottom: 0.4rem; display: block;">
+                                    <i class="fa-solid fa-tags" style="color: var(--muted-teal); font-size: 0.82rem; margin-right: 4px;"></i> Palabras configuradas actualmente:
+                                </label>
+                                <div id="chips-palabras" class="perfil__selection-chips" style="max-height: 120px; overflow-y: auto; overflow-x: hidden;">
+                                    <span class="perfil__selection-placeholder">Sin palabras clave configuradas</span>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 1.2rem; padding: 0.85rem 1rem; background: var(--light-bg); border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.84rem; color: var(--gray-text);">
+                                <strong style="color: var(--dark-green); display: block; margin-bottom: 4px;">
+                                    <i class="fa-solid fa-circle-info" style="color: var(--muted-teal);"></i> Consejos para optimizar tu búsqueda:
+                                </strong>
+                                <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.5;">
+                                    <li>Escribe términos representativos de tus servicios o productos (ej: <em>auditoría, catering, servidores</em>).</li>
+                                    <li>Haz clic en la <strong>&times;</strong> de cualquier etiqueta para eliminarla rápidamente.</li>
+                                    <li>El asistente ortográfico te sugerirá correcciones basadas en el catálogo oficial de Mercado Público.</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                        <button type="reset" class="btn btn-outline">Restablecer</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk"></i> Guardar Filtros
+                    <div class="perfil__form-footer">
+                        <button type="submit" class="btn btn-primary perfil__submit-button">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Palabras Clave
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Pestaña 5: Contraseña y Seguridad -->
+            <!-- 4. Contraseña y Seguridad -->
             <div id="tab-seguridad" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-shield-halved" style="color: var(--accent-green);"></i>
+                        <i class="fa-solid fa-shield-halved perfil__section-icon"></i>
                         Cambiar Contraseña
                     </div>
                 </div>
@@ -369,36 +581,19 @@
                     <div class="profile-form-grid">
                         <div class="form-item grid-full">
                             <label for="profile-current-pass">Contraseña Actual</label>
-                            <div style="position: relative; width: 100%;">
-                                <input type="password" id="profile-current-pass" name="current_pass" class="form-input" placeholder="Ingresa tu contraseña actual" style="width: 100%; padding-right: 2.5rem;" required>
-                                <button type="button" id="toggle-profile-current-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
-                                    <i class="fa-solid fa-eye" id="toggle-profile-current-icon"></i>
-                                </button>
-                            </div>
+                            <input type="password" id="profile-current-pass" class="form-input" placeholder="Ingresa tu contraseña actual" required>
                         </div>
-
                         <div class="form-item">
                             <label for="profile-new-pass">Nueva Contraseña</label>
-                            <div style="position: relative; width: 100%;">
-                                <input type="password" id="profile-new-pass" name="new_pass" class="form-input" placeholder="Nueva contraseña" style="width: 100%; padding-right: 2.5rem;" required>
-                                <button type="button" id="toggle-profile-new-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
-                                    <i class="fa-solid fa-eye" id="toggle-profile-new-icon"></i>
-                                </button>
-                            </div>
+                            <input type="password" id="profile-new-pass" class="form-input" placeholder="Nueva contraseña" required>
                         </div>
-
                         <div class="form-item">
                             <label for="profile-confirm-pass">Confirmar Nueva Contraseña</label>
-                            <div style="position: relative; width: 100%;">
-                                <input type="password" id="profile-confirm-pass" name="confirm_pass" class="form-input" placeholder="Repite la nueva contraseña" style="width: 100%; padding-right: 2.5rem;" required>
-                                <button type="button" id="toggle-profile-confirm-pass" style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: var(--dark-green); font-size: 1.05rem;">
-                                    <i class="fa-solid fa-eye" id="toggle-profile-confirm-icon"></i>
-                                </button>
-                            </div>
+                            <input type="password" id="profile-confirm-pass" class="form-input" placeholder="Repite la contraseña" required>
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.8rem; display: flex; justify-content: flex-end;">
+                    <div class="perfil__form-actions">
                         <button type="submit" class="btn btn-primary">
                             <i class="fa-solid fa-key"></i> Actualizar Clave
                         </button>
@@ -406,63 +601,253 @@
                 </form>
             </div>
 
-            <!-- Pestaña 6: Estado del Sistema / Administración -->
+            <!-- 5. Sesión y Auditoría -->
             <div id="tab-sesiones" class="dashboard-card tab-content-panel">
                 <div class="dashboard-header">
                     <div class="dash-title">
-                        <i class="fa-solid fa-circle-info" style="color: var(--accent-green);"></i>
-                        Parámetros y Estado del Sistema
+                        <i class="fa-solid fa-circle-info perfil__section-icon"></i>
+                        Auditoría y Estado de Conexión
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 1.2rem; text-align: left;">
-                    <div class="stat-grid" style="margin-top: 0.5rem;">
-                        <div class="stat-mini-card">
-                            <label>Estado de Verificación</label>
-                            <div id="profile-status" style="color: var(--accent-green); font-size: 1.05rem; font-weight: 700;">No verificado</div>
-                        </div>
-                        <div class="stat-mini-card">
-                            <label>Tipo de Acceso</label>
-                            <div id="profile-estado" style="color: var(--dark-green); font-size: 1.05rem; font-weight: 700;">--</div>
+                <div class="stat-grid perfil__audit-stats">
+                    <div class="stat-mini-card">
+                        <label>Fecha de Registro</label>
+                        <div id="profile-created-at" class="perfil__audit-value">--</div>
+                    </div>
+                    <div class="stat-mini-card">
+                        <label>Última Actualización</label>
+                        <div id="profile-last-login" class="perfil__audit-value">--</div>
+                    </div>
+                </div>
+
+                <div class="perfil__audit-fields">
+                    <div class="form-item">
+                        <label class="perfil__audit-label">
+                            Identificador de Usuario (Firebase UID)
+                        </label>
+                        <div class="token-display-box">
+                            <span id="profile-uid-header">--</span>
                         </div>
                     </div>
 
-                    <!-- Apartado exclusivo para Administradores -->
-                    <div id="admin-services-section" style="display: none;">
-                        <div class="dashboard-header" style="margin-top: 1.5rem; margin-bottom: 0.5rem;">
-                            <div class="dash-title">
-                                <i class="fa-solid fa-layer-group" style="color: var(--accent-green);"></i>
-                                Módulos y Servicios de la Plataforma
-                            </div>
-                            <span class="dash-badge">Servicios Activos</span>
+                    <div class="form-item">
+                        <label class="perfil__audit-label">
+                            Token de Sesión Local
+                        </label>
+                        <div class="token-display-box perfil__token-box">
+                            <span id="profile-token-id" class="perfil__token-value">--</span>
                         </div>
+                    </div>
+                </div>
 
-                        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
-                            <div class="mockup-item" style="margin: 0; padding: 1.1rem 1.4rem;">
-                                <div class="mockup-info">
-                                    <h6 style="font-size: 1rem; margin-bottom: 2px;">Sistema de Alertas y Avisos</h6>
-                                    <span>Centro de notificaciones y anuncios del estado de la plataforma.</span>
-                                </div>
-                                <a href="/mensajeria" class="btn btn-primary" style="padding: 0.5rem 1.2rem; font-size: 0.88rem;">
-                                    <i class="fa-solid fa-bullhorn"></i> Abrir Avisos
-                                </a>
+                <!-- 5.1 Acceso Exclusivo a Administración General (Solo Administradores) -->
+                <div id="perfil-admin-section" class="perfil__admin-section" style="display: none;">
+                    <div class="perfil__admin-card">
+                        <div class="perfil__admin-content">
+                            <div class="perfil__admin-icon">
+                                <i class="fa-solid fa-shield-halved"></i>
                             </div>
-
-                            <div class="mockup-item" style="margin: 0; padding: 1.1rem 1.4rem;">
-                                <div class="mockup-info">
-                                    <h6 style="font-size: 1rem; margin-bottom: 2px;">Gestión de Cuentas y Accesos</h6>
-                                    <span>Administración de suscripciones, prospectos y perfiles autorizados.</span>
+                            <div class="perfil__admin-text">
+                                <div class="perfil__admin-tag">
+                                    <i class="fa-solid fa-crown"></i> Privilegios de Administrador
                                 </div>
-                                <button type="button" class="btn btn-outline" style="padding: 0.5rem 1.2rem; font-size: 0.88rem;">
-                                    <i class="fa-solid fa-users-gear"></i> Administrar Accesos
-                                </button>
+                                <h4 class="perfil__admin-title">Administración General</h4>
+                                <p class="perfil__admin-desc">
+                                    Gestión centralizada de usuarios, políticas de seguridad de contraseñas, alertas de perfil e información institucional.
+                                </p>
                             </div>
+                        </div>
+                        <div class="perfil__admin-actions">
+                            <a href="{% url 'administracion_general' %}" class="btn btn-primary perfil__admin-btn">
+                                <i class="fa-solid fa-gear"></i> Ir a Administración General
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
 
         </main>
+    </div>
+</div>
+
+<!-- ========================================================================== -->
+<!-- MODAL DE CONFIRMACIÓN DE CAMBIOS PENDIENTES AL CAMBIAR PESTAÑA / SALIR      -->
+<!-- ========================================================================== -->
+<div id="modal-confirmar-salida-pestana" class="modal-2fa-overlay perfil__exit-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo-salida-cambios">
+    <div class="modal-2fa-card perfil__dialog-card">
+        <button type="button" id="btn-cerrar-salida-pestana" class="site-modal__close" aria-label="Permanecer en la página">&times;</button>
+        <div class="perfil__dialog-indicator perfil__exit-dialog-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+
+        <h3 class="modal-2fa-title perfil__dialog-title" id="modal-titulo-salida-cambios">¿Guardar los cambios realizados?</h3>
+        
+        <p class="modal-2fa-desc perfil__exit-dialog-description">
+            Tienes modificaciones sin guardar en: <br><strong id="modal-nombre-seccion-cambios" class="perfil__section-name">--</strong>.
+        </p>
+
+        <p class="perfil__exit-dialog-warning" id="modal-aviso-descarte-cambios">
+            Si cambias de sección sin guardar, tus modificaciones se descartarán.
+        </p>
+
+        <div class="perfil__exit-dialog-actions">
+            <button type="button" id="btn-descartar-cambios-pestana" class="btn btn-outline perfil__exit-dialog-button">
+                Descartar y Cambiar
+            </button>
+            <button type="button" id="btn-guardar-cambios-pestana" class="btn btn-primary perfil__exit-dialog-save-button">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================== -->
+<!-- MODAL 1: Cobertura Geográfica (Árbol Territorial)                         -->
+<!-- ========================================================================== -->
+<div id="territory-modal" class="modal-2fa-overlay perfil__territory-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="territory-modal-title">
+    <div class="modal-2fa-card perfil__selector-dialog-card perfil__territory-dialog-card">
+        
+        <div class="perfil__dialog-header">
+            <div class="perfil__dialog-heading">
+                <i class="fa-solid fa-folder-tree perfil__dialog-heading-icon"></i>
+                <h3 id="territory-modal-title" class="perfil__dialog-heading-title">Cobertura Geográfica</h3>
+            </div>
+            <button type="button" id="btn-cerrar-x" class="perfil__dialog-close">&times;</button>
+        </div>
+
+        <p id="territory-modal-desc" class="perfil__dialog-help">
+            Marca o desmarca regiones, provincias o comunas específicas.
+        </p>
+
+        <div class="perfil__dialog-search-field perfil__tree-search-field">
+            <input type="text" id="territory-tree-search" class="form-input perfil__tree-search-input" placeholder="🔍 Filtrar por nombre de región, provincia o comuna...">
+        </div>
+
+        <div id="territory-tree" class="perfil__tree-panel">
+            <div class="perfil__tree-loading">
+                <i class="fa-solid fa-spinner fa-spin perfil__tree-loading-icon"></i>
+                Cargando divisiones territoriales...
+            </div>
+        </div>
+
+        <div class="perfil__tree-footer">
+            <span id="territory-counter" class="perfil__tree-selection-count">0 comunas seleccionadas</span>
+            <div class="perfil__tree-actions">
+                <button type="button" id="btn-cerrar-cobertura" class="btn btn-outline perfil__tree-button">Cancelar</button>
+                <button type="button" id="btn-guardar-cobertura" class="btn btn-primary perfil__tree-apply-button">
+                    <i class="fa-solid fa-check"></i> Aplicar Selección
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ========================================================================== -->
+<!-- MODAL 2: Catálogo y Productos ONU (Árbol de Productos)                    -->
+<!-- ========================================================================== -->
+<div id="productos-modal" class="modal-2fa-overlay perfil__selection-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="productos-modal-title">
+    <div class="modal-2fa-card perfil__selector-dialog-card perfil__catalog-dialog-card">
+        
+        <div class="perfil__dialog-header">
+            <div class="perfil__dialog-heading">
+                <i class="fa-solid fa-boxes-stacked perfil__dialog-heading-icon"></i>
+                <h3 id="productos-modal-title" class="perfil__dialog-heading-title">Catálogo de Bienes y Servicios (ONU)</h3>
+            </div>
+            <button type="button" id="btn-cerrar-productos-x" class="perfil__dialog-close">&times;</button>
+        </div>
+
+        <p class="perfil__dialog-help">
+            Explora el catálogo oficial por Grupo de Producto y Nivel ONU (incluyendo Obras Civiles MOP). Puedes seleccionar Grupos completos, Rubros o Productos individuales.
+        </p>
+
+        <div class="perfil__dialog-search-field perfil__selection-search-field">
+            <input type="text" id="productos-tree-search" class="form-input perfil__selection-search-input" placeholder="🔍 Filtrar por grupo, código o nombre del producto...">
+            <div id="productos-search-loader" class="perfil__selection-search-loading">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </div>
+        </div>
+
+        <div id="productos-tree" class="perfil__tree-panel">
+            <div class="perfil__tree-loading">
+                <i class="fa-solid fa-spinner fa-spin perfil__tree-loading-icon"></i>
+                Cargando catálogo de productos ONU...
+            </div>
+        </div>
+
+        <div class="perfil__tree-footer">
+            <span id="productos-counter" class="perfil__tree-selection-count">0 productos seleccionados</span>
+            <div class="perfil__tree-actions">
+                <button type="button" id="btn-cerrar-productos" class="btn btn-outline perfil__tree-button">Cancelar</button>
+                <button type="button" id="btn-guardar-productos" class="btn btn-primary perfil__tree-apply-button">
+                    <i class="fa-solid fa-check"></i> Aplicar Selección
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ========================================================================== -->
+<!-- MODAL 3: Entidades Públicas y Unidades de Compra (Árbol UCOM)             -->
+<!-- ========================================================================== -->
+<div id="ucom-modal" class="modal-2fa-overlay perfil__selection-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="ucom-modal-title">
+    <div class="modal-2fa-card perfil__selector-dialog-card perfil__entities-dialog-card">
+        
+        <div class="perfil__dialog-header">
+            <div class="perfil__dialog-heading">
+                <i class="fa-solid fa-sitemap perfil__entities-dialog-icon"></i>
+                <h3 id="ucom-modal-title" class="perfil__dialog-heading-title">Entidades Públicas y Unidades de Compra</h3>
+            </div>
+            <button type="button" id="btn-cerrar-ucom-x" class="perfil__dialog-close">&times;</button>
+        </div>
+
+        <p class="perfil__dialog-help">
+            Explora las instituciones del Estado organizadas jerárquicamente por Sector y Organismo. Puedes marcar un Sector o una Institución completa, o seleccionar Unidades de Compra individuales.
+        </p>
+
+        <!-- Barra de Filtros: Selector de Sector del Estado y Buscador Textual -->
+        <div class="perfil__ucom-filter-controls">
+            <div class="perfil__ucom-filter-group perfil__ucom-filter-group--sector">
+                <label for="ucom-sector-select" class="perfil__ucom-filter-label">
+                    <i class="fa-solid fa-filter" style="color: var(--accent-green);"></i> Selector por Sector:
+                </label>
+                <select id="ucom-sector-select" class="form-input perfil__selection-sector-select">
+                    <option value="">🏛️ Todos los Sectores del Estado (30)</option>
+                </select>
+            </div>
+
+            <div class="perfil__ucom-filter-group perfil__ucom-filter-group--search">
+                <label for="ucom-tree-search" class="perfil__ucom-filter-label">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--accent-green);"></i> Buscar Organismo o Unidad:
+                </label>
+                <div class="perfil__dialog-search-field perfil__selection-search-field" style="margin: 0; position: relative;">
+                    <input type="text" id="ucom-tree-search" class="form-input perfil__selection-search-input" placeholder="🔍 Ej: Carabineros, PDI, Viña del Mar, Gustavo Fricke...">
+                    <div id="ucom-search-loader" class="perfil__selection-search-loading" style="position: absolute; right: 12px; top: 11px; display: none;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent-green);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="ucom-tree" class="perfil__tree-panel">
+            <div class="perfil__tree-loading">
+                <i class="fa-solid fa-spinner fa-spin perfil__tree-loading-icon"></i>
+                Cargando entidades públicas y unidades de compra...
+            </div>
+        </div>
+
+        <div class="perfil__tree-footer">
+            <span id="ucom-counter" class="perfil__tree-selection-count">0 unidades seleccionadas</span>
+            <div class="perfil__tree-actions">
+                <button type="button" id="btn-cerrar-ucom" class="btn btn-outline perfil__tree-button">Cancelar</button>
+                <button type="button" id="btn-guardar-ucom" class="btn btn-primary perfil__tree-apply-button">
+                    <i class="fa-solid fa-check"></i> Aplicar Selección
+                </button>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

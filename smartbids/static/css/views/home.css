@@ -1,0 +1,344 @@
+.home__preview-icon {
+    color: var(--accent-green);
+}
+
+/* ===== Encabezado de funcionalidades ===== */
+
+.home__features-heading {
+    text-align: center;
+    margin-bottom: 5rem;
+}
+
+/* ===== Alerta de hito ===== */
+
+.home__milestone-alert {
+    background: var(--white);
+    padding: 1.2rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.home__milestone-icon {
+    font-size: 2rem;
+    color: var(--accent-green);
+    margin-bottom: 0.5rem;
+}
+
+.home__milestone-title {
+    color: var(--dark-green);
+    font-weight: 700;
+}
+
+.home__milestone-description {
+    font-size: 0.85rem;
+    color: var(--gray-text);
+    margin-bottom: 0;
+}
+
+/* ===== Gráfico de analítica ===== */
+
+.home__analytics-chart {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 120px;
+    padding: 1rem;
+    background: var(--white);
+    border-radius: 12px;
+}
+
+.home__chart-bar--first {
+    width: 20%;
+    background: var(--soft-mint);
+    height: 40%;
+    border-radius: 6px;
+}
+
+.home__chart-bar--second {
+    width: 20%;
+    background: var(--muted-teal);
+    height: 75%;
+    border-radius: 6px;
+}
+
+.home__chart-bar--third {
+    width: 20%;
+    background: var(--accent-green);
+    height: 100%;
+    border-radius: 6px;
+}
+
+.home__chart-bar--fourth {
+    width: 20%;
+    background: var(--dark-green);
+    height: 60%;
+    border-radius: 6px;
+}
+
+/* ===== Sección de contacto ===== */
+
+.home__contact-row {
+    margin-bottom: 0;
+    align-items: start;
+}
+
+.home__contact-email-card {
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.home__contact-email {
+    display: block;
+    color: var(--dark-green);
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.home__contact-card {
+    padding: 1.8rem;
+}
+
+.home__contact-header {
+    margin-bottom: 1.2rem;
+}
+
+.home__contact-title {
+    font-size: 1.35rem;
+    margin: 0;
+}
+
+.home__contact-description {
+    color: var(--gray-text);
+    margin: 0.3rem 0 0;
+    font-size: 0.9rem;
+}
+
+.home__contact-send-icon {
+    color: var(--accent-green);
+    font-size: 1.3rem;
+}
+
+.home__contact-form-grid {
+    margin-top: 0;
+}
+
+.home__contact-message {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.home__contact-honeypot {
+    display: none;
+}
+
+.home__contact-card .form-item label {
+    cursor: pointer;
+}
+
+#contact-topic {
+    cursor: pointer;
+}
+
+.home__contact-feedback {
+    min-height: 1.4rem;
+    margin: 0.8rem 0;
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   ANIMACIONES DE DESLIZAMIENTO DE SECCIONES (SLIDE-IN ON SCROLL)
+   ========================================================================== */
+
+/* 1. Entrada de la sección Hero */
+.hero-content {
+    animation: heroSlideIn 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-preview {
+    animation: heroSlideIn 1.05s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+@keyframes heroSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 2. Secciones que se deslizan suavemente al entrar a la vista */
+.home-slide-section {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.home-slide-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 3. Tarjetas de Propuesta de Valor con deslizamiento escalonado */
+.value-prop .prop-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease;
+}
+
+.value-prop.is-visible .prop-card:nth-child(1) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
+}
+
+.value-prop.is-visible .prop-card:nth-child(2) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.25s;
+}
+
+.value-prop.is-visible .prop-card:nth-child(3) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.4s;
+}
+
+.prop-card:hover {
+    transform: translateY(-6px) !important;
+}
+
+/* 4. Filas de Funcionalidades con deslizamiento suave */
+.feature-row {
+    opacity: 0;
+    transform: translateY(35px);
+    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.feature-row.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 5. Tarjetas del módulo predictivo (ML) */
+.ml-section .ml-text {
+    opacity: 0;
+    transform: translateX(-35px);
+    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ml-section.is-visible .ml-text {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.ml-card-item {
+    opacity: 0;
+    transform: translateX(35px);
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease;
+}
+
+.ml-section.is-visible .ml-card-item:nth-child(1) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.1s;
+}
+
+.ml-section.is-visible .ml-card-item:nth-child(2) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.25s;
+}
+
+.ml-section.is-visible .ml-card-item:nth-child(3) {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.4s;
+}
+
+/* 6. Beneficios con entrada escalonada */
+.benefit-box {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease;
+}
+
+.benefits-banner.is-visible .benefit-box:nth-child(1) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
+}
+
+.benefits-banner.is-visible .benefit-box:nth-child(2) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.2s;
+}
+
+.benefits-banner.is-visible .benefit-box:nth-child(3) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+}
+
+.benefits-banner.is-visible .benefit-box:nth-child(4) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.4s;
+}
+
+.benefit-box:hover {
+    transform: translateY(-6px) !important;
+}
+
+/* 7. Sección de Contacto */
+.features#contacto .feature-text {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.features#contacto .home__contact-card {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
+                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+
+.features#contacto.is-visible .feature-text,
+.features#contacto.is-visible .home__contact-card {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Respeto por preferencias de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    .home-slide-section,
+    .prop-card,
+    .feature-row,
+    .ml-section .ml-text,
+    .ml-card-item,
+    .benefit-box,
+    .hero-content,
+    .hero-preview {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}

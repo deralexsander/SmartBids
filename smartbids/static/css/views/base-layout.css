@@ -1,0 +1,329 @@
+/* ===== Header · Navegación y notificaciones ===== */
+
+.site-header__admin-link--hidden {
+    display: none;
+}
+
+.site-header__profile-button {
+    display: none;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border-radius: 12px;
+}
+
+.site-header__notifications {
+    position: relative;
+}
+
+.site-header__notifications-toggle {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--soft-mint);
+    background: var(--white);
+    color: var(--dark-green);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.site-header__notifications-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 10px;
+    background: #dc2626;
+    color: white;
+    font-size: 11px;
+    line-height: 18px;
+    font-weight: 800;
+}
+
+.site-header__notifications-panel {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    right: 0;
+    top: 50px;
+    width: min(360px, 90vw);
+    padding: 1rem;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.14);
+}
+
+.site-header__notifications-panel.is-open {
+    display: block;
+}
+
+.site-header__notifications-panel[hidden],
+[hidden] {
+    display: none !important;
+}
+
+.site-header__notifications-title {
+    color: var(--dark-green);
+}
+
+.site-header__notifications-list {
+    margin-top: .6rem;
+}
+
+/* ===== Modal · Completitud de perfil ===== */
+
+.site-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 56, 49, 0.6);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.site-modal__card {
+    max-width: 520px;
+    width: 92%;
+    padding: 2.2rem;
+    background: var(--white);
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.2);
+    position: relative;
+    border: 1px solid var(--soft-mint);
+}
+
+.site-modal__close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: transparent;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--muted-teal);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.site-modal__icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(234, 179, 8, 0.15);
+    color: #d97706;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin: 0 auto 1.2rem;
+}
+
+.site-modal__title {
+    color: var(--dark-green);
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+}
+
+.site-modal__description {
+    color: var(--gray-text);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+}
+
+.site-modal__emphasis {
+    color: #e53e3e;
+}
+
+.site-modal__progress {
+    width: 100%;
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.site-modal__progress-fill {
+    width: 0%;
+    height: 100%;
+    background: #e53e3e;
+    border-radius: 20px;
+    transition: width 0.6s ease;
+}
+
+.site-modal__pending {
+    text-align: left;
+    background: var(--light-bg);
+    padding: 0.9rem 1.1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--dark-green);
+}
+
+.site-modal__pending-list {
+    margin: 0.4rem 0 0 1.2rem;
+    padding: 0;
+}
+
+.site-modal__actions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.site-modal__button {
+    padding: 0.65rem 1.3rem;
+    font-size: 0.9rem;
+}
+
+.site-modal__button-link {
+    padding: 0.65rem 1.5rem;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+/* ===== Modal · Selección de Formato de Exportación ===== */
+
+.export-modal__card {
+    max-width: 520px;
+    padding: 2.2rem 2rem;
+}
+
+.export-modal__icon {
+    background: rgba(30, 196, 152, 0.15);
+    color: var(--dark-green);
+}
+
+.export-modal__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin: 1.5rem 0 1.2rem;
+    text-align: left;
+}
+
+.export-modal__option {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    padding: 1.1rem 1.25rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--white);
+    text-decoration: none;
+    color: inherit;
+    font-family: inherit;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    width: 100%;
+}
+
+.export-modal__option:hover,
+.export-modal__option:focus-visible {
+    border-color: var(--accent-green);
+    background: rgba(30, 196, 152, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(17, 99, 78, 0.08);
+    outline: none;
+}
+
+.export-modal__option-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.export-modal__option-icon--csv {
+    background: rgba(30, 196, 152, 0.15);
+    color: var(--dark-green);
+}
+
+.export-modal__option-icon--excel {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+
+.export-modal__option-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.export-modal__option-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dark-green);
+}
+
+.export-modal__option-desc {
+    font-size: 0.82rem;
+    color: var(--gray-text);
+    line-height: 1.35;
+}
+
+.export-modal__option-arrow {
+    color: var(--muted-teal);
+    font-size: 1.05rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.export-modal__option:hover .export-modal__option-arrow {
+    color: var(--dark-green);
+    transform: translateY(2px);
+}
+
+.export-modal__actions {
+    margin-top: 0.8rem;
+}
+
+/* ===== Footer · Marca ===== */
+
+.site-footer__brand-link {
+    margin-bottom: 1rem;
+}
+
+.site-footer__brand-text {
+    color: var(--white);
+}
+
+.site-footer__brand-accent {
+    color: var(--accent-green);
+}
+
+.site-footer__version {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: var(--soft-mint, #a0aec0);
+    opacity: 0.65;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    user-select: none;
+    transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.site-footer__version:hover {
+    opacity: 0.95;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+

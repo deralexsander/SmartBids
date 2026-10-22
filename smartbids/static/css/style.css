@@ -18,6 +18,11 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
         body {
             background-color: var(--white);
             color: #1a202c;
@@ -101,7 +106,9 @@
             display: inline-block;
         }
 
-        nav a:hover {
+        nav a:hover,
+        nav a.active,
+        nav li.active a {
             color: var(--accent-green);
         }
 
@@ -391,7 +398,8 @@
             border: 1px solid var(--soft-mint);
         }
 
-        .floating-badge i {
+        .floating-badge > i:not(.global-message-close-btn i),
+        .floating-badge #global-message-icon {
             font-size: 1.8rem;
             color: var(--accent-green);
         }
@@ -783,6 +791,18 @@
             border-color: var(--accent-green);
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         /* Footer */
         footer {
             background-color: var(--dark-bg);
@@ -838,6 +858,28 @@
             align-items: center;
             font-size: 0.88rem;
             color: var(--soft-mint);
+        }
+
+        .site-footer__version {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            color: var(--soft-mint);
+            opacity: 0.65;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1px 7px;
+            border-radius: 999px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+            user-select: none;
+            transition: opacity 0.2s ease, background 0.2s ease;
+        }
+
+        .site-footer__version:hover {
+            opacity: 0.95;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         /* Responsive */
@@ -902,10 +944,10 @@
     transform: translate(-50%, -25px);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.8s ease, transform 0.8s ease, visibility 0.8s ease;
-    z-index: 2500;
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s ease;
+    z-index: 9999;
     min-width: 320px;
-    max-width: 90vw;
+    max-width: min(92vw, 680px);
     pointer-events: none;
 }
 
@@ -913,12 +955,114 @@
     position: static;
     margin: 0 auto;
     pointer-events: auto;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
+    padding: 0.9rem 1.4rem;
+    gap: 10px;
 }
 
 #global-message-text {
     font-weight: 700;
     font-size: 0.92rem;
+    line-height: 1.45;
+    flex: 1;
+}
+
+.global-message-close-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.05rem;
+    padding: 4px 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.global-message-close-btn i,
+#global-message-close i {
+    font-size: 1.05rem !important;
+    color: inherit !important;
+}
+
+.global-message-close-btn:hover {
+    opacity: 1;
+    transform: scale(1.15);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Modificadores por tipo para el contenedor global de mensajes */
+#global-message-badge.global-message--error {
+    background: #fff5f5;
+    border-color: #feb2b2;
+}
+
+#global-message-badge.global-message--error #global-message-icon,
+#global-message-badge.global-message--error .global-message-close-btn,
+#global-message-badge.global-message--error .global-message-close-btn i,
+#global-message-badge.global-message--error #global-message-close,
+#global-message-badge.global-message--error #global-message-close i {
+    color: #e53e3e !important;
+}
+
+#global-message-badge.global-message--error #global-message-text {
+    color: #c53030 !important;
+}
+
+#global-message-badge.global-message--exito {
+    background: #ffffff;
+    border-color: var(--accent-green);
+}
+
+#global-message-badge.global-message--exito #global-message-icon,
+#global-message-badge.global-message--exito .global-message-close-btn,
+#global-message-badge.global-message--exito .global-message-close-btn i,
+#global-message-badge.global-message--exito #global-message-close,
+#global-message-badge.global-message--exito #global-message-close i {
+    color: var(--accent-green) !important;
+}
+
+#global-message-badge.global-message--exito #global-message-text {
+    color: var(--dark-green) !important;
+}
+
+#global-message-badge.global-message--info {
+    background: #ffffff;
+    border-color: var(--soft-mint);
+}
+
+#global-message-badge.global-message--info #global-message-icon,
+#global-message-badge.global-message--info .global-message-close-btn,
+#global-message-badge.global-message--info .global-message-close-btn i,
+#global-message-badge.global-message--info #global-message-close,
+#global-message-badge.global-message--info #global-message-close i {
+    color: var(--muted-teal) !important;
+}
+
+#global-message-badge.global-message--info #global-message-text {
+    color: var(--dark-green) !important;
+}
+
+#global-message-badge.global-message--alerta {
+    background: #fff8eb;
+    border-color: #fbd38d;
+}
+
+#global-message-badge.global-message--alerta #global-message-icon,
+#global-message-badge.global-message--alerta .global-message-close-btn,
+#global-message-badge.global-message--alerta .global-message-close-btn i,
+#global-message-badge.global-message--alerta #global-message-close,
+#global-message-badge.global-message--alerta #global-message-close i {
+    color: #dd6b20 !important;
+}
+
+#global-message-badge.global-message--alerta #global-message-text {
+    color: #7b341e !important;
 }
 
 
@@ -929,11 +1073,12 @@
 .alerts-wrapper,
 #dynamic-alerts-container {
     position: fixed;
-    top: 90px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    max-width: 440px;
+    top: 85px;
+    right: 24px;
+    left: auto;
+    transform: none;
+    width: 380px;
+    max-width: calc(100vw - 32px);
     height: 120px; /* Altura base para permitir el desfase visual de la pila */
     z-index: 4000;
     pointer-events: none;
@@ -1132,12 +1277,101 @@
 .test-alert-container.tipo-exito .test-alert-progress-bar { background-color: #1ec498; }
 
 /* Adaptación para pantallas móviles */
-@media (max-width: 640px) {
-    .alerts-wrapper,
-    #dynamic-alerts-container {
+@media (max-width: 768px) {
+    #global-message-container {
         top: 75px;
         width: 92%;
-        max-width: 360px;
+        min-width: 290px;
+        max-width: 440px;
+    }
+
+    .alerts-wrapper,
+    #dynamic-alerts-container {
+        top: auto;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 92%;
+        max-width: 420px;
+        height: auto;
+        min-height: 0;
+        pointer-events: none;
+    }
+
+    /* Anclar las tarjetas a la parte inferior para que crezcan hacia ARRIBA y nunca se corten */
+    .alerts-wrapper .test-alert-container,
+    #dynamic-alerts-container .test-alert-container {
+        top: auto;
+        bottom: 0;
+        transform-origin: bottom center;
+        max-height: calc(85vh - env(safe-area-inset-bottom, 0px));
+        overflow-y: auto;
+    }
+
+    /* Estado inicial antes de entrar a la pila */
+    .alerts-wrapper .test-alert-container,
+    #dynamic-alerts-container .test-alert-container {
+        transform: translateY(20px) scale(0.95);
+    }
+
+    /* Posición 0: Frente (Principal) */
+    .alerts-wrapper .test-alert-container.pila-pos-0,
+    #dynamic-alerts-container .test-alert-container.pila-pos-0 {
+        transform: translateY(0) scale(1);
+    }
+
+    /* Posición 1: Detrás, asomando hacia ARRIBA */
+    .alerts-wrapper .test-alert-container.pila-pos-1,
+    #dynamic-alerts-container .test-alert-container.pila-pos-1 {
+        transform: translateY(-12px) scale(0.96);
+    }
+
+    /* Posición 2: Tercera en cola, asomando más hacia ARRIBA */
+    .alerts-wrapper .test-alert-container.pila-pos-2,
+    #dynamic-alerts-container .test-alert-container.pila-pos-2 {
+        transform: translateY(-24px) scale(0.92);
+    }
+
+    /* Ocultas en cola */
+    .alerts-wrapper .test-alert-container.pila-oculta,
+    #dynamic-alerts-container .test-alert-container.pila-oculta {
+        transform: translateY(-34px) scale(0.88);
+    }
+
+    /* Animación de salida al descartar: deslizamiento hacia abajo */
+    .alerts-wrapper .test-alert-container.alerta-saliendo,
+    #dynamic-alerts-container .test-alert-container.alerta-saliendo {
+        transform: translateY(30px) scale(0.95);
+        opacity: 0;
+    }
+
+    /* Ajustes compactos y legibles de contenido para pantalla móvil */
+    .test-alert-content {
+        padding: 0.9rem 1rem;
+        gap: 10px;
+    }
+
+    .test-alert-icon {
+        font-size: 1.25rem;
+    }
+
+    .test-alert-text h6 {
+        font-size: 0.92rem;
+    }
+
+    .test-alert-text p {
+        font-size: 0.82rem;
+        margin-bottom: 6px;
+    }
+
+    .test-alert-checkbox-label {
+        font-size: 0.74rem;
+    }
+
+    .test-alert-close {
+        padding: 4px;
+        font-size: 1.15rem;
     }
 }
 
@@ -1290,6 +1524,26 @@
         color: var(--dark-green);
     }
 
+    select.form-input {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230b3b32' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1.2rem center;
+        background-size: 1rem;
+        padding-right: 2.8rem;
+    }
+
+    select.form-input:hover {
+        border-color: var(--accent-green);
+    }
+
+    select.form-input::-ms-expand {
+        display: none;
+    }
+
     .form-input:read-only {
         background-color: var(--light-bg);
         cursor: not-allowed;
@@ -1422,4 +1676,69 @@
 
 .modal-2fa-actions .btn {
     width: 100%;
+}
+
+/* ==========================================================================
+   TOOLTIP FLOTANTE (ESTILO CUADRO NEGRO EMERGENTE)
+   ========================================================================== */
+.tooltip-custom-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    cursor: default;
+}
+
+/* Texto truncado a máximo 3 líneas */
+.tooltip-custom-trigger {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+}
+
+/* Cuadro flotante que se muestra al colocar el puntero */
+.tooltip-custom-box {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    background-color: #212529;
+    color: #ffffff;
+    text-align: left;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    font-weight: 500;
+    width: max-content;
+    max-width: 320px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
+    z-index: 1000;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+    white-space: normal;
+}
+
+/* Flecha apuntadora inferior del cuadro */
+.tooltip-custom-box::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #212529 transparent transparent transparent;
+}
+
+/* Mostrar tooltip al pasar el mouse */
+.tooltip-custom-container:hover .tooltip-custom-box {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }

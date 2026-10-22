@@ -1,0 +1,1042 @@
+/* ===== Barra lateral ===== */
+.perfil__sidebar-card {
+    text-align: center;
+}
+
+.perfil__avatar {
+    width: 100%;
+    border-radius: 12px;
+    margin: 0 0 1.2rem 0;
+    padding: 1.4rem 1rem;
+    box-sizing: border-box;
+    justify-content: center;
+    position: relative;
+    min-height: 80px;
+    box-shadow: 0 4px 14px rgba(17, 99, 78, 0.15);
+}
+
+.perfil__avatar-initials {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--white);
+    text-transform: uppercase;
+}
+
+.perfil__avatar-status {
+    right: 8px;
+    bottom: 8px;
+}
+
+.perfil__user-name {
+    color: var(--dark-green);
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin-bottom: 2px;
+}
+
+.perfil__user-handle {
+    color: var(--muted-teal);
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.perfil__role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+}
+
+.perfil__sidebar-divider {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.perfil__logout-button,
+#logout-button.perfil__logout-button {
+    width: 100%;
+    border-color: #dc2626;
+    color: #dc2626;
+    background: transparent;
+    transition: all 0.25s ease;
+}
+
+.perfil__logout-button:hover,
+#logout-button.perfil__logout-button:hover,
+.perfil__logout-button:focus,
+#logout-button.perfil__logout-button:focus {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+}
+
+.perfil__logout-button:hover i,
+#logout-button.perfil__logout-button:hover i {
+    color: #ffffff !important;
+}
+
+/* ===== Progreso del perfil ===== */
+.perfil__progress-card {
+    padding: 1.4rem 1.6rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    background: var(--white);
+    border: 1.5px solid var(--soft-mint);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+
+.perfil__progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.perfil__progress-title {
+    color: var(--dark-green);
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.perfil__progress-status {
+    font-size: 0.88rem;
+    color: var(--muted-teal);
+    margin: 3px 0 0 0;
+    font-weight: 600;
+}
+
+.perfil__progress-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+}
+
+.perfil__progress-number {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: #e53e3e;
+    line-height: 1;
+}
+
+.perfil__progress-label {
+    font-weight: 700;
+    color: var(--muted-teal);
+    font-size: 0.85rem;
+}
+
+.perfil__progress-track {
+    width: 100%;
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+.perfil__progress-fill {
+    width: 0%;
+    height: 100%;
+    background-color: #e53e3e;
+    border-radius: 20px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+}
+
+/* ===== Datos personales ===== */
+.perfil__section-icon {
+    color: var(--accent-green);
+}
+
+.perfil__subscriber-id {
+    display: none;
+}
+
+.perfil__personal-form-actions {
+    margin-top: 1.8rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* ===== Datos de empresa ===== */
+.perfil__rut-lookup {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.perfil__rut-input {
+    flex: 1;
+}
+
+.perfil__rut-lookup-button {
+    white-space: nowrap;
+    padding: 0.6rem 1.2rem;
+}
+
+.perfil__company-initials {
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+    text-transform: uppercase;
+}
+
+.perfil__commune-field {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.perfil__commune-input {
+    background-color: #f8fafc;
+    cursor: pointer;
+}
+
+.perfil__commune-picker-button {
+    padding: 0.6rem 0.9rem;
+}
+
+.perfil__form-actions {
+    margin-top: 1.8rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ===== Confirmación de datos de empresa ===== */
+.perfil__company-dialog-overlay {
+    display: none;
+}
+
+.perfil__dialog-card {
+    max-width: 480px;
+}
+
+.perfil__dialog-indicator {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 1.2rem;
+}
+
+.perfil__dialog-icon {
+    background: rgba(30, 196, 152, 0.15);
+    color: var(--accent-green);
+}
+
+.perfil__dialog-title {
+    color: var(--dark-green);
+    font-size: 1.3rem;
+}
+
+.perfil__dialog-description {
+    margin-bottom: 1rem;
+}
+
+.perfil__company-summary {
+    background: var(--light-bg);
+    border: 1px solid var(--soft-mint);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: left;
+    font-size: 0.88rem;
+    margin-bottom: 1.2rem;
+    color: var(--dark-green);
+    line-height: 1.6;
+}
+
+.perfil__dialog-note {
+    font-size: 0.82rem;
+    color: var(--gray-text);
+    margin-bottom: 1.5rem;
+}
+
+.perfil__dialog-note-icon {
+    color: var(--muted-teal);
+}
+
+.perfil__company-dialog-actions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+}
+
+.perfil__company-review-button {
+    padding: 0.6rem 1.4rem;
+}
+
+.perfil__company-confirm-button {
+    padding: 0.6rem 1.5rem;
+}
+
+.perfil__dialog-indicator--danger {
+    background: rgba(229, 62, 62, 0.14);
+    color: #e53e3e;
+}
+
+.perfil__btn-danger {
+    background: #e53e3e;
+    color: #ffffff;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(229, 62, 62, 0.3);
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.perfil__btn-danger:hover {
+    background: #c53030;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(229, 62, 62, 0.4);
+}
+
+.perfil__unlink-button {
+    border: 2px solid #e53e3e !important;
+    color: #e53e3e !important;
+    background: transparent !important;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.perfil__unlink-button:hover {
+    background: #e53e3e !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(229, 62, 62, 0.3);
+}
+
+/* ===== Filtros de licitación ===== */
+.perfil__entity-icon {
+    color: var(--muted-teal);
+}
+
+.perfil__preference-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    margin-bottom: 1.5rem;
+}
+
+.perfil__territory-card {
+    border-left: 4px solid var(--accent-green);
+    padding: 1.4rem;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.perfil__preference-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.perfil__preference-title {
+    font-weight: 800;
+    color: var(--dark-green);
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.perfil__preference-action {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+}
+
+.perfil__selection-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 6px;
+    min-height: 44px;
+    max-height: 125px; /* Límite para mostrar hasta 3 líneas; el resto se desplaza con barra */
+    overflow-y: auto;
+    padding: 8px 10px 8px 8px;
+    border: 1.5px dashed var(--soft-mint);
+    border-radius: 10px;
+    background: var(--light-bg);
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted-teal) transparent;
+}
+
+.perfil__selection-chips::-webkit-scrollbar {
+    width: 6px;
+}
+
+.perfil__selection-chips::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.perfil__selection-chips::-webkit-scrollbar-thumb {
+    background: var(--muted-teal);
+    border-radius: 4px;
+}
+
+.perfil__selection-chips::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-green);
+}
+
+.perfil__selection-placeholder {
+    color: var(--muted-teal);
+    font-size: 0.85rem;
+    padding: 4px;
+}
+
+.perfil__products-card {
+    border-left: 4px solid var(--dark-green);
+    padding: 1.4rem;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.perfil__products-heading-icon {
+    color: var(--dark-green);
+}
+
+.perfil__product-chips {
+    margin-bottom: 0.8rem;
+}
+
+.perfil__tender-type-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--dark-green);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* 1.2 Tipo de Procedimiento: Licitaciones Públicas y Privadas */
+.perfil__tender-type-section {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--soft-mint);
+}
+
+.perfil__tender-group {
+    background: #fafbfc;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.perfil__tender-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.perfil__tender-group-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.perfil__tender-group-icon {
+    font-size: 0.95rem;
+}
+
+.perfil__tender-group-icon--private {
+    color: var(--muted-teal);
+}
+
+.perfil__tender-group-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(30, 196, 152, 0.12);
+    color: var(--dark-green);
+    padding: 2px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+}
+
+.perfil__tender-group-badge--private {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.perfil__tender-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.perfil__tender-type-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--white);
+    border: 1.5px solid var(--soft-mint);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.perfil__tender-type-option:hover {
+    border-color: var(--accent-green);
+    background: rgba(30, 196, 152, 0.04);
+    transform: translateY(-1px);
+}
+
+.perfil__tender-type-checkbox {
+    accent-color: var(--accent-green);
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.perfil__tender-type-details {
+    line-height: 1.2;
+}
+
+.perfil__tender-type-name {
+    color: var(--dark-green);
+    font-size: 0.88rem;
+    display: block;
+}
+
+.perfil__tender-type-limit {
+    color: var(--muted-teal);
+    font-size: 0.78rem;
+}
+
+.perfil__keyword-field {
+    margin-top: 0.8rem;
+    position: relative;
+}
+
+.perfil__keyword-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.perfil__keyword-label {
+    margin: 0;
+}
+
+.perfil__keyword-hint {
+    color: var(--muted-teal);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.perfil__suggestion {
+    display: none;
+    margin-top: 8px;
+    font-size: 0.86rem;
+    color: var(--dark-green);
+    background: rgba(30, 196, 152, 0.08);
+    border: 1.5px solid var(--accent-green);
+    padding: 8px 14px;
+    border-radius: 8px;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.perfil__suggestion:hover {
+    background: rgba(30, 196, 152, 0.16);
+    border-color: var(--dark-green);
+}
+
+.perfil__suggestion-icon {
+    color: var(--accent-green);
+    margin-right: 6px;
+}
+
+.perfil__suggestion-text {
+    color: var(--dark-green);
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.perfil__suggestion-hint {
+    font-size: 0.76rem;
+    color: var(--muted-teal);
+    margin-left: 8px;
+}
+
+.perfil__entities-card {
+    border-left: 4px solid var(--muted-teal);
+    padding: 1.4rem;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.perfil__form-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.perfil__submit-button {
+    padding: 0.75rem 1.8rem;
+}
+
+/* ===== Seguridad y auditoría ===== */
+.perfil__token-value {
+    color: var(--accent-green);
+}
+
+.perfil__section-name {
+    color: var(--dark-green);
+}
+
+.perfil__audit-stats {
+    margin-top: 0.5rem;
+}
+
+.perfil__audit-value {
+    color: var(--dark-green);
+    font-weight: 700;
+}
+
+.perfil__audit-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.2rem;
+}
+
+.perfil__audit-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted-teal);
+    text-transform: uppercase;
+}
+
+.perfil__token-box {
+    border-left: 3px solid var(--accent-green);
+}
+
+/* ===== Confirmación de cambios sin guardar ===== */
+.perfil__exit-dialog-overlay {
+    z-index: 99999;
+    display: none;
+}
+
+.perfil__exit-dialog-icon {
+    background: rgba(229, 62, 62, 0.12);
+    color: #e53e3e;
+}
+
+.perfil__exit-dialog-description {
+    margin-bottom: 1.2rem;
+    font-size: 0.92rem;
+    color: var(--gray-text);
+    line-height: 1.5;
+}
+
+.perfil__exit-dialog-warning {
+    font-size: 0.84rem;
+    color: var(--muted-teal);
+    margin-bottom: 1.6rem;
+}
+
+.perfil__exit-dialog-actions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.perfil__exit-dialog-button {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.88rem;
+    border-color: #cbd5e1;
+    color: #64748b;
+}
+
+.perfil__exit-dialog-save-button {
+    padding: 0.65rem 1.5rem;
+    font-size: 0.88rem;
+}
+
+/* ===== Selectores de cobertura y catálogos ===== */
+.perfil__dialog-search-field {
+    margin-bottom: 0.8rem;
+}
+
+.perfil__territory-dialog-overlay,
+.perfil__selection-dialog-overlay {
+    background: rgba(0,0,0,0.55);
+    display: none;
+}
+
+.perfil__territory-dialog-overlay {
+    z-index: 9999;
+}
+
+.perfil__selection-dialog-overlay {
+    z-index: 99999;
+}
+
+.perfil__selector-dialog-card {
+    width: 92%;
+    max-height: 88vh;
+    background: var(--white);
+    border-radius: 16px;
+    padding: 1.8rem;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+}
+
+.perfil__territory-dialog-card,
+.perfil__catalog-dialog-card {
+    max-width: 760px;
+}
+
+.perfil__entities-dialog-card {
+    max-width: 800px;
+}
+
+.perfil__dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.perfil__dialog-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.perfil__dialog-heading-icon {
+    color: var(--accent-green);
+    font-size: 1.3rem;
+}
+
+.perfil__dialog-heading-title {
+    margin: 0;
+    color: var(--dark-green);
+    font-size: 1.25rem;
+}
+
+.perfil__dialog-close {
+    border: none;
+    background: none;
+    font-size: 1.4rem;
+    color: var(--gray-text);
+    cursor: pointer;
+}
+
+.perfil__dialog-help {
+    font-size: 0.88rem;
+    color: var(--gray-text);
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+}
+
+.perfil__tree-search-field {
+}
+
+.perfil__tree-search-input {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+}
+
+.perfil__tree-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: #fafafa;
+    font-size: 0.92rem;
+}
+
+/* 1.1 Catálogo ONU: Jerarquía de 3 niveles y truncamiento */
+.tree-grupo {
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.tree-grupo:hover {
+    box-shadow: 0 4px 12px rgba(17, 99, 78, 0.06);
+}
+
+.tree-nivel {
+    transition: background-color 0.15s ease;
+}
+
+.tree-nivel:hover {
+    background-color: #f1f5f9;
+}
+
+.tree-item-prod {
+    min-width: 0;
+}
+
+.tree-item-prod:hover {
+    background-color: #f8fafc !important;
+    border-color: var(--soft-mint) !important;
+}
+
+.prod-desc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+}
+
+/* 1.3 Selector previo por Sector y Buscador de Organismos/Unidades */
+.perfil__ucom-filter-controls {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 680px) {
+    .perfil__ucom-filter-controls {
+        grid-template-columns: 1fr;
+    }
+}
+
+.perfil__ucom-filter-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    margin-bottom: 4px;
+}
+
+.perfil__selection-sector-select {
+    width: 100%;
+    height: 42px;
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    font-weight: 600;
+    color: var(--dark-green);
+    background-color: #f8fafc;
+    padding: 0 10px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: border-color 0.15s ease;
+}
+
+.perfil__selection-sector-select:focus {
+    border-color: var(--accent-green);
+    outline: none;
+    background-color: #ffffff;
+}
+
+.prod-code {
+    font-family: 'JetBrains Mono', monospace, ui-monospace;
+    letter-spacing: 0.3px;
+}
+
+.tree-badge-count {
+    transition: background-color 0.15s ease;
+}
+
+.perfil__tree-loading {
+    text-align: center;
+    color: var(--muted-teal);
+    padding: 2rem;
+}
+
+.perfil__tree-loading-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.perfil__tree-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.2rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.perfil__tree-selection-count {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted-teal);
+}
+
+.perfil__tree-actions {
+    display: flex;
+    gap: 0.8rem;
+}
+
+.perfil__tree-button {
+    padding: 0.55rem 1.2rem;
+}
+
+.perfil__tree-apply-button {
+    padding: 0.55rem 1.4rem;
+}
+
+.perfil__selection-search-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.perfil__selection-search-input {
+    padding: 0.65rem 2.5rem 0.65rem 1rem;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.perfil__selection-search-loading {
+    position: absolute;
+    right: 14px;
+    display: none;
+    color: var(--accent-green);
+    font-size: 1rem;
+}
+
+.perfil__entities-dialog-icon {
+    color: var(--muted-teal);
+    font-size: 1.3rem;
+}
+
+/* ===== Sección Exclusiva de Administración en Sesión y Auditoría ===== */
+
+.perfil__admin-section {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--soft-mint);
+    animation: fadeInAdmin 0.35s ease;
+}
+
+@keyframes fadeInAdmin {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.perfil__admin-card {
+    background: linear-gradient(135deg, rgba(17, 99, 78, 0.04) 0%, rgba(30, 196, 152, 0.08) 100%);
+    border: 1.5px solid rgba(17, 99, 78, 0.2);
+    border-radius: 14px;
+    padding: 1.4rem 1.6rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+}
+
+.perfil__admin-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.1rem;
+    flex: 1 1 320px;
+}
+
+.perfil__admin-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--dark-green);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(17, 99, 78, 0.2);
+}
+
+.perfil__admin-text {
+    flex: 1;
+}
+
+.perfil__admin-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(17, 99, 78, 0.12);
+    color: var(--dark-green);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 0.45rem;
+}
+
+.perfil__admin-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    margin: 0 0 0.35rem 0;
+}
+
+.perfil__admin-desc {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--text-dark);
+    margin: 0;
+    opacity: 0.9;
+}
+
+.perfil__admin-actions {
+    flex-shrink: 0;
+}
+
+.perfil__admin-btn {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(17, 99, 78, 0.25);
+    transition: all 0.25s ease;
+}
+
+.perfil__admin-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(17, 99, 78, 0.35);
+}

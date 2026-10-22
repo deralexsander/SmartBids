@@ -1,95 +1,167 @@
 {% extends 'smartbids/base.html' %}
 {% load static %}
+{% load montos %}
 
 {% block nombrePag %}
-<title>Mis Licitaciones</title>
+<title>Mis Licitaciones - SmartBids</title>
 {% endblock %}
 
 {% block contenido %}
-<section class="value-prop" style="padding-top: 130px; padding-bottom: 60px; min-height: 100vh; background-color: var(--light-bg); width: 100%; box-sizing: border-box;">
-    <div style="width: 100%; padding: 0 3%; box-sizing: border-box;">
+{% querystring page=None as export_query %}
+<section class="value-prop mis-lic__page">
+    <div class="mis-lic__container">
         
         <!-- Encabezado Principal y Acciones -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="mis-lic__hero">
             <div>
-                <h1 style="font-size: 2.3rem; color: var(--dark-green); font-weight: 800; letter-spacing: -0.5px; margin: 0.4rem 0 0.2rem;">
+                <span class="hero-badge mis-lic__hero-badge">
+                    <i class="fa-solid fa-bullhorn"></i> Oportunidades de Compra Pública
+                </span>
+                <h1 class="mis-lic__title">
                     Mis <span>Licitaciones</span>
                 </h1>
+                <p class="mis-lic__intro">
+                    Seguimiento dinámico de procesos en Mercado Público configurados desde tu perfil.
+                </p>
             </div>
-            
-            <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-                <button type="button" class="btn btn-outline" style="padding: 0.6rem 1.2rem;">
-                    <i class="fa-solid fa-file-excel"></i> Exportar
+        </div>
+
+        <div class="mis-lic__toolbar">
+        {% if suscriptor_activo %}
+        <div role="tablist" aria-label="Filtrar licitaciones por sección" class="mis-lic__follow-filters">
+            <a href="{% url 'mis_licitaciones' %}" role="tab" aria-selected="{% if not solo_seguidas %}true{% else %}false{% endif %}" aria-current="{% if not solo_seguidas %}page{% endif %}" class="btn {% if not solo_seguidas %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
+                <i class="fa-solid fa-list-ul"></i> <span>Todos</span>
+            </a>
+            <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" role="tab" aria-selected="{% if solo_seguidas %}true{% else %}false{% endif %}" aria-current="{% if solo_seguidas %}page{% endif %}" class="btn {% if solo_seguidas %}btn-primary{% else %}btn-outline{% endif %} mis-lic__filter-link">
+                <i class="fa-solid fa-bookmark"></i> <span>Mis seguidas (<span id="seguimientos-count">{{ cantidad_seguidas }}</span>)</span>
+            </a>
+        </div>
+        {% endif %}
+
+            <div class="mis-lic__toolbar-actions">
+                <button type="button" id="btn-exportar-licitaciones" class="btn btn-outline mis-lic__toolbar-link" data-export-url="{% url 'exportar_licitaciones' %}{{ export_query }}">
+                    <i class="fa-solid fa-file-export"></i> Exportar
                 </button>
-                <a href="{% url 'perfil' %}" class="btn btn-primary" style="padding: 0.6rem 1.4rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-sliders"></i> Ajustar Filtros en Perfil
+                <a href="{% url 'perfil' %}" class="btn btn-primary mis-lic__toolbar-link">
+                    <i class="fa-solid fa-sliders"></i> Ajustar Palabras Clave
                 </a>
             </div>
         </div>
 
-        <!-- Barra Métrica Compacta Horizontal (Visible al 100% en Móvil y Escritorio) -->
-        <div class="dashboard-card" style="padding: 1.2rem 1.8rem; margin-bottom: 2rem; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-width: 820px; width: 100%; gap: 1.5rem;">
+        <form method="get" action="{% url 'mis_licitaciones' %}" class="dashboard-card mis-lic__search-form">
+            {% if solo_seguidas %}<input type="hidden" name="solo_seguidas" value="1">{% endif %}
+            <label class="mis-lic__filter-label mis-lic__filter-label--search">
+                Buscar
+                <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Código, nombre o descripción" class="mis-lic__filter-input">
+            </label>
+            <label class="mis-lic__filter-label mis-lic__filter-label--state">
+                Estado
+                <select name="estado" class="mis-lic__filter-input">
+                    <option value="">Todos</option>
+                    {% for codigo, nombre in estados %}
+                    <option value="{{ codigo }}" {% if request.GET.estado == codigo %}selected{% endif %}>{{ nombre }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="mis-lic__filter-label mis-lic__filter-label--type">
+                Tipo
+                <select name="tipo" class="mis-lic__filter-input">
+                    <option value="">Todos</option>
+                    <optgroup label="Licitaciones Públicas">
+                        {% for item in tipos_procedimiento.publicas %}
+                        <option value="{{ item.codigo }}" {% if request.GET.tipo == item.codigo %}selected{% endif %}>{{ item.codigo }} – {{ item.tramo }}</option>
+                        {% empty %}
+                        <option value="L1" {% if request.GET.tipo == 'L1' %}selected{% endif %}>L1 – Menor a 100 UTM</option>
+                        <option value="LE" {% if request.GET.tipo == 'LE' %}selected{% endif %}>LE – 100 a 1.000 UTM</option>
+                        <option value="LP" {% if request.GET.tipo == 'LP' %}selected{% endif %}>LP – 1.000 a 2.000 UTM</option>
+                        <option value="LQ" {% if request.GET.tipo == 'LQ' %}selected{% endif %}>LQ – 2.000 a 5.000 UTM</option>
+                        <option value="LR" {% if request.GET.tipo == 'LR' %}selected{% endif %}>LR – Mayor a 5.000 UTM</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="Licitaciones Privadas">
+                        {% for item in tipos_procedimiento.privadas %}
+                        <option value="{{ item.codigo }}" {% if request.GET.tipo == item.codigo %}selected{% endif %}>{{ item.codigo }} – {{ item.tramo }}</option>
+                        {% empty %}
+                        <option value="E2" {% if request.GET.tipo == 'E2' %}selected{% endif %}>E2 – Menor a 100 UTM</option>
+                        <option value="CO" {% if request.GET.tipo == 'CO' %}selected{% endif %}>CO – 100 a 1.000 UTM</option>
+                        <option value="B2" {% if request.GET.tipo == 'B2' %}selected{% endif %}>B2 – Mayor a 1.000 UTM</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </label>
+            <div class="mis-lic__filter-actions">
+                <button type="submit" class="btn btn-primary mis-lic__filter-submit"><i class="fa-solid fa-filter"></i> Aplicar</button>
+                {% if solo_seguidas %}
+                <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" class="btn btn-outline mis-lic__filter-clear">Limpiar</a>
+                {% else %}
+                <a href="{% url 'mis_licitaciones' %}" class="btn btn-outline mis-lic__filter-clear">Limpiar</a>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- Barra Métrica Compacta Horizontal (KPI Strip) -->
+        <div class="dashboard-card mis-lic__metrics-card">
+            <div class="mis-lic__metrics">
                 
                 <!-- KPI 1: Total Licitaciones -->
-                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
-                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(30, 196, 152, 0.12); color: var(--accent-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(30, 196, 152, 0.25);">
+                <div class="mis-lic__metric mis-lic__metric--divided">
+                    <div class="profile-avatar-circle mis-lic__metric-icon mis-lic__metric-icon--primary">
                         <i class="fa-solid fa-layer-group"></i>
                     </div>
                     <div>
-                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                        <span class="mis-lic__metric-label">
                             Total Licitaciones
                         </span>
-                        <div style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">
-                            124
+                        <div class="mis-lic__metric-value">
+                            {{ total_licitaciones|default:0 }}
                         </div>
                     </div>
                 </div>
 
                 <!-- KPI 2: Match con Perfil -->
-                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
-                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(30, 196, 152, 0.12); color: var(--accent-green); flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(30, 196, 152, 0.25);">
+                <a href="{% if match_perfil > 0 %}#seccion-match-perfil{% else %}{% url 'perfil' %}{% endif %}" class="mis-lic__metric mis-lic__metric--divided mis-lic__metric-clickable" style="text-decoration: none; color: inherit;" title="Ver procesos que hacen Match con tu Perfil">
+                    <div class="profile-avatar-circle mis-lic__metric-icon mis-lic__metric-icon--primary">
                         <i class="fa-solid fa-bullseye"></i>
                     </div>
                     <div>
-                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                        <span class="mis-lic__metric-label">
                             Match con Perfil
                         </span>
-                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1.1;">38</span>
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Filtradas</span>
+                        <div class="mis-lic__metric-caption">
+                            <span class="mis-lic__metric-value mis-lic__metric-value--accent">{{ match_perfil|default:0 }}</span>
+                            <span class="mis-lic__metric-unit">Filtrada{{ match_perfil|pluralize:"s" }}</span>
                         </div>
                     </div>
-                </div>
+                </a>
 
                 <!-- KPI 3: Cierre Próximo -->
-                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1; border-right: 1px solid var(--border-color); padding-right: 1.2rem;">
-                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(239, 68, 68, 0.12); color: #ef4444; flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(239, 68, 68, 0.25);">
+                <div class="mis-lic__metric mis-lic__metric--divided">
+                    <div class="profile-avatar-circle mis-lic__metric-icon mis-lic__metric-icon--muted">
                         <i class="fa-solid fa-clock"></i>
                     </div>
                     <div>
-                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                        <span class="mis-lic__metric-label">
                             Cierre Próximo (&lt; 3 días)
                         </span>
-                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: #ef4444; line-height: 1.1;">6</span>
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Activas</span>
+                        <div class="mis-lic__metric-caption">
+                            <span class="mis-lic__metric-value mis-lic__metric-value--urgent">{{ cierre_proximo|default:0 }}</span>
+                            <span class="mis-lic__metric-unit mis-lic__metric-unit--urgent">Activas</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- KPI 4: Convenio Marco -->
-                <div style="display: flex; align-items: center; gap: 1.2rem; flex: 1;">
-                    <div class="profile-avatar-circle" style="width: 48px; height: 48px; font-size: 1.2rem; background: rgba(59, 130, 246, 0.12); color: #3b82f6; flex-shrink: 0; box-shadow: none; margin: 0; border: 1px solid rgba(59, 130, 246, 0.25);">
+                <div class="mis-lic__metric">
+                    <div class="profile-avatar-circle mis-lic__metric-icon mis-lic__metric-icon--muted">
                         <i class="fa-solid fa-handshake"></i>
                     </div>
                     <div>
-                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--muted-teal); text-transform: uppercase; letter-spacing: 0.5px; display: block; white-space: nowrap; margin-bottom: 2px;">
+                        <span class="mis-lic__metric-label">
                             Convenio Marco
                         </span>
-                        <div style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;">
-                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--dark-green); line-height: 1.1;">15</span>
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--muted-teal);">Procesos</span>
+                        <div class="mis-lic__metric-caption">
+                            <span class="mis-lic__metric-value">{{ convenio_marco|default:0 }}</span>
+                            <span class="mis-lic__metric-unit">Procesos</span>
                         </div>
                     </div>
                 </div>
@@ -97,148 +169,300 @@
             </div>
         </div>
 
-        <!-- Tabla Principal a Pantalla Completa -->
-        <div class="dashboard-card" style="padding: 1.5rem 2rem; width: 100%; box-sizing: border-box; overflow-x: auto;">
-            <div class="dashboard-header" style="margin-bottom: 1.5rem;">
-                <div class="dash-title" style="font-size: 1.2rem;">
-                    <i class="fa-solid fa-table-list" style="color: var(--accent-green);"></i>
-                    Procesos de Compra Disponibles
+        <!-- SECCIÓN 1: Match con Perfil (Separada de Procesos de Compra Disponibles) -->
+        {% if not solo_seguidas and licitaciones_perfil %}
+        <div class="mis-lic__match-section" id="seccion-match-perfil">
+            <div class="mis-lic__match-header">
+                <div class="mis-lic__match-title">
+                    <i class="fa-solid fa-bullseye" style="color: var(--accent-green);"></i>
+                    Match con Perfil
                 </div>
-                <span class="dash-badge">Filtros Aplicados desde Perfil</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="mis-lic__match-badge">
+                        <i class="fa-solid fa-check-double"></i> {{ match_perfil }} Filtrada{{ match_perfil|pluralize:"s" }} para tu empresa
+                    </span>
+                </div>
             </div>
 
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem; min-width: 950px;">
-                <thead>
-                    <tr style="border-bottom: 2px solid var(--border-color); color: var(--dark-green); font-weight: 800;">
-                        <th style="padding: 1rem 0.8rem;">Código / Tipo</th>
-                        <th style="padding: 1rem 0.8rem;">Organismo Comprador</th>
-                        <th style="padding: 1rem 0.8rem;">Unidad Compradora</th>
-                        <th style="padding: 1rem 0.8rem;">Ubicación</th>
-                        <th style="padding: 1rem 0.8rem;">Rubro y Producto</th>
-                        <th style="padding: 1rem 0.8rem;">Monto / Tramo</th>
-                        <th style="padding: 1rem 0.8rem; text-align: center;">Acción</th>
-                    </tr>
-                </thead>
-                <tbody style="color: var(--gray-text);">
-                    <!-- Fila 1 -->
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">2392-14-LE26</div>
-                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">LE (100 - 1000 UTM)</span>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Subsecretaría de Telecomunicaciones</div>
-                            <small style="color: var(--muted-teal); font-weight: 600;">SUBTEL (RUT: 60.501.000-7)</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div>Depto. de Tecnologías de Información</div>
-                            <small style="color: var(--muted-teal);">Amunátegui 139, Santiago</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 600; color: var(--dark-green);">Santiago</div>
-                            <small style="color: var(--muted-teal);">RM (Región Metropolitana)</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Servicios de Soporte de Servidores y Cloud</div>
-                            <small style="display: block; color: var(--muted-teal);">Prod: 81111812 - Mantenimiento TI</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$45.000.000</span>
-                            <small style="display: block; color: var(--muted-teal);">Tramo 3</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
-                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
-                            </button>
-                        </td>
-                    </tr>
+            <div class="mis-lic__list">
+                {% for lic in licitaciones_perfil %}
+                <div class="dashboard-card mis-lic__card mis-lic__card--match{% if forloop.counter > 5 %} mis-lic__card--match-extra{% endif %}" data-licitacion-card{% if forloop.counter > 5 %} style="display: none;"{% endif %}>
+                    <div class="mis-lic__card-layout">
+                        
+                        <!-- Información Principal (Izquierda) -->
+                        <div class="mis-lic__card-main">
+                            
+                            <!-- Badges y Código -->
+                            <div class="mis-lic__card-badges">
+                                <span class="mis-lic__code">
+                                    {{ lic.lic_codigo }}
+                                </span>
+                                <span class="mis-lic__badge-match-pill">
+                                    <i class="fa-solid fa-bullseye"></i> Match Perfil
+                                </span>
+                                <span class="dash-badge mis-lic__type-badge">
+                                    {{ lic.lic_tipo_licitacion|default:"N/D" }}
+                                </span>
+                                <span class="dash-badge licitacion-state-badge{% if lic.estado_proceso == 'cerrada' %} licitacion-state-badge--closed{% endif %}">{{ lic.estado_proceso_label }}</span>
+                                <span class="mis-lic__organization">
+                                    • {{ lic.lic_codigo_ucom.ucom_descripcion|default:"Unidad de Compra" }}
+                                </span>
+                            </div>
 
-                    <!-- Fila 2 -->
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">1058-22-L126</div>
-                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">L1 (&lt; 100 UTM)</span>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 700; color: var(--dark-green);">I. Municipalidad de Valparaíso</div>
-                            <small style="color: var(--muted-teal); font-weight: 600;">MUNIVALPO (RUT: 69.050.100-2)</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div>Dirección de Administración y Finanzas</div>
-                            <small style="color: var(--muted-teal);">Condell 1490, Valparaíso</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 600; color: var(--dark-green);">Valparaíso</div>
-                            <small style="color: var(--muted-teal);">V Región de Valparaíso</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Adquisición de Laptops para Educación</div>
-                            <small style="display: block; color: var(--muted-teal);">Prod: 43211507 - Computadores Portátiles</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$4.800.000</span>
-                            <small style="display: block; color: var(--muted-teal);">Tramo 1</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
-                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
-                            </button>
-                        </td>
-                    </tr>
+                            <!-- Nombre / Título -->
+                            <h3 class="mis-lic__card-title">
+                                {{ lic.lic_nombre }}
+                            </h3>
 
-                    <!-- Fila 3 -->
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">4520-5-LP26</div>
-                            <span class="dash-badge" style="font-size: 0.72rem; padding: 2px 8px; margin-top: 4px; display: inline-block;">LP (&gt; 1.000 UTM)</span>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Servicio de Salud Concepción</div>
-                            <small style="color: var(--muted-teal); font-weight: 600;">SSCONCE (RUT: 61.602.000-1)</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div>Hospital Guillermo Grant Benavente</div>
-                            <small style="color: var(--muted-teal);">San Martín 1436, Concepción</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <div style="font-weight: 600; color: var(--dark-green);">Concepción</div>
-                            <small style="color: var(--muted-teal);">VIII Región del Biobío</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top; max-width: 280px;">
-                            <div style="font-weight: 700; color: var(--dark-green);">Desarrollo y Mantención de Ficha Clínica</div>
-                            <small style="display: block; color: var(--muted-teal);">Prod: 81111508 - Aplicaciones de Software</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; vertical-align: top;">
-                            <span style="font-weight: 800; color: var(--accent-green); font-size: 1rem;">$85.000.000</span>
-                            <small style="display: block; color: var(--muted-teal);">Tramo 4</small>
-                        </td>
-                        <td style="padding: 1.2rem 0.8rem; text-align: center; vertical-align: top;">
-                            <button type="button" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                            <!-- Descripción desplegable limpia -->
+                            {% if lic.lic_descripcion %}
+                            <details class="mis-lic__description-details">
+                                <summary class="mis-lic__description-summary">
+                                    <i class="fa-solid fa-angle-right mis-lic__description-icon"></i> Ver descripción completa
+                                </summary>
+                                <p class="mis-lic__description">
+                                    {{ lic.lic_descripcion }}
+                                </p>
+                            </details>
+                            {% endif %}
 
-            <!-- Paginador Inferior -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-                <span style="font-size: 0.88rem; color: var(--muted-teal); font-weight: 600;">
-                    Mostrando 1 a 3 de 38 procesos públicos
-                </span>
-                <div style="display: flex; gap: 0.4rem;">
-                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;" disabled>
+                            <!-- Metadata Adicional -->
+                            <div class="mis-lic__metadata">
+                                <span>
+                                    <i class="fa-solid fa-location-dot mis-lic__icon"></i>
+                                    {{ lic.lic_codigo_ucom.ucom_codigo_comuna|default:"Chile" }}
+                                </span>
+                                <span>
+                                    <i class="fa-solid fa-building mis-lic__icon"></i>
+                                    {{ lic.lic_codigo_ucom.ucom_direccion|default:"Sin dirección" }}
+                                </span>
+                                {% if lic.lic_codigo_ucom.ucom_rut %}
+                                <span>
+                                    <strong>RUT:</strong> {{ lic.lic_codigo_ucom.ucom_rut }}
+                                </span>
+                                {% endif %}
+                            </div>
+
+                        </div>
+
+                        <!-- Presupuesto y Botón de Acción (Derecha) -->
+                        <div class="mis-lic__card-actions">
+                            <div class="mis-lic__budget">
+                                <span class="mis-lic__budget-label">
+                                    Presupuesto
+                                </span>
+                                <div class="mis-lic__budget-value">
+                                    {% if lic.lic_presupuesto %}
+                                        ${{ lic.lic_presupuesto|miles_chilenos }}
+                                    {% else %}
+                                        S/M
+                                    {% endif %}
+                                </div>
+                                <small class="mis-lic__closing-date{% if lic.es_cierre_proximo %} mis-lic__closing-date--urgent{% endif %}">
+                                    <i class="{% if lic.es_cierre_proximo %}fa-solid fa-circle-exclamation{% else %}fa-regular fa-clock{% endif %}"></i> Cierre: {{ lic.lic_fecha_cierre|default:"Pendiente" }}
+                                </small>
+                            </div>
+
+                            <div class="mis-lic__card-buttons">
+                                {% if suscriptor_activo and lic.lic_codigo in seguidos %}
+                                <form method="post" action="{% url 'seguimiento_licitacion' lic.lic_codigo %}" data-seguimiento-form>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="return_to" value="{{ request.get_full_path }}">
+                                    <input type="hidden" name="accion" value="dejar">
+                                    <button type="submit" class="btn btn-outline mis-lic__follow-button" data-seguir-label="Seguir" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-outline"><i class="fa-solid fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Dejar de seguir</span></button>
+                                </form>
+                                {% elif suscriptor_activo and lic.estado_proceso != 'cerrada' %}
+                                <form method="post" action="{% url 'seguimiento_licitacion' lic.lic_codigo %}" data-seguimiento-form>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="return_to" value="{{ request.get_full_path }}">
+                                    <input type="hidden" name="accion" value="seguir">
+                                    <button type="submit" class="btn btn-outline mis-lic__follow-button" data-seguir-label="Seguir" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-outline"><i class="fa-regular fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Seguir</span></button>
+                                </form>
+                                {% endif %}
+                                <a href="{% url 'detalle_licitacion' lic.lic_codigo %}?return_to={{ request.get_full_path|urlencode }}" class="btn btn-primary mis-lic__detail-link">
+                                    <i class="fa-solid fa-eye"></i> Ver ficha
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if licitaciones_perfil|length > 5 %}
+            <div class="mis-lic__match-toggle-wrap" style="text-align: center; margin-top: 1.25rem;">
+                <button type="button" class="btn btn-outline" id="btn-toggle-match-cards" style="font-size: 0.85rem; padding: 0.5rem 1.4rem; border-radius: 20px; font-weight: 600;">
+                    <i class="fa-solid fa-chevron-down me-1"></i> Mostrar {{ licitaciones_perfil|length|add:"-5" }} más con match
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- SECCIÓN 2: Procesos de Compra Disponibles -->
+        <div class="dashboard-header mis-lic__section-header">
+            <div class="dash-title mis-lic__section-title">
+                <i class="fa-solid fa-list-check mis-lic__icon"></i>
+                Procesos de Compra Disponibles
+            </div>
+            <span class="dash-badge">
+                {% if solo_seguidas %}
+                    Tus procesos seguidos
+                {% elif request.GET.q or request.GET.estado or request.GET.tipo %}
+                    Resultados filtrados
+                {% else %}
+                    Todos los procesos
+                {% endif %}
+            </span>
+        </div>
+        <div id="seguimiento-feedback" role="status" aria-live="polite" hidden class="mis-lic__feedback"></div>
+
+        <!-- Listado Limpio de Tarjetas (Reemplazo de la tabla saturada) -->
+        <div id="licitaciones-list" data-solo-seguidas="{{ solo_seguidas|yesno:'true,false' }}" data-suscriptor-activo="{{ suscriptor_activo|yesno:'true,false' }}" class="mis-lic__list">
+            {% for lic in licitaciones %}
+            <div class="dashboard-card mis-lic__card" data-licitacion-card>
+                <div class="mis-lic__card-layout">
+                    
+                    <!-- Información Principal (Izquierda) -->
+                    <div class="mis-lic__card-main">
+                        
+                        <!-- Badges y Código -->
+                        <div class="mis-lic__card-badges">
+                            <span class="mis-lic__code">
+                                {{ lic.lic_codigo }}
+                            </span>
+                            <span class="dash-badge mis-lic__type-badge">
+                                {{ lic.lic_tipo_licitacion|default:"N/D" }}
+                            </span>
+                            <span class="dash-badge licitacion-state-badge{% if lic.estado_proceso == 'cerrada' %} licitacion-state-badge--closed{% endif %}">{{ lic.estado_proceso_label }}</span>
+                            <span class="mis-lic__organization">
+                                • {{ lic.lic_codigo_ucom.ucom_descripcion|default:"Unidad de Compra" }}
+                            </span>
+                        </div>
+
+                        <!-- Nombre / Título -->
+                        <h3 class="mis-lic__card-title">
+                            {{ lic.lic_nombre }}
+                        </h3>
+
+                        <!-- Descripción desplegable limpia (No deforma la pantalla) -->
+                        {% if lic.lic_descripcion %}
+                        <details class="mis-lic__description-details">
+                            <summary class="mis-lic__description-summary">
+                                <i class="fa-solid fa-angle-right mis-lic__description-icon"></i> Ver descripción completa
+                            </summary>
+                            <p class="mis-lic__description">
+                                {{ lic.lic_descripcion }}
+                            </p>
+                        </details>
+                        {% endif %}
+
+                        <!-- Metadata Adicional (Ubicación, Dirección, RUT) -->
+                        <div class="mis-lic__metadata">
+                            <span>
+                                <i class="fa-solid fa-location-dot mis-lic__icon"></i>
+                                {{ lic.lic_codigo_ucom.ucom_codigo_comuna|default:"Chile" }}
+                            </span>
+                            <span>
+                                <i class="fa-solid fa-building mis-lic__icon"></i>
+                                {{ lic.lic_codigo_ucom.ucom_direccion|default:"Sin dirección" }}
+                            </span>
+                            {% if lic.lic_codigo_ucom.ucom_rut %}
+                            <span>
+                                <strong>RUT:</strong> {{ lic.lic_codigo_ucom.ucom_rut }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    <!-- Presupuesto y Botón de Acción (Derecha) -->
+                    <div class="mis-lic__card-actions">
+                        <div class="mis-lic__budget">
+                            <span class="mis-lic__budget-label">
+                                Presupuesto
+                            </span>
+                            <div class="mis-lic__budget-value">
+                                {% if lic.lic_presupuesto %}
+                                    ${{ lic.lic_presupuesto|miles_chilenos }}
+                                {% else %}
+                                    S/M
+                                {% endif %}
+                            </div>
+                            <small class="mis-lic__closing-date{% if lic.es_cierre_proximo %} mis-lic__closing-date--urgent{% endif %}">
+                                <i class="{% if lic.es_cierre_proximo %}fa-solid fa-circle-exclamation{% else %}fa-regular fa-clock{% endif %}"></i> Cierre: {{ lic.lic_fecha_cierre|default:"Pendiente" }}
+                            </small>
+                        </div>
+
+                        <div class="mis-lic__card-buttons">
+                            {% if suscriptor_activo and lic.lic_codigo in seguidos %}
+                            <form method="post" action="{% url 'seguimiento_licitacion' lic.lic_codigo %}" data-seguimiento-form>
+                                {% csrf_token %}
+                                <input type="hidden" name="return_to" value="{{ request.get_full_path }}">
+                                <input type="hidden" name="accion" value="dejar">
+                                <button type="submit" class="btn btn-outline mis-lic__follow-button" data-seguir-label="Seguir" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-outline"><i class="fa-solid fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Dejar de seguir</span></button>
+                            </form>
+                            {% elif suscriptor_activo and lic.estado_proceso != 'cerrada' %}
+                            <form method="post" action="{% url 'seguimiento_licitacion' lic.lic_codigo %}" data-seguimiento-form>
+                                {% csrf_token %}
+                                <input type="hidden" name="return_to" value="{{ request.get_full_path }}">
+                                <input type="hidden" name="accion" value="seguir">
+                                <button type="submit" class="btn btn-outline mis-lic__follow-button" data-seguir-label="Seguir" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-outline"><i class="fa-regular fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Seguir</span></button>
+                            </form>
+                            {% endif %}
+                            <a href="{% url 'detalle_licitacion' lic.lic_codigo %}?return_to={{ request.get_full_path|urlencode }}" class="btn btn-primary mis-lic__detail-link">
+                                <i class="fa-solid fa-eye"></i> Ver ficha
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            {% empty %}
+            <div class="dashboard-card mis-lic__empty-state">
+                <i class="fa-solid fa-folder-open mis-lic__empty-icon"></i>
+                No se encontraron licitaciones registradas en tu cuenta.
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginador Inferior Dinámico -->
+        <div class="mis-lic__pagination">
+            <span class="mis-lic__pagination-summary">
+                Mostrando página {{ licitaciones.number }} de {{ licitaciones.paginator.num_pages }} ({{ licitaciones.paginator.count }} procesos filtrados)
+            </span>
+            
+            <div class="mis-lic__pagination-controls">
+                {% if licitaciones.has_previous %}
+                    <a href="{% querystring page=1 %}" class="btn btn-outline mis-lic__pagination-link">
+                        <i class="fa-solid fa-angles-left"></i>
+                    </a>
+                    <a href="{% querystring page=licitaciones.previous_page_number %}" class="btn btn-outline mis-lic__pagination-link">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                {% else %}
+                    <button type="button" class="btn btn-outline mis-lic__pagination-disabled" disabled>
                         <i class="fa-solid fa-chevron-left"></i>
                     </button>
-                    <button type="button" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">1</button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">2</button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">3</button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.82rem;">
+                {% endif %}
+
+                <span class="mis-lic__pagination-current">
+                    {{ licitaciones.number }}
+                </span>
+
+                {% if licitaciones.has_next %}
+                    <a href="{% querystring page=licitaciones.next_page_number %}" class="btn btn-outline mis-lic__pagination-link">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                    <a href="{% querystring page=licitaciones.paginator.num_pages %}" class="btn btn-outline mis-lic__pagination-link">
+                        <i class="fa-solid fa-angles-right"></i>
+                    </a>
+                {% else %}
+                    <button type="button" class="btn btn-outline mis-lic__pagination-disabled" disabled>
                         <i class="fa-solid fa-chevron-right"></i>
                     </button>
-                </div>
+                {% endif %}
             </div>
-
         </div>
 
     </div>

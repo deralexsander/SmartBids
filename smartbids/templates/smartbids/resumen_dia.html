@@ -1,0 +1,341 @@
+{% extends 'smartbids/base.html' %}
+{% load static montos %}
+
+{% block nombrePag %}
+<title>Resumen del Día - SmartBids</title>
+{% endblock %}
+
+{% block contenido %}
+<section class="resumen__page">
+    <div class="resumen__container">
+
+        <!-- ============================================================ -->
+        <!-- ENCABEZADO / HERO                                            -->
+        <!-- ============================================================ -->
+        <div class="resumen__hero">
+            <div class="resumen__hero-content">
+                <div class="resumen__badge-top">
+                    <i class="fa-solid fa-sun"></i> <span>Resumen Ejecutivo Diario</span>
+                </div>
+                <h1 class="resumen__title">
+                    ¡Hola, <span>{{ nombre_usuario }}</span>!
+                </h1>
+                <p class="resumen__date">
+                    <i class="fa-regular fa-calendar-days"></i> {{ fecha_hoy }}
+                </p>
+            </div>
+            <div class="resumen__actions">
+                <a href="{% url 'mis_licitaciones' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Ir a Mis Licitaciones
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- METRICAS CLAVE DEL SUSCRIPTOR                                -->
+        <!-- ============================================================ -->
+        <div class="resumen__kpi-grid">
+            <div class="resumen__kpi-card">
+                <div class="resumen__kpi-icon resumen__kpi-icon--matches">
+                    <i class="fa-solid fa-bullseye"></i>
+                </div>
+                <div class="resumen__kpi-data">
+                    <span class="resumen__kpi-number">{{ total_coincidencias }}</span>
+                    <span class="resumen__kpi-label">Coincidencias con tus palabras clave</span>
+                </div>
+            </div>
+
+            <div class="resumen__kpi-card">
+                <div class="resumen__kpi-icon resumen__kpi-icon--seguidas">
+                    <i class="fa-solid fa-bookmark"></i>
+                </div>
+                <div class="resumen__kpi-data">
+                    <span class="resumen__kpi-number">{{ total_seguidas }}</span>
+                    <span class="resumen__kpi-label">Licitaciones en seguimiento</span>
+                </div>
+            </div>
+
+            <div class="resumen__kpi-card">
+                <div class="resumen__kpi-icon resumen__kpi-icon--urgente">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </div>
+                <div class="resumen__kpi-data">
+                    <span class="resumen__kpi-number">{{ total_cierre_proximo }}</span>
+                    <span class="resumen__kpi-label">Cierres en próximas 72 horas</span>
+                </div>
+            </div>
+
+            <div class="resumen__kpi-card">
+                <div class="resumen__kpi-icon resumen__kpi-icon--notif">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div class="resumen__kpi-data">
+                    <span class="resumen__kpi-number">{{ total_no_leidas }}</span>
+                    <span class="resumen__kpi-label">Alertas de seguimiento sin leer</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECCIÓN 1: MIS LICITACIONES (OPORTUNIDADES Y SEGUIMIENTO)     -->
+        <!-- ============================================================ -->
+        <div class="resumen__section-grid">
+
+            <!-- Columna Principal: Oportunidades Destacadas -->
+            <div class="resumen__card">
+                <div class="resumen__card-header">
+                    <h2 class="resumen__card-title">
+                        <i class="fa-solid fa-fire"></i> Oportunidades del Día
+                    </h2>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="{% url 'mis_licitaciones' %}#seccion-match-perfil" class="resumen__card-link" title="Ver oportunidades con match de tu perfil">
+                            Match con Perfil <i class="fa-solid fa-bullseye"></i>
+                        </a>
+                        <a href="{% url 'mis_licitaciones' %}" class="resumen__card-link" title="Ver todas las licitaciones">
+                            Ver Todas <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                {% if not tiene_palabras_perfil %}
+                <div style="background: rgba(14, 116, 144, 0.08); border-left: 4px solid #0e7490; padding: 0.9rem 1.1rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.88rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <strong style="color: #0e7490;"><i class="fa-solid fa-lightbulb"></i> Optimiza tus resultados:</strong>
+                        <span style="color: var(--dark-green);"> Configura tus palabras clave en tu perfil para filtrar automáticamente compras afines a tu empresa.</span>
+                    </div>
+                    <a href="{% url 'perfil' %}" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: 8px;">Configurar Perfil</a>
+                </div>
+                {% endif %}
+
+                <div class="resumen__lic-list">
+                    {% for lic in licitaciones_destacadas %}
+                    <div class="resumen__lic-item">
+                        <div class="resumen__lic-main">
+                            <div class="resumen__lic-meta">
+                                <span class="resumen__lic-code">{{ lic.lic_codigo }}</span>
+                                <span class="resumen__badge resumen__badge--{{ lic.estado_proceso }}">
+                                    {{ lic.estado_proceso_label }}
+                                </span>
+                                {% if lic.lic_tipo_licitacion %}
+                                <span style="font-weight: 600;">Tipo: {{ lic.lic_tipo_licitacion }}</span>
+                                {% endif %}
+                            </div>
+                            <h3 class="resumen__lic-name">
+                                <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" style="color: inherit; text-decoration: none;">
+                                    {{ lic.lic_nombre|default:lic.lic_codigo }}
+                                </a>
+                            </h3>
+                            <p class="resumen__lic-org">
+                                <i class="fa-solid fa-landmark"></i>
+                                {{ lic.lic_codigo_ucom.ucom_descripcion|default:"Organismo público sin especificar" }}
+                            </p>
+                        </div>
+                        <div class="resumen__lic-side">
+                            <span class="resumen__lic-monto">
+                                {% if lic.lic_presupuesto %}
+                                    {% if lic.lic_moneda and lic.lic_moneda != '$' and lic.lic_moneda != 'CLP' %}
+                                        {{ lic.lic_moneda }} {{ lic.lic_presupuesto|miles_chilenos }}
+                                    {% else %}
+                                        ${{ lic.lic_presupuesto|miles_chilenos }}
+                                    {% endif %}
+                                {% else %}
+                                    No informado
+                                {% endif %}
+                            </span>
+                            <span class="resumen__lic-cierre{% if lic.es_cierre_proximo %} resumen__lic-cierre--urgente{% endif %}">
+                                <i class="{% if lic.es_cierre_proximo %}fa-solid fa-circle-exclamation{% else %}fa-regular fa-clock{% endif %}"></i> Cierra: {{ lic.lic_fecha_cierre|date:"d/m/Y"|default:"Por definir" }}
+                            </span>
+                            <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" class="btn btn-outline mis-lic__detail-link" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; border-radius: 8px; margin-top: 4px;">
+                                <i class="fa-solid fa-eye"></i> Ver Ficha
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="resumen__empty-state">
+                        <i class="fa-solid fa-bullseye resumen__empty-icon" style="color: var(--accent-green);"></i>
+                        <p>No tienes licitaciones que hagan match con tu perfil en este momento.</p>
+                        <a href="{% url 'perfil' %}" class="btn btn-primary" style="margin-top: 0.5rem;"><i class="fa-solid fa-sliders"></i> Configurar Filtros de Perfil</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Columna Lateral: Cierres Urgentes y Seguimiento -->
+            <div class="resumen__side-col">
+                <!-- Cierres Próximos -->
+                <div class="resumen__card">
+                    <div class="resumen__card-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h2 class="resumen__card-title" style="font-size: 1.1rem;">
+                                <i class="fa-solid fa-hourglass-half" style="color: #dc2626;"></i> Cierran Pronto
+                            </h2>
+                            {% if cierre_es_general %}
+                            <span class="dash-badge" style="font-size: 0.68rem; font-weight: 700; background: rgba(14, 116, 144, 0.1); color: #0e7490;">
+                                Mercado
+                            </span>
+                            {% else %}
+                            <span class="dash-badge" style="font-size: 0.68rem; font-weight: 700; background: rgba(4, 198, 87, 0.12); color: var(--dark-green);">
+                                Tu Perfil
+                            </span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'mis_licitaciones' %}" class="resumen__card-link">Ver más</a>
+                    </div>
+                    <div class="resumen__side-list">
+                        {% for lic in licitaciones_urgentes %}
+                        <div class="resumen__side-item">
+                            <div class="resumen__side-item-top">
+                                <span class="resumen__lic-code" style="font-size: 0.75rem;">{{ lic.lic_codigo }}</span>
+                                <span class="resumen__lic-cierre resumen__lic-cierre--urgente">
+                                    <i class="fa-solid fa-circle-exclamation"></i> {{ lic.lic_fecha_cierre|date:"d/m/Y" }}
+                                </span>
+                            </div>
+                            <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" class="resumen__side-item-title">
+                                {{ lic.lic_nombre|default:lic.lic_codigo }}
+                            </a>
+                        </div>
+                        {% empty %}
+                        <p style="font-size: 0.85rem; color: var(--gray-text); margin: 0; text-align: center; padding: 1.2rem 0;">
+                            No hay licitaciones cerrando en las próximas 72 horas.
+                        </p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Licitaciones Seguidas -->
+                <div class="resumen__card">
+                    <div class="resumen__card-header">
+                        <h2 class="resumen__card-title" style="font-size: 1.1rem;">
+                            <i class="fa-solid fa-bookmark" style="color: #0e7490;"></i> Mis Seguidas
+                        </h2>
+                        <a href="{% url 'mis_licitaciones' %}?solo_seguidas=1" class="resumen__card-link">Ir a seguidas</a>
+                    </div>
+                    {% if licitaciones_seguidas_preview %}
+                        <div class="resumen__side-list">
+                            {% for lic in licitaciones_seguidas_preview %}
+                            <div class="resumen__side-item">
+                                <div class="resumen__side-item-top">
+                                    <span class="resumen__lic-code" style="font-size: 0.75rem;">{{ lic.lic_codigo }}</span>
+                                    <span class="resumen__badge resumen__badge--{{ lic.estado_proceso }}" style="font-size: 0.68rem;">
+                                        {{ lic.estado_proceso_label }}
+                                    </span>
+                                </div>
+                                <a href="{% url 'detalle_licitacion' lic.lic_codigo %}" class="resumen__side-item-title">
+                                    {{ lic.lic_nombre|default:lic.lic_codigo }}
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div style="text-align: center; padding: 1.2rem 0; color: var(--gray-text); font-size: 0.85rem;">
+                            <i class="fa-regular fa-bookmark" style="font-size: 1.5rem; color: #0e7490; margin-bottom: 6px; display: block;"></i>
+                            Aún no sigues ninguna licitación. Marca la estrella o botón de seguimiento para recibir alertas automáticas.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECCIÓN 2: RESUMEN DEL MERCADO PÚBLICO (DASHBOARD)            -->
+        <!-- ============================================================ -->
+        <div class="resumen__card">
+            <div class="resumen__card-header">
+                <div>
+                    <h2 class="resumen__card-title">
+                        <i class="fa-solid fa-chart-pie"></i> Pulso del Mercado Público (Dashboard Analítico)
+                    </h2>
+                    <p style="margin: 3px 0 0; font-size: 0.85rem; color: var(--gray-text);">
+                        Métricas consolidadas de órdenes de compra procesadas en el Data Warehouse.
+                    </p>
+                </div>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline" style="border-radius: 10px; font-size: 0.88rem;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Dashboard
+                </a>
+            </div>
+
+            <!-- Cajas de métricas rápidas del DW -->
+            <div class="resumen__dw-metrics">
+                <div class="resumen__dw-box">
+                    <span class="resumen__dw-box-label"><i class="fa-solid fa-coins text-accent"></i> Monto Transado</span>
+                    <span class="resumen__dw-box-val">{{ dashboard_metricas.monto_fmt }}</span>
+                </div>
+                <div class="resumen__dw-box">
+                    <span class="resumen__dw-box-label"><i class="fa-solid fa-file-invoice-dollar text-accent"></i> Ítems Procesados</span>
+                    <span class="resumen__dw-box-val">{{ dashboard_metricas.items_count|default:"0" }}</span>
+                </div>
+                <div class="resumen__dw-box">
+                    <span class="resumen__dw-box-label"><i class="fa-solid fa-users-viewfinder text-accent"></i> Proveedores con OCs</span>
+                    <span class="resumen__dw-box-val">{{ dashboard_metricas.proveedores_count|default:"0" }}</span>
+                </div>
+                <div class="resumen__dw-box">
+                    <span class="resumen__dw-box-label"><i class="fa-solid fa-landmark text-accent"></i> Organismos Compradores</span>
+                    <span class="resumen__dw-box-val">{{ dashboard_metricas.compradores_count|default:"0" }}</span>
+                </div>
+            </div>
+
+            <!-- Destacados de Demanda y Compras -->
+            <div class="resumen__dw-highlight">
+                <div class="resumen__highlight-card">
+                    <small><i class="fa-solid fa-cube"></i> Segmento con Mayor Demanda</small>
+                    <strong>{{ top_producto.nombre|default:"Tecnología y Equipamiento" }}</strong>
+                    <span>{{ top_producto.monto_fmt|default:"Monto consolidado relevante" }}</span>
+                </div>
+                <div class="resumen__highlight-card">
+                    <small><i class="fa-solid fa-building-columns"></i> Organismo Comprador Líder</small>
+                    <strong>{{ top_comprador.nombre|default:"Servicio de Salud / Municipalidades" }}</strong>
+                    <span>{{ top_comprador.monto_fmt|default:"Gasto público destacado" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECCIÓN 3: NOVEDADES Y NOTIFICACIONES                         -->
+        <!-- ============================================================ -->
+        <div class="resumen__card">
+            <div class="resumen__card-header">
+                <h2 class="resumen__card-title">
+                    <i class="fa-solid fa-bell"></i> Novedades y Alertas del Sistema
+                </h2>
+                {% if total_no_leidas > 0 %}
+                <span class="badge badge-success" style="font-size: 0.8rem;">
+                    {{ total_no_leidas }} no leída{{ total_no_leidas|pluralize }}
+                </span>
+                {% endif %}
+            </div>
+
+            {% if notificaciones_recientes %}
+            <div class="resumen__notif-list">
+                {% for notif in notificaciones_recientes %}
+                <div class="resumen__notif-item">
+                    <i class="fa-solid fa-circle-exclamation resumen__notif-icon"></i>
+                    <div style="flex: 1;">
+                        <p class="resumen__notif-text">{{ notif.mensaje }}</p>
+                        <span class="resumen__notif-time">
+                            <i class="fa-regular fa-clock"></i> {{ notif.creado_en|date:"d/m/Y H:i" }}
+                        </span>
+                    </div>
+                    {% if notif.licitacion %}
+                    <a href="{% url 'detalle_licitacion' notif.licitacion.lic_codigo %}" class="btn btn-outline" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">
+                        Ver Licitación
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="resumen__empty-state">
+                <i class="fa-solid fa-circle-check resumen__empty-icon" style="color: var(--accent-green);"></i>
+                <p style="font-weight: 700; color: var(--dark-green); margin: 0 0 4px;">¡Todo al día!</p>
+                <p style="font-size: 0.88rem; margin: 0;">No tienes notificaciones pendientes ni cambios críticos en tus licitaciones seguidas.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</section>
+{% endblock %}

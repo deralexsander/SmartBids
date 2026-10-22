@@ -144,3 +144,33 @@ NOTAS GENERALES Y SOLUCIÓN DE PROBLEMAS
 - GUARDAR NUEVAS LIBRERÍAS:
   Si instalas o actualizas librerías en el proyecto, guarda los cambios ejecutando:
   pip freeze > requirements.txt
+
+
+====================================================================
+LICITACIONES, SEGUIMIENTO Y EXPORTACIÓN
+====================================================================
+- Antes de iniciar por primera vez una instalación, aplica las migraciones:
+  python manage.py migrate
+- La ficha local está disponible desde "Ver ficha" en Mis Licitaciones e incluye
+  los hitos disponibles, documentos y preguntas/respuestas registrados en SmartBids.
+  El enlace de Mercado Público queda como referencia secundaria.
+- Los cambios de estado se calculan a partir de las fechas guardadas para cada
+  licitación. Al consultar las notificaciones, SmartBids compara el estado con
+  el último estado observado y muestra una alerta en la campana.
+- Los seguimientos se conservan durante 30 días después de dejar de seguir un
+  proceso o después de detectar su cierre; luego se eliminan junto con sus alertas.
+- Mis Licitaciones y el Dashboard permiten descargar reportes en CSV y Excel (.xlsx)
+  mediante un modal de selección de formato. La descarga de licitaciones respeta los
+  filtros de búsqueda, estado, tipo y perfil; el Dashboard aplica el rango de fechas
+  seleccionado.
+
+
+====================================================================
+ESTRUCTURA DE PLANTILLAS Y RECURSOS FRONTEND
+====================================================================
+- base.html contiene el diseño compartido, la hoja global y los scripts comunes.
+  También carga los estilos y scripts específicos de cada vista.
+- Los estilos de las vistas están en smartbids/static/css/views/ y los scripts
+  en smartbids/static/js/. Las plantillas no deben incluir reglas CSS, scripts
+  embebidos ni manejadores de eventos inline.
+- El HTML 404 se mantiene como excepción independiente.

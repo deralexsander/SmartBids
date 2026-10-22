@@ -4,8 +4,9 @@
 export const MENSAJES = {
     auth: {
         loginExitoso: 'Ingreso exitoso.',
-        emailNoVerificado: 'Por favor verifica tu correo electrónico antes de ingresar.',
-        registroExitoso: 'Registro exitoso. Se ha enviado un correo de verificación a tu email.',
+        emailNoVerificado: 'Tu cuenta aún no está activada. Revisa tu bandeja de entrada o tu carpeta de SPAM.',
+        registroExitoso: '¡Registro exitoso! Te enviamos un correo de activación. Por favor revisa tu bandeja de entrada o tu carpeta de SPAM / correo no deseado.',
+        reenvioActivacionExitoso: '¡Correo de activación reenviado! Por favor revisa tu bandeja de entrada o tu carpeta de SPAM.',
         resetPasswordEnviado: 'Se ha enviado un correo para restablecer tu contraseña.',
         resetPasswordSinEmail: 'Ingresa tu correo en el campo superior para recuperar tu contraseña.',
         resetPasswordError: 'No se pudo enviar el correo de recuperación. Inténtalo más tarde.',
@@ -87,47 +88,94 @@ export function getFriendlyErrorMessage(errorCode, rawMessage = '') {
 // ==========================================================================
 let timerMensaje = null;
 
-export function mostrarMensaje(texto, tipo = 'info') {
+export function mostrarMensaje(texto, tipo = 'info', duracion = 14000) {
     const container = document.getElementById('global-message-container');
     const badge = document.getElementById('global-message-badge');
     const badgeText = document.getElementById('global-message-text');
     const icon = document.getElementById('global-message-icon');
+    const closeBtn = document.getElementById('global-message-close');
+    const closeIcon = closeBtn ? closeBtn.querySelector('i') : null;
 
     if (!container || !badgeText) return;
 
     if (timerMensaje) {
         clearTimeout(timerMensaje);
+        timerMensaje = null;
     }
 
     badgeText.textContent = texto;
 
     if (icon && badge) {
         icon.className = 'fa-solid';
+        badge.classList.remove('global-message--exito', 'global-message--error', 'global-message--info', 'global-message--alerta');
+
         if (tipo === 'exito') {
+            badge.classList.add('global-message--exito');
             icon.classList.add('fa-circle-check');
             icon.style.color = 'var(--accent-green)';
             badgeText.style.color = 'var(--dark-green)';
             badge.style.borderColor = 'var(--accent-green)';
+            if (closeBtn) closeBtn.style.color = 'var(--accent-green)';
+            if (closeIcon) closeIcon.style.color = 'var(--accent-green)';
         } else if (tipo === 'error') {
+            badge.classList.add('global-message--error');
             icon.classList.add('fa-circle-exclamation');
             icon.style.color = '#e53e3e';
             badgeText.style.color = '#c53030';
             badge.style.borderColor = '#feb2b2';
+            if (closeBtn) closeBtn.style.color = '#e53e3e';
+            if (closeIcon) closeIcon.style.color = '#e53e3e';
+        } else if (tipo === 'alerta' || tipo === 'warning') {
+            badge.classList.add('global-message--alerta');
+            icon.classList.add('fa-triangle-exclamation');
+            icon.style.color = '#dd6b20';
+            badgeText.style.color = '#7b341e';
+            badge.style.borderColor = '#fbd38d';
+            if (closeBtn) closeBtn.style.color = '#dd6b20';
+            if (closeIcon) closeIcon.style.color = '#dd6b20';
         } else {
+            badge.classList.add('global-message--info');
             icon.classList.add('fa-circle-info');
             icon.style.color = 'var(--muted-teal)';
             badgeText.style.color = 'var(--dark-green)';
             badge.style.borderColor = 'var(--soft-mint)';
+            if (closeBtn) closeBtn.style.color = 'var(--muted-teal)';
+            if (closeIcon) closeIcon.style.color = 'var(--muted-teal)';
         }
+    }
+
+    if (closeBtn && closeBtn.dataset.bound !== 'true') {
+        closeBtn.dataset.bound = 'true';
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            limpiarMensaje();
+        });
+    }
+
+    if (!container.dataset.hoverBound) {
+        container.dataset.hoverBound = 'true';
+        container.addEventListener('mouseenter', () => {
+            if (timerMensaje) {
+                clearTimeout(timerMensaje);
+                timerMensaje = null;
+            }
+        });
+        container.addEventListener('mouseleave', () => {
+            if (container.style.visibility === 'visible' && duracion > 0) {
+                timerMensaje = setTimeout(limpiarMensaje, 4000);
+            }
+        });
     }
 
     container.style.visibility = 'visible';
     container.style.opacity = '1';
     container.style.transform = 'translate(-50%, 0)';
 
-    timerMensaje = setTimeout(() => {
-        limpiarMensaje();
-    }, 5000);
+    if (duracion > 0) {
+        timerMensaje = setTimeout(() => {
+            limpiarMensaje();
+        }, duracion);
+    }
 }
 
 // ==========================================================================
@@ -136,6 +184,11 @@ export function mostrarMensaje(texto, tipo = 'info') {
 export function limpiarMensaje() {
     const container = document.getElementById('global-message-container');
     if (!container) return;
+
+    if (timerMensaje) {
+        clearTimeout(timerMensaje);
+        timerMensaje = null;
+    }
 
     container.style.opacity = '0';
     container.style.transform = 'translate(-50%, -25px)';
@@ -302,3 +355,103 @@ async function cargarAlertasPostgres() {
 document.addEventListener('DOMContentLoaded', () => {
     cargarAlertasPostgres();
 });
+
+if (typeof window !== 'undefined') {
+    window.mostrarMensaje = mostrarMensaje;
+    window.limpiarMensaje = limpiarMensaje;
+}
+
+// Captura global de validaciones HTML5 en cualquier formulario del sistema
+document.addEventListener('invalid', (e) => {
+    // Evitar la aparición de las burbujas nativas del navegador ("validaciones de django")
+    e.preventDefault();
+
+    const form = e.target.closest('form');
+    if (!form) return;
+
+    if (form.dataset.invalidNotified !== 'true') {
+        form.dataset.invalidNotified = 'true';
+        setTimeout(() => { delete form.dataset.invalidNotified; }, 2500);
+
+        let nombreCampo = '';
+
+        // 1. Buscar en <label for="...">
+        if (e.target.id) {
+            try {
+                const labelEl = form.querySelector(`label[for="${CSS.escape(e.target.id)}"]`);
+                if (labelEl) {
+                    nombreCampo = labelEl.textContent.replace(/\*/g, '').trim();
+                }
+            } catch (_) {}
+        }
+
+        // 2. Buscar en e.target.labels
+        if (!nombreCampo && e.target.labels && e.target.labels.length > 0) {
+            nombreCampo = e.target.labels[0].textContent.replace(/\*/g, '').trim();
+        }
+
+        // 3. Buscar en aria-label
+        if (!nombreCampo) {
+            nombreCampo = e.target.getAttribute('aria-label') || '';
+        }
+
+        // 4. Diccionario de traducción para nombres técnicos comunes
+        const DICCIONARIO_CAMPOS = {
+            'name': 'Nombre',
+            'nombre': 'Nombre',
+            'first_name': 'Nombre',
+            'last_name': 'Apellido',
+            'topic': 'Tema',
+            'tema': 'Tema',
+            'email': 'Correo',
+            'correo': 'Correo',
+            'phone': 'Teléfono',
+            'telefono': 'Teléfono',
+            'message': 'Mensaje',
+            'mensaje': 'Mensaje',
+            'password': 'Contraseña',
+            'password1': 'Contraseña',
+            'password2': 'Confirmar contraseña',
+            'current_password': 'Contraseña actual',
+            'new_password': 'Nueva contraseña',
+            'rut': 'RUT',
+            'organization': 'Organización',
+            'empresa': 'Empresa',
+            'cargo': 'Cargo',
+            'motivo': 'Motivo',
+            'website': 'Sitio web'
+        };
+
+        const fieldName = (e.target.name || '').toLowerCase();
+        if (!nombreCampo && fieldName && DICCIONARIO_CAMPOS[fieldName]) {
+            nombreCampo = DICCIONARIO_CAMPOS[fieldName];
+        }
+
+        // 5. Fallback a placeholder si es representativo
+        if (!nombreCampo) {
+            const ph = e.target.getAttribute('placeholder') || '';
+            if (ph && !ph.toLowerCase().startsWith('ej') && !ph.includes('@')) {
+                nombreCampo = ph;
+            }
+        }
+
+        if (!nombreCampo && fieldName) {
+            nombreCampo = fieldName;
+        }
+
+        let mensaje = 'Por favor completa todos los campos requeridos correctamente.';
+        if (nombreCampo) {
+            if (e.target.tagName === 'SELECT') {
+                mensaje = `Por favor selecciona una opción para: ${nombreCampo}.`;
+            } else if (e.target.type === 'email' && e.target.validity?.typeMismatch) {
+                mensaje = `Por favor ingresa un ${nombreCampo} válido.`;
+            } else if (e.target.validity?.tooShort) {
+                mensaje = `El campo ${nombreCampo} es demasiado corto.`;
+            } else {
+                mensaje = `Por favor completa el campo: ${nombreCampo}.`;
+            }
+        }
+
+        mostrarMensaje(mensaje, 'error');
+    }
+}, true);

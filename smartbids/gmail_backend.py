@@ -60,6 +60,12 @@ class GmailApiBackend(BaseEmailBackend):
                 mime_msg['To'] = ', '.join(message.to)
                 mime_msg['From'] = message.from_email or settings.DEFAULT_FROM_EMAIL
                 mime_msg['Subject'] = message.subject
+                if message.reply_to:
+                    mime_msg['Reply-To'] = ', '.join(message.reply_to)
+
+                # Encabezados recomendados para correos transaccionales
+                mime_msg['Auto-Submitted'] = 'auto-generated'
+                mime_msg['X-Auto-Response-Suppress'] = 'All'
 
                 if message.body:
                     mime_msg.attach(MIMEText(message.body, 'plain', 'utf-8'))

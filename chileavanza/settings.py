@@ -10,8 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-import os
 from pathlib import Path
+import os
+from urllib.parse import urlparse, unquote
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,27 +27,57 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    'chileavanza.cl',
-    '.chileavanza.cl',
-]
+# Versión de la plataforma
+APP_VERSION = os.getenv('APP_VERSION', 'v1.0.0')
+
+# ==============================================================================
+# HOSTS Y CSRF DINÁMICOS DESDE EL ENTORNO (.env / Railway)
+# ==============================================================================
+_allowed_hosts_env = os.getenv('ALLOWED_HOSTS')
+if _allowed_hosts_env:
+    ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(',') if host.strip()]
+else:
+    ALLOWED_HOSTS = [
+        'smartbids.chileavanza.cl',
+        'chileavanza.cl',
+        '.chileavanza.cl',
+        '.railway.app',
+        '.up.railway.app',
+        '127.0.0.1',
+        'localhost',
+        '*',
+    ]
+
+_csrf_origins_env = os.getenv('CSRF_TRUSTED_ORIGINS')
+if _csrf_origins_env:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in _csrf_origins_env.split(',') if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        'https://smartbids.chileavanza.cl',
+        'https://*.railway.app',
+        'https://*.up.railway.app',
+        'https://chileavanza.cl',
+        'https://*.chileavanza.cl',
+    ]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'smartbids',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
+    'smartbids.storage_guard.StorageSafetyMiddleware',  # Guardián de almacenamiento (mejoras)
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',       # Requerido para servir estáticos en Railway
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -60,7 +91,7 @@ ROOT_URLCONF = 'chileavanza.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates'] if (BASE_DIR / 'templates').exists() else [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -69,6 +100,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'chileavanza.settings.firebase_settings',
+                'smartbids.context_processors.footer_info_context',
             ],
         },
     },
@@ -77,24 +109,60 @@ TEMPLATES = [
 WSGI_APPLICATION = 'chileavanza.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# ==============================================================================
+# BASE DE DATOS (CONFIGURACIÓN EXCLUSIVA CON POSTGRESQL EN RAILWAY)
+# ==============================================================================
+# Soporta la URL privada interna en Railway (DATABASE_PRIVATE_URL) y la URL pública (DATABASE_URL / DATABASE_PUBLIC_URL)
+_db_url_env = os.getenv('DATABASE_PRIVATE_URL') or os.getenv('DATABASE_URL') or os.getenv('DATABASE_PUBLIC_URL')
+
+if _db_url_env:
+    _url = urlparse(_db_url_env)
+    _db_name = _url.path.lstrip('/')
+    _db_user = unquote(_url.username or '')
+    _db_password = unquote(_url.password or '')
+    _db_host = _url.hostname
+    _db_port = _url.port or 5432
+elif os.getenv('DB_HOST') and os.getenv('DB_USER'):
+    _db_name = os.getenv('DB_NAME', 'railway')
+    _db_user = os.getenv('DB_USER', '')
+    _db_password = os.getenv('DB_PASSWORD', '')
+    _db_host = os.getenv('DB_HOST', '')
+    _db_port = int(os.getenv('DB_PORT', 5432))
+else:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        "DATABASE_URL no está configurada en las variables de entorno. "
+        "El proyecto está configurado para operar exclusivamente con PostgreSQL en Railway. "
+        "Asegúrate de definir DATABASE_URL en tu archivo .env o en el panel de Railway."
+    )
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'smartbids'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-    }
+        'NAME': _db_name,
+        'USER': _db_user,
+        'PASSWORD': _db_password,
+        'HOST': _db_host,
+        'PORT': _db_port,
+        'OPTIONS': {
+            'options': '-c search_path=public,catalog,procurement,core,config'
+        },
+    },
+    'dw': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DW_DB_NAME', _db_name),
+        'USER': _db_user,
+        'PASSWORD': _db_password,
+        'HOST': _db_host,
+        'PORT': _db_port,
+        'OPTIONS': {
+            'options': '-c search_path=dw,public'
+        },
+    },
 }
 
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -112,30 +180,22 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'es-cl'
-
 TIME_ZONE = 'America/Santiago'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 if (BASE_DIR / 'static').exists():
     STATICFILES_DIRS = [
         BASE_DIR / 'static',
     ]
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -143,12 +203,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CONFIGURACIÓN DEL SERVIDOR DE CORREOS (GMAIL API REST)
 # ==============================================================================
 EMAIL_BACKEND = 'smartbids.gmail_backend.GmailApiBackend'
-
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'smartbids.qa@chileavanza.cl')
 DEFAULT_FROM_EMAIL = f"SmartBids <{EMAIL_HOST_USER}>"
 
-
-
+# ==============================================================================
+# FIREBASE CONFIGURATION
+# ==============================================================================
 FIREBASE_CONFIG = {
     'apiKey': os.getenv('FIREBASE_API_KEY'),
     'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN'),
@@ -159,7 +219,6 @@ FIREBASE_CONFIG = {
     'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID'),
 }
 
-# Función para inyectar FIREBASE_CONFIG en todos los HTML
 def firebase_settings(request):
     return {
         'FIREBASE_CONFIG': FIREBASE_CONFIG
