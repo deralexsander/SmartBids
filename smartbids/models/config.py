@@ -35,7 +35,7 @@ class Mensajeria(models.Model):
     actualizado_el = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'mensajeria'
+        db_table = '"config"."mensajeria"'
         verbose_name = 'Mensajería'
         verbose_name_plural = 'Mensajerías'
 
@@ -78,7 +78,7 @@ class InfoContacto(models.Model):
     )
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"config"."info_contacto"'
         verbose_name = "Configuración de Contacto y Enlaces"
 
@@ -104,7 +104,7 @@ class AuditoriaAdmin(models.Model):
     ip_origen = models.GenericIPAddressField(blank=True, null=True, verbose_name="IP de origen")
 
     class Meta:
-        db_table = 'auditoria_admin'
+        db_table = '"config"."auditoria_admin"'
         verbose_name = 'Auditoría de Administradores'
         verbose_name_plural = 'Auditorías de Administradores'
         ordering = ['-creado_el']
@@ -122,7 +122,7 @@ class ConfiguracionCorreo(models.Model):
     actualizado_el = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'configuracion_correo'
+        db_table = '"config"."configuracion_correo"'
         verbose_name = 'Configuración de Correos'
         verbose_name_plural = 'Configuraciones de Correos'
 
@@ -234,3 +234,14 @@ def notificar_accion_entre_administradores(ejecutor_email, ejecutor_nombre, afec
         )
     except Exception as e:
         logger.warning(f"[SmartBids] No se pudo enviar correo de auditoría admin: {e}")
+
+class StopWord(models.Model):
+    codigo_stop_word = models.SmallAutoField(primary_key=True)
+    nombre_stop_word = models.CharField(unique=True, max_length=50)
+
+    class Meta:
+        managed = True
+        db_table = '"config"."stop_word"'
+
+    def __str__(self):
+        return self.nombre_stop_word
