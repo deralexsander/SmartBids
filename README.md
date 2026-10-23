@@ -99,6 +99,25 @@ La plataforma integra validación de dos pasos para resguardar la identidad corp
 
 ---
 
+## 👥 Metodología Ágil y Equipo de Desarrollo
+
+El proyecto se gestionó bajo el marco de trabajo **Scrum**, estructurado en iteraciones cortas (Sprints) orientadas a la entrega continua de valor incremental:
+
+* ⏱️ **Planificación por Sprints:** Definición y priorización de backlog según los objetivos y alcance comprometido del producto.
+* 📋 **Seguimiento y Control:** Registro y auditoría de avances, tareas técnicas y mitigación de bloqueos mediante bitácoras semanales.
+* 🔄 **Mejora Continua:** Retrospectivas periódicas, evaluación de resultados y adaptación dinámica a nuevos requerimientos.
+
+### 💼 Roles y Estructura del Equipo
+
+| Integrante | Rol en el Proyecto | Responsabilidades Clave |
+| :--- | :--- | :--- |
+| **Andrés Santoro** | **Product Owner & CEO** | Visión del producto, ideación y definición de la propuesta de valor para el ecosistema de compras públicas y priorización del backlog de negocio. |
+| **Matías González** | **Scrum Master** | Facilitación del marco Scrum, gestión de ceremonias y bitácoras de avance, asegurando el cumplimiento de hitos y la documentación integral. |
+| **Flavia Oneto** | **Team Developer (Data & DB Engineer)** | Modelado y optimización de base de datos relacional (PostgreSQL), pipelines de transformación (ETL) y conciliación de modelos para el consumo eficiente en Django. |
+| **Nicolás Muñoz** | **Team Developer (Frontend, Cloud & Security)** | Arquitectura y desarrollo de la interfaz de usuario (UI/UX), infraestructura cloud (hosting, dominio/URL personalizada y SSL) y seguridad de la plataforma (autenticación 2FA/OTP y control de sesiones). |
+
+---
+
 ## 🛠️ Stack Tecnológico
 
 * **Backend:** Python 3.10+, Django, WhiteNoise, Gunicorn[cite: 7].
