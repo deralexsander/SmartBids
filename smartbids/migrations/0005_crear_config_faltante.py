@@ -3,6 +3,76 @@
 from django.db import migrations, models
 
 
+
+MODELOS = ('AuditoriaAdmin', 'ConfiguracionCorreo', 'InfoContacto')
+
+
+def tipo_canonico(tipo):
+    return tipo.replace('varchar', 'character varying').replace('timestamp with time zone', 'timestamptz')
+
+
+def planificar_config(apps, schema_editor):
+    connection = schema_editor.connection
+    if connection.vendor != 'postgresql':
+        raise RuntimeError('La conciliación requiere PostgreSQL.')
+    to_create = []
+    errors = []
+    with connection.cursor() as cursor:
+        for name in MODELOS:
+            model = apps.get_model('smartbids', name)
+            table = model._meta.db_table
+            cursor.execute('SELECT to_regclass(%s)::oid', [table])
+            oid = cursor.fetchone()[0]
+            if oid is None:
+                to_create.append(model)
+                continue
+            cursor.execute(
+                'SELECT attname, format_type(atttypid, atttypmod), attnotnull, '
+                "atthasdef, attidentity, attgenerated FROM pg_attribute "
+                'WHERE attrelid = %s AND attnum > 0 AND NOT attisdropped', [oid]
+            )
+            actual = {row[0]: row[1:] for row in cursor.fetchall()}
+            expected_names = set()
+            for field in model._meta.local_fields:
+                expected_names.add(field.column)
+                column = actual.get(field.column)
+                if column is None:
+                    errors.append(f'{table}: falta {field.column}')
+                    continue
+                sql_type, notnull, *_ = column
+                expected_type = field.db_type(connection)
+                if tipo_canonico(sql_type) != tipo_canonico(expected_type):
+                    errors.append(f'{table}.{field.column}: tipo {sql_type}, esperado {expected_type}')
+                if bool(notnull) != (not field.null):
+                    errors.append(f'{table}.{field.column}: nulabilidad diferente')
+                if field.get_internal_type() in ('AutoField', 'BigAutoField', 'SmallAutoField'):
+                    # Existing serial sequences and identity columns are both valid.
+                    if not column[2] and not column[3]:
+                        errors.append(f'{table}.{field.column}: falta generación automática del ID')
+            for name_extra, column in actual.items():
+                if name_extra not in expected_names:
+                    _, notnull, hasdefault, identity, generated = column
+                    if notnull and not (hasdefault or identity or generated):
+                        errors.append(f'{table}.{name_extra}: columna adicional obligatoria sin default')
+            cursor.execute(
+                "SELECT a.attname FROM pg_constraint c "
+                'CROSS JOIN LATERAL unnest(c.conkey) WITH ORDINALITY AS k(attnum, pos) '
+                'JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum '
+                "WHERE c.conrelid = %s AND c.contype = 'p' ORDER BY k.pos", [oid]
+            )
+            pk = [row[0] for row in cursor.fetchall()]
+            if pk != [model._meta.pk.column]:
+                errors.append(f'{table}: clave primaria incompatible: {pk}')
+    if errors:
+        raise RuntimeError('No se adoptaron tablas ni se crearon tablas nuevas:\n' + '\n'.join(errors))
+    return to_create
+
+
+def crear_o_adoptar(apps, schema_editor):
+    for model in planificar_config(apps, schema_editor):
+        schema_editor.create_model(model)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,6 +80,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],
+            state_operations=[
         migrations.CreateModel(
             name='AuditoriaAdmin',
             fields=[
@@ -67,4 +140,9 @@ class Migration(migrations.Migration):
                 'constraints': [],
             },
         ),
+            ],
+        ),
+        # Irreversible: adopted tables can contain pre-existing production data.
+        migrations.RunPython(crear_o_adoptar),
     ]
+
