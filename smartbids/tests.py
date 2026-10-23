@@ -1395,7 +1395,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
 
         with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
              patch('smartbids.tracking_views._sincronizar_seguimientos'), \
-             patch('smartbids.models.tracking.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.models.core.SeguimientoLicitacion.objects') as m_seg, \
              patch('smartbids.licitaciones_views.Preferencia.objects') as m_pref, \
              patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
              patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_objects), \
@@ -1442,7 +1442,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
 
         with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
              patch('smartbids.tracking_views._sincronizar_seguimientos'), \
-             patch('smartbids.models.tracking.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.models.core.SeguimientoLicitacion.objects') as m_seg, \
              patch('smartbids.licitaciones_views.Preferencia.objects') as m_pref, \
              patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
              patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_objects), \
