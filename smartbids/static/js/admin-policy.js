@@ -24,7 +24,11 @@ let policyRequest = null;
 
 function adminHeaders() {
     const uid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
-    return uid ? { 'X-Firebase-UID': uid } : {};
+    const token = localStorage.getItem('smartbids_session_token');
+    const headers = {};
+    if (uid) headers['X-Firebase-UID'] = uid;
+    if (token) headers['X-Session-Token'] = token;
+    return headers;
 }
 
 function setPolicyMessage(text, type = 'info') {

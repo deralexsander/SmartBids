@@ -14,6 +14,7 @@ from django.core.cache import cache
 from .models import Suscriptor, Empresa, Preferencia, EstadoSuscriptor
 from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor, GrupoProducto, Nivel1Producto
 from .models.procurement import UnidadCompra
+from .auth_views import validar_autorizacion_suscriptor
 
 logger = logging.getLogger(__name__)
 
@@ -395,6 +396,10 @@ def obtener_perfil_suscriptor(request):
         if not suscriptor:
             return JsonResponse({'status': 'error', 'mensaje': f'Suscriptor no encontrado para el UID: {uid}'}, status=404)
 
+        autorizado, motivo = validar_autorizacion_suscriptor(request, suscriptor)
+        if not autorizado:
+            return JsonResponse({'status': 'error', 'mensaje': motivo}, status=403)
+
         pref = Preferencia.objects.filter(id_suscriptor=suscriptor).first()
         emp = suscriptor.sus_rut_empresa
 
@@ -560,6 +565,10 @@ def actualizar_preferencias_suscriptor(request):
         if not suscriptor:
             return JsonResponse({'status': 'error', 'mensaje': 'Suscriptor no encontrado.'}, status=404)
 
+        autorizado, motivo = validar_autorizacion_suscriptor(request, suscriptor)
+        if not autorizado:
+            return JsonResponse({'status': 'error', 'mensaje': motivo}, status=403)
+
         pref, _ = Preferencia.objects.get_or_create(id_suscriptor=suscriptor)
 
         if 'pref_comunas' in data:
@@ -632,6 +641,10 @@ def actualizar_perfil_suscriptor(request):
         if not suscriptor:
             return JsonResponse({'status': 'error', 'mensaje': 'Suscriptor no encontrado.'}, status=404)
 
+        autorizado, motivo = validar_autorizacion_suscriptor(request, suscriptor)
+        if not autorizado:
+            return JsonResponse({'status': 'error', 'mensaje': motivo}, status=403)
+
         suscriptor.sus_nombre1 = (data.get('sus_nombre1') or '').strip()
         suscriptor.sus_nombre2 = (data.get('sus_nombre2') or '').strip()
         suscriptor.sus_apellido1 = (data.get('sus_apellido1') or '').strip()
@@ -664,6 +677,10 @@ def actualizar_empresa_suscriptor(request):
         suscriptor = Suscriptor.objects.filter(firebase_uid=uid).first()
         if not suscriptor:
             return JsonResponse({'status': 'error', 'mensaje': 'Suscriptor no encontrado.'}, status=404)
+
+        autorizado, motivo = validar_autorizacion_suscriptor(request, suscriptor)
+        if not autorizado:
+            return JsonResponse({'status': 'error', 'mensaje': motivo}, status=403)
 
         rut = _formatear_rut(data.get('emp_rut'))
         if not rut:
@@ -867,6 +884,10 @@ def desvincular_empresa_suscriptor(request):
         suscriptor = Suscriptor.objects.select_related('sus_rut_empresa').filter(firebase_uid=uid).first()
         if not suscriptor:
             return JsonResponse({'status': 'error', 'mensaje': 'Cuenta de suscriptor no encontrada.'}, status=404)
+
+        autorizado, motivo = validar_autorizacion_suscriptor(request, suscriptor)
+        if not autorizado:
+            return JsonResponse({'status': 'error', 'mensaje': motivo}, status=403)
 
         empresa_actual = suscriptor.sus_rut_empresa
         if not empresa_actual:

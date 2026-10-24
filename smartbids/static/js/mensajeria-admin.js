@@ -2,8 +2,12 @@ import { mostrarMensaje } from './mensaje.js';
 import { auth } from './firebase-config.js';
 
 function encabezadosAdministrador() {
-    const uid = auth.currentUser?.uid;
-    return uid ? { 'X-Firebase-UID': uid } : {};
+    const uid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
+    const token = localStorage.getItem('smartbids_session_token');
+    const headers = {};
+    if (uid) headers['X-Firebase-UID'] = uid;
+    if (token) headers['X-Session-Token'] = token;
+    return headers;
 }
 
 // ==========================================================================

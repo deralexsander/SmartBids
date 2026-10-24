@@ -249,8 +249,7 @@
     {% elif request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
     <script type="module" src="{% static 'js/accion-cuenta.js' %}"></script>
     {% elif request.resolver_match.url_name == 'dashboard' %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{% static 'js/dashboard.js' %}"></script>
+    <!-- Chart.js y analítica son gestionados directamente por dashboard.html -->
     {% elif request.resolver_match.url_name == 'administracion_general' %}
     <script type="module" src="{% static 'js/admin-policy.js' %}"></script>
     <script type="module" src="{% static 'js/admin-users.js' %}"></script>

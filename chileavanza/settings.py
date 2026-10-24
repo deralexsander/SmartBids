@@ -45,7 +45,6 @@ else:
         '.up.railway.app',
         '127.0.0.1',
         'localhost',
-        '*',
     ]
 
 _csrf_origins_env = os.getenv('CSRF_TRUSTED_ORIGINS')
@@ -59,6 +58,20 @@ else:
         'https://chileavanza.cl',
         'https://*.chileavanza.cl',
     ]
+
+# ==============================================================================
+# SEGURIDAD DE COOKIES Y TRANSPORTE HTTPS
+# ==============================================================================
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 
 # Application definition

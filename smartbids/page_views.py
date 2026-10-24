@@ -49,11 +49,14 @@ def mensajeria_view(request):
 
 def administracion_general_view(request):
     suscriptor = resolver_suscriptor(request)
-    if suscriptor and suscriptor.codigo_estado:
-        rol = (suscriptor.codigo_estado.nombre_estado or '').strip().lower()
-        es_admin = rol in ('admin', 'administrador') or suscriptor.codigo_estado.codigo_estado == 5
-        if not es_admin:
-            return redirect('mis_licitaciones')
+    if not suscriptor:
+        return redirect('ingreso')
+    if not suscriptor.codigo_estado:
+        return redirect('mis_licitaciones')
+    rol = (suscriptor.codigo_estado.nombre_estado or '').strip().lower()
+    es_admin = rol in ('admin', 'administrador') or suscriptor.codigo_estado.codigo_estado == 5
+    if not es_admin:
+        return redirect('mis_licitaciones')
     return render(request, 'smartbids/administracion_general.html')
 
 def handler404_view(request, exception=None):

@@ -1767,7 +1767,6 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
     // Verificar si el usuario omitió recientemente el aviso
     const omitidoHasta = localStorage.getItem(KEY_OMITIR_MODAL);
     if (omitidoHasta && Date.now() < Number(omitidoHasta)) {
-        console.info('[SmartBids] Modal de perfil pospuesto por omisión previa.');
         return;
     }
 
