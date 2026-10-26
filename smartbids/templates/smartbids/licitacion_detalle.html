@@ -36,7 +36,7 @@
                         <span><i class="fa-solid fa-building"></i> {{ licitacion.lic_codigo_ucom.ucom_descripcion|default:"Unidad de compra no informada" }}</span>
                         {% if licitacion.lic_codigo_ucom.ucom_codigo_comuna %}
                         <span class="lic-detalle__meta-sep">•</span>
-                        <span><i class="fa-solid fa-location-dot"></i> {{ licitacion.lic_codigo_ucom.ucom_codigo_comuna }}</span>
+                        <span><i class="fa-solid fa-location-dot"></i> {{ licitacion.lic_codigo_ucom.ucom_codigo_comuna|nombre_comuna }}</span>
                         {% endif %}
                         {% if licitacion.lic_codigo_ucom.ucom_rut %}
                         <span class="lic-detalle__meta-sep">•</span>

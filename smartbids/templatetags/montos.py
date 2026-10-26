@@ -14,3 +14,12 @@ def miles_chilenos(value):
     except (InvalidOperation, TypeError, ValueError):
         return value
     return f'{monto:,.0f}'.replace(',', '.')
+
+
+@register.filter
+def nombre_comuna(value):
+    if not value:
+        return ''
+    from smartbids.utils.licitacion_utils import obtener_nombre_comuna
+    return obtener_nombre_comuna(value)
+

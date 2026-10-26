@@ -230,7 +230,7 @@
                             <div class="mis-lic__metadata">
                                 <span>
                                     <i class="fa-solid fa-location-dot mis-lic__icon"></i>
-                                    {{ lic.lic_codigo_ucom.ucom_codigo_comuna|default:"Chile" }}
+                                    {{ lic.lic_codigo_ucom.ucom_codigo_comuna|nombre_comuna|default:"Chile" }}
                                 </span>
                                 <span>
                                     <i class="fa-solid fa-building mis-lic__icon"></i>
@@ -361,7 +361,7 @@
                         <div class="mis-lic__metadata">
                             <span>
                                 <i class="fa-solid fa-location-dot mis-lic__icon"></i>
-                                {{ lic.lic_codigo_ucom.ucom_codigo_comuna|default:"Chile" }}
+                                {{ lic.lic_codigo_ucom.ucom_codigo_comuna|nombre_comuna|default:"Chile" }}
                             </span>
                             <span>
                                 <i class="fa-solid fa-building mis-lic__icon"></i>

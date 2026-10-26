@@ -2081,6 +2081,48 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
 
         self.assertGreater(archivos_analizados, 0, 'Deben haberse analizado archivos JS.')
 
+    def test_obtener_nombre_comuna_resuelve_correctamente(self):
+        """Verifica que obtener_nombre_comuna traduzca códigos a nombres legibles."""
+        from smartbids.utils.licitacion_utils import obtener_nombre_comuna
+        from unittest.mock import patch
+
+        mapa_mock = {'13101': 'Santiago', '01101': 'Iquique'}
+        with patch('smartbids.utils.licitacion_utils.obtener_mapa_comunas', return_value=mapa_mock):
+            self.assertEqual(obtener_nombre_comuna('13101'), 'Santiago')
+            self.assertEqual(obtener_nombre_comuna('1101'), 'Iquique')
+            self.assertEqual(obtener_nombre_comuna('99999'), '99999')
+            self.assertEqual(obtener_nombre_comuna(''), '')
+            self.assertEqual(obtener_nombre_comuna(None), '')
+
+    def test_propiedad_nombre_comuna_en_unidad_compra_y_licitacion(self):
+        """Verifica que las propiedades nombre_comuna en UnidadCompra y Licitacion funcionen."""
+        from smartbids.models.procurement import UnidadCompra, Licitacion
+        from unittest.mock import patch
+
+        mapa_mock = {'13101': 'Santiago'}
+        with patch('smartbids.utils.licitacion_utils.obtener_mapa_comunas', return_value=mapa_mock):
+            ucom = UnidadCompra(codigo_unidad_compra=1, ucom_codigo_comuna='13101')
+            self.assertEqual(ucom.nombre_comuna, 'Santiago')
+            self.assertEqual(ucom.ucom_nombre_comuna, 'Santiago')
+
+            lic = Licitacion(lic_codigo='123-1-L24', lic_codigo_ucom=ucom)
+            self.assertEqual(lic.nombre_comuna, 'Santiago')
+
+            lic_sin_ucom = Licitacion(lic_codigo='124-1-L24', lic_codigo_ucom=None)
+            self.assertEqual(lic_sin_ucom.nombre_comuna, '')
+
+    def test_filtro_template_nombre_comuna(self):
+        """Verifica que el filtro de template nombre_comuna traduzca el código."""
+        from smartbids.templatetags.montos import nombre_comuna
+        from unittest.mock import patch
+
+        mapa_mock = {'13101': 'Santiago'}
+        with patch('smartbids.utils.licitacion_utils.obtener_mapa_comunas', return_value=mapa_mock):
+            self.assertEqual(nombre_comuna('13101'), 'Santiago')
+            self.assertEqual(nombre_comuna(''), '')
+            self.assertEqual(nombre_comuna(None), '')
+
+
 
 
 
