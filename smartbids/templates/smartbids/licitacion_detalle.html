@@ -150,71 +150,25 @@
                             <h2 class="lic-detalle__section-title">
                                 <i class="fa-solid fa-file-lines lic-detalle__icon"></i> Documentos y Adjuntos
                             </h2>
-                            {% if documentos %}
-                            <span class="dash-badge lic-detalle__qa-count">{{ documentos|length }} archivo{{ documentos|length|pluralize:"s" }}</span>
-                            {% endif %}
                         </div>
-                        {% if url_adjuntos %}
-                        <a href="{{ url_adjuntos }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__card-action-btn" title="Abrir repositorio de anexos en Mercado Público">
-                            <i class="fa-solid fa-paperclip"></i> Repositorio Oficial
+                        <a href="{{ url_adjuntos|default:url_externa }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__card-action-btn" title="Abrir repositorio de anexos en Mercado Público en una pestaña aparte">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir en pestaña aparte
                         </a>
-                        {% endif %}
                     </div>
 
-                    {% if documentos %}
-                        {% if documentos|length > 4 %}
-                        <div class="lic-detalle__filter-box">
-                            <i class="fa-solid fa-magnifying-glass lic-detalle__filter-icon"></i>
-                            <input type="search" id="filtro-documentos" placeholder="Filtrar por nombre o tipo de anexo..." class="lic-detalle__filter-input">
+                    <div class="lic-detalle__docs-empty" style="padding: 2.2rem 1rem;">
+                        <div style="width: 58px; height: 58px; border-radius: 50%; background: var(--light-bg); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: var(--dark-green); font-size: 1.5rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);">
+                            <i class="fa-solid fa-folder-open"></i>
                         </div>
-                        {% endif %}
-                        <div class="lic-detalle__docs-scrollable" id="lista-documentos">
-                            {% for doc in documentos %}
-                            <div class="lic-detalle__doc-card" data-doc-item data-search-text="{{ doc.nombre|lower }} {{ doc.descripcion|lower }}">
-                                <div class="lic-detalle__doc-icon-wrap lic-detalle__doc-icon-wrap--{{ doc.extension }}">
-                                    {% if doc.extension == 'pdf' %}
-                                        <i class="fa-solid fa-file-pdf"></i>
-                                    {% elif doc.extension == 'docx' or doc.extension == 'doc' %}
-                                        <i class="fa-solid fa-file-word"></i>
-                                    {% elif doc.extension == 'xlsx' or doc.extension == 'xls' or doc.extension == 'csv' %}
-                                        <i class="fa-solid fa-file-excel"></i>
-                                    {% elif doc.extension == 'zip' or doc.extension == 'rar' or doc.extension == '7z' %}
-                                        <i class="fa-solid fa-file-zipper"></i>
-                                    {% else %}
-                                        <i class="fa-solid fa-file-lines"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="lic-detalle__doc-body">
-                                    <div class="lic-detalle__doc-header">
-                                        <span class="lic-detalle__doc-name">{{ doc.nombre }}</span>
-                                        {% if doc.extension %}<span class="dash-badge lic-detalle__doc-ext-badge">{{ doc.extension|upper }}</span>{% endif %}
-                                    </div>
-                                    <div class="lic-detalle__doc-meta">
-                                        {% if doc.descripcion %}<span class="lic-detalle__doc-tag"><i class="fa-solid fa-tag"></i> {{ doc.descripcion }}</span>{% endif %}
-                                        {% if doc.fecha %}<small class="lic-detalle__doc-date"><i class="fa-regular fa-clock"></i> {{ doc.fecha }}</small>{% endif %}
-                                    </div>
-                                </div>
-                                {% if doc.url %}
-                                <div class="lic-detalle__doc-action">
-                                    <a href="{{ doc.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__doc-btn" title="Descargar / Consultar anexo oficial">
-                                        <i class="fa-solid fa-download"></i> Descargar
-                                    </a>
-                                </div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
+                        <p class="lic-detalle__empty-message" style="max-width: 440px; margin: 0 auto 1.3rem auto; font-size: 0.94rem; line-height: 1.5; color: var(--gray-text);">
+                            Las bases administrativas, especificaciones técnicas y anexos del proceso se consultan y descargan directamente en el repositorio oficial de Mercado Público.
+                        </p>
+                        <div class="lic-detalle__cta-wrap" style="margin-top: 0.5rem;">
+                            <a href="{{ url_adjuntos|default:url_externa }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary lic-detalle__cta-btn" style="font-weight: 700; padding: 0.7rem 1.4rem; font-size: 0.92rem; box-shadow: 0 4px 14px rgba(17, 99, 78, 0.2);">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir repositorio en nueva pestaña
+                            </a>
                         </div>
-                    {% else %}
-                        <div class="lic-detalle__docs-empty">
-                            {% if url_adjuntos %}
-                            <div class="lic-detalle__cta-wrap">
-                                <a href="{{ url_adjuntos }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline lic-detalle__cta-btn">
-                                    <i class="fa-solid fa-paperclip"></i> Consultar Archivos en Mercado Público
-                                </a>
-                            </div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+                    </div>
                 </section>
             </div>
 

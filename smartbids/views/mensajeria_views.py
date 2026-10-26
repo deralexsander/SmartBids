@@ -8,12 +8,12 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models.config import (
+from smartbids.models.config import (
     InfoContacto, ParametroGlobal, ConfiguracionCorreo, AuditoriaAdmin,
     obtener_correos_sistema,
 )
-from .models import Mensajeria, Suscriptor
-from .context_processors import EMAIL_CONTACTO_RESPALDO, extraer_correo_contacto
+from smartbids.models import Mensajeria, Suscriptor
+from smartbids.context_processors import EMAIL_CONTACTO_RESPALDO, extraer_correo_contacto
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)

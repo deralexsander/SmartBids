@@ -9,10 +9,10 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from .dashboard_views import formatear_monto
-from .licitacion_utils import estado_licitacion, resolver_suscriptor
-from .models import FactOrdenCompra
-from .models.core import Preferencia, NotificacionLicitacion, SeguimientoLicitacion
-from .models.procurement import Licitacion, LicitacionesProductos
+from smartbids.utils.licitacion_utils import estado_licitacion, resolver_suscriptor
+from smartbids.models import FactOrdenCompra
+from smartbids.models.core import Preferencia, NotificacionLicitacion, SeguimientoLicitacion
+from smartbids.models.procurement import Licitacion, LicitacionesProductos
 from .tracking_views import _sincronizar_seguimientos
 
 

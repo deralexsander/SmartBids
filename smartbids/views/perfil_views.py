@@ -11,9 +11,9 @@ from django.db.models import Q, Value
 from django.db.models.functions import Replace, Upper
 
 from django.core.cache import cache
-from .models import Suscriptor, Empresa, Preferencia, EstadoSuscriptor
-from .models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor, GrupoProducto, Nivel1Producto
-from .models.procurement import UnidadCompra
+from smartbids.models import Suscriptor, Empresa, Preferencia, EstadoSuscriptor
+from smartbids.models.catalog import Comuna, Organismo, Producto, Region, Provincia, Sector, Proveedor, GrupoProducto, Nivel1Producto
+from smartbids.models.procurement import UnidadCompra
 from .auth_views import validar_autorizacion_suscriptor
 
 logger = logging.getLogger(__name__)
@@ -160,7 +160,7 @@ def catalogos_preferencias(request):
         return JsonResponse({'status': 'ok', 'sugerencia': sugerencia})
 
     if tipo == 'tipos_licitacion':
-        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+        from smartbids.utils.licitacion_utils import obtener_catalogo_tipos_licitacion
         return JsonResponse({
             'status': 'ok',
             'datos': obtener_catalogo_tipos_licitacion()
@@ -364,7 +364,7 @@ def catalogos_preferencias(request):
 
     if tipo == 'ucom_arbol':
         try:
-            from .licitacion_utils import obtener_catalogo_organismos_ucom
+            from smartbids.utils.licitacion_utils import obtener_catalogo_organismos_ucom
             sector_filtro = request.GET.get('sector', '').strip()
             q_filtro = request.GET.get('q', '').strip()
             data_ucom = obtener_catalogo_organismos_ucom(sector_codigo=sector_filtro or None, q=q_filtro or None)

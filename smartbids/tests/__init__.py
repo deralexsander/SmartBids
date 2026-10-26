@@ -4,9 +4,9 @@ from io import StringIO
 
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 
-from .licitacion_utils import estado_licitacion, escribir_fila_csv
-from .models.procurement import Licitacion
-from .templatetags.montos import miles_chilenos
+from smartbids.utils.licitacion_utils import estado_licitacion, escribir_fila_csv
+from smartbids.models.procurement import Licitacion
+from smartbids.templatetags.montos import miles_chilenos
 
 
 @override_settings(TIME_ZONE='UTC')
@@ -60,7 +60,7 @@ class EstadoLicitacionTests(SimpleTestCase):
     def test_exportacion_excel_genera_archivo_y_protege_formulas(self):
         from io import BytesIO
         import openpyxl
-        from .licitacion_utils import generar_excel_response
+        from smartbids.utils.licitacion_utils import generar_excel_response
 
         response = generar_excel_response(
             'test.xlsx',
@@ -89,7 +89,7 @@ class FormatoMontosTests(SimpleTestCase):
 
 class PreferenciasTests(SimpleTestCase):
     def test_normalizar_cadena_simple(self):
-        from .perfil_views import normalizar_cadena_simple
+        from smartbids.views.perfil_views import normalizar_cadena_simple
         self.assertEqual(normalizar_cadena_simple("Mantención"), "mantencion")
         self.assertEqual(normalizar_cadena_simple("¡Cloud & Seguridad!"), "cloud seguridad")
         self.assertEqual(normalizar_cadena_simple(""), "")
@@ -102,10 +102,10 @@ class VistasExportacionTests(SimpleTestCase):
 
     def test_exportar_licitaciones_csv_por_defecto(self):
         from unittest.mock import patch
-        from .licitaciones_views import exportar_licitaciones_view
+        from smartbids.views.licitaciones_views import exportar_licitaciones_view
 
-        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=([], 0)):
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.views.licitaciones_views.filtrar_licitaciones', return_value=([], 0)):
             req = self.rf.get('/mis-licitaciones/exportar/')
             resp = exportar_licitaciones_view(req)
             self.assertEqual(resp['Content-Type'], 'text/csv; charset=utf-8')
@@ -113,10 +113,10 @@ class VistasExportacionTests(SimpleTestCase):
 
     def test_exportar_licitaciones_excel(self):
         from unittest.mock import patch
-        from .licitaciones_views import exportar_licitaciones_view
+        from smartbids.views.licitaciones_views import exportar_licitaciones_view
 
-        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=([], 0)):
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.views.licitaciones_views.filtrar_licitaciones', return_value=([], 0)):
             req = self.rf.get('/mis-licitaciones/exportar/?formato=xlsx')
             resp = exportar_licitaciones_view(req)
             self.assertEqual(resp['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -124,7 +124,7 @@ class VistasExportacionTests(SimpleTestCase):
 
     def test_exportar_dashboard_excel(self):
         from unittest.mock import patch
-        from .page_views import exportar_dashboard_view
+        from smartbids.views.page_views import exportar_dashboard_view
 
         req = self.rf.get('/dashboard/exportar/?formato=xlsx&gran=mes&periodo=2024-05')
         resp = exportar_dashboard_view(req)
@@ -132,7 +132,7 @@ class VistasExportacionTests(SimpleTestCase):
         self.assertIn('dashboard-tablas-2024-05.xlsx', resp['Content-Disposition'])
 
     def test_exportar_dashboard_csv(self):
-        from .page_views import exportar_dashboard_view
+        from smartbids.views.page_views import exportar_dashboard_view
 
         req = self.rf.get('/dashboard/exportar/?formato=csv&gran=mes&periodo=2024-05')
         resp = exportar_dashboard_view(req)
@@ -151,16 +151,16 @@ class DashboardDWTests(SimpleTestCase):
 
     def test_dashboard_page_render(self):
         from unittest.mock import patch
-        from .dashboard_views import dashboard_view
+        from smartbids.views.dashboard_views import dashboard_view
         req = self.rf.get('/dashboard/')
-        with patch('smartbids.dashboard_views.render') as mock_render:
+        with patch('smartbids.views.dashboard_views.render') as mock_render:
             mock_render.return_value = 'ok'
             resp = dashboard_view(req)
             self.assertEqual(resp, 'ok')
             mock_render.assert_called_once_with(req, 'smartbids/dashboard.html')
 
     def test_dashboard_periodo_invalido(self):
-        from .dashboard_views import dashboard_kpis
+        from smartbids.views.dashboard_views import dashboard_kpis
         req = self.rf.get('/dashboard/kpis/?gran=mensual&periodo=invalido')
         resp = dashboard_kpis(req)
         self.assertEqual(resp.status_code, 400)
@@ -174,13 +174,13 @@ class ReenvioActivacionTests(SimpleTestCase):
         cache.clear()
 
     def test_metodo_no_permitido(self):
-        from .auth_views import reenviar_correo_activacion
+        from smartbids.views.auth_views import reenviar_correo_activacion
         req = self.rf.get('/api/reenviar-correo-activacion/')
         resp = reenviar_correo_activacion(req)
         self.assertEqual(resp.status_code, 405)
 
     def test_correo_requerido(self):
-        from .auth_views import reenviar_correo_activacion
+        from smartbids.views.auth_views import reenviar_correo_activacion
         req = self.rf.post('/api/reenviar-correo-activacion/', data=b'{}', content_type='application/json')
         resp = reenviar_correo_activacion(req)
         self.assertEqual(resp.status_code, 400)
@@ -188,10 +188,10 @@ class ReenvioActivacionTests(SimpleTestCase):
     def test_usuario_no_encontrado(self):
         from unittest.mock import patch, MagicMock
         from firebase_admin import auth as fb_auth
-        from .auth_views import reenviar_correo_activacion
+        from smartbids.views.auth_views import reenviar_correo_activacion
 
         mock_app = MagicMock()
-        with patch('smartbids.auth_views._firebase_admin_app', return_value=mock_app), \
+        with patch('smartbids.views.auth_views._firebase_admin_app', return_value=mock_app), \
              patch('firebase_admin.auth.get_user_by_email', side_effect=fb_auth.UserNotFoundError('No user')):
             req = self.rf.post(
                 '/api/reenviar-correo-activacion/',
@@ -203,10 +203,10 @@ class ReenvioActivacionTests(SimpleTestCase):
 
     def test_usuario_ya_activado(self):
         from unittest.mock import patch, MagicMock
-        from .auth_views import reenviar_correo_activacion
+        from smartbids.views.auth_views import reenviar_correo_activacion
 
         mock_user = MagicMock(email_verified=True)
-        with patch('smartbids.auth_views._firebase_admin_app', return_value=MagicMock()), \
+        with patch('smartbids.views.auth_views._firebase_admin_app', return_value=MagicMock()), \
              patch('firebase_admin.auth.get_user_by_email', return_value=mock_user):
             req = self.rf.post(
                 '/api/reenviar-correo-activacion/',
@@ -218,12 +218,12 @@ class ReenvioActivacionTests(SimpleTestCase):
 
     def test_reenvio_exitoso_y_rate_limit(self):
         from unittest.mock import patch, MagicMock
-        from .auth_views import reenviar_correo_activacion
+        from smartbids.views.auth_views import reenviar_correo_activacion
 
         mock_user = MagicMock(email_verified=False)
-        with patch('smartbids.auth_views._firebase_admin_app', return_value=MagicMock()), \
+        with patch('smartbids.views.auth_views._firebase_admin_app', return_value=MagicMock()), \
              patch('firebase_admin.auth.get_user_by_email', return_value=mock_user), \
-             patch('smartbids.auth_views._enviar_email_activacion') as mock_envio:
+             patch('smartbids.views.auth_views._enviar_email_activacion') as mock_envio:
             req = self.rf.post(
                 '/api/reenviar-correo-activacion/',
                 data=b'{"email": "pendiente@smartbids.cl"}',
@@ -244,7 +244,7 @@ class ReenvioActivacionTests(SimpleTestCase):
 
     def test_correo_malformado_admin(self):
         import json
-        from .auth_views import reenviar_correo_activacion
+        from smartbids.views.auth_views import reenviar_correo_activacion
 
         req = self.rf.post(
             '/api/reenviar-correo-activacion/',
@@ -260,7 +260,7 @@ class ReenvioActivacionTests(SimpleTestCase):
 
     def test_correo_malformado_en_enviar_codigo_login(self):
         import json
-        from .auth_views import enviar_codigo_login
+        from smartbids.views.auth_views import enviar_codigo_login
 
         req = self.rf.post(
             '/api/enviar-codigo-login/',
@@ -362,7 +362,7 @@ class AdministracionGeneralTests(SimpleTestCase):
     def test_acceso_denegado_no_administrador(self):
         from unittest.mock import patch, MagicMock
         from django.test import RequestFactory
-        from .page_views import administracion_general_view
+        from smartbids.views.page_views import administracion_general_view
 
         rf = RequestFactory()
         req = rf.get('/administracion-general/')
@@ -370,7 +370,7 @@ class AdministracionGeneralTests(SimpleTestCase):
         mock_susc = MagicMock()
         mock_susc.codigo_estado = MagicMock(codigo_estado=2, nombre_estado='Habilitado')
 
-        with patch('smartbids.page_views.resolver_suscriptor', return_value=mock_susc):
+        with patch('smartbids.views.page_views.resolver_suscriptor', return_value=mock_susc):
             resp = administracion_general_view(req)
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp.url, '/mis-licitaciones/')
@@ -378,12 +378,12 @@ class AdministracionGeneralTests(SimpleTestCase):
     def test_acceso_denegado_anonimo(self):
         from unittest.mock import patch
         from django.test import RequestFactory
-        from .page_views import administracion_general_view
+        from smartbids.views.page_views import administracion_general_view
 
         rf = RequestFactory()
         req = rf.get('/administracion-general/')
 
-        with patch('smartbids.page_views.resolver_suscriptor', return_value=None):
+        with patch('smartbids.views.page_views.resolver_suscriptor', return_value=None):
             resp = administracion_general_view(req)
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp.url, '/ingreso/')
@@ -391,7 +391,7 @@ class AdministracionGeneralTests(SimpleTestCase):
     def test_autorizacion_suscriptor_token_valido(self):
         from unittest.mock import MagicMock
         from django.test import RequestFactory
-        from .auth_views import validar_autorizacion_suscriptor
+        from smartbids.views.auth_views import validar_autorizacion_suscriptor
 
         rf = RequestFactory()
         req = rf.post('/api/actualizar-perfil/', HTTP_X_SESSION_TOKEN='token_secreto_123')
@@ -403,7 +403,7 @@ class AdministracionGeneralTests(SimpleTestCase):
     def test_autorizacion_suscriptor_token_invalido(self):
         from unittest.mock import MagicMock
         from django.test import RequestFactory
-        from .auth_views import validar_autorizacion_suscriptor
+        from smartbids.views.auth_views import validar_autorizacion_suscriptor
 
         rf = RequestFactory()
         req = rf.post('/api/actualizar-perfil/', HTTP_X_SESSION_TOKEN='token_atacante')
@@ -420,7 +420,7 @@ class AccionCuentaTests(SimpleTestCase):
         self.rf = RequestFactory()
 
     def test_construir_enlace_accion_web(self):
-        from .auth_views import _construir_enlace_accion_web
+        from smartbids.views.auth_views import _construir_enlace_accion_web
         raw_link = "https://smartbids-auth-users.firebaseapp.com/__/auth/action?mode=verifyEmail&oobCode=XYZ123&apiKey=KEY789&lang=es-419"
         req = self.rf.get('/api/algo/')
 
@@ -431,7 +431,7 @@ class AccionCuentaTests(SimpleTestCase):
         self.assertIn('apiKey=KEY789', link)
 
     def test_solicitar_recuperacion_password_validacion(self):
-        from .auth_views import solicitar_recuperacion_password
+        from smartbids.views.auth_views import solicitar_recuperacion_password
         # Sin email
         req = self.rf.post('/api/solicitar-recuperacion-password/', data=b'{}', content_type='application/json')
         resp = solicitar_recuperacion_password(req)
@@ -444,15 +444,15 @@ class AccionCuentaTests(SimpleTestCase):
 
     def test_solicitar_recuperacion_password_exito(self):
         from unittest.mock import patch, MagicMock
-        from .auth_views import solicitar_recuperacion_password
+        from smartbids.views.auth_views import solicitar_recuperacion_password
         from django.core.cache import cache
 
         cache.clear()
         mock_user = MagicMock(email='usuario@smartbids.cl')
-        with patch('smartbids.auth_views._firebase_admin_app', return_value=MagicMock()), \
+        with patch('smartbids.views.auth_views._firebase_admin_app', return_value=MagicMock()), \
              patch('firebase_admin.auth.get_user_by_email', return_value=mock_user), \
              patch('firebase_admin.auth.generate_password_reset_link', return_value='https://firebase.com?oobCode=RESET123&apiKey=KEY'), \
-             patch('smartbids.auth_views.send_mail') as mock_mail:
+             patch('smartbids.views.auth_views.send_mail') as mock_mail:
 
             req = self.rf.post(
                 '/api/solicitar-recuperacion-password/',
@@ -468,7 +468,7 @@ class AccionCuentaTests(SimpleTestCase):
 
     def test_renderizado_vista_accion_cuenta(self):
         from unittest.mock import patch
-        from .page_views import accion_cuenta_view
+        from smartbids.views.page_views import accion_cuenta_view
         req = self.rf.get('/auth/action/?mode=verifyEmail&oobCode=TEST1234')
         with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
             resp = accion_cuenta_view(req)
@@ -484,7 +484,7 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
         self.rf = RequestFactory()
 
     def test_verificar_existencia_gmail_formato(self):
-        from .auth_views import verificar_existencia_gmail
+        from smartbids.views.auth_views import verificar_existencia_gmail
         ok, err = verificar_existencia_gmail('abc@gmail.com')
         self.assertFalse(ok)
         self.assertIn('al menos 6 caracteres', err)
@@ -500,29 +500,29 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
     def test_validar_email_registro_endpoints(self):
         from unittest.mock import patch, MagicMock
         import firebase_admin.auth
-        from .auth_views import validar_email_registro
+        from smartbids.views.auth_views import validar_email_registro
 
         req = self.rf.post('/api/validar-email-registro/', data=b'{}', content_type='application/json')
         resp = validar_email_registro(req)
         self.assertEqual(resp.status_code, 400)
 
-        with patch('smartbids.auth_views.verificar_existencia_gmail', return_value=(False, 'La cuenta no existe en Gmail')):
+        with patch('smartbids.views.auth_views.verificar_existencia_gmail', return_value=(False, 'La cuenta no existe en Gmail')):
             req_gmail = self.rf.post('/api/validar-email-registro/', data=b'{"email": "inexistente@gmail.com"}', content_type='application/json')
             resp_gmail = validar_email_registro(req_gmail)
             self.assertEqual(resp_gmail.status_code, 400)
             self.assertIn('no existe en Gmail', resp_gmail.content.decode('utf-8'))
 
         mock_user = MagicMock(email='existente@smartbids.cl')
-        with patch('smartbids.auth_views.verificar_existencia_gmail', return_value=(True, None)), \
-             patch('smartbids.auth_views._firebase_admin_app', return_value=MagicMock()), \
+        with patch('smartbids.views.auth_views.verificar_existencia_gmail', return_value=(True, None)), \
+             patch('smartbids.views.auth_views._firebase_admin_app', return_value=MagicMock()), \
              patch('firebase_admin.auth.get_user_by_email', return_value=mock_user):
             req_duplicado = self.rf.post('/api/validar-email-registro/', data=b'{"email": "existente@smartbids.cl"}', content_type='application/json')
             resp_duplicado = validar_email_registro(req_duplicado)
             self.assertEqual(resp_duplicado.status_code, 400)
             self.assertIn('Ya existe una cuenta registrada', resp_duplicado.content.decode('utf-8'))
 
-        with patch('smartbids.auth_views.verificar_existencia_gmail', return_value=(True, None)), \
-             patch('smartbids.auth_views._firebase_admin_app', return_value=MagicMock()), \
+        with patch('smartbids.views.auth_views.verificar_existencia_gmail', return_value=(True, None)), \
+             patch('smartbids.views.auth_views._firebase_admin_app', return_value=MagicMock()), \
              patch('firebase_admin.auth.get_user_by_email', side_effect=firebase_admin.auth.UserNotFoundError('No user')):
             req_nuevo = self.rf.post('/api/validar-email-registro/', data=b'{"email": "nuevo@smartbids.cl"}', content_type='application/json')
             resp_nuevo = validar_email_registro(req_nuevo)
@@ -530,13 +530,13 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
 
     def test_filtrar_licitaciones_sin_perfil_match_cero(self):
         from unittest.mock import patch, MagicMock
-        from .licitaciones_views import filtrar_licitaciones
+        from smartbids.views.licitaciones_views import filtrar_licitaciones
 
         mock_qs = MagicMock()
         mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
 
-        with patch('smartbids.licitaciones_views.Licitacion.objects', mock_qs), \
-             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+        with patch('smartbids.views.licitaciones_views.Licitacion.objects', mock_qs), \
+             patch('smartbids.views.licitaciones_views.Preferencia.objects.filter') as mock_pref:
             # Suscriptor sin preferencias configuradas (None o listas vacías)
             mock_pref.return_value.first.return_value = MagicMock(
                 pref_comunas=[],
@@ -554,15 +554,15 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
 
     def test_filtrar_licitaciones_con_perfil_aplica_filtro_y_aumenta_match(self):
         from unittest.mock import patch, MagicMock
-        from .licitaciones_views import filtrar_licitaciones
+        from smartbids.views.licitaciones_views import filtrar_licitaciones
 
         mock_qs = MagicMock()
         mock_filtered_qs = MagicMock()
         mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
         mock_qs.filter.return_value.distinct.return_value = mock_filtered_qs
 
-        with patch('smartbids.licitaciones_views.Licitacion.objects') as mock_licitacion_objects, \
-             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+        with patch('smartbids.views.licitaciones_views.Licitacion.objects') as mock_licitacion_objects, \
+             patch('smartbids.views.licitaciones_views.Preferencia.objects.filter') as mock_pref:
             mock_licitacion_objects.select_related.return_value.all.return_value.order_by.return_value = mock_qs
             mock_licitacion_objects.filter.return_value.distinct.return_value.count.return_value = 42
 
@@ -582,13 +582,13 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
 
     def test_filtrar_licitaciones_tab_todas_sin_filtro_de_claves(self):
         from unittest.mock import patch, MagicMock
-        from .licitaciones_views import filtrar_licitaciones
+        from smartbids.views.licitaciones_views import filtrar_licitaciones
 
         mock_qs = MagicMock()
         mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
 
-        with patch('smartbids.licitaciones_views.Licitacion.objects') as mock_licitacion_objects, \
-             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+        with patch('smartbids.views.licitaciones_views.Licitacion.objects') as mock_licitacion_objects, \
+             patch('smartbids.views.licitaciones_views.Preferencia.objects.filter') as mock_pref:
             mock_licitacion_objects.select_related.return_value.all.return_value.order_by.return_value = mock_qs
             mock_licitacion_objects.filter.return_value.distinct.return_value.count.return_value = 15
 
@@ -608,13 +608,13 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
 
     def test_mis_licitaciones_view_kpi_match_cero_cuando_perfil_vacio(self):
         from unittest.mock import patch, MagicMock
-        from .licitaciones_views import mis_licitaciones_view
+        from smartbids.views.licitaciones_views import mis_licitaciones_view
 
-        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.licitaciones_views.cache.get_or_set', return_value=62650), \
-             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(MagicMock(), 0)), \
-             patch('smartbids.licitaciones_views.render') as mock_render, \
-             patch('smartbids.licitaciones_views.Paginator') as mock_paginator:
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.views.licitaciones_views.cache.get_or_set', return_value=62650), \
+             patch('smartbids.views.licitaciones_views.filtrar_licitaciones', return_value=(MagicMock(), 0)), \
+             patch('smartbids.views.licitaciones_views.render') as mock_render, \
+             patch('smartbids.views.licitaciones_views.Paginator') as mock_paginator:
             
             mock_paginator.return_value.get_page.return_value = []
             req = self.rf.get('/mis-licitaciones/')
@@ -634,16 +634,16 @@ class ResumenDiaTests(SimpleTestCase):
 
     def test_resumen_dia_view_sin_suscriptor(self):
         from unittest.mock import patch, MagicMock
-        from .resumen_views import resumen_dia_view
+        from smartbids.views.resumen_views import resumen_dia_view
 
         mock_lic_qs = MagicMock()
         mock_lic_qs.count.return_value = 0
         mock_lic_qs.__iter__.return_value = []
         mock_lic_qs.__getitem__.return_value = []
 
-        with patch('smartbids.resumen_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.resumen_views.render') as mock_render, \
-             patch('smartbids.resumen_views.Licitacion.objects') as mock_lic:
+        with patch('smartbids.views.resumen_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.views.resumen_views.render') as mock_render, \
+             patch('smartbids.views.resumen_views.Licitacion.objects') as mock_lic:
             mock_lic.filter.return_value.select_related.return_value.order_by.return_value = mock_lic_qs
             req = self.rf.get('/resumen/')
             resumen_dia_view(req)
@@ -658,7 +658,7 @@ class ResumenDiaTests(SimpleTestCase):
 
     def test_resumen_dia_view_con_suscriptor(self):
         from unittest.mock import patch, MagicMock
-        from .resumen_views import resumen_dia_view
+        from smartbids.views.resumen_views import resumen_dia_view
 
         mock_susc = MagicMock(sus_nombre1='Juan', sus_apellido1='Pérez')
         mock_pref = MagicMock(pref_palabras_claves=['servicios'], pref_productos=[])
@@ -677,13 +677,13 @@ class ResumenDiaTests(SimpleTestCase):
         mock_notif_qs.__iter__.return_value = []
         mock_notif_qs.__getitem__.return_value = []
 
-        with patch('smartbids.resumen_views.resolver_suscriptor', return_value=mock_susc), \
-             patch('smartbids.resumen_views._sincronizar_seguimientos'), \
-             patch('smartbids.resumen_views.Preferencia.objects.filter') as mock_pref_filter, \
-             patch('smartbids.resumen_views.SeguimientoLicitacion.objects.filter') as mock_seg_filter, \
-             patch('smartbids.resumen_views.NotificacionLicitacion.objects.filter') as mock_notif_filter, \
-             patch('smartbids.resumen_views.Licitacion.objects') as mock_lic, \
-             patch('smartbids.resumen_views.render') as mock_render:
+        with patch('smartbids.views.resumen_views.resolver_suscriptor', return_value=mock_susc), \
+             patch('smartbids.views.resumen_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.resumen_views.Preferencia.objects.filter') as mock_pref_filter, \
+             patch('smartbids.views.resumen_views.SeguimientoLicitacion.objects.filter') as mock_seg_filter, \
+             patch('smartbids.views.resumen_views.NotificacionLicitacion.objects.filter') as mock_notif_filter, \
+             patch('smartbids.views.resumen_views.Licitacion.objects') as mock_lic, \
+             patch('smartbids.views.resumen_views.render') as mock_render:
             
             mock_pref_filter.return_value.first.return_value = mock_pref
             mock_seg_filter.return_value.select_related.return_value.count.return_value = 2
@@ -707,7 +707,7 @@ class ResumenDiaTests(SimpleTestCase):
     def test_resumen_dia_view_oportunidades_y_cierran_pronto_solo_match_perfil(self):
         """Verifica que Oportunidades del Día y Cierran Pronto filtren exclusivamente por el perfil configurado."""
         from unittest.mock import patch, MagicMock
-        from .resumen_views import resumen_dia_view
+        from smartbids.views.resumen_views import resumen_dia_view
 
         mock_susc = MagicMock(sus_nombre1='Ana')
         mock_pref = MagicMock(pref_tipo_licitacion=['LE'], pref_palabras_claves=[], pref_productos=[], pref_comunas=[], pref_ucom=[])
@@ -718,14 +718,14 @@ class ResumenDiaTests(SimpleTestCase):
         mock_match_qs.__getitem__.return_value = [mock_match_lic]
         mock_match_qs.count.return_value = 1
 
-        with patch('smartbids.resumen_views.resolver_suscriptor', return_value=mock_susc), \
-             patch('smartbids.resumen_views._sincronizar_seguimientos'), \
-             patch('smartbids.resumen_views.Preferencia.objects.filter') as mock_pref_filter, \
-             patch('smartbids.resumen_views.SeguimientoLicitacion.objects.filter') as mock_seg_filter, \
-             patch('smartbids.resumen_views.NotificacionLicitacion.objects.filter') as mock_notif_filter, \
-             patch('smartbids.resumen_views.Licitacion.objects') as mock_lic, \
-             patch('smartbids.resumen_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
-             patch('smartbids.resumen_views.render') as mock_render:
+        with patch('smartbids.views.resumen_views.resolver_suscriptor', return_value=mock_susc), \
+             patch('smartbids.views.resumen_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.resumen_views.Preferencia.objects.filter') as mock_pref_filter, \
+             patch('smartbids.views.resumen_views.SeguimientoLicitacion.objects.filter') as mock_seg_filter, \
+             patch('smartbids.views.resumen_views.NotificacionLicitacion.objects.filter') as mock_notif_filter, \
+             patch('smartbids.views.resumen_views.Licitacion.objects') as mock_lic, \
+             patch('smartbids.views.resumen_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
+             patch('smartbids.views.resumen_views.render') as mock_render:
 
             mock_pref_filter.return_value.first.return_value = mock_pref
             mock_seg_filter.return_value.select_related.return_value.count.return_value = 0
@@ -752,7 +752,7 @@ class ResumenDiaTests(SimpleTestCase):
     def test_resumen_dia_view_cierran_pronto_fallback_mercado(self):
         """Verifica que si no hay cierres en 72h del perfil, Cierran Pronto use las oportunidades activas del mercado."""
         from unittest.mock import patch, MagicMock
-        from .resumen_views import resumen_dia_view
+        from smartbids.views.resumen_views import resumen_dia_view
 
         mock_susc = MagicMock(sus_nombre1='Carlos')
         mock_pref = MagicMock(pref_tipo_licitacion=['LE'], pref_palabras_claves=[], pref_productos=[], pref_comunas=[], pref_ucom=[])
@@ -768,14 +768,14 @@ class ResumenDiaTests(SimpleTestCase):
         mock_empty_qs.__iter__.return_value = []
         mock_empty_qs.__getitem__.return_value = []
 
-        with patch('smartbids.resumen_views.resolver_suscriptor', return_value=mock_susc), \
-             patch('smartbids.resumen_views._sincronizar_seguimientos'), \
-             patch('smartbids.resumen_views.Preferencia.objects.filter') as mock_pref_filter, \
-             patch('smartbids.resumen_views.SeguimientoLicitacion.objects.filter') as mock_seg_filter, \
-             patch('smartbids.resumen_views.NotificacionLicitacion.objects.filter') as mock_notif_filter, \
-             patch('smartbids.resumen_views.Licitacion.objects') as mock_lic, \
-             patch('smartbids.resumen_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
-             patch('smartbids.resumen_views.render') as mock_render:
+        with patch('smartbids.views.resumen_views.resolver_suscriptor', return_value=mock_susc), \
+             patch('smartbids.views.resumen_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.resumen_views.Preferencia.objects.filter') as mock_pref_filter, \
+             patch('smartbids.views.resumen_views.SeguimientoLicitacion.objects.filter') as mock_seg_filter, \
+             patch('smartbids.views.resumen_views.NotificacionLicitacion.objects.filter') as mock_notif_filter, \
+             patch('smartbids.views.resumen_views.Licitacion.objects') as mock_lic, \
+             patch('smartbids.views.resumen_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
+             patch('smartbids.views.resumen_views.render') as mock_render:
 
             mock_pref_filter.return_value.first.return_value = mock_pref
             mock_seg_filter.return_value.select_related.return_value.count.return_value = 0
@@ -809,14 +809,14 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
     def test_admin_auto_eliminacion_bloqueada(self):
         import json
         from unittest.mock import patch, MagicMock
-        from .firebase_policy_views import usuarios_firebase
+        from smartbids.views.firebase_policy_views import usuarios_firebase
 
         mock_susc = MagicMock(sus_nombre1='Admin', sus_apellido1='Uno', sus_nombre_social='')
 
-        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
-             patch('smartbids.firebase_policy_views._firebase_admin_session'), \
-             patch('smartbids.firebase_policy_views._firebase_accounts_url'), \
-             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs:
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session'), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs:
             
             mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_susc
             req = self.rf.delete('/api/firebase/usuarios/?uid=admin_123', HTTP_X_FIREBASE_UID='admin_123')
@@ -828,16 +828,16 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
     def test_admin_auto_remocion_bloqueada(self):
         import json
         from unittest.mock import patch, MagicMock
-        from .firebase_policy_views import usuarios_firebase
+        from smartbids.views.firebase_policy_views import usuarios_firebase
 
         mock_susc = MagicMock(sus_nombre1='Admin', sus_apellido1='Uno', sus_nombre_social='')
         mock_estado_suscriptor = MagicMock(nombre_estado='suscriptor')
 
-        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
-             patch('smartbids.firebase_policy_views._firebase_admin_session'), \
-             patch('smartbids.firebase_policy_views._firebase_accounts_url'), \
-             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
-             patch('smartbids.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_estado_suscriptor)):
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session'), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.views.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_estado_suscriptor)):
             
             mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_susc
             body = json.dumps({'uid': 'admin_123', 'codigo_estado': 2})
@@ -849,7 +849,7 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
 
     def test_admin_eliminar_otro_admin_genera_auditoria_y_correo(self):
         from unittest.mock import patch, MagicMock
-        from .firebase_policy_views import usuarios_firebase
+        from smartbids.views.firebase_policy_views import usuarios_firebase
 
         mock_target_susc = MagicMock(
             codigo_estado=MagicMock(nombre_estado='administrador', codigo_estado=5),
@@ -860,13 +860,13 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
         mock_session = MagicMock()
         mock_session.post.return_value = MagicMock(ok=True, status_code=200)
 
-        with patch('smartbids.firebase_policy_views._usuario_es_administrador', return_value=True), \
-             patch('smartbids.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
-             patch('smartbids.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
-             patch('smartbids.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
-             patch('smartbids.firebase_policy_views.Preferencia.objects'), \
-             patch('smartbids.firebase_policy_views.registrar_auditoria_admin') as mock_registrar, \
-             patch('smartbids.firebase_policy_views.notificar_accion_entre_administradores') as mock_notificar:
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.views.firebase_policy_views.Preferencia.objects'), \
+             patch('smartbids.views.firebase_policy_views.registrar_auditoria_admin') as mock_registrar, \
+             patch('smartbids.views.firebase_policy_views.notificar_accion_entre_administradores') as mock_notificar:
             
             mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
             mock_susc_objs.filter.return_value.first.return_value = mock_target_susc
@@ -882,10 +882,10 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
     def test_config_correo_get_y_patch(self):
         import json
         from unittest.mock import patch, MagicMock
-        from .mensajeria_views import administrar_config_correo
+        from smartbids.views.mensajeria_views import administrar_config_correo
 
-        with patch('smartbids.mensajeria_views._usuario_es_administrador', return_value=True), \
-             patch('smartbids.mensajeria_views.ConfiguracionCorreo.objects') as mock_cfg_objs:
+        with patch('smartbids.views.mensajeria_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.mensajeria_views.ConfiguracionCorreo.objects') as mock_cfg_objs:
             
             mock_cfg = MagicMock(
                 email_contacto='contacto@chileavanza.cl',
@@ -919,7 +919,7 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
         import json
         from django.utils import timezone
         from unittest.mock import patch, MagicMock
-        from .mensajeria_views import auditoria_admin_view
+        from smartbids.views.mensajeria_views import auditoria_admin_view
 
         mock_reg = MagicMock(
             id=1,
@@ -933,8 +933,8 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             ip_origen='127.0.0.1'
         )
 
-        with patch('smartbids.mensajeria_views._usuario_es_administrador', return_value=True), \
-             patch('smartbids.mensajeria_views.AuditoriaAdmin.objects.all') as mock_all:
+        with patch('smartbids.views.mensajeria_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.mensajeria_views.AuditoriaAdmin.objects.all') as mock_all:
             mock_all.return_value.order_by.return_value = [mock_reg]
             req = self.rf.get('/api/administracion/auditoria-admin/')
             resp = auditoria_admin_view(req)
@@ -945,7 +945,7 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
 
     def test_producto_codigo_formateado_standard_y_obras_civiles(self):
         """Verifica que el código se formatee con guiones y soporte primer nivel de 3 dígitos (Obras Civiles)."""
-        from .models.catalog import Producto
+        from smartbids.models.catalog import Producto
 
         p_standard = Producto(
             codigo_producto='50193001',
@@ -976,8 +976,8 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
         """Verifica la jerarquía Grupo -> Nivel 1 -> Productos y la ausencia de textos erróneos."""
         import json
         from unittest.mock import patch, MagicMock
-        from .perfil_views import catalogos_preferencias
-        from .models.catalog import GrupoProducto, Nivel1Producto
+        from smartbids.views.perfil_views import catalogos_preferencias
+        from smartbids.models.catalog import GrupoProducto, Nivel1Producto
 
         mock_grupos = [
             GrupoProducto(codigo_grupo_producto='01', nombre_grupo_producto='Alimentos'),
@@ -1012,9 +1012,9 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             }
         ]
 
-        with patch('smartbids.perfil_views.GrupoProducto.objects.all') as m_g_all, \
-             patch('smartbids.perfil_views.Nivel1Producto.objects.all') as m_n_all, \
-             patch('smartbids.perfil_views.Producto.objects.exclude') as m_p_exc:
+        with patch('smartbids.views.perfil_views.GrupoProducto.objects.all') as m_g_all, \
+             patch('smartbids.views.perfil_views.Nivel1Producto.objects.all') as m_n_all, \
+             patch('smartbids.views.perfil_views.Producto.objects.exclude') as m_p_exc:
 
             m_g_all.return_value.order_by.return_value = mock_grupos
             m_n_all.return_value.order_by.return_value = mock_niveles
@@ -1064,8 +1064,8 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
         """Verifica que el filtrado por q busque en descripciones y códigos de productos."""
         import json
         from unittest.mock import patch
-        from .perfil_views import catalogos_preferencias
-        from .models.catalog import GrupoProducto, Nivel1Producto
+        from smartbids.views.perfil_views import catalogos_preferencias
+        from smartbids.models.catalog import GrupoProducto, Nivel1Producto
 
         mock_grupos = [GrupoProducto(codigo_grupo_producto='01', nombre_grupo_producto='Alimentos')]
         mock_niveles = [Nivel1Producto(codigo_nivel1='50', descripcion='Alimentos, bebidas y tabaco', codigo_grupo_producto_id='01')]
@@ -1081,9 +1081,9 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             'glosa_nivel4': ''
         }]
 
-        with patch('smartbids.perfil_views.GrupoProducto.objects.all') as m_g_all, \
-             patch('smartbids.perfil_views.Nivel1Producto.objects.all') as m_n_all, \
-             patch('smartbids.perfil_views.Producto.objects.exclude') as m_p_exc:
+        with patch('smartbids.views.perfil_views.GrupoProducto.objects.all') as m_g_all, \
+             patch('smartbids.views.perfil_views.Nivel1Producto.objects.all') as m_n_all, \
+             patch('smartbids.views.perfil_views.Producto.objects.exclude') as m_p_exc:
 
             m_g_all.return_value.order_by.return_value = mock_grupos
             m_n_all.return_value.order_by.return_value = mock_niveles
@@ -1103,7 +1103,7 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
         """Verifica que productos_detalle entregue etiquetas con código formateado y descripción adecuada."""
         import json
         from unittest.mock import patch, MagicMock
-        from .perfil_views import obtener_perfil_suscriptor
+        from smartbids.views.perfil_views import obtener_perfil_suscriptor
 
         mock_susc = MagicMock(
             id_suscriptor=10,
@@ -1162,11 +1162,11 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
         m_prod_qs = MagicMock()
         m_prod_qs.filter.return_value.values.return_value = mock_prods
 
-        with patch('smartbids.perfil_views.Suscriptor.objects', m_susc_qs), \
-             patch('smartbids.perfil_views.Preferencia.objects', m_pref_qs), \
-             patch('smartbids.perfil_views.Comuna.objects', m_com_qs), \
-             patch('smartbids.perfil_views.UnidadCompra.objects', m_ucom_qs), \
-             patch('smartbids.perfil_views.Producto.objects', m_prod_qs):
+        with patch('smartbids.views.perfil_views.Suscriptor.objects', m_susc_qs), \
+             patch('smartbids.views.perfil_views.Preferencia.objects', m_pref_qs), \
+             patch('smartbids.views.perfil_views.Comuna.objects', m_com_qs), \
+             patch('smartbids.views.perfil_views.UnidadCompra.objects', m_ucom_qs), \
+             patch('smartbids.views.perfil_views.Producto.objects', m_prod_qs):
 
             req = self.rf.post('/api/perfil/obtener/', data=b'{"uid": "uid_test_10"}', content_type='application/json')
             resp = obtener_perfil_suscriptor(req)
@@ -1198,7 +1198,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
     def test_obtener_catalogo_tipos_licitacion_estructura_y_clasificacion(self):
         """Verifica que el catálogo organice 5 tramos públicos (L1, LE, LP, LQ, LR) y 3 privados (E2, CO, B2)."""
         from unittest.mock import patch, MagicMock
-        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+        from smartbids.utils.licitacion_utils import obtener_catalogo_tipos_licitacion
 
         mock_cat_pub = MagicMock(codigo_cat_licitacion=1, nombre_cat_licitacion='Pública')
         mock_cat_priv = MagicMock(codigo_cat_licitacion=2, nombre_cat_licitacion='Privada')
@@ -1263,7 +1263,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
     def test_obtener_catalogo_tipos_licitacion_fallback(self):
         """Verifica que si la base de datos no está disponible, el fallback funcione con los 8 tipos requeridos."""
         from unittest.mock import patch
-        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+        from smartbids.utils.licitacion_utils import obtener_catalogo_tipos_licitacion
 
         with patch('smartbids.models.catalog.TipoLicitacion.objects') as m_tl_objects:
             m_tl_objects.select_related.side_effect = Exception("Error simulado DB")
@@ -1280,7 +1280,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         """Verifica el endpoint /api/catalogos-preferencias/?tipo=tipos_licitacion."""
         import json
         from unittest.mock import patch
-        from .perfil_views import catalogos_preferencias
+        from smartbids.views.perfil_views import catalogos_preferencias
 
         mock_catalogo = {
             'publicas': [{'codigo': 'L1'}, {'codigo': 'LE'}, {'codigo': 'LP'}, {'codigo': 'LQ'}, {'codigo': 'LR'}],
@@ -1288,7 +1288,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             'todos_codigos': ['L1', 'LE', 'LP', 'LQ', 'LR', 'E2', 'CO', 'B2']
         }
 
-        with patch('smartbids.licitacion_utils.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo):
+        with patch('smartbids.utils.licitacion_utils.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo):
             req = self.rf.get('/api/catalogos-preferencias/?tipo=tipos_licitacion')
             resp = catalogos_preferencias(req)
             self.assertEqual(resp.status_code, 200)
@@ -1303,7 +1303,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
     def test_perfil_view_incluye_tipos_procedimiento_en_contexto(self):
         """Verifica que perfil_view pase tipos_procedimiento al contexto de la plantilla."""
         from unittest.mock import patch
-        from .page_views import perfil_view
+        from smartbids.views.page_views import perfil_view
 
         mock_catalogo = {
             'publicas': [{'codigo': 'L1'}],
@@ -1311,8 +1311,8 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             'todos_codigos': ['L1', 'B2']
         }
 
-        with patch('smartbids.page_views.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo), \
-             patch('smartbids.page_views.render') as mock_render:
+        with patch('smartbids.views.page_views.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo), \
+             patch('smartbids.views.page_views.render') as mock_render:
             mock_render.return_value = 'render_result'
             req = self.rf.get('/perfil/')
             resp = perfil_view(req)
@@ -1327,7 +1327,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         """Verifica que LP, LQ y LR reflejen fielmente los tramos de 1.000-2.000, 2.000-5.000 y >5.000 UTM."""
         from unittest.mock import patch
         from django.template.loader import render_to_string
-        from .licitacion_utils import obtener_catalogo_tipos_licitacion
+        from smartbids.utils.licitacion_utils import obtener_catalogo_tipos_licitacion
 
         catalogo = obtener_catalogo_tipos_licitacion()
         publicas_dict = {item['codigo']: item for item in catalogo['publicas']}
@@ -1370,7 +1370,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
     def test_mis_licitaciones_view_incluye_tipos_procedimiento_en_contexto(self):
         """Verifica que mis_licitaciones_view pase tipos_procedimiento al contexto de la plantilla."""
         from unittest.mock import patch, MagicMock
-        from .licitaciones_views import mis_licitaciones_view
+        from smartbids.views.licitaciones_views import mis_licitaciones_view
 
         mock_catalogo = {
             'publicas': [{'codigo': 'L1', 'tramo': 'Menor a 100 UTM'}],
@@ -1388,12 +1388,12 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         m_qs = MagicMock()
         m_qs.aggregate.return_value = {'cierre_proximo': 2, 'convenio_marco': 0}
 
-        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(m_qs, 0)), \
-             patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_qs), \
-             patch('smartbids.licitaciones_views.Paginator', return_value=mock_paginator), \
-             patch('smartbids.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo), \
-             patch('smartbids.licitaciones_views.render') as mock_render:
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.views.licitaciones_views.filtrar_licitaciones', return_value=(m_qs, 0)), \
+             patch('smartbids.views.licitaciones_views.Licitacion.objects', m_lic_qs), \
+             patch('smartbids.views.licitaciones_views.Paginator', return_value=mock_paginator), \
+             patch('smartbids.views.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value=mock_catalogo), \
+             patch('smartbids.views.licitaciones_views.render') as mock_render:
             mock_render.return_value = 'render_result'
             req = self.rf.get('/mis-licitaciones/')
             resp = mis_licitaciones_view(req)
@@ -1409,7 +1409,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         """Verifica que en pestaña Todas, las licitaciones de Match con Perfil se separen de Procesos Disponibles."""
         from unittest.mock import patch, MagicMock
         from django.db.models import Q
-        from .licitaciones_views import mis_licitaciones_view
+        from smartbids.views.licitaciones_views import mis_licitaciones_view
 
         mock_lic_match = MagicMock(lic_codigo='1075963-374-LE26', lic_tipo_licitacion='LE')
         mock_qs_match = MagicMock()
@@ -1431,16 +1431,16 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         req = self.rf.get('/mis-licitaciones/')
         req._q_perfil = Q(lic_tipo_licitacion__in=['LE'])
 
-        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
-             patch('smartbids.tracking_views._sincronizar_seguimientos'), \
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
+             patch('smartbids.views.tracking_views._sincronizar_seguimientos'), \
              patch('smartbids.models.core.SeguimientoLicitacion.objects') as m_seg, \
-             patch('smartbids.licitaciones_views.Preferencia.objects') as m_pref, \
-             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
-             patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_objects), \
-             patch('smartbids.licitaciones_views.Paginator', return_value=mock_paginator), \
-             patch('smartbids.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value={'publicas': [], 'privadas': []}), \
-             patch('smartbids.licitaciones_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
-             patch('smartbids.licitaciones_views.render') as mock_render:
+             patch('smartbids.views.licitaciones_views.Preferencia.objects') as m_pref, \
+             patch('smartbids.views.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
+             patch('smartbids.views.licitaciones_views.Licitacion.objects', m_lic_objects), \
+             patch('smartbids.views.licitaciones_views.Paginator', return_value=mock_paginator), \
+             patch('smartbids.views.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value={'publicas': [], 'privadas': []}), \
+             patch('smartbids.views.licitaciones_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
+             patch('smartbids.views.licitaciones_views.render') as mock_render:
             m_seg.filter.return_value.values_list.return_value = []
             m_pref.filter.return_value.first.return_value = None
             mock_render.return_value = 'render_result'
@@ -1459,7 +1459,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         """Verifica que el paginador use 10 elementos por página y que en la página 2 no se repitan las tarjetas de perfil."""
         from unittest.mock import patch, MagicMock
         from django.db.models import Q
-        from .licitaciones_views import mis_licitaciones_view
+        from smartbids.views.licitaciones_views import mis_licitaciones_view
 
         mock_lic_match = MagicMock(lic_codigo='1075963-374-LE26', lic_tipo_licitacion='LE')
         mock_qs_match = MagicMock()
@@ -1478,16 +1478,16 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         req_page2 = self.rf.get('/mis-licitaciones/?page=2')
         req_page2._q_perfil = Q(lic_tipo_licitacion__in=['LE'])
 
-        with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
-             patch('smartbids.tracking_views._sincronizar_seguimientos'), \
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
+             patch('smartbids.views.tracking_views._sincronizar_seguimientos'), \
              patch('smartbids.models.core.SeguimientoLicitacion.objects') as m_seg, \
-             patch('smartbids.licitaciones_views.Preferencia.objects') as m_pref, \
-             patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
-             patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_objects), \
-             patch('smartbids.licitaciones_views.Paginator') as mock_paginator, \
-             patch('smartbids.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value={'publicas': [], 'privadas': []}), \
-             patch('smartbids.licitaciones_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
-             patch('smartbids.licitaciones_views.render') as mock_render:
+             patch('smartbids.views.licitaciones_views.Preferencia.objects') as m_pref, \
+             patch('smartbids.views.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
+             patch('smartbids.views.licitaciones_views.Licitacion.objects', m_lic_objects), \
+             patch('smartbids.views.licitaciones_views.Paginator') as mock_paginator, \
+             patch('smartbids.views.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value={'publicas': [], 'privadas': []}), \
+             patch('smartbids.views.licitaciones_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
+             patch('smartbids.views.licitaciones_views.render') as mock_render:
             mock_paginator.return_value.get_page.return_value = []
             m_seg.filter.return_value.values_list.return_value = []
             m_pref.filter.return_value.first.return_value = None
@@ -1506,7 +1506,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         """Verifica que licitaciones que cierran en menos de 3 días marquen es_cierre_proximo en True."""
         from datetime import timedelta
         from django.utils import timezone
-        from .models.procurement import Licitacion
+        from smartbids.models.procurement import Licitacion
 
         hoy = timezone.localdate()
         # Licitación cerrando mañana (< 3 días)
@@ -1531,13 +1531,13 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         """Verifica que el tipo de procedimiento actúe como filtro restrictivo (AND) y no unión (OR)."""
         from unittest.mock import patch, MagicMock
         from django.db.models import Q
-        from .licitaciones_views import filtrar_licitaciones
+        from smartbids.views.licitaciones_views import filtrar_licitaciones
 
         mock_qs = MagicMock()
         mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
 
-        with patch('smartbids.licitaciones_views.Licitacion.objects', mock_qs), \
-             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+        with patch('smartbids.views.licitaciones_views.Licitacion.objects', mock_qs), \
+             patch('smartbids.views.licitaciones_views.Preferencia.objects.filter') as mock_pref:
 
             # Caso 1: Solo tiene tipo LE seleccionado (como en la captura del usuario)
             mock_pref.return_value.first.return_value = MagicMock(
@@ -1574,13 +1574,13 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
     def test_filtrar_licitaciones_asigna_q_perfil_en_request(self):
         """Verifica que filtrar_licitaciones guarde _q_perfil en el objeto request."""
         from unittest.mock import patch, MagicMock
-        from .licitaciones_views import filtrar_licitaciones
+        from smartbids.views.licitaciones_views import filtrar_licitaciones
 
         mock_qs = MagicMock()
         mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
 
-        with patch('smartbids.licitaciones_views.Licitacion.objects', mock_qs), \
-             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+        with patch('smartbids.views.licitaciones_views.Licitacion.objects', mock_qs), \
+             patch('smartbids.views.licitaciones_views.Preferencia.objects.filter') as mock_pref:
             mock_pref.return_value.first.return_value = MagicMock(
                 pref_comunas=[],
                 pref_tipo_licitacion=['LE'],
@@ -1596,7 +1596,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
     def test_obtener_catalogo_organismos_ucom_estructura_completa(self):
         """Verifica que obtener_catalogo_organismos_ucom arme la estructura jerárquica Sector -> Organismo -> Unidades."""
         from unittest.mock import patch, MagicMock
-        from .licitacion_utils import obtener_catalogo_organismos_ucom, CACHE_KEY_CATALOGO_UCOM_ARBOL
+        from smartbids.utils.licitacion_utils import obtener_catalogo_organismos_ucom, CACHE_KEY_CATALOGO_UCOM_ARBOL
         from django.core.cache import cache
         cache.delete(CACHE_KEY_CATALOGO_UCOM_ARBOL)
 
@@ -1610,9 +1610,9 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             {'codigo_unidad_compra': 2939, 'ucom_descripcion': 'Departamento de Apoyo Logistico', 'ucom_codigo_organismo': 111880},
         ]
 
-        with patch('smartbids.licitacion_utils.Sector.objects.values') as m_sec, \
-             patch('smartbids.licitacion_utils.Organismo.objects.values') as m_org, \
-             patch('smartbids.licitacion_utils.UnidadCompra.objects.values') as m_ucom:
+        with patch('smartbids.utils.licitacion_utils.Sector.objects.values') as m_sec, \
+             patch('smartbids.utils.licitacion_utils.Organismo.objects.values') as m_org, \
+             patch('smartbids.utils.licitacion_utils.UnidadCompra.objects.values') as m_ucom:
             m_sec.return_value.order_by.return_value = mock_sectores
             m_org.return_value.order_by.return_value = mock_organismos
             m_ucom.return_value.order_by.return_value = mock_ucoms
@@ -1642,7 +1642,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
     def test_obtener_catalogo_organismos_ucom_filtro_sector_y_q(self):
         """Verifica el filtrado por sector y búsqueda textual por nombre o sigla."""
         from unittest.mock import patch, MagicMock
-        from .licitacion_utils import obtener_catalogo_organismos_ucom, CACHE_KEY_CATALOGO_UCOM_ARBOL
+        from smartbids.utils.licitacion_utils import obtener_catalogo_organismos_ucom, CACHE_KEY_CATALOGO_UCOM_ARBOL
         from django.core.cache import cache
         cache.delete(CACHE_KEY_CATALOGO_UCOM_ARBOL)
 
@@ -1659,9 +1659,9 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             {'codigo_unidad_compra': 3411, 'ucom_descripcion': 'Pref. Bio-Bio', 'ucom_codigo_organismo': 113812},
         ]
 
-        with patch('smartbids.licitacion_utils.Sector.objects.values') as m_sec, \
-             patch('smartbids.licitacion_utils.Organismo.objects.values') as m_org, \
-             patch('smartbids.licitacion_utils.UnidadCompra.objects.values') as m_ucom:
+        with patch('smartbids.utils.licitacion_utils.Sector.objects.values') as m_sec, \
+             patch('smartbids.utils.licitacion_utils.Organismo.objects.values') as m_org, \
+             patch('smartbids.utils.licitacion_utils.UnidadCompra.objects.values') as m_ucom:
             m_sec.return_value.order_by.return_value = mock_sectores
             m_org.return_value.order_by.return_value = mock_organismos
             m_ucom.return_value.order_by.return_value = mock_ucoms
@@ -1687,7 +1687,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         """Verifica la respuesta JSON del endpoint /api/catalogos-preferencias/?tipo=ucom_arbol."""
         from unittest.mock import patch
         import json
-        from .perfil_views import catalogos_preferencias
+        from smartbids.views.perfil_views import catalogos_preferencias
 
         mock_catalogo = {
             'status': 'ok',
@@ -1698,7 +1698,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             'total_unidades': 1,
         }
 
-        with patch('smartbids.licitacion_utils.obtener_catalogo_organismos_ucom', return_value=mock_catalogo):
+        with patch('smartbids.utils.licitacion_utils.obtener_catalogo_organismos_ucom', return_value=mock_catalogo):
             req = self.rf.get('/api/catalogos-preferencias/?tipo=ucom_arbol&sector=23')
             resp = catalogos_preferencias(req)
             self.assertEqual(resp.status_code, 200)
@@ -1711,13 +1711,13 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
         """Verifica que ucom_ids en el perfil aplique OR entre lic_codigo_ucom_id y ucom_codigo_organismo."""
         from unittest.mock import patch, MagicMock
         from django.db.models import Q
-        from .licitaciones_views import filtrar_licitaciones
+        from smartbids.views.licitaciones_views import filtrar_licitaciones
 
         mock_qs = MagicMock()
         mock_qs.select_related.return_value.all.return_value.order_by.return_value = mock_qs
 
-        with patch('smartbids.licitaciones_views.Licitacion.objects', mock_qs), \
-             patch('smartbids.licitaciones_views.Preferencia.objects.filter') as mock_pref:
+        with patch('smartbids.views.licitaciones_views.Licitacion.objects', mock_qs), \
+             patch('smartbids.views.licitaciones_views.Preferencia.objects.filter') as mock_pref:
             mock_pref.return_value.first.return_value = MagicMock(
                 pref_comunas=[],
                 pref_tipo_licitacion=[],
@@ -1749,7 +1749,7 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         """Verifica que si la BD ya tiene descripción, documentos y preguntas, no llame a Mercado Público."""
         from unittest.mock import patch
         from types import SimpleNamespace
-        from smartbids.tracking_views import detalle_licitacion_view
+        from smartbids.views.tracking_views import detalle_licitacion_view
 
         req = self.rf.get('/licitaciones/1000-1-LE26/')
 
@@ -1777,11 +1777,11 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         )
 
         with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
-             patch('smartbids.tracking_views.get_object_or_404', return_value=lic), \
-             patch('smartbids.tracking_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.tracking_views.LicitacionDocumento.objects.filter') as mock_docs, \
-             patch('smartbids.tracking_views.LicitacionPregunta.objects.filter') as mock_pregs, \
-             patch('smartbids.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
+             patch('smartbids.views.tracking_views.get_object_or_404', return_value=lic), \
+             patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.views.tracking_views.LicitacionDocumento.objects.filter') as mock_docs, \
+             patch('smartbids.views.tracking_views.LicitacionPregunta.objects.filter') as mock_pregs, \
+             patch('smartbids.views.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
 
             mock_docs.return_value = [
                 SimpleNamespace(nombre='Bases.pdf', url='http://bases.pdf', extension='pdf', descripcion='Bases', fecha=None)
@@ -1800,7 +1800,7 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         """Verifica que si la BD NO tiene descripción, se llame a Mercado Público y se actualice en BD."""
         from unittest.mock import patch
         from types import SimpleNamespace
-        from smartbids.tracking_views import detalle_licitacion_view
+        from smartbids.views.tracking_views import detalle_licitacion_view
 
         req = self.rf.get('/licitaciones/1000-2-LE26/')
 
@@ -1822,12 +1822,12 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         )
 
         with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
-             patch('smartbids.tracking_views.get_object_or_404', return_value=lic), \
-             patch('smartbids.tracking_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.tracking_views.LicitacionDocumento.objects.filter', return_value=[]), \
-             patch('smartbids.tracking_views.LicitacionPregunta.objects.filter', return_value=[]), \
-             patch('smartbids.tracking_views.Licitacion.objects.filter') as mock_lic_filter, \
-             patch('smartbids.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
+             patch('smartbids.views.tracking_views.get_object_or_404', return_value=lic), \
+             patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.views.tracking_views.LicitacionDocumento.objects.filter', return_value=[]), \
+             patch('smartbids.views.tracking_views.LicitacionPregunta.objects.filter', return_value=[]), \
+             patch('smartbids.views.tracking_views.Licitacion.objects.filter') as mock_lic_filter, \
+             patch('smartbids.views.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
 
             mock_ext.return_value = {
                 'descripcion': 'Descripción recuperada desde la ficha oficial de Mercado Público',
@@ -1851,7 +1851,7 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         """Verifica que si la BD ya tiene descripción pero faltan adjuntos, mantenga la descripción de la BD."""
         from unittest.mock import patch
         from types import SimpleNamespace
-        from smartbids.tracking_views import detalle_licitacion_view
+        from smartbids.views.tracking_views import detalle_licitacion_view
 
         req = self.rf.get('/licitaciones/1000-3-LE26/')
 
@@ -1873,12 +1873,12 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         )
 
         with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
-             patch('smartbids.tracking_views.get_object_or_404', return_value=lic), \
-             patch('smartbids.tracking_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.tracking_views.LicitacionDocumento.objects.filter', return_value=[]), \
-             patch('smartbids.tracking_views.LicitacionPregunta.objects.filter', return_value=[]), \
-             patch('smartbids.tracking_views.Licitacion.objects.filter') as mock_lic_filter, \
-             patch('smartbids.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
+             patch('smartbids.views.tracking_views.get_object_or_404', return_value=lic), \
+             patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.views.tracking_views.LicitacionDocumento.objects.filter', return_value=[]), \
+             patch('smartbids.views.tracking_views.LicitacionPregunta.objects.filter', return_value=[]), \
+             patch('smartbids.views.tracking_views.Licitacion.objects.filter') as mock_lic_filter, \
+             patch('smartbids.views.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
 
             mock_ext.return_value = {
                 'descripcion': 'Otra descripcion de mercado publico que NO debe sobreescribir la BD',
@@ -1912,7 +1912,7 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
         """Verifica que enviar_codigo_login no exponga el código OTP ni contraseñas en el JSON devuelto."""
         import json
         from unittest.mock import patch
-        from smartbids.auth_views import enviar_codigo_login, CODIGOS_OTP_TEMPORALES
+        from smartbids.views.auth_views import enviar_codigo_login, CODIGOS_OTP_TEMPORALES
 
         req = self.rf.post(
             '/api/enviar-codigo-login/',
@@ -1920,7 +1920,7 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
             content_type='application/json'
         )
 
-        with patch('smartbids.auth_views.send_mail') as mock_send_mail:
+        with patch('smartbids.views.auth_views.send_mail') as mock_send_mail:
             resp = enviar_codigo_login(req)
             self.assertEqual(resp.status_code, 200)
             data = json.loads(resp.content.decode('utf-8'))
@@ -1950,7 +1950,7 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
         import json
         from unittest.mock import patch, MagicMock
         from django.utils import timezone
-        from smartbids.auth_views import validar_codigo_login, CODIGOS_OTP_TEMPORALES, _calcular_hash_otp
+        from smartbids.views.auth_views import validar_codigo_login, CODIGOS_OTP_TEMPORALES, _calcular_hash_otp
 
         email_prueba = 'usuario.otp@smartbids.cl'
         CODIGOS_OTP_TEMPORALES[email_prueba] = {
@@ -1972,8 +1972,8 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
             content_type='application/json'
         )
 
-        with patch('smartbids.auth_views.Suscriptor.objects.get_or_create', return_value=(mock_susc, False)), \
-             patch('smartbids.auth_views.EstadoSuscriptor.objects.filter'):
+        with patch('smartbids.views.auth_views.Suscriptor.objects.get_or_create', return_value=(mock_susc, False)), \
+             patch('smartbids.views.auth_views.EstadoSuscriptor.objects.filter'):
             resp = validar_codigo_login(req)
             self.assertEqual(resp.status_code, 200)
             data = json.loads(resp.content.decode('utf-8'))
@@ -2007,7 +2007,7 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
         """Verifica que purgar_codigos_otp_expirados elimine los códigos que superaron los 10 minutos."""
         from datetime import timedelta
         from django.utils import timezone
-        from smartbids.auth_views import purgar_codigos_otp_expirados, CODIGOS_OTP_TEMPORALES, revocar_codigo_otp
+        from smartbids.views.auth_views import purgar_codigos_otp_expirados, CODIGOS_OTP_TEMPORALES, revocar_codigo_otp
 
         ahora = timezone.now()
         CODIGOS_OTP_TEMPORALES['expirado@smartbids.cl'] = {
@@ -2034,7 +2034,7 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
         """Verifica que tras 5 intentos fallidos el OTP sea destruido por protección contra fuerza bruta."""
         import json
         from django.utils import timezone
-        from smartbids.auth_views import validar_codigo_login, CODIGOS_OTP_TEMPORALES, _calcular_hash_otp
+        from smartbids.views.auth_views import validar_codigo_login, CODIGOS_OTP_TEMPORALES, _calcular_hash_otp
 
         email = 'bruteforce@smartbids.cl'
         CODIGOS_OTP_TEMPORALES[email] = {
@@ -2062,7 +2062,7 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
         """Verifica estáticamente que los archivos JavaScript no almacenen variables pendingPassword."""
         import os
 
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         js_dir = os.path.join(base_dir, 'static', 'js')
 
         archivos_analizados = 0

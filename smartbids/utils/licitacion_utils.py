@@ -9,9 +9,9 @@ import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from .models.core import Suscriptor
-from .models.catalog import Sector, Organismo
-from .models.procurement import UnidadCompra
+from smartbids.models.core import Suscriptor
+from smartbids.models.catalog import Sector, Organismo
+from smartbids.models.procurement import UnidadCompra
 
 CACHE_KEY_CATALOGO_TIPOS_LICITACION = 'sb_catalogo_tipos_licitacion_v2'
 
@@ -79,7 +79,7 @@ def obtener_catalogo_tipos_licitacion():
     }
 
     try:
-        from .models.catalog import TipoLicitacion
+        from smartbids.models.catalog import TipoLicitacion
         todos_deseados = codigos_publicos + codigos_privados
         db_qs = TipoLicitacion.objects.select_related(
             'codigo_cat_licitacion', 'codigo_tramo_licitacion'
@@ -176,8 +176,8 @@ def obtener_catalogo_organismos_ucom(sector_codigo=None, q=None):
 
     cached_data = cache.get(CACHE_KEY_CATALOGO_UCOM_ARBOL)
     if not cached_data:
-        from .models.catalog import Sector, Organismo
-        from .models.procurement import UnidadCompra
+        from smartbids.models.catalog import Sector, Organismo
+        from smartbids.models.procurement import UnidadCompra
 
         try:
             sectores_qs = Sector.objects.values('codigo_sector', 'nombre_sector').order_by('nombre_sector')

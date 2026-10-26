@@ -11,15 +11,15 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from .licitacion_utils import (
+from smartbids.utils.licitacion_utils import (
     ESTADOS_LICITACION,
     estado_licitacion,
     hito_completado,
     resolver_suscriptor,
 )
-from .mercadopublico_service import obtener_datos_externos_licitacion
-from .models.procurement import Licitacion
-from .models.core import (
+from smartbids.services.mercadopublico_service import obtener_datos_externos_licitacion
+from smartbids.models.procurement import Licitacion
+from smartbids.models.core import (
     LicitacionDocumento,
     LicitacionPregunta,
     NotificacionLicitacion,
@@ -140,6 +140,8 @@ def detalle_licitacion_view(request, codigo):
     url_externa = _url_http(licitacion.lic_url)
     if not url_externa and licitacion.lic_codigo:
         url_externa = f'https://www.mercadopublico.cl/fichaLicitacion.html?idLicitacion={licitacion.lic_codigo}'
+    if not url_adjuntos and licitacion.lic_codigo:
+        url_adjuntos = f'https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion={licitacion.lic_codigo}'
 
     return render(request, 'smartbids/licitacion_detalle.html', {
         'licitacion': licitacion,

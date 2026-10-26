@@ -6,14 +6,14 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.utils import timezone
 
-from .licitacion_utils import (
+from smartbids.utils.licitacion_utils import (
     escribir_fila_csv,
     generar_excel_response,
     generar_excel_multitabla_response,
     resolver_suscriptor,
     obtener_catalogo_tipos_licitacion,
 )
-from .models.procurement import Licitacion
+from smartbids.models.procurement import Licitacion
 from .dashboard_views import (
     dashboard_kpis,
     dashboard_desglose,

@@ -20,7 +20,7 @@ import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials
 
 
-from .models import Suscriptor, Mensajeria, Empresa, Preferencia, EstadoSuscriptor
+from smartbids.models import Suscriptor, Mensajeria, Empresa, Preferencia, EstadoSuscriptor
 
 
 logger = logging.getLogger(__name__)

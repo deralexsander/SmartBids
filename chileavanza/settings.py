@@ -88,7 +88,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'smartbids.storage_guard.StorageSafetyMiddleware',  # Guardián de almacenamiento (mejoras)
+    'smartbids.utils.storage_guard.StorageSafetyMiddleware',  # Guardián de almacenamiento (mejoras)
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',       # Requerido para servir estáticos en Railway
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -215,7 +215,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==============================================================================
 # CONFIGURACIÓN DEL SERVIDOR DE CORREOS (GMAIL API REST)
 # ==============================================================================
-EMAIL_BACKEND = 'smartbids.gmail_backend.GmailApiBackend'
+EMAIL_BACKEND = 'smartbids.backends.gmail_backend.GmailApiBackend'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'smartbids.qa@chileavanza.cl')
 DEFAULT_FROM_EMAIL = f"SmartBids <{EMAIL_HOST_USER}>"
 

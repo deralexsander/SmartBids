@@ -885,8 +885,12 @@
         /* Responsive */
         @media (max-width: 1024px) {
             .hero, .feature-row, .ml-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
                 gap: 3rem;
+            }
+
+            .hero > *, .feature-row > *, .ml-grid > * {
+                min-width: 0;
             }
 
             .prop-grid, .benefits-grid {
@@ -919,12 +923,28 @@
                 grid-template-columns: 1fr;
             }
 
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
             .form-inline {
                 flex-direction: column;
             }
 
             .hero-content h1 {
-                font-size: 2.2rem;
+                font-size: 2.1rem;
+                word-break: break-word;
+            }
+
+            .hero-ctas {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .trust-metrics {
+                flex-wrap: wrap;
+                gap: 1.5rem;
             }
 
             .cta-container h2 {
