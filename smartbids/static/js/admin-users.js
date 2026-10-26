@@ -22,9 +22,11 @@ let pendingRoleChange = null;
 function adminHeaders() {
     const uid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
     const email = auth.currentUser?.email || '';
+    const token = localStorage.getItem('smartbids_session_token');
     const headers = {};
     if (uid) headers['X-Firebase-UID'] = uid;
     if (email) headers['X-Firebase-Email'] = email;
+    if (token) headers['X-Session-Token'] = token;
     return headers;
 }
 

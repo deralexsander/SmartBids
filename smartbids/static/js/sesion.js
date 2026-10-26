@@ -123,6 +123,7 @@ onAuthStateChanged(auth, async (user) => {
         SessionManager.clearLocalToken();
         localStorage.removeItem('smartbids_uid');
         document.cookie = 'sb_firebase_uid=; path=/; max-age=0; SameSite=Lax';
+        document.cookie = 'sb_session_token=; path=/; max-age=0; SameSite=Lax';
 
         if (pageRule?.requiresAuth) {
             window.location.replace(pageRule.redirectFallback || '/ingreso');
@@ -152,6 +153,10 @@ onAuthStateChanged(auth, async (user) => {
     // Guardar UID y fijar cookie de sesión para SSR
     localStorage.setItem('smartbids_uid', user.uid);
     document.cookie = `sb_firebase_uid=${user.uid}; path=/; max-age=604800; SameSite=Lax`;
+    const tokenActual = SessionManager.getLocalToken();
+    if (tokenActual) {
+        document.cookie = `sb_session_token=${tokenActual}; path=/; max-age=604800; SameSite=Lax`;
+    }
     updateNavButtons(user);
 
     // 3. Validar rol solo si la ruta actual lo exige expresamente
@@ -168,7 +173,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     // 4. Imprimir token local si existe
-    const tokenActual = SessionManager.getLocalToken();
     if (tokenActual) {
         console.log(`tokenID: ${tokenActual}`);
     }

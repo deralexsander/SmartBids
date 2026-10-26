@@ -2,8 +2,12 @@ import os
 import logging
 from django.db import connection
 from django.http import HttpResponseServerError
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
+
+CACHE_KEY_DB_SIZE = 'smartbids:storage_safety:db_size'
+CACHE_TTL_SECONDS = 60
 
 def obtener_limite_bytes():
     """
@@ -17,6 +21,19 @@ def obtener_limite_bytes():
 
     return int(limite_gb * 1024 * 1024 * 1024)
 
+def obtener_tamano_bd():
+    """
+    Obtiene el tamaño de la base de datos con caché de 60 segundos
+    para evitar consultas síncronas pesadas en cada operación de escritura.
+    """
+    tamano = cache.get(CACHE_KEY_DB_SIZE)
+    if tamano is None:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_database_size(current_database());")
+            tamano = cursor.fetchone()[0]
+        cache.set(CACHE_KEY_DB_SIZE, tamano, timeout=CACHE_TTL_SECONDS)
+    return tamano
+
 class StorageSafetyMiddleware:
     """
     Bloquea escrituras (POST, PUT, PATCH) si la base de datos supera la cuota
@@ -28,10 +45,7 @@ class StorageSafetyMiddleware:
     def __call__(self, request):
         if request.method in ['POST', 'PUT', 'PATCH']:
             try:
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT pg_database_size(current_database());")
-                    tamano_actual = cursor.fetchone()[0]
-
+                tamano_actual = obtener_tamano_bd()
                 limite_seguridad = obtener_limite_bytes()
 
                 if tamano_actual >= limite_seguridad:

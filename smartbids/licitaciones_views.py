@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from .models.procurement import Licitacion, LicitacionesProductos
-from .models.core import Preferencia, Suscriptor
+from .models.core import Preferencia, Suscriptor, SeguimientoLicitacion
 from .licitacion_utils import (
     escribir_fila_csv,
     estado_licitacion,
@@ -87,7 +87,7 @@ def filtrar_licitaciones(request, suscriptor):
 
     if solo_seguidas:
         if suscriptor:
-            from .models.tracking import SeguimientoLicitacion
+            from .models.core import SeguimientoLicitacion
             codigos_seguidos = SeguimientoLicitacion.objects.filter(
                 usuario=suscriptor,
                 seguimiento_activo=True,
@@ -154,7 +154,7 @@ def mis_licitaciones_view(request):
 
     seguidos = set()
     if suscriptor:
-        from .models.tracking import SeguimientoLicitacion
+        from .models.core import SeguimientoLicitacion
         seguidos = set(
             SeguimientoLicitacion.objects.filter(
                 usuario=suscriptor,

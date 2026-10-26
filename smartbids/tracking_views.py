@@ -19,7 +19,7 @@ from .licitacion_utils import (
 )
 from .mercadopublico_service import obtener_datos_externos_licitacion
 from .models.procurement import Licitacion
-from .models.tracking import (
+from .models.core import (
     LicitacionDocumento,
     LicitacionPregunta,
     NotificacionLicitacion,

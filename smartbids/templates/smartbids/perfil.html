@@ -502,6 +502,25 @@
 
             <!-- 4. Palabras Clave -->
             <div id="tab-palabras" class="dashboard-card tab-content-panel">
+                <!-- ========================================================================= -->
+                <!-- [BLOQUEO TEMPORAL DE VISTA - FUNCIÓN PALABRAS CLAVE]                     -->
+                <!-- Para retirar este bloqueo: simplemente elimine o comente el bloque        -->
+                <!-- '<div class="bloqueo-palabras-overlay"> ... </div>'                       -->
+                <!-- ========================================================================= -->
+                <div class="bloqueo-palabras-overlay" aria-live="polite">
+                    <div class="bloqueo-palabras-tarjeta">
+                        <div class="bloqueo-palabras-icono-wrap">
+                            <img src="{% static 'media/isotipo smartbids.webp' %}" alt="SmartBids" class="bloqueo-palabras-isotipo">
+                        </div>
+                        <h3 class="bloqueo-palabras-texto">smartbids está trabajando para usted</h3>
+                        <p class="bloqueo-palabras-subtexto">Esta función se encuentra temporalmente en proceso de calibración y mejora.</p>
+                        <div class="bloqueo-palabras-badge">
+                            <i class="fa-solid fa-clock-rotate-left"></i> En optimización
+                        </div>
+                    </div>
+                </div>
+                <!-- ========================================================================= -->
+
                 <div class="dashboard-header">
                     <div class="dash-title">
                         <i class="fa-solid fa-tags perfil__section-icon"></i>

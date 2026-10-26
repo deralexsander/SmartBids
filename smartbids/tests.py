@@ -375,6 +375,44 @@ class AdministracionGeneralTests(SimpleTestCase):
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp.url, '/mis-licitaciones/')
 
+    def test_acceso_denegado_anonimo(self):
+        from unittest.mock import patch
+        from django.test import RequestFactory
+        from .page_views import administracion_general_view
+
+        rf = RequestFactory()
+        req = rf.get('/administracion-general/')
+
+        with patch('smartbids.page_views.resolver_suscriptor', return_value=None):
+            resp = administracion_general_view(req)
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp.url, '/ingreso/')
+
+    def test_autorizacion_suscriptor_token_valido(self):
+        from unittest.mock import MagicMock
+        from django.test import RequestFactory
+        from .auth_views import validar_autorizacion_suscriptor
+
+        rf = RequestFactory()
+        req = rf.post('/api/actualizar-perfil/', HTTP_X_SESSION_TOKEN='token_secreto_123')
+        mock_susc = MagicMock(token_sesion='token_secreto_123', firebase_uid='uid_1')
+
+        ok, msg = validar_autorizacion_suscriptor(req, mock_susc)
+        self.assertTrue(ok)
+
+    def test_autorizacion_suscriptor_token_invalido(self):
+        from unittest.mock import MagicMock
+        from django.test import RequestFactory
+        from .auth_views import validar_autorizacion_suscriptor
+
+        rf = RequestFactory()
+        req = rf.post('/api/actualizar-perfil/', HTTP_X_SESSION_TOKEN='token_atacante')
+        mock_susc = MagicMock(token_sesion='token_secreto_123', firebase_uid='uid_1')
+
+        ok, msg = validar_autorizacion_suscriptor(req, mock_susc)
+        self.assertFalse(ok)
+        self.assertIn('Acceso no autorizado', msg)
+
 
 class AccionCuentaTests(SimpleTestCase):
     def setUp(self):
@@ -1395,7 +1433,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
 
         with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
              patch('smartbids.tracking_views._sincronizar_seguimientos'), \
-             patch('smartbids.models.tracking.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.models.core.SeguimientoLicitacion.objects') as m_seg, \
              patch('smartbids.licitaciones_views.Preferencia.objects') as m_pref, \
              patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
              patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_objects), \
@@ -1442,7 +1480,7 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
 
         with patch('smartbids.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
              patch('smartbids.tracking_views._sincronizar_seguimientos'), \
-             patch('smartbids.models.tracking.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.models.core.SeguimientoLicitacion.objects') as m_seg, \
              patch('smartbids.licitaciones_views.Preferencia.objects') as m_pref, \
              patch('smartbids.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
              patch('smartbids.licitaciones_views.Licitacion.objects', m_lic_objects), \

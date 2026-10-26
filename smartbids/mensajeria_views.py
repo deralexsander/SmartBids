@@ -80,15 +80,24 @@ def enviar_consulta_contacto(request):
 
 
 def _usuario_es_administrador(request):
-    uid = request.headers.get('X-Firebase-UID')
+    uid = request.headers.get('X-Firebase-UID') or request.COOKIES.get('sb_firebase_uid')
     if not uid:
         return False
 
     suscriptor = Suscriptor.objects.select_related('codigo_estado').filter(
         firebase_uid=uid
     ).first()
-    nombre_estado = suscriptor.codigo_estado.nombre_estado if suscriptor and suscriptor.codigo_estado else ''
-    return nombre_estado.strip().casefold() == 'administrador'
+    if not suscriptor or not suscriptor.codigo_estado:
+        return False
+
+    nombre_estado = (suscriptor.codigo_estado.nombre_estado or '').strip().lower()
+    es_admin = nombre_estado in ('administrador', 'admin') or suscriptor.codigo_estado.codigo_estado == 5
+    if not es_admin:
+        return False
+
+    from .auth_views import validar_autorizacion_suscriptor
+    autorizado, _ = validar_autorizacion_suscriptor(request, suscriptor)
+    return autorizado
 
 
 def _respuesta_acceso_denegado():
