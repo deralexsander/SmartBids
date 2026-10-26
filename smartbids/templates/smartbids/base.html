@@ -35,7 +35,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="icon" href="{% static 'media/isotipo smartbids.png' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'media/favicon.ico' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'media/favicon.ico' %}">
     {% block nombrePag %}{% endblock %}
 </head>
 <body>
@@ -51,7 +52,7 @@
     {% block header %}
     <header>
         <a href="{% url 'home' %}" class="logo">
-            <img src="{% static 'media/isotipo smartbids.png' %}" alt="SmartBids Icon" class="logo-icon">
+            <img src="{% static 'media/isotipo smartbids.webp' %}" alt="SmartBids Icon" class="logo-icon">
             <div class="logo-text">Smart<span>Bids</span></div>
         </a>
         <nav>
