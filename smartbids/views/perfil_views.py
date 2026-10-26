@@ -254,8 +254,7 @@ def catalogos_preferencias(request):
 
             campos_prod = [
                 'codigo_producto', 'descripcion', 'nivel1_id',
-                'nivel2', 'nivel3', 'nivel4',
-                'glosa_nivel2', 'glosa_nivel3', 'glosa_nivel4'
+                'glosa_nivel3', 'glosa_nivel4'
             ]
             prods = list(query_base.values(*campos_prod))
 
@@ -265,9 +264,6 @@ def catalogos_preferencias(request):
                 desc = re.sub(r'\s+', ' ', desc_raw).strip()
 
                 n1 = str(p.get('nivel1_id') or '').strip()
-                n2 = str(p.get('nivel2') or '').strip()
-                n3 = str(p.get('nivel3') or '').strip()
-                n4 = str(p.get('nivel4') or '').strip()
 
                 # Descomponer código soportando primer bloque de 3 dígitos (Obras Civiles MOP)
                 # o 2 dígitos (ONU estándar) si viniera sin FK
@@ -282,23 +278,23 @@ def catalogos_preferencias(request):
                         n2 = cod[2:4]
                         n3 = cod[4:6]
                         n4 = cod[6:8]
-
-                cod_fmt = f"{n1}-{n2}-{n3}-{n4}" if (n1 and n2 and n3 and n4) else cod
+                    cod_fmt = f"{n1}-{n2}-{n3}-{n4}"
+                else:
+                    if len(cod) >= 9 and len(n1) == 3:
+                        cod_fmt = f"{n1}-{cod[3:5]}-{cod[5:7]}-{cod[7:9]}"
+                    elif len(cod) >= 8 and len(n1) == 2:
+                        cod_fmt = f"{n1}-{cod[2:4]}-{cod[4:6]}-{cod[6:8]}"
+                    else:
+                        cod_fmt = cod
 
                 if not desc:
                     desc = p.get('glosa_nivel4') or p.get('glosa_nivel3') or f"Producto {cod_fmt}"
 
+                # Carga optimizada y ligera: solo los campos necesarios para el buscador y renderizado
                 prod_item = {
                     'codigo_producto': cod,
                     'codigo_formateado': cod_fmt,
                     'descripcion': desc,
-                    'nivel1': n1,
-                    'nivel2': n2,
-                    'nivel3': n3,
-                    'nivel4': n4,
-                    'glosa_nivel2': (p.get('glosa_nivel2') or '').strip(),
-                    'glosa_nivel3': (p.get('glosa_nivel3') or '').strip(),
-                    'glosa_nivel4': (p.get('glosa_nivel4') or '').strip(),
                 }
 
                 if n1 in niveles_map:
@@ -336,7 +332,7 @@ def catalogos_preferencias(request):
                         'niveles': niveles_del_grupo
                     })
 
-            # Formato de retrocompatibilidad plana para componentes anteriores
+            # Resumen ligero de rubros para compatibilidad sin duplicar 18.000 productos en memoria
             rubros_compat = []
             for g in grupos_list:
                 for niv in g['niveles']:
@@ -345,7 +341,6 @@ def catalogos_preferencias(request):
                         'nombre_rubro': f"{niv['codigo_nivel1']} – {niv['descripcion']}",
                         'codigo_grupo': g['codigo_grupo'],
                         'nombre_grupo': g['nombre_grupo'],
-                        'productos': niv['productos']
                     })
 
             resp_data = {

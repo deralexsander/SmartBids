@@ -90,7 +90,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'smartbids.utils.storage_guard.StorageSafetyMiddleware',  # Guardián de almacenamiento (mejoras)
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',       # Requerido para servir estáticos en Railway
+    'django.middleware.gzip.GZipMiddleware',                 # Compresión HTTP (reduce ancho de banda y tamaño de payloads)
+    'whitenoise.middleware.WhiteNoiseMiddleware',           # Requerido para servir estáticos en Railway
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -157,6 +158,7 @@ DATABASES = {
         'PASSWORD': _db_password,
         'HOST': _db_host,
         'PORT': _db_port,
+        'CONN_MAX_AGE': 60,  # Reutiliza conexiones por 60s reduciendo ráfagas de handshake TCP/TLS
         'OPTIONS': {
             'options': '-c search_path=public,catalog,procurement,core,config'
         },
@@ -168,11 +170,28 @@ DATABASES = {
         'PASSWORD': _db_password,
         'HOST': _db_host,
         'PORT': _db_port,
+        'CONN_MAX_AGE': 60,  # Reutiliza conexiones por 60s
         'OPTIONS': {
             'options': '-c search_path=dw,public'
         },
     },
 }
+
+# ==============================================================================
+# CONFIGURACIÓN DE MEMORIA Y CACHÉ (PREVIENE DESBORDES DE RAM EN HOSTING)
+# ==============================================================================
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'smartbids-memcache',
+        'TIMEOUT': 3600,
+        'OPTIONS': {
+            'MAX_ENTRIES': 250,
+            'CULL_FREQUENCY': 3,
+        }
+    }
+}
+
 
 
 # Password validation
