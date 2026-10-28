@@ -6,14 +6,14 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.utils import timezone
 
-from .licitacion_utils import (
+from smartbids.utils.licitacion_utils import (
     escribir_fila_csv,
     generar_excel_response,
     generar_excel_multitabla_response,
     resolver_suscriptor,
     obtener_catalogo_tipos_licitacion,
 )
-from .models.procurement import Licitacion
+from smartbids.models.procurement import Licitacion
 from .dashboard_views import (
     dashboard_kpis,
     dashboard_desglose,
@@ -49,11 +49,14 @@ def mensajeria_view(request):
 
 def administracion_general_view(request):
     suscriptor = resolver_suscriptor(request)
-    if suscriptor and suscriptor.codigo_estado:
-        rol = (suscriptor.codigo_estado.nombre_estado or '').strip().lower()
-        es_admin = rol in ('admin', 'administrador') or suscriptor.codigo_estado.codigo_estado == 5
-        if not es_admin:
-            return redirect('mis_licitaciones')
+    if not suscriptor:
+        return redirect('ingreso')
+    if not suscriptor.codigo_estado:
+        return redirect('mis_licitaciones')
+    rol = (suscriptor.codigo_estado.nombre_estado or '').strip().lower()
+    es_admin = rol in ('admin', 'administrador') or suscriptor.codigo_estado.codigo_estado == 5
+    if not es_admin:
+        return redirect('mis_licitaciones')
     return render(request, 'smartbids/administracion_general.html')
 
 def handler404_view(request, exception=None):

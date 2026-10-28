@@ -1,5 +1,6 @@
 
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 
 
 class UnidadCompra(models.Model):
@@ -12,8 +13,20 @@ class UnidadCompra(models.Model):
     ucom_codigo_comuna = models.CharField(max_length=5, blank=True, null=True)
     ucom_descripcion = models.CharField(max_length=300, blank=True, null=True)
 
+    @property
+    def nombre_comuna(self):
+        """Retorna el nombre legible de la comuna asociada a la unidad de compra."""
+        if not self.ucom_codigo_comuna:
+            return ''
+        from smartbids.utils.licitacion_utils import obtener_nombre_comuna
+        return obtener_nombre_comuna(self.ucom_codigo_comuna)
+
+    @property
+    def ucom_nombre_comuna(self):
+        return self.nombre_comuna
+
     class Meta:
-        managed = False
+        managed = True
         db_table = '"procurement"."unidad_compra"'
         
 class Licitacion(models.Model):
@@ -31,11 +44,12 @@ class Licitacion(models.Model):
     lic_moneda = models.CharField(max_length=20, blank=True, null=True)
     lic_presupuesto = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True, db_comment='numero con deciamles')
     lic_items_cantidad = models.IntegerField(blank=True, null=True)
-    lic_codigos_producto = models.TextField(blank=True, null=True)  # This field type is a guess.
-    lic_diccionario_palabras = models.TextField(blank=True, null=True)  # This field type is a guess.
+    lic_codigos_producto = ArrayField(models.CharField(max_length=20),blank=True,null=True)
+    lic_diccionario_palabras = ArrayField(models.CharField(max_length=100),blank=True,null=True)
     lic_texto = models.TextField(blank=True, null=True)
     lic_url = models.TextField(blank=True, null=True)
     lic_plazo = models.IntegerField(blank=True, null=True)
+    lic_estado = models.ForeignKey('EstadoLicitacion',models.DO_NOTHING,db_column='lic_estado',blank=True,null=True)
 
     @property
     def es_cierre_proximo(self):
@@ -58,8 +72,15 @@ class Licitacion(models.Model):
     def es_cierre_proximo(self, valor):
         self._es_cierre_proximo = bool(valor)
 
+    @property
+    def nombre_comuna(self):
+        """Retorna el nombre de la comuna de la unidad de compra emisora."""
+        if self.lic_codigo_ucom:
+            return getattr(self.lic_codigo_ucom, 'nombre_comuna', '')
+        return ''
+
     class Meta:
-        managed = False
+        managed = True
         db_table = '"procurement"."licitacion"'
         
 class LicitacionesProductos(models.Model):
@@ -68,5 +89,5 @@ class LicitacionesProductos(models.Model):
     codigo_producto = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"procurement"."licitaciones_productos"'

@@ -35,7 +35,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="icon" href="{% static 'media/isotipo smartbids.png' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'media/favicon.ico' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'media/favicon.ico' %}">
     {% block nombrePag %}{% endblock %}
 </head>
 <body>
@@ -51,7 +52,7 @@
     {% block header %}
     <header>
         <a href="{% url 'home' %}" class="logo">
-            <img src="{% static 'media/isotipo smartbids.png' %}" alt="SmartBids Icon" class="logo-icon">
+            <img src="{% static 'media/isotipo smartbids.webp' %}" alt="SmartBids Icon" class="logo-icon">
             <div class="logo-text">Smart<span>Bids</span></div>
         </a>
         <nav>
@@ -249,8 +250,7 @@
     {% elif request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
     <script type="module" src="{% static 'js/accion-cuenta.js' %}"></script>
     {% elif request.resolver_match.url_name == 'dashboard' %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{% static 'js/dashboard.js' %}"></script>
+    <!-- Chart.js y analítica son gestionados directamente por dashboard.html -->
     {% elif request.resolver_match.url_name == 'administracion_general' %}
     <script type="module" src="{% static 'js/admin-policy.js' %}"></script>
     <script type="module" src="{% static 'js/admin-users.js' %}"></script>

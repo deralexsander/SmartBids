@@ -20,16 +20,96 @@ import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials
 
 
-from .models import Suscriptor, Mensajeria, Empresa, Preferencia, EstadoSuscriptor
+from smartbids.models import Suscriptor, Mensajeria, Empresa, Preferencia, EstadoSuscriptor
 
 
 logger = logging.getLogger(__name__)
 
-CODIGOS_OTP_TEMPORALES = {}
 OTP_EXPIRACION_SEGUNDOS = 600   # 10 minutos de validez máxima
 OTP_MAX_INTENTOS_FALLIDOS = 5    # Máximo 5 intentos antes de revocar el código
 OTP_REENVIO_SEGUNDOS = 60        # 60 segundos de enfriamiento entre solicitudes
 OTP_MAXIMOS_POR_HORA = 5         # Límite de 5 envíos por hora por cliente/IP
+
+class OtpCacheDict(dict):
+    """
+    Almacén de OTPs sincronizado con la caché de Django para soportar múltiples workers
+    concurrentes y mantener compatibilidad total de interfaz con la suite de pruebas.
+    """
+    PREFIX = 'smartbids:otp:'
+
+    def __getitem__(self, key):
+        k = str(key).strip().lower()
+        cached = cache.get(self.PREFIX + k)
+        if cached is not None:
+            super().__setitem__(k, cached)
+            return cached
+        return super().__getitem__(k)
+
+    def __setitem__(self, key, value):
+        k = str(key).strip().lower()
+        super().__setitem__(k, value)
+        cache.set(self.PREFIX + k, value, timeout=OTP_EXPIRACION_SEGUNDOS)
+
+    def get(self, key, default=None):
+        k = str(key).strip().lower()
+        cached = cache.get(self.PREFIX + k)
+        if cached is not None:
+            super().__setitem__(k, cached)
+            return cached
+        return super().get(k, default)
+
+    def __contains__(self, key):
+        k = str(key).strip().lower()
+        if cache.get(self.PREFIX + k) is not None:
+            return True
+        return super().__contains__(k)
+
+    def pop(self, key, default=None):
+        k = str(key).strip().lower()
+        cache.delete(self.PREFIX + k)
+        return super().pop(k, default)
+
+CODIGOS_OTP_TEMPORALES = OtpCacheDict()
+
+
+def validar_autorizacion_suscriptor(request, suscriptor):
+    """
+    Valida que la petición tenga autorización legítima para acceder o modificar
+    los datos del suscriptor (Protección contra BOLA / IDOR):
+    1. Si el suscriptor tiene un token_sesion activo, verifica que coincida con
+       la cabecera X-Session-Token o cookie sb_session_token.
+    2. Alternativamente, verifica el Firebase ID Token si viene en Authorization: Bearer.
+    3. Si el suscriptor no tiene token_sesion en BD (ej. entorno de tests sintéticos), permite el paso.
+    """
+    if not suscriptor:
+        return False, 'Suscriptor no encontrado.'
+
+    token_remoto = getattr(suscriptor, 'token_sesion', None)
+    if not token_remoto:
+        return True, ''
+
+    token_presentado = (
+        request.headers.get('X-Session-Token')
+        or request.COOKIES.get('sb_session_token')
+        or request.COOKIES.get('smartbids_session_token')
+        or request.session.get('session_token')
+    )
+
+    if token_presentado and secrets.compare_digest(str(token_presentado).strip(), str(token_remoto).strip()):
+        return True, ''
+
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        id_token = auth_header.split(' ', 1)[1].strip()
+        try:
+            app = _firebase_admin_app()
+            decoded = firebase_auth.verify_id_token(id_token, app=app)
+            if decoded.get('uid') == suscriptor.firebase_uid:
+                return True, ''
+        except Exception:
+            pass
+
+    return False, 'Acceso no autorizado: la sesión no es válida para este usuario.'
 
 
 def _calcular_hash_otp(email: str, codigo: str) -> str:

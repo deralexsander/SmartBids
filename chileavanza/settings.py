@@ -45,7 +45,6 @@ else:
         '.up.railway.app',
         '127.0.0.1',
         'localhost',
-        '*',
     ]
 
 _csrf_origins_env = os.getenv('CSRF_TRUSTED_ORIGINS')
@@ -59,6 +58,20 @@ else:
         'https://chileavanza.cl',
         'https://*.chileavanza.cl',
     ]
+
+# ==============================================================================
+# SEGURIDAD DE COOKIES Y TRANSPORTE HTTPS
+# ==============================================================================
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 
 # Application definition
@@ -75,9 +88,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'smartbids.storage_guard.StorageSafetyMiddleware',  # Guardián de almacenamiento (mejoras)
+    'smartbids.utils.storage_guard.StorageSafetyMiddleware',  # Guardián de almacenamiento (mejoras)
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',       # Requerido para servir estáticos en Railway
+    'django.middleware.gzip.GZipMiddleware',                 # Compresión HTTP (reduce ancho de banda y tamaño de payloads)
+    'whitenoise.middleware.WhiteNoiseMiddleware',           # Requerido para servir estáticos en Railway
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -144,6 +158,7 @@ DATABASES = {
         'PASSWORD': _db_password,
         'HOST': _db_host,
         'PORT': _db_port,
+        'CONN_MAX_AGE': 60,  # Reutiliza conexiones por 60s reduciendo ráfagas de handshake TCP/TLS
         'OPTIONS': {
             'options': '-c search_path=public,catalog,procurement,core,config'
         },
@@ -155,11 +170,28 @@ DATABASES = {
         'PASSWORD': _db_password,
         'HOST': _db_host,
         'PORT': _db_port,
+        'CONN_MAX_AGE': 60,  # Reutiliza conexiones por 60s
         'OPTIONS': {
             'options': '-c search_path=dw,public'
         },
     },
 }
+
+# ==============================================================================
+# CONFIGURACIÓN DE MEMORIA Y CACHÉ (PREVIENE DESBORDES DE RAM EN HOSTING)
+# ==============================================================================
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'smartbids-memcache',
+        'TIMEOUT': 3600,
+        'OPTIONS': {
+            'MAX_ENTRIES': 250,
+            'CULL_FREQUENCY': 3,
+        }
+    }
+}
+
 
 
 # Password validation
@@ -202,7 +234,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==============================================================================
 # CONFIGURACIÓN DEL SERVIDOR DE CORREOS (GMAIL API REST)
 # ==============================================================================
-EMAIL_BACKEND = 'smartbids.gmail_backend.GmailApiBackend'
+EMAIL_BACKEND = 'smartbids.backends.gmail_backend.GmailApiBackend'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'smartbids.qa@chileavanza.cl')
 DEFAULT_FROM_EMAIL = f"SmartBids <{EMAIL_HOST_USER}>"
 

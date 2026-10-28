@@ -17,7 +17,7 @@ class ActividadEconomica(models.Model):
     codigo_subrubro = models.ForeignKey('SubrubroActividad', models.DO_NOTHING, db_column='codigo_subrubro')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."actividad_economica"'
     def __str__(self):
         return f"{self.codigo_actividad} - {self.nombre_actividad}"
@@ -27,7 +27,7 @@ class Ambito(models.Model):
     nombre_ambito = models.CharField(unique=True, max_length=100)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."ambito"'
 
     def __str__(self):
@@ -38,7 +38,7 @@ class CategoriaLicitacion(models.Model):
     nombre_cat_licitacion = models.CharField(unique=True, max_length=50)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."categoria_licitacion"'
 
 class Comuna(models.Model):
@@ -47,7 +47,7 @@ class Comuna(models.Model):
     codigo_provincia = models.ForeignKey('Provincia', models.DO_NOTHING, db_column='codigo_provincia')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."comuna"'
 
     def __str__(self):
@@ -59,7 +59,7 @@ class GrupoProducto(models.Model):
     nombre_grupo_producto = models.CharField(unique=True, max_length=100)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."grupo_producto"'
 
     def __str__(self):
@@ -74,7 +74,7 @@ class Nivel1Producto(models.Model):
     activo = models.BooleanField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."nivel1_producto"'
 
     def __str__(self):
@@ -93,7 +93,7 @@ class Organismo(models.Model):
     org_direccion = models.CharField(max_length=300, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."organismo"'
 
     def __str__(self):
@@ -108,7 +108,7 @@ class Pais(models.Model):
     pais_activo = models.BooleanField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."pais"'
 
 class Producto(models.Model):
@@ -125,7 +125,7 @@ class Producto(models.Model):
     glosa_nivel4 = models.CharField(max_length=200, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."producto"'
 
     @property
@@ -161,7 +161,7 @@ class Proveedor(models.Model):
     prov_activo = models.BooleanField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."proveedor"'
 
 class Provincia(models.Model):
@@ -170,7 +170,7 @@ class Provincia(models.Model):
     codigo_region = models.ForeignKey('Region', models.DO_NOTHING, db_column='codigo_region')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."provincia"'
 
     def __str__(self):
@@ -181,10 +181,10 @@ class Region(models.Model):
     codigo_region = models.CharField(primary_key=True, max_length=2)
     nombre_region = models.CharField(max_length=100)
     region_3l = models.CharField(db_column='region_3L', max_length=3, blank=True, null=True)  # nombre de la region resumido en 3 letras
-
+    orden = models.PositiveSmallIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."region"'
 
     def __str__(self):
@@ -195,7 +195,7 @@ class RubroActividad(models.Model):
     nombre_rubro = models.CharField(unique=True, max_length=200)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."rubro_actividad"'
     def __str__(self):
         return self.nombre_rubro
@@ -205,7 +205,7 @@ class Sector(models.Model):
     nombre_sector = models.CharField(unique=True, max_length=100)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."sector"'
 
     def __str__(self):
@@ -217,7 +217,7 @@ class SubrubroActividad(models.Model):
     codigo_rubro = models.ForeignKey(RubroActividad, models.DO_NOTHING, db_column='codigo_rubro')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."subrubro_actividad"'
     def __str__(self):
         return self.nombre_subrubro
@@ -230,7 +230,7 @@ class TipoLicitacion(models.Model):
     activo = models.BooleanField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."tipo_licitacion"'
 
 class TramoLicitacion(models.Model):
@@ -238,20 +238,29 @@ class TramoLicitacion(models.Model):
     nombre_tramo_licitacion = models.CharField(unique=True, max_length=50)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."tramo_licitacion"'
     
     def __str__(self):
         return self.nombre_tramo_licitacion
     
+class EstadoLicitacion(models.Model):
+    codigo_estado_licitacion = models.SmallAutoField(primary_key=True)
+    nombre_estado_licitacion = models.CharField(unique=True, max_length=50)
 
+    class Meta:
+        managed = True
+        db_table = '"catalog"."estado_licitacion"'
+
+    def __str__(self):
+        return self.nombre_estado_licitacion
 
 class UnidadMedida(models.Model):
     codigo_unidad_medida = models.CharField(primary_key=True, max_length=3)
     nombre_unidad_medida = models.CharField(unique=True, max_length=100)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = '"catalog"."unidad_medida"'
 
     def __str__(self):

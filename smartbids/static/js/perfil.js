@@ -551,43 +551,85 @@ async function setupTerritoryTree() {
         updateCounter();
     }
 
-    async function abrirModal(modo) {
-        modoModalTerritorio = modo;
-        modal.classList.add('active');
-        modal.style.display = 'flex';
-        modal.style.zIndex = '99999';
+    let territoryTreeRenderedModo = null;
 
-        if (modalTitle) {
-            modalTitle.textContent = modo === 'empresa' ? 'Comuna Casa Matriz *' : 'Cobertura Geográfica';
+    function syncCheckedTerritory(modo) {
+        const esModoEmpresa = modo === 'empresa';
+        if (esModoEmpresa) {
+            const codEmp = document.getElementById('empresa-comuna')?.value?.trim();
+            tree.querySelectorAll('.comuna-check').forEach(check => {
+                check.checked = (check.value === codEmp);
+            });
+        } else {
+            const currentCodes = comunasManager ? comunasManager.getCodes() : [];
+            const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
+            tree.querySelectorAll('.comuna-check').forEach(check => {
+                check.checked = selectedSet.has(String(check.value).trim());
+            });
+            tree.querySelectorAll('.tree-province').forEach(updateParentState);
+            tree.querySelectorAll('.tree-region').forEach(updateParentState);
         }
-        if (modalDesc) {
-            modalDesc.textContent = modo === 'empresa'
-                ? 'Navega en el árbol territorial y selecciona la comuna donde opera la casa matriz de la empresa.'
-                : 'Marca o desmarca regiones, provincias o comunas específicas para tus filtros.';
-        }
+        updateCounter();
+    }
 
-        const codComunaEmpresa = document.getElementById('empresa-comuna')?.value?.trim() || '';
+    async function abrirModal(modo, triggerBtn = null) {
+        if (triggerBtn) setButtonLoading(triggerBtn, true, 'Abriendo territorio...');
 
-        try {
-            const resp = await fetch(`/api/catalogos-preferencias/?tipo=territorio&comuna_empresa=${encodeURIComponent(codComunaEmpresa)}`);
-            territoryData = await resp.json();
-            renderTree(territoryData);
-        } catch (err) {
-            console.error('[SmartBids] Error al cargar datos de territorio:', err);
-            tree.innerHTML = '<p style="color: #e53e3e; text-align: center;">Error al cargar datos territoriales.</p>';
-        }
+        setTimeout(async () => {
+            try {
+                modoModalTerritorio = modo;
+                modal.classList.add('active');
+                modal.style.display = 'flex';
+                modal.style.zIndex = '99999';
+
+                if (modalTitle) {
+                    modalTitle.textContent = modo === 'empresa' ? 'Comuna Casa Matriz *' : 'Cobertura Geográfica';
+                }
+                if (modalDesc) {
+                    modalDesc.textContent = modo === 'empresa'
+                        ? 'Navega en el árbol territorial y selecciona la comuna donde opera la casa matriz de la empresa.'
+                        : 'Marca o desmarca regiones, provincias o comunas específicas para tus filtros.';
+                }
+
+                const codComunaEmpresa = document.getElementById('empresa-comuna')?.value?.trim() || '';
+
+                if (!territoryData) {
+                    tree.innerHTML = `
+                        <div style="text-align: center; color: var(--muted-teal); padding: 3rem;">
+                            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.8rem; color: var(--accent-green); margin-bottom: 0.8rem; display: block;"></i>
+                            <span style="font-weight: 700; color: var(--dark-green);">Cargando catálogo territorial...</span>
+                        </div>
+                    `;
+
+                    const resp = await fetch(`/api/catalogos-preferencias/?tipo=territorio&comuna_empresa=${encodeURIComponent(codComunaEmpresa)}`);
+                    territoryData = await resp.json();
+                    renderTree(territoryData);
+                    territoryTreeRenderedModo = modo;
+                } else if (territoryTreeRenderedModo !== modo) {
+                    renderTree(territoryData);
+                    territoryTreeRenderedModo = modo;
+                } else {
+                    syncCheckedTerritory(modo);
+                }
+            } catch (err) {
+                console.error('[SmartBids] Error al cargar datos de territorio:', err);
+                tree.innerHTML = '<p style="color: #e53e3e; text-align: center;">Error al cargar datos territoriales.</p>';
+            } finally {
+                if (triggerBtn) setButtonLoading(triggerBtn, false);
+            }
+        }, 25);
     }
 
     if (openBtnCobertura && openBtnCobertura.dataset.bound !== 'true') {
         openBtnCobertura.dataset.bound = 'true';
-        openBtnCobertura.addEventListener('click', () => abrirModal('cobertura'));
+        openBtnCobertura.addEventListener('click', () => abrirModal('cobertura', openBtnCobertura));
     }
 
     if (openBtnEmpresa && openBtnEmpresa.dataset.bound !== 'true') {
         openBtnEmpresa.dataset.bound = 'true';
         openBtnEmpresa.addEventListener('click', () => {
             if (!openBtnEmpresa.disabled && openBtnEmpresa.style.cursor !== 'not-allowed') {
-                abrirModal('empresa');
+                abrirModal('empresa', openBtnEmpresa);
             }
         });
     }
@@ -601,7 +643,7 @@ async function setupTerritoryTree() {
                 inputLabelEmpresa.style.backgroundColor === '#f1f5f9'
             );
             if (!esBloqueado) {
-                abrirModal('empresa');
+                abrirModal('empresa', openBtnEmpresa);
             }
         });
     }
@@ -864,34 +906,60 @@ async function setupProductsTree() {
         updateCounter();
     }
 
+    let productosTreeRendered = false;
+
+    function syncCheckedProductos() {
+        const currentCodes = productosManager ? productosManager.getCodes() : [];
+        const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
+        tree.querySelectorAll('.prod-check').forEach(check => {
+            check.checked = selectedSet.has(String(check.value).trim());
+        });
+        tree.querySelectorAll('.tree-nivel').forEach(updateParentNivelState);
+        tree.querySelectorAll('.tree-grupo').forEach(updateParentGrupoState);
+        updateCounter();
+    }
+
     if (openBtn && openBtn.dataset.bound !== 'true') {
         openBtn.dataset.bound = 'true';
-        openBtn.addEventListener('click', async () => {
-            modal.classList.add('active');
-            modal.style.display = 'flex';
-            modal.style.zIndex = '99999';
+        openBtn.addEventListener('click', () => {
+            setButtonLoading(openBtn, true, 'Abriendo catálogo...');
 
-            if (searchInput) searchInput.value = '';
-
-            if (!productosData) {
-                tree.innerHTML = `
-                    <div style="text-align: center; color: var(--muted-teal); padding: 3rem;">
-                        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.8rem; color: var(--accent-green); margin-bottom: 0.8rem; display: block;"></i>
-                        <span style="font-weight: 700; color: var(--dark-green);">Cargando catálogo completo de productos ONU...</span>
-                    </div>
-                `;
-
+            setTimeout(async () => {
                 try {
-                    const resp = await fetch('/api/catalogos-preferencias/?tipo=productos_arbol');
-                    productosData = await resp.json();
-                    renderTree(productosData);
+                    modal.classList.add('active');
+                    modal.style.display = 'flex';
+                    modal.style.zIndex = '99999';
+
+                    if (searchInput && searchInput.value) {
+                        searchInput.value = '';
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+
+                    if (!productosData) {
+                        tree.innerHTML = `
+                            <div style="text-align: center; color: var(--muted-teal); padding: 3rem;">
+                                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.8rem; color: var(--accent-green); margin-bottom: 0.8rem; display: block;"></i>
+                                <span style="font-weight: 700; color: var(--dark-green);">Cargando catálogo completo de productos ONU...</span>
+                            </div>
+                        `;
+
+                        const resp = await fetch('/api/catalogos-preferencias/?tipo=productos_arbol');
+                        productosData = await resp.json();
+                        renderTree(productosData);
+                        productosTreeRendered = true;
+                    } else if (!productosTreeRendered) {
+                        renderTree(productosData);
+                        productosTreeRendered = true;
+                    } else {
+                        syncCheckedProductos();
+                    }
                 } catch (err) {
                     console.error('[SmartBids] Error al cargar catálogo de productos:', err);
                     tree.innerHTML = '<p style="color: #e53e3e; text-align: center; padding: 2rem;">Error al cargar el catálogo de productos.</p>';
+                } finally {
+                    setButtonLoading(openBtn, false);
                 }
-            } else {
-                renderTree(productosData);
-            }
+            }, 25);
         });
     }
 
@@ -1266,43 +1334,76 @@ async function setupUcomTree() {
         applyFilters();
     }
 
+    let ucomTreeRendered = false;
+
+    function syncCheckedUcom() {
+        const currentCodes = ucomManager ? ucomManager.getCodes() : [];
+        const selectedSet = new Set(currentCodes.map(c => String(c).trim()));
+        tree.querySelectorAll('.ucom-check').forEach(check => {
+            check.checked = selectedSet.has(String(check.value).trim());
+        });
+        tree.querySelectorAll('.tree-organismo').forEach(o => {
+            updateParentState(o, '.tree-children input.ucom-check', ':scope > .tree-header input.org-check');
+        });
+        tree.querySelectorAll('.tree-sector').forEach(s => {
+            updateParentState(s, '.tree-children input.ucom-check', ':scope > .tree-header input.sec-check');
+        });
+        updateCounter();
+        applyFilters();
+    }
+
     if (openBtn && openBtn.dataset.bound !== 'true') {
         openBtn.dataset.bound = 'true';
-        openBtn.addEventListener('click', async () => {
-            modal.classList.add('active');
-            modal.style.display = 'flex';
-            modal.style.zIndex = '99999';
+        openBtn.addEventListener('click', () => {
+            setButtonLoading(openBtn, true, 'Abriendo entidades...');
 
-            if (sectorSelect) sectorSelect.value = '';
-            if (searchInput) searchInput.value = '';
-
-            if (!ucomData) {
-                tree.innerHTML = `
-                    <div style="text-align: center; color: var(--muted-teal); padding: 3rem;">
-                        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.8rem; color: var(--accent-green); margin-bottom: 0.8rem; display: block;"></i>
-                        <span style="font-weight: 700; color: var(--dark-green);">Cargando catálogo oficial de organismos y unidades...</span>
-                    </div>
-                `;
-
+            setTimeout(async () => {
                 try {
-                    const resp = await fetch('/api/catalogos-preferencias/?tipo=ucom_arbol');
-                    const jsonRes = await resp.json();
+                    modal.classList.add('active');
+                    modal.style.display = 'flex';
+                    modal.style.zIndex = '99999';
 
-                    if (!resp.ok || jsonRes.status === 'error') {
-                        throw new Error(jsonRes.mensaje || `Error HTTP ${resp.status}`);
+                    if (sectorSelect && sectorSelect.value) {
+                        sectorSelect.value = '';
+                    }
+                    if (searchInput && searchInput.value) {
+                        searchInput.value = '';
+                        searchInput.dispatchEvent(new Event('input'));
                     }
 
-                    ucomData = jsonRes;
-                    populateSectorSelect(ucomData.sectores_lista);
-                    renderTree(ucomData);
+                    if (!ucomData) {
+                        tree.innerHTML = `
+                            <div style="text-align: center; color: var(--muted-teal); padding: 3rem;">
+                                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.8rem; color: var(--accent-green); margin-bottom: 0.8rem; display: block;"></i>
+                                <span style="font-weight: 700; color: var(--dark-green);">Cargando catálogo oficial de organismos y unidades...</span>
+                            </div>
+                        `;
+
+                        const resp = await fetch('/api/catalogos-preferencias/?tipo=ucom_arbol');
+                        const jsonRes = await resp.json();
+
+                        if (!resp.ok || jsonRes.status === 'error') {
+                            throw new Error(jsonRes.mensaje || `Error HTTP ${resp.status}`);
+                        }
+
+                        ucomData = jsonRes;
+                        populateSectorSelect(ucomData.sectores_lista);
+                        renderTree(ucomData);
+                        ucomTreeRendered = true;
+                    } else if (!ucomTreeRendered) {
+                        populateSectorSelect(ucomData.sectores_lista);
+                        renderTree(ucomData);
+                        ucomTreeRendered = true;
+                    } else {
+                        syncCheckedUcom();
+                    }
                 } catch (err) {
                     console.error('[SmartBids] Error al cargar unidades de compra:', err);
                     tree.innerHTML = `<p style="color: #e53e3e; text-align: center; padding: 2rem;">Error al cargar catálogo de unidades: ${err.message}</p>`;
+                } finally {
+                    setButtonLoading(openBtn, false);
                 }
-            } else {
-                populateSectorSelect(ucomData.sectores_lista);
-                renderTree(ucomData);
-            }
+            }, 25);
         });
     }
 
@@ -1767,7 +1868,6 @@ export async function evaluarYMostrarModalPerfil(datosPerfil) {
     // Verificar si el usuario omitió recientemente el aviso
     const omitidoHasta = localStorage.getItem(KEY_OMITIR_MODAL);
     if (omitidoHasta && Date.now() < Number(omitidoHasta)) {
-        console.info('[SmartBids] Modal de perfil pospuesto por omisión previa.');
         return;
     }
 

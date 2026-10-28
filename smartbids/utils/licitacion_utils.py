@@ -9,9 +9,9 @@ import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from .models.core import Suscriptor
-from .models.catalog import Sector, Organismo
-from .models.procurement import UnidadCompra
+from smartbids.models.core import Suscriptor
+from smartbids.models.catalog import Sector, Organismo
+from smartbids.models.procurement import UnidadCompra
 
 CACHE_KEY_CATALOGO_TIPOS_LICITACION = 'sb_catalogo_tipos_licitacion_v2'
 
@@ -79,7 +79,7 @@ def obtener_catalogo_tipos_licitacion():
     }
 
     try:
-        from .models.catalog import TipoLicitacion
+        from smartbids.models.catalog import TipoLicitacion
         todos_deseados = codigos_publicos + codigos_privados
         db_qs = TipoLicitacion.objects.select_related(
             'codigo_cat_licitacion', 'codigo_tramo_licitacion'
@@ -176,8 +176,8 @@ def obtener_catalogo_organismos_ucom(sector_codigo=None, q=None):
 
     cached_data = cache.get(CACHE_KEY_CATALOGO_UCOM_ARBOL)
     if not cached_data:
-        from .models.catalog import Sector, Organismo
-        from .models.procurement import UnidadCompra
+        from smartbids.models.catalog import Sector, Organismo
+        from smartbids.models.procurement import UnidadCompra
 
         try:
             sectores_qs = Sector.objects.values('codigo_sector', 'nombre_sector').order_by('nombre_sector')
@@ -565,3 +565,35 @@ def generar_excel_multitabla_response(filename, tablas_dict):
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+def obtener_mapa_comunas():
+    """
+    Retorna un diccionario en caché con el mapeo {codigo_comuna: nombre_comuna}
+    de las comunas de Chile para evitar consultas repetitivas al renderizar licitaciones.
+    """
+    from django.core.cache import cache
+    mapa = cache.get('mapa_comunas_dict')
+    if mapa is None:
+        try:
+            from smartbids.models.catalog import Comuna
+            mapa = dict(Comuna.objects.values_list('codigo_comuna', 'nombre_comuna'))
+            cache.set('mapa_comunas_dict', mapa, 86400)
+        except Exception:
+            mapa = {}
+    return mapa
+
+
+def obtener_nombre_comuna(codigo):
+    """
+    Traduce un código de comuna chilena (ej: '13101' o '01101') a su nombre legible (ej: 'Santiago', 'Iquique').
+    Si no se encuentra en el catálogo o no es válido, retorna el código original.
+    """
+    if not codigo:
+        return ''
+    cod = str(codigo).strip()
+    if not cod:
+        return ''
+    mapa = obtener_mapa_comunas()
+    return mapa.get(cod) or mapa.get(cod.zfill(5)) or cod
+

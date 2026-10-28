@@ -12,8 +12,8 @@ from google.auth.transport.requests import AuthorizedSession
 from google.oauth2 import service_account
 
 from .mensajeria_views import _respuesta_acceso_denegado, _usuario_es_administrador
-from .models import EstadoSuscriptor, Preferencia, Suscriptor
-from .models.config import registrar_auditoria_admin, notificar_accion_entre_administradores
+from smartbids.models import EstadoSuscriptor, Preferencia, Suscriptor
+from smartbids.models.config import registrar_auditoria_admin, notificar_accion_entre_administradores
 
 
 GOOGLE_CLOUD_SCOPES = ['https://www.googleapis.com/auth/cloud-platform']

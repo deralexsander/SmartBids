@@ -31,3 +31,15 @@ from .mensajeria_views import (
     administrar_config_correo, auditoria_admin_view,
 )
 from .firebase_policy_views import politica_contrasenas_firebase, usuarios_firebase
+
+from . import (
+    page_views,
+    dashboard_views,
+    licitaciones_views,
+    resumen_views,
+    tracking_views,
+    auth_views,
+    perfil_views,
+    mensajeria_views,
+    firebase_policy_views,
+)
