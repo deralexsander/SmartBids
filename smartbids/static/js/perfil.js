@@ -3012,3 +3012,119 @@ document.addEventListener('smartbids:admin-ready', () => {
     const adminSection = document.getElementById('perfil-admin-section');
     if (adminSection) adminSection.style.display = 'block';
 });
+
+// ==========================================================================
+// 12. GESTIÓN DE DERECHOS ARCOP (LEY N° 21.719)
+// ==========================================================================
+function inicializarDerechosArcop() {
+    const btnExportar = document.getElementById('btn-exportar-datos-arcop');
+    if (btnExportar) {
+        btnExportar.addEventListener('click', async () => {
+            const uid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
+            if (!uid) {
+                mostrarMensaje('No se detectó una sesión activa para exportar tus datos.', 'error');
+                return;
+            }
+
+            setButtonLoading(btnExportar, true, 'Exportando...');
+            try {
+                const response = await fetch('/api/arcop/exportar-datos/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: uid })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.mensaje || 'Error al generar la exportación.');
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `smartbids_mis_datos_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+                mostrarMensaje('Tus datos han sido exportados en formato JSON conforme a la Ley N° 21.719.', 'exito');
+            } catch (err) {
+                console.error('[ARCOP] Error en descarga:', err);
+                mostrarMensaje(err.message || 'No se pudieron descargar tus datos.', 'error');
+            } finally {
+                setButtonLoading(btnExportar, false);
+            }
+        });
+    }
+
+    const modalCancelacion = document.getElementById('modal-cancelacion-cuenta');
+    const btnAbrirModal = document.getElementById('btn-abrir-modal-cancelacion');
+    const btnCerrarModal = document.getElementById('btn-cerrar-modal-cancelacion');
+    const btnCancelarAccion = document.getElementById('btn-cancelar-accion-eliminar');
+    const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar-cuenta');
+    const inputMotivo = document.getElementById('motivo-cancelacion-arcop');
+
+    const cerrarModalCancelacion = () => {
+        if (modalCancelacion) modalCancelacion.style.display = 'none';
+        if (inputMotivo) inputMotivo.value = '';
+    };
+
+    if (btnAbrirModal && modalCancelacion) {
+        btnAbrirModal.addEventListener('click', () => {
+            modalCancelacion.style.display = 'flex';
+        });
+    }
+
+    if (btnCerrarModal) btnCerrarModal.addEventListener('click', cerrarModalCancelacion);
+    if (btnCancelarAccion) btnCancelarAccion.addEventListener('click', cerrarModalCancelacion);
+
+    if (btnConfirmarEliminar) {
+        btnConfirmarEliminar.addEventListener('click', async () => {
+            const uid = auth.currentUser?.uid || localStorage.getItem('smartbids_uid');
+            if (!uid) {
+                mostrarMensaje('No se detectó una sesión activa.', 'error');
+                return;
+            }
+
+            const motivo = inputMotivo ? inputMotivo.value.trim() : '';
+            setButtonLoading(btnConfirmarEliminar, true, 'Procesando baja...');
+
+            try {
+                const response = await fetch('/api/arcop/solicitar-cancelacion/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: uid, motivo: motivo })
+                });
+
+                const data = await response.json();
+                if (!response.ok || data.status !== 'ok') {
+                    throw new Error(data.mensaje || 'No se pudo procesar la solicitud.');
+                }
+
+                cerrarModalCancelacion();
+                sessionStorage.setItem('flash_message', JSON.stringify({
+                    texto: 'Tu cuenta ha sido dada de baja exitosamente conforme a la Ley N° 21.719.',
+                    tipo: 'info',
+                    duracion: 10000
+                }));
+
+                try {
+                    await signOut(auth);
+                } catch (_) {}
+                SessionManager.cerrarSesion();
+            } catch (err) {
+                console.error('[ARCOP] Error en cancelación:', err);
+                mostrarMensaje(err.message || 'Error al procesar la cancelación de cuenta.', 'error');
+                setButtonLoading(btnConfirmarEliminar, false);
+            }
+        });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarDerechosArcop);
+} else {
+    inicializarDerechosArcop();
+}

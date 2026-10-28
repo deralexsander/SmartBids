@@ -426,6 +426,37 @@ html.dark-mode .info__security-description {
     color: var(--text-muted) !important;
 }
 
+html.dark-mode .info__hero-legal-meta {
+    color: var(--text-muted) !important;
+}
+
+html.dark-mode .info__hero-legal-meta strong {
+    color: var(--text-primary) !important;
+}
+
+html.dark-mode .info__arcop-alert-box {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-left: 4px solid var(--accent-green) !important;
+}
+
+html.dark-mode .info__arcop-alert-text {
+    color: var(--text-body) !important;
+}
+
+html.dark-mode .info__arcop-alert-text strong {
+    color: var(--text-primary) !important;
+}
+
+html.dark-mode .info__arcop-alert-link {
+    color: var(--accent-green) !important;
+}
+
+html.dark-mode .info__arcop-alert-link:hover {
+    color: #4ade80 !important;
+}
+
+
 /* ==============================================================================
    4. BLOQUEO DE PALABRAS CLAVE EN PERFIL
    ============================================================================== */
@@ -1160,6 +1191,43 @@ html.dark-mode .auth__help-btn:hover {
     background: rgba(30, 196, 152, 0.15) !important;
     border-color: var(--accent-green) !important;
 }
+
+html.dark-mode .auth__consent-item {
+    color: var(--text-muted) !important;
+}
+
+html.dark-mode .auth__consent-label a {
+    color: var(--accent-green) !important;
+}
+
+html.dark-mode .auth__consent-label a:hover {
+    color: #4ade80 !important;
+}
+
+/* Cookie Banner Dark Mode */
+html.dark-mode .cookie-banner {
+    background: #182234 !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.55) !important;
+}
+
+html.dark-mode .cookie-banner__text {
+    color: #e2e8f0 !important;
+}
+
+html.dark-mode .cookie-banner__text strong {
+    color: #ffffff !important;
+}
+
+html.dark-mode .cookie-banner__link {
+    color: var(--accent-green) !important;
+}
+
+html.dark-mode .cookie-banner__link:hover {
+    color: #4ade80 !important;
+}
+
+
 
 html.dark-mode .action-card {
     background: var(--bg-surface) !important;
@@ -1973,3 +2041,30 @@ html.dark-mode #delete-user-modal .modal-2fa-card {
     border: 1px solid var(--border-subtle) !important;
     color: var(--text-body) !important;
 }
+
+/* ===== ARCOP Derechos Dark Mode (Ley N° 21.719) ===== */
+html.dark-mode .arcop-card {
+    background: var(--bg-surface) !important;
+    border-color: var(--border-subtle) !important;
+}
+
+html.dark-mode .arcop-card__body h4 {
+    color: #ffffff !important;
+}
+
+html.dark-mode .arcop-card__body p {
+    color: var(--text-muted) !important;
+}
+
+html.dark-mode .arcop-meta-box {
+    background: #0f172a !important;
+    border-color: var(--border-subtle) !important;
+    color: #e2e8f0 !important;
+}
+
+html.dark-mode #modal-cancelacion-cuenta .modal-2fa-card {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-body) !important;
+}
+

@@ -20,6 +20,35 @@ def extraer_correo_contacto(texto):
     correos = obtener_correos_sistema()
     return correos.get('email_contacto', EMAIL_CONTACTO_RESPALDO)
 
+
+def extraer_razon_social(texto):
+    """
+    Extrae dinámicamente la Razón Social desde líneas como 'Razón Social: no informada' o 'Razon Social: ...'
+    """
+    if not texto:
+        return 'no informada'
+    match = re.search(r'(?:Razón|Razon)\s*Social\s*:\s*(.+)', texto, re.IGNORECASE)
+    if match:
+        val = match.group(1).strip()
+        if val:
+            return val
+    return 'no informada'
+
+
+def extraer_rut_empresa(texto):
+    """
+    Extrae dinámicamente el RUT institucional desde líneas como 'RUT: 00000000-5'
+    """
+    if not texto:
+        return '00000000-5'
+    match = re.search(r'RUT\s*:\s*(.+)', texto, re.IGNORECASE)
+    if match:
+        val = match.group(1).strip()
+        if val:
+            return val
+    return '00000000-5'
+
+
 def footer_info_context(request):
     """
     Inyecta la información institucional y de contacto del footer en todos los templates.
@@ -28,11 +57,15 @@ def footer_info_context(request):
     lineas_contacto = []
     empresas_list = []
     contacto_email = correos.get('email_contacto', EMAIL_CONTACTO_RESPALDO)
+    razon_social = 'no informada'
+    rut = '00000000-5'
 
     try:
         info = InfoContacto.objects.first()
         if info:
             contacto_email = extraer_correo_contacto(info.contacto_texto)
+            razon_social = extraer_razon_social(info.contacto_texto)
+            rut = extraer_rut_empresa(info.contacto_texto)
             if info.contacto_texto:
                 lineas_contacto = [
                     linea.strip() 
@@ -48,5 +81,7 @@ def footer_info_context(request):
         'footer_contacto_lineas': lineas_contacto,
         'footer_empresas': empresas_list,
         'contacto_email': contacto_email,
+        'razon_social': razon_social,
+        'rut': rut,
         'app_version': getattr(settings, 'APP_VERSION', 'v1.0.0'),
     }

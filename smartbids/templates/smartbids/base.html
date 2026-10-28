@@ -239,8 +239,11 @@
     {% block contenido %}{% endblock %}
     {% block footer %}{% endblock %}
 
+    {% include 'smartbids/includes/cookie_banner.html' %}
+
     <script type="module" src="{% static 'js/firebase-config.js' %}"></script>
     <script type="module" src="{% static 'js/theme.js' %}"></script>
+    <script src="{% static 'js/cookie-banner.js' %}"></script>
     <script type="module" src="{% static 'js/auth-state.js' %}"></script>
     <script type="module" src="{% static 'js/ui.js' %}?v=3"></script>
     <script type="module" src="{% static 'js/session.js' %}"></script>

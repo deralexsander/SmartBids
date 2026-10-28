@@ -1233,3 +1233,106 @@
     letter-spacing: 0.3px;
     text-transform: uppercase;
 }
+
+/* ==========================================================================
+   DERECHOS DE PRIVACIDAD ARCOP (LEY N° 21.719)
+   ========================================================================== */
+.arcop-cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.arcop-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.6rem;
+    background: var(--light-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.arcop-card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+.arcop-card--danger {
+    border-left: 4px solid #dc2626;
+}
+
+.arcop-card__icon {
+    font-size: 2rem;
+    color: var(--accent-green);
+    background: rgba(30, 196, 152, 0.12);
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.arcop-card--danger .arcop-card__icon {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.12);
+}
+
+.arcop-card__body {
+    flex: 1;
+}
+
+.arcop-card__body h4 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark-green);
+}
+
+.arcop-card__body p {
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+    color: var(--gray-text);
+    line-height: 1.5;
+}
+
+.arcop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.arcop-btn--danger {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.arcop-btn--danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.arcop-meta-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    padding: 0.85rem 1rem;
+    background: var(--white);
+    border-radius: 8px;
+    font-size: 0.86rem;
+    color: var(--dark-green);
+    border: 1px solid var(--border-color);
+}
+
+.arcop-meta-box i {
+    color: var(--accent-green);
+    margin-right: 0.35rem;
+}
+
