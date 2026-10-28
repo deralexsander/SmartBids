@@ -108,13 +108,18 @@ CACHE_KEY_PRODUCTOS_ARBOL = 'catalogos_productos_arbol_v2'
 
 
 
+from smartbids.utils.palabras_utils import (
+    normalizar_texto,
+    procesar_palabras_usuario,
+    sanitizar_caracteres_especiales,
+    leer_STOPWORDS,
+    filtrar_STOPWORDS,
+    obtener_palabras_unicas,
+)
+
+# Alias para compatibilidad de normalización usando el pipeline oficial de SmartBids
 def normalizar_cadena_simple(texto: str) -> str:
-    if not texto:
-        return ''
-    norm = unicodedata.normalize('NFD', str(texto))
-    sin_tildes = ''.join(c for c in norm if unicodedata.category(c) != 'Mn')
-    limpio = re.sub(r'[^a-zA-Z0-9\s]', ' ', sin_tildes)
-    return ' '.join(limpio.lower().split())
+    return normalizar_texto(texto)
 
 
 @csrf_exempt
@@ -536,6 +541,7 @@ def obtener_perfil_suscriptor(request):
                     'ucom_detalle': ucom_detalle,
                     'pref_tipo_licitacion': to_list(pref.pref_tipo_licitacion) if pref else [],
                     'pref_palabras_claves': to_list(pref.pref_palabras_claves) if pref else [],
+                    'pref_palabras_claves_norm': to_list(pref.pref_palabras_claves_norm) if pref else [],
                 } if pref else {}
             }
         })
@@ -584,23 +590,13 @@ def actualizar_preferencias_suscriptor(request):
                     continue
             pref.pref_ucom = ucom
 
-        palabras_limpias = None
+        palabras_usuario_final = None
         if 'pref_palabras_claves' in data:
             palabras_recibidas = data.get('pref_palabras_claves', [])
-            if isinstance(palabras_recibidas, str):
-                palabras_recibidas = palabras_recibidas.split(',')
-
-            palabras_limpias = []
-            palabras_set = set()
-            for w in palabras_recibidas:
-                token = normalizar_cadena_simple(str(w))
-                if token and len(token) > 1:
-                    for item in token.split():
-                        item = item[:50].strip()
-                        if len(item) > 1 and item not in palabras_set:
-                            palabras_set.add(item)
-                            palabras_limpias.append(item)
-            pref.pref_palabras_claves = palabras_limpias
+            palabras_orig, palabras_norm = procesar_palabras_usuario(palabras_recibidas, npal=3)
+            pref.pref_palabras_claves = palabras_orig
+            pref.pref_palabras_claves_norm = palabras_norm
+            palabras_usuario_final = palabras_orig
 
         pref.save()
 
@@ -611,8 +607,9 @@ def actualizar_preferencias_suscriptor(request):
             'status': 'ok',
             'mensaje': 'Preferencias guardadas con éxito.'
         }
-        if palabras_limpias is not None:
-            response_payload['palabras_sanitizadas'] = palabras_limpias
+        if palabras_usuario_final is not None:
+            response_payload['palabras_sanitizadas'] = palabras_usuario_final
+            response_payload['palabras_norm'] = pref.pref_palabras_claves_norm or []
 
         return JsonResponse(response_payload)
 
@@ -976,6 +973,7 @@ def exportar_datos_arcop(request):
                 'tipos_licitacion': pref.pref_tipo_licitacion or [],
                 'productos_codigos': pref.pref_productos or [],
                 'palabras_claves': pref.pref_palabras_claves or [],
+                'palabras_claves_normalizadas': pref.pref_palabras_claves_norm or [],
             }
 
         # Licitaciones en seguimiento

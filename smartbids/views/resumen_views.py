@@ -51,14 +51,15 @@ def resumen_dia_view(request):
     # 2. Preferencias del suscriptor y filtros de match
     preferencias = Preferencia.objects.filter(id_suscriptor=suscriptor).first() if suscriptor else None
     palabras = preferencias.pref_palabras_claves if preferencias and preferencias.pref_palabras_claves else []
+    palabras_norm = preferencias.pref_palabras_claves_norm if preferencias and preferencias.pref_palabras_claves_norm else []
     productos = preferencias.pref_productos if preferencias and preferencias.pref_productos else []
     tipos = [str(t).strip() for t in (preferencias.pref_tipo_licitacion or []) if str(t).strip()] if preferencias else []
     comunas = [str(c).strip() for c in (preferencias.pref_comunas or []) if str(c).strip()] if preferencias else []
     ucom_ids = [int(u) for u in (preferencias.pref_ucom or []) if str(u).strip().isdigit()] if preferencias else []
-    tiene_palabras_perfil = bool(palabras or productos or tipos or comunas or ucom_ids)
+    tiene_palabras_perfil = bool(palabras or palabras_norm or productos or tipos or comunas or ucom_ids)
 
     q_contenido = Q()
-    if palabras:
+    if palabras or palabras_norm:
         q_palabras = Q()
         for palabra in palabras:
             q_palabras |= (
@@ -66,6 +67,8 @@ def resumen_dia_view(request):
                 | Q(lic_nombre__icontains=palabra)
                 | Q(lic_descripcion__icontains=palabra)
             )
+        if palabras_norm:
+            q_palabras |= Q(lic_palabras_claves_norm__overlap=palabras_norm)
         q_contenido |= q_palabras
 
     if productos:

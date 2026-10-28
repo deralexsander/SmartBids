@@ -54,6 +54,18 @@ class Suscriptor(models.Model):
     def __str__(self):
         return f"Suscriptor {self.id_suscriptor} - {self.codigo_estado.nombre_estado}"
 
+    @property
+    def palabras_claves(self):
+        """Retorna las palabras clave originales ingresadas por el suscriptor."""
+        pref = getattr(self, 'preferencia', None)
+        return pref.pref_palabras_claves if pref else []
+
+    @property
+    def palabras_claves_norm(self):
+        """Retorna el conjunto de palabras clave normalizadas (NLP) del suscriptor."""
+        pref = getattr(self, 'preferencia', None)
+        return pref.pref_palabras_claves_norm if pref else []
+
 
 class Preferencia(models.Model):
     id_suscriptor = models.OneToOneField('Suscriptor', models.DO_NOTHING, db_column='id_suscriptor', primary_key=True)

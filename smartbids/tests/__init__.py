@@ -94,6 +94,99 @@ class PreferenciasTests(SimpleTestCase):
         self.assertEqual(normalizar_cadena_simple("¡Cloud & Seguridad!"), "cloud seguridad")
         self.assertEqual(normalizar_cadena_simple(""), "")
 
+    def test_nlp_sanitizar_caracteres_especiales(self):
+        from smartbids.utils.palabras_utils import sanitizar_caracteres_especiales
+        texto_con_control = "Servidor\x00\x08 IBM\x1F Cloud\ue000"
+        self.assertEqual(sanitizar_caracteres_especiales(texto_con_control), "Servidor IBM Cloud")
+
+    def test_nlp_filtrar_stopwords(self):
+        from smartbids.utils.palabras_utils import filtrar_STOPWORDS
+        sw = {"de", "y", "el", "la", "en"}
+        texto = "sistema de gestion y control en la nube"
+        self.assertEqual(filtrar_STOPWORDS(texto, sw), "sistema gestion control nube")
+
+    def test_nlp_obtener_palabras_unicas_ngramas(self):
+        from smartbids.utils.palabras_utils import obtener_palabras_unicas
+        texto = "sistema riesgo"
+        # npal = 1 (unigramas)
+        self.assertEqual(obtener_palabras_unicas(texto, npal=1), {"sistema", "riesgo"})
+        # npal = 2 (unigramas y bigramas)
+        self.assertEqual(obtener_palabras_unicas(texto, npal=2), {"sistema", "riesgo", "sistema riesgo"})
+        # npal = 3 (unigramas, bigramas y trigramas)
+        texto_tri = "mesa ayuda tecnica"
+        tokens_tri = obtener_palabras_unicas(texto_tri, npal=3)
+        self.assertIn("mesa", tokens_tri)
+        self.assertIn("ayuda", tokens_tri)
+        self.assertIn("tecnica", tokens_tri)
+        self.assertIn("mesa ayuda", tokens_tri)
+        self.assertIn("ayuda tecnica", tokens_tri)
+        self.assertIn("mesa ayuda tecnica", tokens_tri)
+
+    def test_nlp_normalizar_texto_completo(self):
+        from smartbids.utils.palabras_utils import normalizar_texto
+        sw = {"de", "para"}
+        # Tildes, números aislados, signos de puntuación y stopwords
+        texto = "Mantención de Computadores +2026 para Diseño Web & Redes!"
+        norm = normalizar_texto(texto, stopwords_set=sw)
+        self.assertEqual(norm, "mantencion computadores diseno web redes")
+
+    def test_nlp_procesar_palabras_usuario_dual(self):
+        from unittest.mock import patch
+        from smartbids.utils.palabras_utils import procesar_palabras_usuario
+        with patch('smartbids.utils.palabras_utils.leer_STOPWORDS', return_value={"de", "y", "el"}):
+            entrada = ["Computadora", "Sistema de Riesgo", "Auditoría ISO 9001"]
+            orig, norm = procesar_palabras_usuario(entrada, npal=3)
+            # Escritura original del usuario intacta
+            self.assertEqual(orig, ["Computadora", "Sistema de Riesgo", "Auditoría ISO 9001"])
+            # Conjunto normalizado con unigramas y n-gramas
+            self.assertIn("computadora", norm)
+            self.assertIn("sistema", norm)
+            self.assertIn("riesgo", norm)
+            self.assertIn("sistema riesgo", norm)
+            self.assertIn("auditoria", norm)
+            self.assertIn("iso", norm)
+            self.assertIn("auditoria iso", norm)
+            # El número aislado 9001 y la stopword 'de' no deben estar
+            self.assertNotIn("9001", norm)
+            self.assertNotIn("de", norm)
+
+    def test_actualizar_preferencias_api_guarda_campos_duales(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from django.test import RequestFactory
+        from smartbids.views.perfil_views import actualizar_preferencias_suscriptor
+
+        rf = RequestFactory()
+        body = json.dumps({
+            'uid': 'test-firebase-uid',
+            'pref_palabras_claves': ['Computadora', 'Sistema de Riesgo']
+        }).encode('utf-8')
+        req = rf.post('/api/actualizar-preferencias/', data=body, content_type='application/json')
+
+        mock_suscriptor = MagicMock()
+        mock_pref = MagicMock()
+        mock_pref.pref_palabras_claves = []
+        mock_pref.pref_palabras_claves_norm = []
+
+        with patch('smartbids.views.perfil_views.Suscriptor.objects.filter') as mock_filter, \
+             patch('smartbids.views.perfil_views.validar_autorizacion_suscriptor', return_value=(True, '')), \
+             patch('smartbids.views.perfil_views.Preferencia.objects.get_or_create', return_value=(mock_pref, False)), \
+             patch('smartbids.utils.palabras_utils.leer_STOPWORDS', return_value={"de"}):
+            
+            mock_filter.return_value.first.return_value = mock_suscriptor
+            resp = actualizar_preferencias_suscriptor(req)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content.decode('utf-8'))
+            self.assertEqual(data['status'], 'ok')
+            # Verifica que la respuesta mantenga las palabras del usuario intactas
+            self.assertEqual(data['palabras_sanitizadas'], ['Computadora', 'Sistema de Riesgo'])
+            # Verifica que pref_palabras_claves contenga la escritura del usuario
+            self.assertEqual(mock_pref.pref_palabras_claves, ['Computadora', 'Sistema de Riesgo'])
+            # Verifica que pref_palabras_claves_norm contenga los tokens normalizados
+            self.assertIn('computadora', mock_pref.pref_palabras_claves_norm)
+            self.assertIn('sistema riesgo', mock_pref.pref_palabras_claves_norm)
+            self.assertNotIn('de', mock_pref.pref_palabras_claves_norm)
+
 
 class VistasExportacionTests(SimpleTestCase):
     def setUp(self):

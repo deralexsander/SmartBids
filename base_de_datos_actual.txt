@@ -150,7 +150,8 @@ desde la plataforma de Mercado Público (ChileCompra).
     lic_descripcion, lic_fecha_cierre, lic_hora_cierre, lic_toma_razon,
     lic_codigo_ucom (FK), lic_fecha_public, lic_fecha_preguntas, lic_fecha_respuestas,
     lic_tipo_licitacion, lic_moneda, lic_presupuesto, lic_items_cantidad,
-    lic_codigos_producto (array), lic_diccionario_palabras (array), lic_texto,
+    lic_codigos_producto (array), lic_diccionario_palabras (array),
+    lic_palabras_claves_norm (array normalizado NLP de la licitación), lic_texto,
     lic_url, lic_plazo, lic_estado (FK).
 
 --------------------------------------------------------------------------------

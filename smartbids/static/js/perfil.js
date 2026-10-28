@@ -1820,12 +1820,7 @@ function autogenerarInicialesEmpresa() {
 }
 
 function sanitizarPalabraClave(texto) {
-    return (texto || '')
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9\s]/g, " ")
-        .split(/\s+/)
-        .filter(w => w.length > 1);
+    return (texto || '').trim();
 }
 
 // ==========================================================================
@@ -2342,8 +2337,16 @@ export async function inicializarVistaPerfil(user) {
             setButtonLoading(btn, true, 'Guardando...');
 
             const rawPalabras = document.getElementById('pref-palabras')?.value || '';
-            const tokens = rawPalabras.split(',').flatMap(p => sanitizarPalabraClave(p));
-            const palabrasLimpias = [...new Set(tokens)];
+            const items = rawPalabras.split(',').map(p => p.trim()).filter(Boolean);
+            const vistos = new Set();
+            const palabrasLimpias = [];
+            for (const item of items) {
+                const k = item.toLowerCase();
+                if (!vistos.has(k)) {
+                    vistos.add(k);
+                    palabrasLimpias.push(item);
+                }
+            }
 
             const payload = {
                 uid: targetUid,
