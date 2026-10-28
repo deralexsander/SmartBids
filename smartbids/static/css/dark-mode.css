@@ -327,6 +327,16 @@ html.dark-mode .home__hero-card {
     border-left-color: var(--accent-green) !important;
 }
 
+html.dark-mode .home__hero-mockup-btn.is-followed {
+    background-color: var(--accent-green) !important;
+    color: #081a14 !important;
+    border-color: var(--accent-green) !important;
+}
+
+html.dark-mode .home__typing-cursor {
+    color: #38efbd !important;
+}
+
 html.dark-mode .home__card-code,
 html.dark-mode .home__card-title,
 html.dark-mode .home__resumen-greeting,

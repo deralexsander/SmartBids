@@ -196,12 +196,132 @@
     gap: 0.8rem;
 }
 
+.home__hero-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.home__simulated-cursor {
+    position: absolute;
+    pointer-events: none;
+    z-index: 25;
+    opacity: 0;
+    width: 24px;
+    height: 24px;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+    transition: left 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+                top 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.35s ease,
+                transform 0.18s ease;
+    transform-origin: top left;
+}
+
+.home__simulated-cursor svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 .home__hero-mockup-btn {
     pointer-events: none !important;
     cursor: default !important;
     user-select: none !important;
     box-shadow: none !important;
     opacity: 0.95;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background-color 0.3s ease,
+                color 0.3s ease,
+                box-shadow 0.3s ease;
+}
+
+.home__hero-mockup-btn.is-pressed {
+    transform: scale(0.92);
+}
+
+.home__hero-mockup-btn.is-followed {
+    background-color: var(--accent-green) !important;
+    color: var(--dark-green) !important;
+    border-color: var(--accent-green) !important;
+    box-shadow: 0 4px 14px rgba(30, 196, 152, 0.35) !important;
+    animation: followedPulse 0.45s ease-out;
+}
+
+@keyframes followedPulse {
+    0% { transform: scale(0.92); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+
+/* Cursor de tipeo para el Explorador */
+.home__typing-cursor {
+    display: inline-block;
+    color: var(--accent-green);
+    font-weight: 700;
+    margin-left: 2px;
+    animation: typingBlink 0.85s infinite;
+}
+
+@keyframes typingBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+#explorador-mock-result-card {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#explorador-mock-result-card.is-visible-card {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#explorador-mock-search-btn {
+    transition: transform 0.18s ease;
+}
+
+#explorador-mock-search-btn.is-active {
+    transform: scale(0.92);
+}
+
+/* Revelado sutil de items en Resumen Diario */
+#resumen-mock-list .home__resumen-item {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#resumen-mock-list.is-visible-items .home__resumen-item:nth-child(1) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.15s;
+}
+
+#resumen-mock-list.is-visible-items .home__resumen-item:nth-child(2) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+}
+
+/* Animación de barras en Data Warehouse */
+.home__chart-graphic .home__chart-bar {
+    transition: height 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home__chart-graphic.is-animated-chart .home__chart-col:nth-child(1) .home__chart-bar {
+    transition-delay: 0.1s;
+}
+.home__chart-graphic.is-animated-chart .home__chart-col:nth-child(2) .home__chart-bar {
+    transition-delay: 0.22s;
+}
+.home__chart-graphic.is-animated-chart .home__chart-col:nth-child(3) .home__chart-bar {
+    transition-delay: 0.34s;
+}
+.home__chart-graphic.is-animated-chart .home__chart-col:nth-child(4) .home__chart-bar {
+    transition-delay: 0.46s;
 }
 
 .home__official-link {

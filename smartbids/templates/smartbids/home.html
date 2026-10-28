@@ -94,17 +94,24 @@
                     </div>
                     <div class="stat-mini-card">
                         <label>Cierre de Ofertas</label>
-                        <div class="home__urgent-text"><i class="fa-regular fa-clock"></i> Faltan 4 días (14:30 hrs)</div>
+                        <div class="home__urgent-text"><i class="fa-regular fa-clock"></i> Faltan 4 días</div>
                     </div>
                 </div>
 
                 <div class="home__hero-card-footer">
-                    <span class="btn btn-primary btn-sm home__hero-mockup-btn" aria-hidden="true" tabindex="-1">
-                        <i class="fa-solid fa-bookmark"></i> Seguir Proceso
+                    <span class="btn btn-primary btn-sm home__hero-mockup-btn" id="hero-follow-mock-btn" aria-hidden="true" tabindex="-1">
+                        <i class="fa-regular fa-bookmark" id="hero-follow-icon"></i> <span id="hero-follow-text">Seguir Proceso</span>
                     </span>
                     <span class="home__official-link">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> Ficha oficial Mercado Público
                     </span>
+                </div>
+
+                <!-- Cursor simulado sutil -->
+                <div class="home__simulated-cursor" id="hero-simulated-cursor" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 3L18 12L11.5 13.5L9 19L4 3Z" fill="var(--accent-green)" stroke="var(--dark-green)" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
                 </div>
             </div>
         </div>
@@ -175,22 +182,22 @@
                         <span class="dash-badge"><i class="fa-solid fa-bolt"></i> En Vivo</span>
                     </div>
 
-                    <div class="home__resumen-kpi-grid">
+                    <div class="home__resumen-kpi-grid" id="resumen-kpi-grid">
                         <div class="home__resumen-kpi-item">
-                            <span class="home__resumen-kpi-num home__resumen-kpi-num--match">32</span>
+                            <span class="home__resumen-kpi-num home__resumen-kpi-num--match" data-count-target="32">0</span>
                             <span class="home__resumen-kpi-lbl">Matches de hoy</span>
                         </div>
                         <div class="home__resumen-kpi-item">
-                            <span class="home__resumen-kpi-num home__resumen-kpi-num--follow">5</span>
+                            <span class="home__resumen-kpi-num home__resumen-kpi-num--follow" data-count-target="5">0</span>
                             <span class="home__resumen-kpi-lbl">En seguimiento</span>
                         </div>
                         <div class="home__resumen-kpi-item">
-                            <span class="home__resumen-kpi-num home__resumen-kpi-num--urgent">2</span>
+                            <span class="home__resumen-kpi-num home__resumen-kpi-num--urgent" data-count-target="2">0</span>
                             <span class="home__resumen-kpi-lbl">Cierres &lt; 72 hrs</span>
                         </div>
                     </div>
 
-                    <div class="home__resumen-item-list">
+                    <div class="home__resumen-item-list" id="resumen-mock-list">
                         <div class="home__resumen-item">
                             <div class="home__resumen-item-info">
                                 <strong>Adquisición Servidores & Backup Cloud</strong>
@@ -228,18 +235,19 @@
                     <div class="home__explorador-bar">
                         <div class="home__explorador-input-wrap">
                             <i class="fa-solid fa-magnifying-glass"></i>
-                            <span class="home__explorador-input-text">Servicios de Mantención Cloud</span>
+                            <span class="home__explorador-input-text" id="explorador-typing-target"></span>
+                            <span class="home__typing-cursor" id="explorador-typing-cursor" aria-hidden="true">|</span>
                         </div>
-                        <span class="btn btn-primary btn-sm home__explorador-search-btn">Buscar</span>
+                        <span class="btn btn-primary btn-sm home__explorador-search-btn" id="explorador-mock-search-btn">Buscar</span>
                     </div>
 
-                    <div class="home__filter-tags">
+                    <div class="home__filter-tags" id="explorador-mock-tags">
                         <span class="home__filter-tag"><i class="fa-solid fa-location-dot"></i> Valparaíso / Viña del Mar</span>
                         <span class="home__filter-tag"><i class="fa-solid fa-tags"></i> Tipo: LP (1.000 a 2.000 UTM)</span>
                         <span class="home__filter-tag"><i class="fa-solid fa-filter"></i> Estado: Publicada</span>
                     </div>
 
-                    <div class="home__explorador-card-preview">
+                    <div class="home__explorador-card-preview" id="explorador-mock-result-card">
                         <div class="home__explorador-card-top">
                             <span class="home__card-code">#4810-18-LP24</span>
                             <span class="dash-badge licitacion-state-badge">Publicada</span>
@@ -330,21 +338,21 @@
                     </div>
 
                     <!-- Gráfico analítico estilizado -->
-                    <div class="home__chart-graphic">
+                    <div class="home__chart-graphic" id="dw-mock-chart">
                         <div class="home__chart-col">
-                            <div class="home__chart-bar" style="height: 48%;" title="Jul: $280M CLP"></div>
+                            <div class="home__chart-bar" data-target-height="48%" style="height: 0%;" title="Jul: $280M CLP"></div>
                             <span class="home__chart-col-lbl">Jul</span>
                         </div>
                         <div class="home__chart-col">
-                            <div class="home__chart-bar" style="height: 65%;" title="Ago: $370M CLP"></div>
+                            <div class="home__chart-bar" data-target-height="65%" style="height: 0%;" title="Ago: $370M CLP"></div>
                             <span class="home__chart-col-lbl">Ago</span>
                         </div>
                         <div class="home__chart-col">
-                            <div class="home__chart-bar" style="height: 85%;" title="Sep: $490M CLP"></div>
+                            <div class="home__chart-bar" data-target-height="85%" style="height: 0%;" title="Sep: $490M CLP"></div>
                             <span class="home__chart-col-lbl">Sep</span>
                         </div>
                         <div class="home__chart-col">
-                            <div class="home__chart-bar home__chart-bar--active" style="height: 100%;" title="Oct: $580M CLP"></div>
+                            <div class="home__chart-bar home__chart-bar--active" data-target-height="100%" style="height: 0%;" title="Oct: $580M CLP"></div>
                             <span class="home__chart-col-lbl">Oct</span>
                         </div>
                     </div>
