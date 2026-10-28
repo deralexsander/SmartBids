@@ -47,6 +47,11 @@ const updateNavButtons = (user) => {
     if (loginButton) loginButton.style.display = user ? 'none' : 'inline-flex';
     if (profileButton) profileButton.style.display = user ? 'inline-flex' : 'none';
     if (!user && adminGeneralNav) adminGeneralNav.style.display = 'none';
+
+    // Actualiza botones condicionales de la landing page según el estado de autenticación
+    document.querySelectorAll('[data-auth-href][data-guest-href]').forEach(btn => {
+        btn.setAttribute('href', user ? btn.getAttribute('data-auth-href') : btn.getAttribute('data-guest-href'));
+    });
 };
 
 async function validarRolAdministrador(user) {

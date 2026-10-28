@@ -7,7 +7,55 @@ document.addEventListener('DOMContentLoaded', () => {
     initSlideReveal();
     initSmoothAnchorScroll();
     initScrollSpy();
+    initConditionalAuthButtons();
 });
+
+/**
+ * Gestiona los botones de la landing page para que dirijan a su módulo respectivo
+ * si el usuario tiene sesión activa, o a la página de registro si no está autenticado.
+ */
+function initConditionalAuthButtons() {
+    const buttons = document.querySelectorAll('[data-auth-href][data-guest-href]');
+    if (!buttons.length) return;
+
+    const checkIsAuth = () => {
+        const hasUidStorage = Boolean(
+            (window.localStorage && localStorage.getItem('smartbids_uid')) ||
+            (window.sessionStorage && sessionStorage.getItem('smartbids_uid'))
+        );
+        const hasUidCookie = Boolean(
+            document.cookie && (document.cookie.includes('sb_firebase_uid=') || document.cookie.includes('firebase_uid='))
+        );
+        const isLoginBtnHidden = document.getElementById('btn-login')?.style.display === 'none';
+        const isProfileBtnVisible = document.getElementById('btn-profile')?.style.display === 'inline-flex';
+
+        return hasUidStorage || hasUidCookie || isLoginBtnHidden || isProfileBtnVisible;
+    };
+
+    const syncButtons = () => {
+        const isAuth = checkIsAuth();
+        buttons.forEach(btn => {
+            const targetHref = isAuth ? btn.getAttribute('data-auth-href') : btn.getAttribute('data-guest-href');
+            if (targetHref) {
+                btn.setAttribute('href', targetHref);
+            }
+        });
+    };
+
+    // Sincronizar inmediatamente al cargar el DOM
+    syncButtons();
+
+    // Sincronizar al hacer clic como salvaguarda
+    buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const isAuth = checkIsAuth();
+            const targetHref = isAuth ? btn.getAttribute('data-auth-href') : btn.getAttribute('data-guest-href');
+            if (targetHref) {
+                btn.setAttribute('href', targetHref);
+            }
+        });
+    });
+}
 
 /**
  * Inicializa el IntersectionObserver para revelar y deslizar elementos

@@ -317,38 +317,80 @@ html.dark-mode .mockup-status {
     border: 1px solid rgba(30, 196, 152, 0.25) !important;
 }
 
-html.dark-mode .home__milestone-alert {
-    background: var(--bg-surface-elevated) !important;
-    border: 1px solid var(--border-subtle) !important;
+html.dark-mode .home__hero-card,
+html.dark-mode .home__mockup-card {
+    background: var(--bg-surface) !important;
+    border-color: var(--border-subtle) !important;
 }
 
-html.dark-mode .home__milestone-title {
+html.dark-mode .home__hero-card {
+    border-left-color: var(--accent-green) !important;
+}
+
+html.dark-mode .home__card-code,
+html.dark-mode .home__card-title,
+html.dark-mode .home__resumen-greeting,
+html.dark-mode .home__explorador-card-name,
+html.dark-mode .home__dw-title,
+html.dark-mode .home__timeline-content strong,
+html.dark-mode .home__resumen-item-info strong,
+html.dark-mode .home__ranking-name,
+html.dark-mode .home__ranking-val,
+html.dark-mode .home__qa-label {
     color: var(--text-primary) !important;
 }
 
-html.dark-mode .home__milestone-description {
+html.dark-mode .home__card-meta,
+html.dark-mode .home__official-link,
+html.dark-mode .home__resumen-date,
+html.dark-mode .home__resumen-kpi-lbl,
+html.dark-mode .home__resumen-item-info small,
+html.dark-mode .home__timeline-content small,
+html.dark-mode .home__qa-text,
+html.dark-mode .home__dw-subtitle,
+html.dark-mode .home__chart-col-lbl {
     color: var(--text-muted) !important;
 }
 
-html.dark-mode .home__analytics-chart {
+html.dark-mode .home__resumen-kpi-num--follow {
+    color: var(--text-primary) !important;
+}
+
+html.dark-mode .home__resumen-mock-header,
+html.dark-mode .home__hero-card-footer {
+    border-color: var(--border-subtle) !important;
+}
+
+html.dark-mode .home__resumen-kpi-item,
+html.dark-mode .home__resumen-item,
+html.dark-mode .home__explorador-bar,
+html.dark-mode .home__explorador-card-preview,
+html.dark-mode .home__filter-tag,
+html.dark-mode .home__qa-card,
+html.dark-mode .home__chart-graphic,
+html.dark-mode .home__ranking-row {
     background: var(--bg-surface-elevated) !important;
-    border: 1px solid var(--border-subtle) !important;
+    border-color: var(--border-subtle) !important;
 }
 
-html.dark-mode .home__chart-bar--first {
-    background: rgba(177, 210, 202, 0.22) !important;
+html.dark-mode .home__explorador-input-text {
+    color: var(--text-primary) !important;
 }
 
-html.dark-mode .home__chart-bar--second {
-    background: var(--muted-teal) !important;
+html.dark-mode .home__feature-badge,
+html.dark-mode .home__badge-match {
+    background: rgba(30, 196, 152, 0.15) !important;
+    color: #38efbd !important;
 }
 
-html.dark-mode .home__chart-bar--third {
-    background: var(--accent-green) !important;
+html.dark-mode .home__timeline-item--done .home__timeline-bullet {
+    background: rgba(30, 196, 152, 0.25) !important;
+    color: #38efbd !important;
 }
 
-html.dark-mode .home__chart-bar--fourth {
-    background: #2dd4bf !important;
+html.dark-mode .home__timeline-item--current .home__timeline-bullet {
+    background: #0d4637 !important;
+    color: #38efbd !important;
 }
 
 /* Beneficios */
@@ -1297,7 +1339,6 @@ html.dark-mode .perfil__progress-title,
 html.dark-mode .perfil__appearance-heading,
 html.dark-mode .site-modal__title,
 html.dark-mode .export-modal__option-title,
-html.dark-mode .home__milestone-title,
 html.dark-mode .info__security-title,
 html.dark-mode .admin__quick-action-title,
 html.dark-mode .rk-title,
@@ -1308,7 +1349,6 @@ html.dark-mode .resumen__title {
 html.dark-mode .section-desc,
 html.dark-mode .mis-lic__intro,
 html.dark-mode .admin__page-description,
-html.dark-mode .home__milestone-description,
 html.dark-mode .info__security-description,
 html.dark-mode .perfil__appearance-sub,
 html.dark-mode .resumen__date {
