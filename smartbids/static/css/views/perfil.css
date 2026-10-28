@@ -806,8 +806,83 @@
 }
 
 .tree-item-prod:hover {
-    background-color: #f8fafc !important;
-    border-color: var(--soft-mint) !important;
+    background-color: #f8fafc;
+    border-color: var(--soft-mint);
+}
+
+.tree-node {
+    background: var(--white);
+    border: 1px solid #eef2f6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tree-region, .tree-sector, .tree-grupo {
+    background: var(--white);
+    border: 1.5px solid var(--soft-mint);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    margin-bottom: 12px;
+}
+
+.tree-province, .tree-organismo, .tree-nivel {
+    background: #fafbfc;
+    border: 1px solid #eef2f6;
+    border-radius: 8px;
+    margin-top: 6px;
+}
+
+.tree-region > .tree-header,
+.tree-sector > .tree-header,
+.tree-grupo > .tree-header {
+    background: rgba(30, 196, 152, 0.06);
+    padding: 10px 14px;
+}
+
+.tree-province > .tree-header,
+.tree-organismo > .tree-header,
+.tree-nivel > .tree-header {
+    background: #f8fafc;
+    padding: 8px 12px;
+}
+
+.tree-item-comuna, .tree-item-prod, .tree-item-ucom {
+    background: var(--white);
+    border: 1px solid #f1f5f9;
+    border-radius: 6px;
+    padding: 6px 10px;
+    transition: all 0.15s ease;
+}
+
+.tree-item-comuna:hover, .tree-item-prod:hover, .tree-item-ucom:hover {
+    background-color: #f8fafc;
+    border-color: var(--soft-mint);
+}
+
+.tree-header {
+    background: rgba(30, 196, 152, 0.05);
+}
+
+.tree-children {
+    background: var(--white);
+    border-top: 1px dashed #e2e8f0;
+    padding: 10px 12px;
+}
+
+.tree-badge-count {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.perfil-chip-item {
+    background: var(--white);
+    border: 1.5px solid var(--accent-green);
+    color: var(--dark-green);
+}
+
+.perfil-chip-more {
+    background: #e2e8f0;
+    color: #475569;
 }
 
 .prod-desc {

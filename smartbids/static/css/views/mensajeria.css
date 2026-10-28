@@ -116,3 +116,22 @@
     overflow-x: hidden;
     padding-right: 6px;
 }
+
+@media (max-width: 768px) {
+    .mensajeria__layout {
+        flex-direction: column;
+        gap: 2rem;
+    }
+    .mensajeria__alerts-panel {
+        position: static;
+        width: 100%;
+    }
+    .mensajeria__settings-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .mensajeria__select {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}

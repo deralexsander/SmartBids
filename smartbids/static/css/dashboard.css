@@ -723,6 +723,30 @@
     }
 }
 
+@media (max-width: 680px) {
+    .dashboard__title {
+        font-size: 1.75rem;
+        white-space: normal;
+    }
+    .dashboard__actions,
+    #per-global {
+        width: 100%;
+        max-width: 100%;
+        flex-wrap: wrap;
+        box-sizing: border-box;
+    }
+    .seg {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+    }
+    .seg-btn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.78rem;
+    }
+}
+
 .rk-paso {
     display: inline-block;
     font-size: 0.72rem;

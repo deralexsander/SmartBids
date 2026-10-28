@@ -363,6 +363,12 @@
             gap: 1rem;
         }
 
+        @media (max-width: 580px) {
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .stat-mini-card {
             background: var(--light-bg);
             padding: 1rem;

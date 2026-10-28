@@ -29,6 +29,7 @@ DEFAULT_ROUTES = [
     ('/mis-licitaciones/', 'Mis Licitaciones y Filtros'),
     ('/dashboard/', 'Dashboard Analítico'),
     ('/resumen/', 'Resumen del Día'),
+    ('/mensajeria/', 'Mensajería y Alertas'),
 ]
 
 JS_OVERFLOW_CHECK = '''
@@ -91,11 +92,17 @@ class Command(BaseCommand):
             default=None,
             help='Prueba una ruta específica en lugar de todas (ej: /perfil/)',
         )
+        parser.add_argument(
+            '--dark',
+            action='store_true',
+            help='Ejecuta las pruebas forzando el Modo Oscuro (dark mode)',
+        )
 
     def handle(self, *args, **options):
         base_url = options['url'].rstrip('/')
         save_screenshots = options['screenshot']
         specific_route = options['route']
+        is_dark = options.get('dark', False)
 
         try:
             from playwright.sync_api import sync_playwright
@@ -106,7 +113,12 @@ class Command(BaseCommand):
             sys.exit(1)
 
         chrome_path = None
-        for path in ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium-browser']:
+        for path in [
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium-browser'
+        ]:
             if os.path.exists(path):
                 chrome_path = path
                 break
@@ -144,10 +156,24 @@ class Command(BaseCommand):
                 for vp_name, vp in DEFAULT_VIEWPORTS:
                     total_checks += 1
                     context = browser.new_context(viewport=vp)
+                    context.route("**/sesion.js*", lambda r: r.fulfill(
+                        status=200,
+                        content_type="application/javascript",
+                        body="// Mocked for visual tests\nwindow.verificarSesionActiva = () => Promise.resolve({valido: true});"
+                    ))
+                    if is_dark:
+                        context.add_init_script("""
+                            try {
+                                localStorage.setItem('smartbids_theme', 'dark');
+                                document.documentElement.classList.add('dark-mode');
+                                document.documentElement.setAttribute('data-theme', 'dark');
+                            } catch(e) {}
+                        """)
                     page = context.new_page()
 
                     try:
-                        resp = page.goto(target_url, wait_until='networkidle', timeout=15000)
+                        resp = page.goto(target_url, wait_until='domcontentloaded', timeout=15000)
+                        page.wait_for_timeout(350)
                         if not resp or resp.status >= 400:
                             self.stdout.write(self.style.WARNING(
                                 f'   ⚠️ {vp_name}: HTTP {resp.status if resp else "Sin respuesta"}'
@@ -177,7 +203,8 @@ class Command(BaseCommand):
                         if save_screenshots:
                             clean_route = route.strip('/').replace('/', '_') or 'home'
                             clean_vp = vp_name.split(' ')[0].lower()
-                            file_path = screenshot_dir / f'{clean_route}_{clean_vp}_{vp["width"]}x{vp["height"]}.png'
+                            prefix = 'dark_' if is_dark else ''
+                            file_path = screenshot_dir / f'{prefix}{clean_route}_{clean_vp}_{vp["width"]}x{vp["height"]}.png'
                             page.screenshot(path=str(file_path), full_page=True)
 
                     except Exception as e:

@@ -291,8 +291,8 @@ class TagManager {
         visibleCodes.forEach(code => {
             const label = this.items.get(code) || code;
             const chip = document.createElement('div');
-            chip.className = 'dash-badge';
-            chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.82rem; background: var(--white); border: 1.5px solid var(--accent-green); color: var(--dark-green); border-radius: 20px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.04); max-width: 280px;';
+            chip.className = 'dash-badge perfil-chip-item';
+            chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.82rem; border-radius: 20px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.04); max-width: 280px;';
             chip.title = label;
             chip.innerHTML = `
                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px;" title="${label}">${label}</span>
@@ -308,8 +308,8 @@ class TagManager {
         if (codes.length > maxChipsVisibles) {
             const rem = codes.length - maxChipsVisibles;
             const moreBadge = document.createElement('div');
-            moreBadge.className = 'dash-badge';
-            moreBadge.style.cssText = 'display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.8rem; background: #e2e8f0; color: #475569; border-radius: 20px; font-weight: 700;';
+            moreBadge.className = 'dash-badge perfil-chip-more';
+            moreBadge.style.cssText = 'display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.8rem; border-radius: 20px; font-weight: 700;';
             moreBadge.textContent = `+${rem} más...`;
             moreBadge.title = `${codes.length} seleccionados en total`;
             this.container.appendChild(moreBadge);
@@ -339,8 +339,8 @@ export function actualizarChipsPalabras() {
 
     palabras.forEach((palabra, index) => {
         const chip = document.createElement('div');
-        chip.className = 'dash-badge';
-        chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: 0.83rem; background: var(--white); border: 1.5px solid var(--accent-green); color: var(--dark-green); border-radius: 20px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.04);';
+        chip.className = 'dash-badge perfil-chip-item';
+        chip.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: 0.83rem; border-radius: 20px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.04);';
         chip.innerHTML = `
             <span>${palabra}</span>
             <i class="fa-solid fa-xmark" style="cursor: pointer; color: #e53e3e; margin-left: 4px;" title="Eliminar término"></i>
@@ -428,23 +428,23 @@ async function setupTerritoryTree() {
                     const nameAttr = esModoEmpresa ? 'name="comuna_empresa_radio"' : '';
 
                     comsHtml += `
-                        <div class="tree-item-comuna" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #f1f5f9; background: #ffffff; transition: all 0.2s ease;">
+                        <div class="tree-item-comuna" style="padding: 6px 10px; border-radius: 8px; transition: all 0.2s ease;">
                             <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.88rem; width: 100%;">
                                 <input type="${inputType}" ${nameAttr} class="comuna-check" value="${cod}" data-label="${c.nombre_comuna}" ${isChecked} style="accent-color: var(--accent-green); cursor: pointer;">
-                                <span style="color: var(--dark-green); font-weight: 600;">${c.nombre_comuna}</span>
-                                <small style="color: var(--muted-teal); font-size: 0.78rem; margin-left: auto;">(${cod})</small>
+                                <span class="comuna-name" style="font-weight: 600;">${c.nombre_comuna}</span>
+                                <small class="comuna-code" style="color: var(--muted-teal); font-size: 0.78rem; margin-left: auto;">(${cod})</small>
                             </label>
                         </div>
                     `;
                 });
 
                 provsHtml += `
-                    <div class="tree-node tree-province" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
+                    <div class="tree-node tree-province" style="margin-top: 6px; border-radius: 8px; overflow: hidden;">
                         <div class="tree-header tree-toggle-btn" data-target="prov-child-${provId}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none;">
-                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green); font-size: 0.9rem;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem;">
                                 <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.75rem; color: var(--muted-teal); transition: transform 0.2s ease;"></i>
                                 <i class="fa-solid fa-folder" style="color: var(--soft-mint); font-size: 0.85rem;"></i>
-                                <span>${prov.nombre_provincia}</span>
+                                <span class="prov-title">${prov.nombre_provincia}</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px;" onclick="event.stopPropagation();">
                                 ${!esModoEmpresa ? `
@@ -454,7 +454,7 @@ async function setupTerritoryTree() {
                                     </label>` : ''}
                             </div>
                         </div>
-                        <div id="prov-child-${provId}" class="tree-children" style="display: none; padding: 8px; border-top: 1px dashed #e2e8f0; background: #ffffff;">
+                        <div id="prov-child-${provId}" class="tree-children" style="display: none; padding: 8px;">
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px;">
                                 ${comsHtml}
                             </div>
@@ -464,22 +464,22 @@ async function setupTerritoryTree() {
             });
 
             html += `
-                <div class="tree-node tree-region" style="margin-bottom: 12px; background: #ffffff; border-radius: 12px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 8px rgba(0,0,0,0.02); overflow: hidden;">
-                    <div class="tree-header tree-toggle-btn" data-target="reg-child-${regId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.05); cursor: pointer; user-select: none;">
-                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">
+                <div class="tree-node tree-region" style="margin-bottom: 12px; border-radius: 12px; overflow: hidden;">
+                    <div class="tree-header tree-toggle-btn" data-target="reg-child-${regId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 0.95rem;">
                             <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease;"></i>
                             <i class="fa-solid fa-map" style="color: var(--accent-green); font-size: 0.9rem;"></i>
-                            <span>${reg.nombre_region}</span>
+                            <span class="reg-title">${reg.nombre_region}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
                             ${!esModoEmpresa ? `
-                                <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700; color: var(--dark-green);">
+                                <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700;">
                                     <input type="checkbox" class="region-check" style="accent-color: var(--accent-green);">
                                     <span>Seleccionar Región</span>
                                 </label>` : ''}
                         </div>
                     </div>
-                    <div id="reg-child-${regId}" class="tree-children" style="display: none; padding: 10px 12px; background: #ffffff;">
+                    <div id="reg-child-${regId}" class="tree-children" style="display: none; padding: 10px 12px;">
                         ${provsHtml}
                     </div>
                 </div>
@@ -784,10 +784,10 @@ async function setupProductsTree() {
                     const isChecked = selectedSet.has(cod) ? 'checked' : '';
 
                     prodsHtml += `
-                        <div class="tree-item-prod" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #f1f5f9; background: #ffffff; margin-bottom: 4px; display: flex; align-items: center; transition: all 0.15s ease;">
+                        <div class="tree-item-prod" style="padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; display: flex; align-items: center; transition: all 0.15s ease;">
                             <label style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; width: 100%; margin: 0; min-width: 0;">
                                 <input type="checkbox" class="prod-check" value="${cod}" data-label="${desc}" data-formatted="${codFmt}" ${isChecked} style="accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0; width: 16px; height: 16px;">
-                                <span class="prod-desc" style="color: var(--dark-green); font-weight: 500; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;" title="${desc}">${desc}</span>
+                                <span class="prod-desc" style="font-weight: 500; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;" title="${desc}">${desc}</span>
                                 <small class="prod-code" style="color: var(--muted-teal); font-size: 0.8rem; margin-left: 8px; white-space: nowrap; font-family: monospace; flex-shrink: 0;">[${codFmt}]</small>
                             </label>
                         </div>
@@ -795,13 +795,13 @@ async function setupProductsTree() {
                 });
 
                 nivelesHtml += `
-                    <div class="tree-node tree-nivel" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
+                    <div class="tree-node tree-nivel" style="margin-top: 6px; border-radius: 8px; overflow: hidden;">
                         <div class="tree-header tree-toggle-btn" data-target="${nivId}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none;">
-                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green); font-size: 0.88rem; min-width: 0; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.88rem; min-width: 0; flex: 1;">
                                 <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.75rem; color: var(--muted-teal); transition: transform 0.2s ease; flex-shrink: 0;"></i>
                                 <i class="fa-solid fa-tag" style="color: var(--muted-teal); font-size: 0.85rem; flex-shrink: 0;"></i>
                                 <span class="nivel-title" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;" title="${niv.codigo_nivel1} – ${niv.descripcion}">${niv.codigo_nivel1} – ${niv.descripcion}</span>
-                                <span class="tree-badge-count" style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600; flex-shrink: 0;">${prods.length}</span>
+                                <span class="tree-badge-count" style="font-size: 0.75rem; padding: 2px 7px; border-radius: 10px; font-weight: 600; flex-shrink: 0;">${prods.length}</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px; margin-left: 10px; flex-shrink: 0;" onclick="event.stopPropagation();">
                                 <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--muted-teal); margin: 0; font-weight: 600;">
@@ -810,7 +810,7 @@ async function setupProductsTree() {
                                 </label>
                             </div>
                         </div>
-                        <div id="${nivId}" class="tree-children" style="display: none; padding: 8px; border-top: 1px dashed #e2e8f0; background: #ffffff; max-height: 320px; overflow-y: auto;">
+                        <div id="${nivId}" class="tree-children" style="display: none; padding: 8px; max-height: 320px; overflow-y: auto;">
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 ${prodsHtml}
                             </div>
@@ -820,22 +820,22 @@ async function setupProductsTree() {
             });
 
             html += `
-                <div class="tree-node tree-grupo" style="margin-bottom: 10px; background: #ffffff; border-radius: 10px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 6px rgba(0,0,0,0.02); overflow: hidden;">
-                    <div class="tree-header tree-toggle-btn" data-target="${grpId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.07); cursor: pointer; user-select: none;">
-                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--dark-green); font-size: 0.94rem; min-width: 0; flex: 1;">
+                <div class="tree-node tree-grupo" style="margin-bottom: 10px; border-radius: 10px; overflow: hidden;">
+                    <div class="tree-header tree-toggle-btn" data-target="${grpId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.94rem; min-width: 0; flex: 1;">
                             <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease; flex-shrink: 0;"></i>
                             <i class="fa-solid fa-layer-group" style="color: var(--soft-mint); font-size: 1rem; flex-shrink: 0;"></i>
                             <span class="grupo-title" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;" title="${grp.codigo_grupo} – ${grp.nombre_grupo}">${grp.codigo_grupo} – ${grp.nombre_grupo}</span>
-                            <span class="tree-badge-count" style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-weight: 700; flex-shrink: 0;">${totalProdsGrupo}</span>
+                            <span class="tree-badge-count" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 700; flex-shrink: 0;">${totalProdsGrupo}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px; flex-shrink: 0;" onclick="event.stopPropagation();">
-                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; color: var(--dark-green); margin: 0;">
+                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; margin: 0;">
                                 <input type="checkbox" class="grupo-check" style="accent-color: var(--accent-green); cursor: pointer;">
                                 <span>Marcar Grupo</span>
                             </label>
                         </div>
                     </div>
-                    <div id="${grpId}" class="tree-children" style="display: none; padding: 10px 14px; background: #f8fafc; border-top: 1px solid var(--soft-mint);">
+                    <div id="${grpId}" class="tree-children" style="display: none; padding: 10px 14px;">
                         ${nivelesHtml}
                     </div>
                 </div>
@@ -1205,10 +1205,10 @@ async function setupUcomTree() {
                     const isChecked = selectedSet.has(cod) ? 'checked' : '';
 
                     ucomsHtml += `
-                        <div class="tree-item-ucom" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #f1f5f9; background: #ffffff; margin-bottom: 4px; display: flex; align-items: center; transition: all 0.15s ease;">
+                        <div class="tree-item-ucom" style="padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; display: flex; align-items: center; transition: all 0.15s ease;">
                             <label style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; width: 100%; margin: 0;">
                                 <input type="checkbox" class="ucom-check" value="${cod}" data-label="${u.descripcion}" ${isChecked} style="accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0; width: 16px; height: 16px;">
-                                <span class="ucom-desc" style="color: var(--dark-green); font-weight: 500; line-height: 1.3;">${u.descripcion}</span>
+                                <span class="ucom-desc" style="font-weight: 500; line-height: 1.3;">${u.descripcion}</span>
                                 <small class="ucom-code" style="color: var(--muted-teal); font-size: 0.8rem; margin-left: auto; white-space: nowrap; font-family: monospace;">[${cod}]</small>
                             </label>
                         </div>
@@ -1218,13 +1218,13 @@ async function setupUcomTree() {
                 const displayTitle = org.sigla ? `${org.nombre_organismo} (${org.sigla})` : org.nombre_organismo;
 
                 orgsHtml += `
-                    <div class="tree-node tree-organismo" data-org-code="${org.codigo_organismo}" data-org-sigla="${String(org.sigla || '').toLowerCase()}" style="margin-top: 6px; border: 1px solid #eef2f6; border-radius: 8px; background: #fafbfc; overflow: hidden;">
+                    <div class="tree-node tree-organismo" data-org-code="${org.codigo_organismo}" data-org-sigla="${String(org.sigla || '').toLowerCase()}" style="margin-top: 6px; border-radius: 8px; overflow: hidden;">
                         <div class="tree-header tree-toggle-btn" data-target="${orgId}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none;">
-                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--dark-green); font-size: 0.9rem;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem;">
                                 <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.75rem; color: var(--muted-teal); transition: transform 0.2s ease;"></i>
                                 <i class="fa-solid fa-building-columns" style="color: var(--muted-teal); font-size: 0.85rem;"></i>
                                 <span class="org-title">${displayTitle}</span>
-                                <span style="font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600;">${(org.unidades || []).length}</span>
+                                <span class="tree-badge-count" style="font-size: 0.75rem; padding: 2px 7px; border-radius: 10px; font-weight: 600;">${(org.unidades || []).length}</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px;" onclick="event.stopPropagation();">
                                 <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--muted-teal); margin: 0;">
@@ -1233,7 +1233,7 @@ async function setupUcomTree() {
                                 </label>
                             </div>
                         </div>
-                        <div id="${orgId}" class="tree-children" style="display: none; padding: 8px; border-top: 1px dashed #e2e8f0; background: #ffffff;">
+                        <div id="${orgId}" class="tree-children" style="display: none; padding: 8px;">
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 ${ucomsHtml}
                             </div>
@@ -1243,21 +1243,21 @@ async function setupUcomTree() {
             });
 
             html += `
-                <div class="tree-node tree-sector" data-sector-code="${sec.codigo_sector}" style="margin-bottom: 12px; background: #ffffff; border-radius: 12px; border: 1.5px solid var(--soft-mint); box-shadow: 0 2px 8px rgba(0,0,0,0.02); overflow: hidden;">
-                    <div class="tree-header tree-toggle-btn" data-target="${secId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 196, 152, 0.05); cursor: pointer; user-select: none;">
-                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--dark-green); font-size: 0.95rem;">
+                <div class="tree-node tree-sector" data-sector-code="${sec.codigo_sector}" style="margin-bottom: 12px; border-radius: 12px; overflow: hidden;">
+                    <div class="tree-header tree-toggle-btn" data-target="${secId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 0.95rem;">
                             <i class="fa-solid fa-chevron-right toggle-icon" style="font-size: 0.8rem; color: var(--accent-green); transition: transform 0.2s ease;"></i>
                             <i class="fa-solid fa-landmark" style="color: var(--accent-green); font-size: 0.9rem;"></i>
                             <span class="sec-title">${sec.nombre_sector}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
-                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700; color: var(--dark-green); margin: 0;">
+                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700; margin: 0;">
                                 <input type="checkbox" class="sec-check" style="accent-color: var(--accent-green); cursor: pointer;">
                                 <span>Marcar Sector</span>
                             </label>
                         </div>
                     </div>
-                    <div id="${secId}" class="tree-children" style="display: none; padding: 10px 12px; background: #ffffff;">
+                    <div id="${secId}" class="tree-children" style="display: none; padding: 10px 12px;">
                         ${orgsHtml}
                     </div>
                 </div>

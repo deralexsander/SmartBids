@@ -1,6 +1,7 @@
 // ==========================================================================
 // CONTROLES DE INTERFAZ REUTILIZABLES
 // ==========================================================================
+import { setupThemeEvents } from './theme.js';
 export async function hidePageLoader() {
     const loader = document.getElementById('page-loader');
     if (!loader) return;
@@ -148,6 +149,7 @@ export function setupExportModal() {
 function inicializarControlesUI() {
     setupPasswordToggles();
     setupExportModal();
+    setupThemeEvents();
 }
 
 if (document.readyState === 'loading') {

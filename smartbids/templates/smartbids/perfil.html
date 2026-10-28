@@ -660,6 +660,32 @@
                     </div>
                 </div>
 
+                <!-- Preferencias de Interfaz / Modo Oscuro -->
+                <div class="dashboard-header" style="margin-top: 1.8rem;">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-circle-half-stroke perfil__section-icon"></i>
+                        Preferencias Visuales y Apariencia
+                    </div>
+                </div>
+
+                <div class="stat-mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.4rem; border-radius: 14px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <span id="theme-toggle-icon-tab" class="theme-icon-wrap" style="width: 42px; height: 42px; border-radius: 10px; background: rgba(30, 196, 152, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-green); font-size: 1.2rem;">
+                            <i class="fa-solid fa-moon"></i>
+                        </span>
+                        <div>
+                            <strong style="display: block; font-size: 0.98rem; margin-bottom: 4px;" class="perfil__appearance-heading">
+                                Modo Oscuro: <span id="theme-toggle-status-tab" class="theme-status-text" style="color: var(--accent-green);">Desactivado</span>
+                            </strong>
+                            <span style="font-size: 0.85rem; color: var(--muted-teal);" class="perfil__appearance-sub">Alterna entre tema claro y tema oscuro respetando la identidad visual y contraste de SmartBids.</span>
+                        </div>
+                    </div>
+                    <label class="theme-switch" for="theme-dark-toggle-tab" title="Alternar modo oscuro">
+                        <input type="checkbox" id="theme-dark-toggle-tab" aria-label="Alternar modo oscuro">
+                        <span class="theme-switch-slider"></span>
+                    </label>
+                </div>
+
                 <!-- 5.1 Acceso Exclusivo a Administración General (Solo Administradores) -->
                 <div id="perfil-admin-section" class="perfil__admin-section" style="display: none;">
                     <div class="perfil__admin-card">
