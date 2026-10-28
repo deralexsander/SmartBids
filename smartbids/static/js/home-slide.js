@@ -7,12 +7,62 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    initSlideReveal();
     initSmoothAnchorScroll();
     initScrollSpy();
     initConditionalAuthButtons();
-    initInteractiveMockupAnimations();
+
+    // Las animaciones inician exactamente 3 segundos después de desaparecer la barra de carga
+    ejecutarTrasCargaYTresSegundos(() => {
+        initSlideReveal();
+        initInteractiveMockupAnimations();
+    });
 });
+
+/**
+ * Aguarda a que la barra de carga (page-loader) desaparezca por completo y espera
+ * exactamente 3 segundos adicionales antes de dar inicio a las animaciones de la landing page.
+ */
+function ejecutarTrasCargaYTresSegundos(callback) {
+    let triggered = false;
+
+    const iniciarConRetardo = () => {
+        if (triggered) return;
+        triggered = true;
+        setTimeout(() => {
+            callback();
+        }, 3000); // 3 segundos exactos después de desaparecer la barra de carga
+    };
+
+    const loader = document.getElementById('page-loader');
+    const estaCargando = document.documentElement.classList.contains('loading') || (loader && loader.style.display !== 'none');
+
+    // Si ya desapareció el loader o nunca estuvo presente
+    if (window.smartbidsLoaderHidden || (!loader && !estaCargando)) {
+        iniciarConRetardo();
+        return;
+    }
+
+    // Escuchar el evento disparado por hidePageLoader
+    window.addEventListener('page-loader-hidden', iniciarConRetardo, { once: true });
+
+    // Observador de mutaciones como salvaguarda ante remoción directa del DOM
+    const observer = new MutationObserver(() => {
+        const stillInDom = document.getElementById('page-loader');
+        const hasLoading = document.documentElement.classList.contains('loading');
+        if (!stillInDom && !hasLoading) {
+            observer.disconnect();
+            iniciarConRetardo();
+        }
+    });
+
+    observer.observe(document.documentElement, { attributes: true, childList: true, subtree: true });
+
+    // Salvaguarda final: si por alguna razón no se emite el evento en 2.5s, arrancar el contador
+    setTimeout(() => {
+        observer.disconnect();
+        iniciarConRetardo();
+    }, 2500);
+}
 
 /**
  * Gestiona los botones de la landing page para que dirijan a su módulo respectivo
@@ -106,10 +156,11 @@ function initInteractiveMockupAnimations() {
                             const targetY = (btnRect.top - cardRect.top) + (btnRect.height / 2) - 4;
 
                             setTimeout(() => {
+                                // Desplazamiento pausado y visible del puntero (1.6s)
                                 heroCursor.style.left = `${targetX}px`;
                                 heroCursor.style.top = `${targetY}px`;
 
-                                // Simulación del micro-clic y cambio de estado
+                                // Simulación del micro-clic al completar el recorrido
                                 setTimeout(() => {
                                     heroCursor.style.transform = 'scale(0.85)';
                                     heroBtn.classList.add('is-pressed');
@@ -121,14 +172,14 @@ function initInteractiveMockupAnimations() {
                                         if (heroIcon) heroIcon.className = 'fa-solid fa-bookmark';
                                         if (heroText) heroText.textContent = 'Siguiendo';
 
-                                        // Desvanecimiento suave del puntero
+                                        // Permite apreciar la bandera marcada antes de desvanecer el cursor
                                         setTimeout(() => {
                                             heroCursor.style.opacity = '0';
-                                        }, 450);
-                                    }, 180);
-                                }, 870);
-                            }, 80);
-                        }, 900);
+                                        }, 850);
+                                    }, 260);
+                                }, 1650);
+                            }, 120);
+                        }, 600);
                     }
                 });
             }, { threshold: 0.25 });
@@ -161,7 +212,7 @@ function initInteractiveMockupAnimations() {
                         let charIndex = 0;
                         typingTarget.textContent = '';
 
-                        // Efecto de tipeo letra por letra
+                        // Efecto de tipeo cadencioso y natural (75ms por letra)
                         const typeInterval = setInterval(() => {
                             if (charIndex < fullText.length) {
                                 typingTarget.textContent += fullText.charAt(charIndex);
@@ -170,17 +221,19 @@ function initInteractiveMockupAnimations() {
                                 clearInterval(typeInterval);
                                 if (typingCursor) typingCursor.style.display = 'none';
 
-                                // Micro-pulsación en el botón Buscar
-                                if (searchBtn) searchBtn.classList.add('is-active');
-
+                                // Pausa para simular la decisión antes del clic
                                 setTimeout(() => {
-                                    if (searchBtn) searchBtn.classList.remove('is-active');
+                                    if (searchBtn) searchBtn.classList.add('is-active');
 
-                                    // Revelación suave de 0 a 100 de la tarjeta de resultado
-                                    resultCard.classList.add('is-visible-card');
-                                }, 220);
+                                    setTimeout(() => {
+                                        if (searchBtn) searchBtn.classList.remove('is-active');
+
+                                        // Revelación suave de 0 a 100 de la tarjeta de resultado
+                                        resultCard.classList.add('is-visible-card');
+                                    }, 320);
+                                }, 450);
                             }
-                        }, 38);
+                        }, 75);
                     }
                 });
             }, { threshold: 0.3 });
@@ -205,17 +258,17 @@ function initInteractiveMockupAnimations() {
                         resumenKpiGrid.dataset.animatedCounters = 'true';
                         observer.unobserve(resumenKpiGrid);
 
-                        // Animar contadores de 0 a valor objetivo
+                        // Animar contadores pausadamente de 0 a valor objetivo (1.8s)
                         countElements.forEach(el => {
                             const target = parseInt(el.getAttribute('data-count-target'), 10) || 0;
-                            const duration = 950;
+                            const duration = 1800;
                             const startTime = performance.now();
 
                             const updateCount = (now) => {
                                 const elapsed = now - startTime;
                                 const progress = Math.min(elapsed / duration, 1);
-                                // Easing suave (easeOutQuad)
-                                const easeProgress = 1 - (1 - progress) * (1 - progress);
+                                // Easing suave (easeOutCubic)
+                                const easeProgress = 1 - Math.pow(1 - progress, 3);
                                 const current = Math.floor(easeProgress * target);
 
                                 el.textContent = current;
@@ -230,11 +283,11 @@ function initInteractiveMockupAnimations() {
                             requestAnimationFrame(updateCount);
                         });
 
-                        // Revelado escalonado de los ítems de licitación
+                        // Revelado escalonado pausado de los ítems de licitación
                         if (resumenMockList) {
                             setTimeout(() => {
                                 resumenMockList.classList.add('is-visible-items');
-                            }, 300);
+                            }, 400);
                         }
                     }
                 });
@@ -269,6 +322,37 @@ function initInteractiveMockupAnimations() {
             }, { threshold: 0.35 });
 
             chartObserver.observe(chartContainer);
+        }
+    }
+
+    // 5. ANIMACIÓN DEL CRONOGRAMA DE PROCESO (FICHA TÉCNICA)
+    const timelineList = document.getElementById('ficha-mock-timeline');
+    const qaCard = document.getElementById('ficha-mock-qa');
+
+    if (timelineList) {
+        if (prefersReducedMotion) {
+            timelineList.classList.add('is-animated-timeline');
+            if (qaCard) qaCard.classList.add('is-visible-qa');
+        } else {
+            const timelineObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !timelineList.dataset.animatedTimeline) {
+                        timelineList.dataset.animatedTimeline = 'true';
+                        observer.unobserve(timelineList);
+
+                        // Revelación de hitos del cronograma
+                        timelineList.classList.add('is-animated-timeline');
+
+                        if (qaCard) {
+                            setTimeout(() => {
+                                qaCard.classList.add('is-visible-qa');
+                            }, 1600);
+                        }
+                    }
+                });
+            }, { threshold: 0.25 });
+
+            timelineObserver.observe(timelineList);
         }
     }
 }

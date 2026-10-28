@@ -4,7 +4,11 @@
 import { setupThemeEvents } from './theme.js';
 export async function hidePageLoader() {
     const loader = document.getElementById('page-loader');
-    if (!loader) return;
+    if (!loader) {
+        window.smartbidsLoaderHidden = true;
+        window.dispatchEvent(new CustomEvent('page-loader-hidden'));
+        return;
+    }
 
     loader.classList.add('page-loader-done');
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -12,6 +16,8 @@ export async function hidePageLoader() {
     loader.style.opacity = '0';
     setTimeout(() => {
         if (loader.parentNode) loader.remove();
+        window.smartbidsLoaderHidden = true;
+        window.dispatchEvent(new CustomEvent('page-loader-hidden'));
     }, 400);
 }
 
