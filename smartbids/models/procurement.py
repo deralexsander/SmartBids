@@ -46,6 +46,7 @@ class Licitacion(models.Model):
     lic_items_cantidad = models.IntegerField(blank=True, null=True)
     lic_codigos_producto = ArrayField(models.CharField(max_length=20),blank=True,null=True)
     lic_diccionario_palabras = ArrayField(models.CharField(max_length=100),blank=True,null=True)
+    lic_palabras_claves_norm = ArrayField(models.CharField(max_length=100), blank=True, null=True, db_comment='conjunto de palabras claves normalizadas de la licitacion')
     lic_texto = models.TextField(blank=True, null=True)
     lic_url = models.TextField(blank=True, null=True)
     lic_plazo = models.IntegerField(blank=True, null=True)

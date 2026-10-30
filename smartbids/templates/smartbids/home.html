@@ -2,258 +2,492 @@
 {% load static %}
 
 {% block nombrePag %}
-<title>Inicio</title>
+<title>SmartBids - Inteligencia & Machine Learning para Mercado Público</title>
 {% endblock %}
-
 
 {% block nav_buttons %}
     <a id="btn-login" href="{% url 'ingreso' %}" class="btn btn-outline">Ingresar</a>
 {% endblock %}
 
 {% block contenido %}
+    <!-- ============================================================ -->
+    <!-- 1. HERO SECTION: PROPUESTA PRINCIPAL Y PREVIEW REALISTA        -->
+    <!-- ============================================================ -->
     <section class="hero">
         <div class="hero-content">
             <div class="hero-badge">
-                <i class="fa-solid fa-bolt"></i> Inteligencia para Ofertar en Mercado Público
+                <i class="fa-solid fa-bolt"></i> Inteligencia & Machine Learning para Mercado Público
             </div>
-            <h1>Gana más licitaciones públicas con <span>Machine Learning</span></h1>
-            <p>SmartBids transforma millones de datos de Mercado Público en oportunidades estratégicas para tu MiPyME, automatizando el seguimiento y calculando tu probabilidad de éxito.</p>
+            <h1>Gana más licitaciones públicas con <span>Machine Learning</span> y Datos Oficiales</h1>
+            <p>SmartBids transforma millones de datos abiertos de Mercado Público en oportunidades estratégicas para tu MiPyME. Filtra por territorio en las 346 comunas de Chile, analiza a tus competidores y estima tu probabilidad de éxito con modelos predictivos.</p>
             <div class="hero-ctas">
                 <a href="#funcionalidades" class="btn btn-outline btn-large">
-                    Ver Funcionalidades
+                    <i class="fa-solid fa-layer-group"></i> Ver Módulos de la Plataforma
                 </a>
             </div>
             <div class="trust-metrics">
                 <div class="metric-item">
-                    <h4>+19,3 Millones</h4>
-                    <p>US$ Transados Analizados</p>
+                    <h4>346 Comunas</h4>
+                    <p>Cobertura Territorial Nacional</p>
                 </div>
                 <div class="metric-item">
-                    <h4>85%</h4>
-                    <p>Ahorro de Tiempo en Búsquedas</p>
+                    <h4>XGBoost & ML</h4>
+                    <p>Scoring Predictivo de Adjudicación</p>
                 </div>
                 <div class="metric-item">
-                    <h4>XGBoost</h4>
-                    <p>Modelo Predictivo Integrado</p>
+                    <h4>100% Oficial</h4>
+                    <p>Sincronizado con ChileCompra</p>
+                </div>
+                <div class="metric-item">
+                    <h4>Ley 21.719</h4>
+                    <p>Seguridad 2FA & Privacidad ARCOP</p>
                 </div>
             </div>
         </div>
 
+        <!-- Previsualización fiel de una licitación en la plataforma SmartBids -->
         <div class="hero-preview">
-            <div class="dashboard-card">
-                <div class="dashboard-header">
-                    <div class="dash-title">
-                        <i class="fa-solid fa-magnifying-glass-chart home__preview-icon"></i>
-                        Licitación #7382-21-LR24
+            <div class="dashboard-card home__hero-card">
+                <div class="home__hero-card-header">
+                    <div class="home__card-badges">
+                        <span class="home__card-code">#2392-12-LR24</span>
+                        <span class="home__badge-match">
+                            <i class="fa-solid fa-bullseye"></i> Match Perfil 94%
+                        </span>
+                        <span class="dash-badge">LP (1.000 a 2.000 UTM)</span>
+                        <span class="dash-badge licitacion-state-badge">
+                            <span class="home__live-dot" aria-hidden="true"></span> Publicada
+                        </span>
                     </div>
-                    <span class="dash-badge">Alta Coincidencia</span>
                 </div>
-                <div class="prediction-box">
-                    <div class="pred-text">
+
+                <h3 class="home__card-title">
+                    Servicio de Mantenimiento Preventivo e Infraestructura Cloud para Servicios de Salud
+                </h3>
+
+                <div class="home__card-meta">
+                    <span><i class="fa-solid fa-building"></i> Servicio de Salud Valparaíso - San Antonio</span>
+                    <span class="home__meta-sep">•</span>
+                    <span><i class="fa-solid fa-location-dot"></i> Viña del Mar, Región de Valparaíso</span>
+                </div>
+
+                <!-- Box Predictivo de Machine Learning (XGBoost) -->
+                <div class="prediction-box home__pred-box">
+                    <div class="home__pred-text">
+                        <div class="home__pred-badge">
+                            <i class="fa-solid fa-microchip"></i> Modelo Predictivo XGBoost
+                        </div>
                         <h5>Probabilidad de Adjudicación</h5>
-                        <p>Basado en historial de precios y competencia</p>
+                        <p>Correlación de ofertas históricas, baja dispersión de precios y 3 oferentes estimados.</p>
                     </div>
-                    <div class="pred-score">78%</div>
+                    <div class="home__pred-score-wrap">
+                        <div class="pred-score">82%</div>
+                        <span class="home__pred-pill">Alta Viabilidad</span>
+                    </div>
                 </div>
-                <div class="stat-grid">
+
+                <!-- Mini Grid de Métricas Oficiales -->
+                <div class="stat-grid home__stat-grid">
                     <div class="stat-mini-card">
-                        <label>Comprador Frecuente</label>
-                        <div>Servicio de Salud</div>
+                        <label>Presupuesto Estimado</label>
+                        <div>$45.000.000 CLP</div>
                     </div>
                     <div class="stat-mini-card">
-                        <label>Competidores Est.</label>
-                        <div>3 Oferentes</div>
+                        <label>Cierre de Ofertas</label>
+                        <div class="home__urgent-text"><i class="fa-regular fa-clock"></i> Faltan 4 días</div>
                     </div>
+                </div>
+
+                <div class="home__hero-card-footer">
+                    <span class="btn btn-primary btn-sm home__hero-mockup-btn" id="hero-follow-mock-btn" aria-hidden="true" tabindex="-1">
+                        <i class="fa-regular fa-bookmark" id="hero-follow-icon"></i> <span id="hero-follow-text">Seguir Proceso</span>
+                    </span>
+                    <span class="home__official-link">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Ficha oficial Mercado Público
+                    </span>
+                </div>
+
+                <!-- Cursor simulado sutil -->
+                <div class="home__simulated-cursor" id="hero-simulated-cursor" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 3L18 12L11.5 13.5L9 19L4 3Z" fill="var(--accent-green)" stroke="var(--dark-green)" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- ============================================================ -->
+    <!-- 2. PROPUESTA DE VALOR: BENEFICIOS PARA MIPYMES                 -->
+    <!-- ============================================================ -->
     <section class="value-prop home-slide-section" id="propuesta">
         <div class="section-header">
             <span class="section-subtitle">¿Por qué elegir SmartBids?</span>
             <h2 class="section-title">Diseñado específicamente para impulsar la participación de las MiPyMEs</h2>
-            <p class="section-desc">Las empresas pierden cientos de horas en búsquedas manuales y análisis de bases complejas. SmartBids democratiza el acceso a las compras públicas con análisis inteligente.</p>
+            <p class="section-desc">Las empresas pierden cientos de horas al mes en búsquedas manuales y análisis de bases complejas. SmartBids democratiza el acceso a las compras públicas mediante analítica automatizada y Machine Learning predictivo.</p>
         </div>
 
         <div class="prop-grid">
             <div class="prop-card">
                 <div class="prop-icon"><i class="fa-solid fa-brain"></i></div>
-                <h3>Inteligencia Comercial</h3>
-                <p>Transformamos grandes volúmenes de datos públicos y dispersos en oportunidades concretas alineadas al rubro exacto de tu negocio.</p>
+                <h3>Inteligencia Comercial & Filtrado</h3>
+                <p>Filtramos el ruido de miles de compras diarias y detectamos solo aquellas que calzan con tus rubros, palabras clave y comunas de operación en Chile.</p>
             </div>
             <div class="prop-card">
-                <div class="prop-icon"><i class="fa-solid fa-robot"></i></div>
-                <h3>Automatización Operativa</h3>
-                <p>Olvídate del monitoreo manual. Recibe alertas en tiempo real sobre hitos críticos, fechas de cierre, preguntas y respuestas.</p>
+                <div class="prop-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                <h3>Modelos Predictivos (ML)</h3>
+                <p>Algoritmos de Machine Learning entrenados con históricos de compras públicas para evaluar la factibilidad real antes de que inviertas tiempo ofertando.</p>
             </div>
             <div class="prop-card">
-                <div class="prop-icon"><i class="fa-solid fa-chart-pie"></i></div>
-                <h3>Decisiones Basadas en Datos</h3>
-                <p>Evalúa el comportamiento de los compradores, estudia el precio de tu competencia y decide con certeza dónde vale la pena ofertar.</p>
+                <div class="prop-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <h3>Data Warehouse & Competencia</h3>
+                <p>Evalúa el comportamiento de los organismos compradores, estudia el precio de tu competencia y decide con datos certeros dónde vale la pena participar.</p>
             </div>
         </div>
     </section>
 
+    <!-- ============================================================ -->
+    <!-- 3. MÓDULOS DE LA PLATAFORMA (MOCKUPS FIELES A LA REALIDAD)    -->
+    <!-- ============================================================ -->
     <section class="features home-slide-section" id="funcionalidades">
         <div class="section-header home__features-heading">
             <span class="section-subtitle">Módulos de la Plataforma</span>
-            <h2 class="section-title">Todo lo que necesitas para dominar Mercado Público</h2>
+            <h2 class="section-title">Una suite integral para dominar Mercado Público</h2>
+            <p class="section-desc">Cada herramienta ha sido creada para resolver un problema operativo real de las empresas que licitan en Chile.</p>
         </div>
 
+        <!-- MÓDULO 1: Resumen Diario del Proveedor -->
         <div class="feature-row">
             <div class="feature-text">
-                <h3>Búsqueda Avanzada y Perfilamiento Inteligente</h3>
-                <p>Configura el perfil de tu empresa con rubros, palabras clave y preferencias de monto. SmartBids filtra automáticamente el ruido y te entrega solo lo relevante.</p>
+                <span class="dash-badge home__feature-badge"><i class="fa-solid fa-sun"></i> Módulo Matutino</span>
+                <h3>Resumen Ejecutivo Diario en 24 Horas</h3>
+                <p>El primer paso de tu jornada comercial. Cada mañana SmartBids consolida las licitaciones publicadas en las últimas 24 horas que coinciden con tus palabras clave, procesos con cierre urgente (&lt; 72 hrs) y el estado de tus procesos en seguimiento.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-check"></i> Perfil de proveedor con rubros y categorías personalizadas</li>
-                    <li><i class="fa-solid fa-check"></i> Filtros por región, monto estimado e institución</li>
-                    <li><i class="fa-solid fa-check"></i> Autenticación segura y protección de datos empresarial (2FA)</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Monitoreo continuo de 24 hrs:</strong> Detección instantánea de nuevas oportunidades.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Alertas de cierre urgente:</strong> Procesos con menos de 72 horas para presentar oferta.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Contador de coincidencias:</strong> Match automático según tu rubro y palabras clave.</li>
                 </ul>
-                <a href="{% url 'registro' %}" class="btn btn-outline">Probar Módulo SaaS</a>
+                <a href="{% if suscriptor_activo %}{% url 'resumen_dia' %}{% else %}{% url 'registro' %}{% endif %}" data-auth-href="{% url 'resumen_dia' %}" data-guest-href="{% url 'registro' %}" class="btn btn-outline home__auth-conditional-btn">Probar Resumen Diario</a>
             </div>
             <div class="feature-graphic">
-                <div class="graphic-mockup">
-                    <div class="mockup-item">
-                        <div class="mockup-info">
-                            <h6>Servicios de Mantenimiento TI</h6>
-                            <span>Ministerio de Educación • $15.000.000</span>
+                <div class="dashboard-card home__mockup-card">
+                    <div class="home__resumen-mock-header">
+                        <div class="home__resumen-user">
+                            <div class="home__resumen-avatar">SB</div>
+                            <div>
+                                <h6 class="home__resumen-greeting">¡Hola, Equipo Comercial!</h6>
+                                <span class="home__resumen-date"><i class="fa-regular fa-calendar-days"></i> Publicaciones de hoy • Mercado Público</span>
+                            </div>
                         </div>
-                        <span class="mockup-status">Coincidencia 95%</span>
+                        <span class="dash-badge"><i class="fa-solid fa-bolt"></i> En Vivo</span>
                     </div>
-                    <div class="mockup-item">
-                        <div class="mockup-info">
-                            <h6>Adquisición Licencias Software</h6>
-                            <span>Municipalidad de Santiago • $8.500.000</span>
+
+                    <div class="home__resumen-kpi-grid" id="resumen-kpi-grid">
+                        <div class="home__resumen-kpi-item">
+                            <span class="home__resumen-kpi-num home__resumen-kpi-num--match" data-count-target="32">0</span>
+                            <span class="home__resumen-kpi-lbl">Matches de hoy</span>
                         </div>
-                        <span class="mockup-status">Coincidencia 88%</span>
+                        <div class="home__resumen-kpi-item">
+                            <span class="home__resumen-kpi-num home__resumen-kpi-num--follow" data-count-target="5">0</span>
+                            <span class="home__resumen-kpi-lbl">En seguimiento</span>
+                        </div>
+                        <div class="home__resumen-kpi-item">
+                            <span class="home__resumen-kpi-num home__resumen-kpi-num--urgent" data-count-target="2">0</span>
+                            <span class="home__resumen-kpi-lbl">Cierres &lt; 72 hrs</span>
+                        </div>
+                    </div>
+
+                    <div class="home__resumen-item-list" id="resumen-mock-list">
+                        <div class="home__resumen-item">
+                            <div class="home__resumen-item-info">
+                                <strong>Adquisición Servidores & Backup Cloud</strong>
+                                <small>Ministerio de Hacienda • $28.000.000 CLP</small>
+                            </div>
+                            <span class="dash-badge">Match 96%</span>
+                        </div>
+                        <div class="home__resumen-item">
+                            <div class="home__resumen-item-info">
+                                <strong>Soporte Técnico Especializado TI</strong>
+                                <small>Municipalidad de Las Condes • $14.500.000 CLP</small>
+                            </div>
+                            <span class="dash-badge">Match 89%</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- MÓDULO 2: Explorador Territorial y Filtros Avanzados -->
         <div class="feature-row reverse">
             <div class="feature-text">
-                <h3>Monitoreo de Hitos y Seguimiento Continuo</h3>
-                <p>Gestiona tu pipeline de licitaciones como un CRM especializado en compras estatales. Mantén bajo control cada etapa del ciclo de compra.</p>
+                <span class="dash-badge home__feature-badge"><i class="fa-solid fa-map-location-dot"></i> Cobertura Territorial</span>
+                <h3>Explorador Territorial con Cobertura en 346 Comunas</h3>
+                <p>Encuentra oportunidades exactamente donde tu empresa puede operar. Filtra por cualquiera de las 16 regiones, 56 provincias y 346 comunas de Chile, tramos de compra pública o privada, y unidades de compra institucional (UCOM).</p>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-check"></i> Guardado de procesos de interés y tablero de seguimiento</li>
-                    <li><i class="fa-solid fa-check"></i> Registro completo de bases, adjuntos y aclaraciones</li>
-                    <li><i class="fa-solid fa-check"></i> Recordatorios automáticos de fechas clave para presentar oferta</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Jerarquía geográfica completa:</strong> Región, Provincia y Comuna a nivel nacional.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Tramos oficiales:</strong> L1 (&lt;100 UTM), LE, LP, LQ y LR (&gt;5.000 UTM).</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Exportación integral:</strong> Descarga listados a planillas Excel (.xlsx) y CSV con 1 clic.</li>
                 </ul>
-                <a href="{% url 'registro' %}" class="btn btn-outline">Ver Módulo Seguimiento</a>
+                <a href="{% if suscriptor_activo %}{% url 'mis_licitaciones' %}{% else %}{% url 'registro' %}{% endif %}" data-auth-href="{% url 'mis_licitaciones' %}" data-guest-href="{% url 'registro' %}" class="btn btn-outline home__auth-conditional-btn">Ver Explorador de Licitaciones</a>
             </div>
             <div class="feature-graphic">
-                <div class="graphic-mockup">
-                    <div class="home__milestone-alert">
-                        <i class="fa-solid fa-bell home__milestone-icon"></i>
-                        <h6 class="home__milestone-title">Alerta de Hito Próximo</h6>
-                        <p class="home__milestone-description">Faltan 24 hrs para el cierre de preguntas en Licitación #5021</p>
+                <div class="dashboard-card home__mockup-card">
+                    <div class="home__explorador-bar">
+                        <div class="home__explorador-input-wrap">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span class="home__explorador-input-text" id="explorador-typing-target"></span>
+                            <span class="home__typing-cursor" id="explorador-typing-cursor" aria-hidden="true">|</span>
+                        </div>
+                        <span class="btn btn-primary btn-sm home__explorador-search-btn" id="explorador-mock-search-btn">Buscar</span>
+                    </div>
+
+                    <div class="home__filter-tags" id="explorador-mock-tags">
+                        <span class="home__filter-tag"><i class="fa-solid fa-location-dot"></i> Valparaíso / Viña del Mar</span>
+                        <span class="home__filter-tag"><i class="fa-solid fa-tags"></i> Tipo: LP (1.000 a 2.000 UTM)</span>
+                        <span class="home__filter-tag"><i class="fa-solid fa-filter"></i> Estado: Publicada</span>
+                    </div>
+
+                    <div class="home__explorador-card-preview" id="explorador-mock-result-card">
+                        <div class="home__explorador-card-top">
+                            <span class="home__card-code">#4810-18-LP24</span>
+                            <span class="dash-badge licitacion-state-badge">Publicada</span>
+                        </div>
+                        <h5 class="home__explorador-card-name">Modernización Data Center y Respaldo Institucional</h5>
+                        <div class="home__explorador-card-bottom">
+                            <span><i class="fa-solid fa-coins"></i> $62.000.000 CLP</span>
+                            <span class="home__badge-match"><i class="fa-solid fa-bullseye"></i> Match 92%</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- MÓDULO 3: Ficha Técnica Oficial, Bases y Foro Q&A -->
         <div class="feature-row">
             <div class="feature-text">
-                <h3>Dashboards Históricos y Analítica de Mercado</h3>
-                <p>Visualiza analítica profunda del mercado público en paneles interactivos. Descubre tendencias de precios, volumen comprador y patrones de tu competencia.</p>
+                <span class="dash-badge home__feature-badge"><i class="fa-solid fa-file-contract"></i> Ficha Integral</span>
+                <h3>Ficha Oficial con Bases, Cronograma y Foro Q&A</h3>
+                <p>Centraliza todo el expediente de la licitación en una única pantalla. Consulta el cronograma de hitos paso a paso (apertura técnica, apertura económica, adjudicación), accede directamente a las bases administrativas y revisa el foro oficial de preguntas y respuestas sincronizado con ChileCompra.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-check"></i> Panel de Compradores: Historial de montos y frecuencia de compra</li>
-                    <li><i class="fa-solid fa-check"></i> Panel de Competencia: Tasas de adjudicación de otros oferentes</li>
-                    <li><i class="fa-solid fa-check"></i> Exportación fácil de reportes consolidados en Excel (.xlsx) y CSV</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Cronograma de hitos en vivo:</strong> Consulta fechas de inicio, consultas y aperturas.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Acceso a bases oficiales:</strong> Enlace directo a documentos y anexos oficiales.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Foro de preguntas y respuestas:</strong> Monitorea aclaraciones del organismo comprador.</li>
                 </ul>
-                <a href="{% url 'registro' %}" class="btn btn-outline">Explorar Dashboards</a>
+                <a href="{% if suscriptor_activo %}{% url 'mis_licitaciones' %}{% else %}{% url 'registro' %}{% endif %}" data-auth-href="{% url 'mis_licitaciones' %}" data-guest-href="{% url 'registro' %}" class="btn btn-outline home__auth-conditional-btn">Explorar Ficha Técnica</a>
             </div>
             <div class="feature-graphic">
-                <div class="graphic-mockup">
-                    <div class="home__analytics-chart">
-                        <div class="home__chart-bar--first"></div>
-                        <div class="home__chart-bar--second"></div>
-                        <div class="home__chart-bar--third"></div>
-                        <div class="home__chart-bar--fourth"></div>
+                <div class="dashboard-card home__mockup-card">
+                    <div class="home__ficha-header">
+                        <span class="dash-badge">Cronograma del Proceso</span>
+                        <span class="home__official-link"><i class="fa-solid fa-file-pdf"></i> Bases Oficiales (.pdf)</span>
+                    </div>
+
+                    <ol class="home__timeline-list" id="ficha-mock-timeline">
+                        <li class="home__timeline-item home__timeline-item--done">
+                            <div class="home__timeline-bullet"><i class="fa-solid fa-check"></i></div>
+                            <div class="home__timeline-content">
+                                <strong>Publicación de Bases</strong>
+                                <small>18/10/2026 - Convocatoria oficial</small>
+                            </div>
+                        </li>
+                        <li class="home__timeline-item home__timeline-item--done">
+                            <div class="home__timeline-bullet"><i class="fa-solid fa-check"></i></div>
+                            <div class="home__timeline-content">
+                                <strong>Foro de Consultas y Aclaraciones</strong>
+                                <small>24/10/2026 - 4 preguntas respondidas</small>
+                            </div>
+                        </li>
+                        <li class="home__timeline-item home__timeline-item--current">
+                            <div class="home__timeline-bullet"><i class="fa-solid fa-hourglass-half"></i></div>
+                            <div class="home__timeline-content">
+                                <strong>Apertura Técnica y Económica</strong>
+                                <small>02/11/2026 15:00 hrs • Etapa actual</small>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="home__qa-card" id="ficha-mock-qa">
+                        <div class="home__qa-label"><i class="fa-solid fa-comments"></i> Aclaración Oficial Foro ChileCompra:</div>
+                        <p class="home__qa-text">"Se confirma que la experiencia en servicios cloud de entidades públicas y privadas es admisible según el punto 4.2 de las bases."</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MÓDULO 4: Data Warehouse y Analítica de Competencia -->
+        <div class="feature-row reverse">
+            <div class="feature-text">
+                <span class="dash-badge home__feature-badge"><i class="fa-solid fa-chart-pie"></i> Analítica & Data Warehouse</span>
+                <h3>Data Warehouse de Mercado y Análisis de Competidores</h3>
+                <p>Toma decisiones con datos consolidados de compras públicas. Explora la evolución histórica de montos transados en CLP y UF, analiza la demanda por códigos de producto (ONU/UNSPSC) y descubre las tasas de adjudicación de tus competidores directos.</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Gráficos analíticos con Chart.js:</strong> Tendencias de gasto y volumen mensual.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Ranking de oferentes:</strong> Conoce qué empresas ganan en tu rubro y sus montos.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Hábitos de compra:</strong> Frecuencia y presupuesto promedio de cada organismo público.</li>
+                </ul>
+                <a href="{% if suscriptor_activo %}{% url 'dashboard' %}{% else %}{% url 'registro' %}{% endif %}" data-auth-href="{% url 'dashboard' %}" data-guest-href="{% url 'registro' %}" class="btn btn-outline home__auth-conditional-btn">Explorar Dashboards</a>
+            </div>
+            <div class="feature-graphic">
+                <div class="dashboard-card home__mockup-card">
+                    <div class="home__dw-header">
+                        <div>
+                            <span class="home__dw-subtitle">Evolución de Compras Públicas • Rubro TI</span>
+                            <h5 class="home__dw-title">$1.420.500.000 CLP Transados</h5>
+                        </div>
+                        <span class="dash-badge">Trimestre Actual</span>
+                    </div>
+
+                    <!-- Gráfico analítico estilizado -->
+                    <div class="home__chart-graphic" id="dw-mock-chart">
+                        <div class="home__chart-col">
+                            <div class="home__chart-bar" data-target-height="48%" style="height: 0%;" title="Jul: $280M CLP"></div>
+                            <span class="home__chart-col-lbl">Jul</span>
+                        </div>
+                        <div class="home__chart-col">
+                            <div class="home__chart-bar" data-target-height="65%" style="height: 0%;" title="Ago: $370M CLP"></div>
+                            <span class="home__chart-col-lbl">Ago</span>
+                        </div>
+                        <div class="home__chart-col">
+                            <div class="home__chart-bar" data-target-height="85%" style="height: 0%;" title="Sep: $490M CLP"></div>
+                            <span class="home__chart-col-lbl">Sep</span>
+                        </div>
+                        <div class="home__chart-col">
+                            <div class="home__chart-bar home__chart-bar--active" data-target-height="100%" style="height: 0%;" title="Oct: $580M CLP"></div>
+                            <span class="home__chart-col-lbl">Oct</span>
+                        </div>
+                    </div>
+
+                    <!-- Mini Ranking de Competencia -->
+                    <div class="home__ranking-mini">
+                        <div class="home__ranking-row">
+                            <span class="home__ranking-pos">#1</span>
+                            <span class="home__ranking-name">Tecnologías Conectadas SpA</span>
+                            <strong class="home__ranking-val">$420M CLP (28%)</strong>
+                        </div>
+                        <div class="home__ranking-row">
+                            <span class="home__ranking-pos">#2</span>
+                            <span class="home__ranking-name">Soluciones Cloud Chile Ltda</span>
+                            <strong class="home__ranking-val">$310M CLP (21%)</strong>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- ============================================================ -->
+    <!-- 4. MACHINE LEARNING & MODELOS PREDICTIVOS                      -->
+    <!-- ============================================================ -->
     <section class="ml-section home-slide-section" id="inteligencia">
         <div class="ml-grid">
             <div class="ml-text">
-                <h2>Potenciado por <span>Modelos Predictivos</span> de Adjudicación</h2>
-                <p>Nuestra plataforma aplica algoritmos de Scikit-Learn y XGBoost entrenados con el historial de compras públicas para darte una ventaja competitiva real.</p>
-                <a href="{% url 'registro' %}" class="btn btn-primary btn-large">Probar Evaluación Predictiva</a>
+                <span class="dash-badge home__ml-badge"><i class="fa-solid fa-brain"></i> Machine Learning Integrado</span>
+                <h2>Potenciado por <span>Modelos Predictivos</span> Scikit-Learn y XGBoost</h2>
+                <p>No todas las licitaciones ameritan el costo de preparar una oferta. Nuestro motor de Machine Learning analiza el histórico transaccional de compras públicas para entregarte una estimación fundamentada de viabilidad y éxito comercial.</p>
+                
+                <div class="home__ml-explain-card">
+                    <h5 class="home__ml-explain-title"><i class="fa-solid fa-magnifying-glass-chart"></i> ¿Cómo evalúa el algoritmo una licitación?</h5>
+                    <ul class="home__ml-factor-list">
+                        <li class="home__ml-factor-item">
+                            <span class="home__ml-factor-name">Historial de Precios vs Presupuesto</span>
+                            <span class="home__ml-factor-badge home__ml-factor-badge--high">+35% Rango Competitivo</span>
+                        </li>
+                        <li class="home__ml-factor-item">
+                            <span class="home__ml-factor-name">Densidad de Competidores en la Zona</span>
+                            <span class="home__ml-factor-badge home__ml-factor-badge--mid">+25% Baja Rivalidad</span>
+                        </li>
+                        <li class="home__ml-factor-item">
+                            <span class="home__ml-factor-name">Concordancia Semántica con tu Perfil</span>
+                            <span class="home__ml-factor-badge home__ml-factor-badge--match">+22% Match 94%</span>
+                        </li>
+                    </ul>
+                    <div class="home__ml-final-score">
+                        <span>Puntaje Predictivo Calculado:</span>
+                        <strong>82% de Probabilidad</strong>
+                    </div>
+                </div>
+
+                <a href="{% if suscriptor_activo %}{% url 'mis_licitaciones' %}{% else %}{% url 'registro' %}{% endif %}" data-auth-href="{% url 'mis_licitaciones' %}" data-guest-href="{% url 'registro' %}" class="btn btn-primary btn-large home__auth-conditional-btn">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Probar Evaluación Predictiva
+                </a>
             </div>
+
             <div class="ml-cards">
                 <div class="ml-card-item">
                     <div class="ml-card-icon"><i class="fa-solid fa-bullseye"></i></div>
                     <div class="ml-card-content">
-                        <h4>Estimación de Probabilidad de Éxito</h4>
-                        <p>Algoritmos predictivos que calculan la factibilidad de ganar una licitación según bases y precios históricos.</p>
+                        <h4>Estimación de Probabilidad de Éxito (XGBoost)</h4>
+                        <p>Algoritmos predictivos supervisados que correlacionan precios históricos, montos oficiales, tipo de licitación y número estimado de oferentes.</p>
                     </div>
                 </div>
                 <div class="ml-card-item">
-                    <div class="ml-card-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <div class="ml-card-icon"><i class="fa-solid fa-tags"></i></div>
                     <div class="ml-card-content">
-                        <h4>Motor de Recomendación Inteligente</h4>
-                        <p>Recibe sugerencias personalizadas de oportunidades afines a la fortalezas de tu empresa.</p>
+                        <h4>Motor de Recomendación y Match de Perfil</h4>
+                        <p>Filtrado semántico continuo que escanea bases técnicas, rubros tributarios y palabras clave para identificar compras afines a tu empresa.</p>
                     </div>
                 </div>
                 <div class="ml-card-item">
-                    <div class="ml-card-icon"><i class="fa-solid fa-microchip"></i></div>
+                    <div class="ml-card-icon"><i class="fa-solid fa-sliders"></i></div>
                     <div class="ml-card-content">
-                        <h4>Evaluador Predictivo Desglosado</h4>
-                        <p>Entiende con claridad los factores clave detrás del puntaje asignado a cada licitación.</p>
+                        <h4>Calibración Continua con tu Perfil Empresarial</h4>
+                        <p>Ajusta comunas prioritarias, categorías ONU (UNSPSC) y palabras clave en tu perfil para que el modelo refine sus predicciones automáticamente.</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- ============================================================ -->
+    <!-- 5. BENEFICIOS TANGIBLES, CIBERSEGURIDAD Y MARCO NORMATIVO      -->
+    <!-- ============================================================ -->
     <section class="benefits-banner home-slide-section" id="beneficios">
         <div class="section-header">
-            <span class="section-subtitle">Beneficios Tangibles</span>
-            <h2 class="section-title">Resultados reales para tu gestión comercial</h2>
+            <span class="section-subtitle">Beneficios Tangibles & Confianza</span>
+            <h2 class="section-title">Resultados reales con seguridad empresarial demostrable</h2>
+            <p class="section-desc">Diseñado bajo los más altos estándares normativos y de ciberseguridad para garantizar la protección de los datos de tu empresa.</p>
         </div>
 
         <div class="benefits-grid">
             <div class="benefit-box">
                 <i class="fa-solid fa-clock"></i>
-                <h4>Menor Tiempo de Búsqueda</h4>
-                <p>Reduce hasta en un 80% el tiempo invertido en revisar el portal de ChileCompra.</p>
+                <h4>-80% de Tiempo de Búsqueda</h4>
+                <p>Automatiza la prospección diaria en Mercado Público y recibe alertas directas en tu panel sin tener que navegar cientos de páginas dispersas.</p>
             </div>
             <div class="benefit-box">
                 <i class="fa-solid fa-chart-line"></i>
-                <h4>Mayor Tasa de Éxito</h4>
-                <p>Concentra tus recursos sólo en las licitaciones con alta probabilidad de adjudicación.</p>
+                <h4>Mayor Tasa de Adjudicación</h4>
+                <p>Concentra los recursos y tiempo de tu equipo exclusivamente en las licitaciones donde los algoritmos predictivos indiquen viabilidad favorable.</p>
             </div>
             <div class="benefit-box">
                 <i class="fa-solid fa-shield-halved"></i>
-                <h4>Cero Hitos Perdidos</h4>
-                <p>Alertas oportunas que garantizan entregar tus ofertas con la documentación requerida a tiempo.</p>
+                <h4>Ciberseguridad con 2FA</h4>
+                <p>Acceso corporativo protegido mediante Doble Factor de Autenticación con códigos temporales OTP enviados al correo con hash criptográfico con sal.</p>
             </div>
             <div class="benefit-box">
-                <i class="fa-solid fa-eye"></i>
-                <h4>Visibilidad Total</h4>
-                <p>Conoce los precios reales y estrategias con las que opera tu competencia en tu rubro.</p>
+                <i class="fa-solid fa-scale-balanced"></i>
+                <h4>Cumplimiento Ley N° 21.719</h4>
+                <p>Pleno respeto por los derechos ARCOP de protección de datos personales: exportación en formato portable y garantía legal de supresión de datos.</p>
             </div>
         </div>
     </section>
 
+    <!-- ============================================================ -->
+    <!-- 6. SECCIÓN DE CONTACTO (TOTALMENTE OPERATIVA)                  -->
+    <!-- ============================================================ -->
     <section class="features home-slide-section" id="contacto" aria-labelledby="contacto-title">
         <div class="feature-row home__contact-row">
             <div class="feature-text">
                 <span class="section-subtitle">Contacto SmartBids</span>
-                <h3 id="contacto-title">Hablemos de tu proyecto</h3>
-                <p>Cuéntanos qué necesitas. Nuestro equipo puede orientarte sobre la plataforma, una consulta comercial o soporte técnico.</p>
+                <h3 id="contacto-title">Hablemos de tu empresa</h3>
+                <p>¿Tienes dudas sobre cómo implementar SmartBids en tu equipo? Nuestro equipo puede orientarte sobre la plataforma, una demostración comercial o soporte técnico.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-comments"></i> Consultas comerciales y demostraciones</li>
-                    <li><i class="fa-solid fa-life-ring"></i> Ayuda para usar SmartBids</li>
-                    <li><i class="fa-solid fa-lightbulb"></i> Ideas e integraciones para tu equipo</li>
+                    <li><i class="fa-solid fa-comments"></i> Demostraciones guiadas y consultas comerciales</li>
+                    <li><i class="fa-solid fa-life-ring"></i> Soporte técnico para suscriptores de la plataforma</li>
+                    <li><i class="fa-solid fa-lightbulb"></i> Integraciones personalizadas para equipos de ventas</li>
                 </ul>
                 <div class="stat-mini-card home__contact-email-card">
-                    <label>También puedes escribirnos</label>
+                    <label>Canal directo de contacto</label>
                     <a href="mailto:{{ contacto_email }}" class="home__contact-email">{{ contacto_email }}</a>
                 </div>
             </div>
@@ -261,8 +495,8 @@
             <div class="dashboard-card home__contact-card">
                 <div class="dashboard-header home__contact-header">
                     <div>
-                        <h3 class="dash-title home__contact-title">Conversemos</h3>
-                        <p class="home__contact-description">Completa tus datos y envíanos tu consulta.</p>
+                        <h3 class="dash-title home__contact-title">Envíanos un mensaje</h3>
+                        <p class="home__contact-description">Completa tus datos y nos pondremos en contacto contigo a la brevedad.</p>
                     </div>
                     <i class="fa-regular fa-paper-plane home__contact-send-icon" aria-hidden="true"></i>
                 </div>
@@ -306,11 +540,6 @@
             </div>
         </div>
     </section>
-
-
-
-
-
 {% endblock %}
 
 {% block footer %}

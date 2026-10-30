@@ -33,18 +33,21 @@ def filtrar_licitaciones(request, suscriptor):
     tipos = [str(value).strip() for value in (preferencias.pref_tipo_licitacion or []) if str(value).strip()] if preferencias else []
     ucom_ids = [int(value) for value in (preferencias.pref_ucom or []) if str(value).strip().isdigit()] if preferencias else []
     palabras = [str(value).strip() for value in (preferencias.pref_palabras_claves or []) if str(value).strip()] if preferencias else []
+    palabras_norm = [str(value).strip() for value in (preferencias.pref_palabras_claves_norm or []) if str(value).strip()] if preferencias else []
     productos = [str(value).strip() for value in (preferencias.pref_productos or []) if str(value).strip()] if preferencias else []
 
-    tiene_filtros_perfil = bool(comunas or tipos or ucom_ids or palabras or productos)
+    tiene_filtros_perfil = bool(comunas or tipos or ucom_ids or palabras or palabras_norm or productos)
     tab = request.GET.get('tab', '').strip().lower()
     solo_seguidas = request.GET.get('solo_seguidas') == '1'
     solo_claves = (tab == 'claves' or request.GET.get('solo_claves') == '1') and not solo_seguidas
 
     q_contenido = Q()
-    if palabras:
+    if palabras or palabras_norm:
         q_palabras = Q()
         for palabra in palabras:
             q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra) | Q(lic_descripcion__icontains=palabra)
+        if palabras_norm:
+            q_palabras |= Q(lic_palabras_claves_norm__overlap=palabras_norm)
         q_contenido |= q_palabras
 
     if productos:

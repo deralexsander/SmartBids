@@ -108,13 +108,18 @@ CACHE_KEY_PRODUCTOS_ARBOL = 'catalogos_productos_arbol_v2'
 
 
 
+from smartbids.utils.palabras_utils import (
+    normalizar_texto,
+    procesar_palabras_usuario,
+    sanitizar_caracteres_especiales,
+    leer_STOPWORDS,
+    filtrar_STOPWORDS,
+    obtener_palabras_unicas,
+)
+
+# Alias para compatibilidad de normalización usando el pipeline oficial de SmartBids
 def normalizar_cadena_simple(texto: str) -> str:
-    if not texto:
-        return ''
-    norm = unicodedata.normalize('NFD', str(texto))
-    sin_tildes = ''.join(c for c in norm if unicodedata.category(c) != 'Mn')
-    limpio = re.sub(r'[^a-zA-Z0-9\s]', ' ', sin_tildes)
-    return ' '.join(limpio.lower().split())
+    return normalizar_texto(texto)
 
 
 @csrf_exempt
@@ -536,6 +541,7 @@ def obtener_perfil_suscriptor(request):
                     'ucom_detalle': ucom_detalle,
                     'pref_tipo_licitacion': to_list(pref.pref_tipo_licitacion) if pref else [],
                     'pref_palabras_claves': to_list(pref.pref_palabras_claves) if pref else [],
+                    'pref_palabras_claves_norm': to_list(pref.pref_palabras_claves_norm) if pref else [],
                 } if pref else {}
             }
         })
@@ -584,23 +590,13 @@ def actualizar_preferencias_suscriptor(request):
                     continue
             pref.pref_ucom = ucom
 
-        palabras_limpias = None
+        palabras_usuario_final = None
         if 'pref_palabras_claves' in data:
             palabras_recibidas = data.get('pref_palabras_claves', [])
-            if isinstance(palabras_recibidas, str):
-                palabras_recibidas = palabras_recibidas.split(',')
-
-            palabras_limpias = []
-            palabras_set = set()
-            for w in palabras_recibidas:
-                token = normalizar_cadena_simple(str(w))
-                if token and len(token) > 1:
-                    for item in token.split():
-                        item = item[:50].strip()
-                        if len(item) > 1 and item not in palabras_set:
-                            palabras_set.add(item)
-                            palabras_limpias.append(item)
-            pref.pref_palabras_claves = palabras_limpias
+            palabras_orig, palabras_norm = procesar_palabras_usuario(palabras_recibidas, npal=3)
+            pref.pref_palabras_claves = palabras_orig
+            pref.pref_palabras_claves_norm = palabras_norm
+            palabras_usuario_final = palabras_orig
 
         pref.save()
 
@@ -611,8 +607,9 @@ def actualizar_preferencias_suscriptor(request):
             'status': 'ok',
             'mensaje': 'Preferencias guardadas con éxito.'
         }
-        if palabras_limpias is not None:
-            response_payload['palabras_sanitizadas'] = palabras_limpias
+        if palabras_usuario_final is not None:
+            response_payload['palabras_sanitizadas'] = palabras_usuario_final
+            response_payload['palabras_norm'] = pref.pref_palabras_claves_norm or []
 
         return JsonResponse(response_payload)
 
@@ -905,3 +902,210 @@ def desvincular_empresa_suscriptor(request):
     except Exception as e:
         logger.error(f"[SmartBids] Error al desvincular empresa: {str(e)}")
         return JsonResponse({'status': 'error', 'mensaje': f'Error interno al procesar la desvinculación: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def exportar_datos_arcop(request):
+    """
+    Exportación de datos personales del titular conforme al Derecho a la Portabilidad
+    (Artículo 9 de la Ley N° 21.719 sobre Protección de los Datos Personales de Chile).
+    Genera un archivo JSON estructurado e interoperable para el usuario.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        uid = data.get('uid')
+        if not uid:
+            return JsonResponse({'status': 'error', 'mensaje': 'Identidad no provista (UID requerido).'}, status=400)
+
+        suscriptor = Suscriptor.objects.select_related('codigo_estado', 'sus_rut_empresa').filter(firebase_uid=uid).first()
+        if not suscriptor:
+            return JsonResponse({'status': 'error', 'mensaje': 'Suscriptor no encontrado.'}, status=404)
+
+        autorizado, motivo = validar_autorizacion_suscriptor(request, suscriptor)
+        if not autorizado:
+            return JsonResponse({'status': 'error', 'mensaje': motivo}, status=403)
+
+        ahora = timezone.now()
+
+        # Datos del suscriptor
+        datos_suscriptor = {
+            'id_suscriptor': suscriptor.id_suscriptor,
+            'firebase_uid': suscriptor.firebase_uid,
+            'nombres': f"{suscriptor.sus_nombre1} {suscriptor.sus_nombre2 or ''}".strip(),
+            'apellidos': f"{suscriptor.sus_apellido1} {suscriptor.sus_apellido2 or ''}".strip(),
+            'nombre_social': suscriptor.sus_nombre_social or '',
+            'iniciales': suscriptor.sus_iniciales or '',
+            'estado_cuenta': suscriptor.codigo_estado.nombre_estado if suscriptor.codigo_estado else 'N/A',
+            'fecha_registro': suscriptor.fecha_registro.isoformat() if suscriptor.fecha_registro else None,
+            'fecha_ultima_actualizacion': suscriptor.fecha_actualizacion.isoformat() if suscriptor.fecha_actualizacion else None,
+            'consentimiento_legal': {
+                'fecha_aceptacion_terminos': suscriptor.consentimiento_terminos_fecha.isoformat() if getattr(suscriptor, 'consentimiento_terminos_fecha', None) else None,
+                'version_terminos': getattr(suscriptor, 'consentimiento_terminos_version', 'v1.0'),
+                'consentimiento_comunicaciones_comerciales': bool(getattr(suscriptor, 'consentimiento_marketing', False)),
+            }
+        }
+
+        # Datos de empresa vinculada
+        datos_empresa = None
+        if suscriptor.sus_rut_empresa:
+            emp = suscriptor.sus_rut_empresa
+            datos_empresa = {
+                'rut': emp.emp_rut,
+                'razon_social': emp.emp_razon_social or '',
+                'nombre_fantasia': emp.emp_nombre_fantasia or '',
+                'direccion': emp.emp_direccion or '',
+                'comuna': emp.emp_codigo_comuna.nombre_comuna if emp.emp_codigo_comuna else None,
+                'contacto_nombre': emp.emp_contacto_nombre or '',
+                'contacto_correo': emp.emp_contacto_correo or '',
+                'contacto_telefono': emp.emp_contacto_telefono or '',
+            }
+
+        # Preferencias de licitaciones
+        pref = Preferencia.objects.filter(id_suscriptor=suscriptor).first()
+        datos_preferencias = None
+        if pref:
+            datos_preferencias = {
+                'unidades_compra_ucom': pref.pref_ucom or [],
+                'comunas_codigos': pref.pref_comunas or [],
+                'tipos_licitacion': pref.pref_tipo_licitacion or [],
+                'productos_codigos': pref.pref_productos or [],
+                'palabras_claves': pref.pref_palabras_claves or [],
+                'palabras_claves_normalizadas': pref.pref_palabras_claves_norm or [],
+            }
+
+        # Licitaciones en seguimiento
+        licitaciones_seguidas = []
+        try:
+            from smartbids.models.core import SeguimientoLicitacion
+            seguimientos = SeguimientoLicitacion.objects.filter(id_usuario=suscriptor.id_suscriptor)
+            for seg in seguimientos:
+                licitaciones_seguidas.append({
+                    'id_licitacion': seg.id_licitacion,
+                    'estado_actual': seg.estado_actual,
+                    'seguimiento_activo': seg.seguimiento_activo,
+                    'fecha_inicio_seguimiento': seg.creado_en.isoformat() if seg.creado_en else None,
+                })
+        except Exception:
+            pass
+
+        # Registrar solicitud ARCOP de portabilidad en la base de datos
+        try:
+            from smartbids.models.core import SolicitudArcop
+            SolicitudArcop.objects.create(
+                id_suscriptor=suscriptor,
+                tipo_derecho='PORTABILIDAD',
+                detalle='Exportación directa de datos generada por el titular desde su perfil.',
+                estado='PROCESADO',
+                respondido_el=ahora,
+                observaciones='Archivo JSON descargado exitosamente por el titular.'
+            )
+        except Exception as e_arcop:
+            logger.warning(f"[ARCOP] No se pudo registrar log de solicitud: {e_arcop}")
+
+        # Obtener datos institucionales dinámicos desde Información Institucional y Footer
+        correo_privacidad = 'smartbids.qa@chileavanza.cl'
+        razon_social = 'no informada'
+        rut = '00000000-5'
+        try:
+            from smartbids.context_processors import extraer_correo_contacto, extraer_razon_social, extraer_rut_empresa
+            from smartbids.models.config import InfoContacto
+            info = InfoContacto.objects.first()
+            if info and info.contacto_texto:
+                correo_privacidad = extraer_correo_contacto(info.contacto_texto)
+                razon_social = extraer_razon_social(info.contacto_texto)
+                rut = extraer_rut_empresa(info.contacto_texto)
+        except Exception:
+            pass
+
+        paquete_portabilidad = {
+            'declaracion_legal': {
+                'normativa': 'Ley N° 21.719 sobre Protección de los Datos Personales de la República de Chile',
+                'derecho': 'Artículo 9 - Derecho a la Portabilidad de los Datos Personales',
+                'responsable_del_tratamiento': f"{razon_social} (RUT: {rut})",
+                'plataforma': 'SmartBids (chileavanza.cl)',
+                'fecha_exportacion': ahora.isoformat(),
+                'contacto_privacidad': correo_privacidad,
+            },
+            'titular': datos_suscriptor,
+            'empresa_asociada': datos_empresa,
+            'preferencias_busqueda': datos_preferencias,
+            'licitaciones_seguidas': licitaciones_seguidas,
+        }
+
+        response = JsonResponse(paquete_portabilidad, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+        response['Content-Disposition'] = f'attachment; filename="smartbids_mis_datos_{suscriptor.id_suscriptor}.json"'
+        return response
+
+    except Exception as e:
+        logger.error(f"[SmartBids] Error al exportar datos ARCOP: {str(e)}")
+        return JsonResponse({'status': 'error', 'mensaje': f'Error al procesar la portabilidad de datos: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def solicitar_cancelacion_arcop(request):
+    """
+    Solicitud de cancelación / supresión de cuenta y datos personales
+    (Artículo 8 de la Ley N° 21.719 de Protección de Datos Personales de Chile).
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        uid = data.get('uid')
+        motivo = (data.get('motivo') or '').strip()
+
+        if not uid:
+            return JsonResponse({'status': 'error', 'mensaje': 'UID no provisto.'}, status=400)
+
+        suscriptor = Suscriptor.objects.select_related('codigo_estado').filter(firebase_uid=uid).first()
+        if not suscriptor:
+            return JsonResponse({'status': 'error', 'mensaje': 'Cuenta no encontrada.'}, status=404)
+
+        autorizado, motivo_auth = validar_autorizacion_suscriptor(request, suscriptor)
+        if not autorizado:
+            return JsonResponse({'status': 'error', 'mensaje': motivo_auth}, status=403)
+
+        ahora = timezone.now()
+
+        # Registrar la solicitud ARCOP
+        try:
+            from smartbids.models.core import SolicitudArcop
+            SolicitudArcop.objects.create(
+                id_suscriptor=suscriptor,
+                tipo_derecho='CANCELACION',
+                detalle=f"Solicitud de supresión de cuenta ingresada por el titular. Motivo: {motivo or 'No indicado'}",
+                estado='PROCESADO',
+                respondido_el=ahora,
+                observaciones='Cuenta cancelada y preferencias suprimidas conforme al Art. 8 Ley 21.719.'
+            )
+        except Exception as e_log:
+            logger.warning(f"[ARCOP] No se pudo guardar solicitud: {e_log}")
+
+        # Limpiar preferencias del suscriptor para cesar procesamiento activo
+        Preferencia.objects.filter(id_suscriptor=suscriptor).delete()
+
+        # Inactivar o deshabilitar cuenta (Estado Suscriptor = Deshabilitado o Inactivo)
+        estado_deshabilitado = EstadoSuscriptor.objects.filter(nombre_estado__icontains='deshabilitado').first()
+        if not estado_deshabilitado:
+            estado_deshabilitado = EstadoSuscriptor.objects.filter(codigo_estado=1).first()
+
+        if estado_deshabilitado:
+            suscriptor.codigo_estado = estado_deshabilitado
+        suscriptor.token_sesion = None
+        suscriptor.fecha_actualizacion = ahora
+        suscriptor.save()
+
+        logger.info(f"[ARCOP] Cuenta de suscriptor {suscriptor.id_suscriptor} (UID: {uid}) procesada para cancelación.")
+
+        return JsonResponse({
+            'status': 'ok',
+            'mensaje': 'Tu solicitud de cancelación ha sido procesada exitosamente. Tus preferencias han sido eliminadas y tu sesión ha sido cerrada conforme a la Ley N° 21.719.'
+        })
+
+    except Exception as e:
+        logger.error(f"[SmartBids] Error al procesar cancelación ARCOP: {str(e)}")
+        return JsonResponse({'status': 'error', 'mensaje': f'Error al procesar la cancelación: {str(e)}'}, status=500)
