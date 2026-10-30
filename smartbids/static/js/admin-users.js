@@ -86,15 +86,15 @@ function renderUsers() {
             : (user.codigo_estado === null ? 'Cuenta sin registro en PostgreSQL' : '');
 
         const deleteButtonHtml = esUsuarioActual
-            ? `<span class="badge admin-user-current-badge" style="background: rgba(4, 198, 87, 0.15); color: var(--accent-green); padding: 0.4rem 0.65rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Tu sesión de administrador activa"><i class="fa-solid fa-user-check"></i> Tu cuenta</span>`
-            : `<button type="button" class="btn btn-outline btn-delete-user admin-user-delete" data-uid="${user.uid}" title="${esAdmin ? 'Eliminar administrador (requiere auditoría de seguridad)' : 'Eliminar usuario'}" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 8px;">
+            ? `<span class="badge" style="background: rgba(4, 198, 87, 0.15); color: var(--dark-green); padding: 0.4rem 0.65rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Tu sesión de administrador activa"><i class="fa-solid fa-user-check"></i> Tu cuenta</span>`
+            : `<button type="button" class="btn btn-outline btn-delete-user admin-user-delete" data-uid="${user.uid}" title="${esAdmin ? 'Eliminar administrador (requiere auditoría de seguridad)' : 'Eliminar usuario'}" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-color: #feb2b2; color: #e53e3e; background: #fff5f5; border-radius: 8px;">
                 <i class="fa-regular fa-trash-can"></i>
                </button>`;
 
         row.innerHTML = `
             <!-- Usuario / Correo -->
             <td style="padding: 0.9rem 0.8rem; vertical-align: middle;">
-                <div class="admin-user-email-text" style="font-weight: 700; font-size: 0.9rem; word-break: break-all;">
+                <div style="font-weight: 700; color: var(--dark-green); font-size: 0.9rem; word-break: break-all;">
                     ${user.email || 'Sin correo'}
                 </div>
                 <small style="color: ${user.emailVerified ? 'var(--accent-green)' : 'var(--muted-teal)'}; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;">
@@ -117,7 +117,7 @@ function renderUsers() {
 
             <!-- Identificador (UID) -->
             <td style="padding: 0.9rem 0.8rem; vertical-align: middle;">
-                <span class="admin-user-uid-badge" style="font-family: monospace; font-size: 0.78rem; padding: 3px 6px; border-radius: 6px; display: inline-block;" title="${user.uid}">
+                <span style="font-family: monospace; font-size: 0.78rem; background: var(--light-bg); border: 1px solid var(--soft-mint); padding: 3px 6px; border-radius: 6px; color: var(--dark-green); display: inline-block;" title="${user.uid}">
                     ${user.uid ? user.uid.substring(0, 8) + '...' : '--'}
                 </span>
             </td>
@@ -125,7 +125,7 @@ function renderUsers() {
             <!-- Selector de Estado con ajuste visual limpio -->
             <td style="padding: 0.9rem 0.6rem; vertical-align: middle;">
                 <div class="form-inline" style="max-width: 100%; margin: 0;">
-                    <select class="user-role-select admin-user-state form-input" data-uid="${user.uid}" ${selectDisabled ? `disabled title="${selectTitle}"` : ''} style="width: 100%; padding: 0.5rem 0.7rem; border-radius: 10px; font-size: 0.85rem; outline: none; font-weight: 600; cursor: ${selectDisabled ? 'not-allowed' : 'pointer'}; opacity: ${selectDisabled ? '0.7' : '1'};">
+                    <select class="user-role-select admin-user-state" data-uid="${user.uid}" ${selectDisabled ? `disabled title="${selectTitle}"` : ''} style="width: 100%; padding: 0.5rem 0.7rem; border-radius: 10px; border: 1.5px solid var(--soft-mint); font-size: 0.85rem; outline: none; background-color: var(--white); color: var(--dark-green); font-weight: 600; cursor: ${selectDisabled ? 'not-allowed' : 'pointer'}; opacity: ${selectDisabled ? '0.7' : '1'};">
                         ${opcionesEstado || `<option selected>${estadoTexto}</option>`}
                     </select>
                 </div>
@@ -324,11 +324,11 @@ async function loadAuditoriaAdmin() {
         }
         tbodyAuditoria.innerHTML = items.map(item => `
             <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 0.75rem 0.6rem; white-space: nowrap; font-size: 0.82rem; color: var(--text-muted);">${item.creado_el}</td>
-                <td style="padding: 0.75rem 0.6rem; font-weight: 600;" class="audit-user-col">${item.ejecutor_email}<br><small style="color:var(--text-muted);">${item.ejecutor_nombre || ''}</small></td>
-                <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: #f87171;">${item.afectado_email}<br><small style="color:var(--text-muted);">${item.afectado_nombre || ''}</small></td>
-                <td style="padding: 0.75rem 0.6rem;"><span class="badge" style="background: ${item.accion === 'ELIMINACION' ? 'rgba(239, 68, 68, 0.18); color: #fca5a5;' : 'rgba(245, 158, 11, 0.18); color: #fcd34d;'} font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">${item.accion}</span></td>
-                <td style="padding: 0.75rem 0.6rem; font-size: 0.82rem;" class="audit-detail-col">${item.detalle}</td>
+                <td style="padding: 0.75rem 0.6rem; white-space: nowrap; font-size: 0.82rem; color: var(--gray-text);">${item.creado_el}</td>
+                <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--dark-green);">${item.ejecutor_email}<br><small style="color:var(--gray-text);">${item.ejecutor_nombre || ''}</small></td>
+                <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: #dc2626;">${item.afectado_email}<br><small style="color:var(--gray-text);">${item.afectado_nombre || ''}</small></td>
+                <td style="padding: 0.75rem 0.6rem;"><span class="badge" style="background: ${item.accion === 'ELIMINACION' ? '#fed7d7; color: #9b2c2c;' : '#feebc8; color: #7b341e;'} font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">${item.accion}</span></td>
+                <td style="padding: 0.75rem 0.6rem; font-size: 0.82rem; color: var(--dark-green);">${item.detalle}</td>
             </tr>
         `).join('');
     } catch (e) {

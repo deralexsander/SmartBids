@@ -45,39 +45,6 @@
     margin-bottom: 0;
 }
 
-.info__hero-legal-meta {
-    margin-top: 1.5rem;
-    font-size: 0.95rem;
-    color: var(--gray-text);
-}
-
-.info__arcop-alert-box {
-    margin-top: 1.25rem;
-    padding: 1.1rem 1.35rem;
-    background: #f8fafc;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-left: 4px solid var(--accent-green);
-    border-radius: 8px;
-}
-
-.info__arcop-alert-text {
-    margin: 0;
-    font-size: 0.9rem;
-    line-height: 1.55;
-    color: var(--dark-green);
-}
-
-.info__arcop-alert-link {
-    color: var(--accent-green);
-    font-weight: 600;
-    text-decoration: underline;
-}
-
-.info__arcop-alert-link:hover {
-    color: var(--dark-green);
-}
-
-
 /* ==========================================================================
    ANIMACIONES DE DESLIZAMIENTO DE SECCIONES (SLIDE-IN ON SCROLL)
    ========================================================================== */

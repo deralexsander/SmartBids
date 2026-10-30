@@ -22,10 +22,7 @@ from .dashboard_views import (
 
 
 def home(request):
-    suscriptor = resolver_suscriptor(request)
-    return render(request, 'smartbids/home.html', {
-        'suscriptor_activo': suscriptor is not None,
-    })
+    return render(request, 'smartbids/home.html')
 
 def login_view(request):
     return render(request, 'registro/ingreso.html')

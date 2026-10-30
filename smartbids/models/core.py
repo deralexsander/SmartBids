@@ -43,9 +43,6 @@ class Suscriptor(models.Model):
     sus_iniciales = models.CharField(max_length=5, blank=True, null=True)
     sus_nombre2 = models.CharField(max_length=100, blank=True, null=True)
     token_sesion = models.CharField(max_length=128, blank=True, null=True)
-    consentimiento_terminos_fecha = models.DateTimeField(blank=True, null=True)
-    consentimiento_terminos_version = models.CharField(max_length=20, blank=True, null=True, default='v1.0')
-    consentimiento_marketing = models.BooleanField(default=False)
 
     class Meta:
         managed = True
@@ -53,18 +50,6 @@ class Suscriptor(models.Model):
 
     def __str__(self):
         return f"Suscriptor {self.id_suscriptor} - {self.codigo_estado.nombre_estado}"
-
-    @property
-    def palabras_claves(self):
-        """Retorna las palabras clave originales ingresadas por el suscriptor."""
-        pref = getattr(self, 'preferencia', None)
-        return pref.pref_palabras_claves if pref else []
-
-    @property
-    def palabras_claves_norm(self):
-        """Retorna el conjunto de palabras clave normalizadas (NLP) del suscriptor."""
-        pref = getattr(self, 'preferencia', None)
-        return pref.pref_palabras_claves_norm if pref else []
 
 
 class Preferencia(models.Model):
@@ -203,37 +188,3 @@ class LicitacionPregunta(models.Model):
     class Meta:
         db_table = '"core"."smartbids_licitacion_pregunta"'
         ordering = ('fecha_pregunta', 'id')
-
-
-class SolicitudArcop(models.Model):
-    TIPO_CHOICES = [
-        ('ACCESO', 'Acceso a Datos'),
-        ('RECTIFICACION', 'Rectificación'),
-        ('CANCELACION', 'Cancelación / Supresión'),
-        ('OPOSICION', 'Oposición al Tratamiento'),
-        ('PORTABILIDAD', 'Portabilidad de Datos'),
-    ]
-    ESTADO_CHOICES = [
-        ('PENDIENTE', 'Pendiente de Revisión'),
-        ('PROCESADO', 'Procesado'),
-        ('RECHAZADO', 'Rechazado'),
-    ]
-
-    id = models.BigAutoField(primary_key=True)
-    id_suscriptor = models.ForeignKey(Suscriptor, models.CASCADE, db_column='id_suscriptor')
-    tipo_derecho = models.CharField(max_length=20, choices=TIPO_CHOICES)
-    detalle = models.TextField(blank=True, default='')
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
-    creado_el = models.DateTimeField(auto_now_add=True)
-    respondido_el = models.DateTimeField(blank=True, null=True)
-    observaciones = models.TextField(blank=True, default='')
-
-    class Meta:
-        managed = True
-        db_table = '"core"."smartbids_solicitud_arcop"'
-        verbose_name = 'Solicitud ARCOP'
-        verbose_name_plural = 'Solicitudes ARCOP'
-
-    def __str__(self):
-        return f"ARCOP #{self.id} - {self.tipo_derecho} ({self.estado})"
-

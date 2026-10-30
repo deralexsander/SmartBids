@@ -555,15 +555,6 @@ if (registerForm) {
             return;
         }
 
-        const consentTerms = document.getElementById('consent-terms');
-        const consentMarketing = document.getElementById('consent-marketing');
-
-        if (consentTerms && !consentTerms.checked) {
-            mostrarMensaje('Debes leer y aceptar los Términos del Servicio y la Política de Privacidad para registrarte.', 'error');
-            consentTerms.focus();
-            return;
-        }
-
         const submitBtn = registerForm.querySelector('button[type="submit"]');
         setButtonLoading(submitBtn, true, 'Verificando correo...');
 
@@ -597,9 +588,7 @@ if (registerForm) {
                 body: JSON.stringify({
                     uid: user.uid,
                     sus_nombre1: firstName,
-                    sus_apellido1: lastName,
-                    consentimiento_terminos: true,
-                    consentimiento_marketing: !!(consentMarketing && consentMarketing.checked)
+                    sus_apellido1: lastName
                 })
             });
 

@@ -204,7 +204,6 @@ def registrar_prospecto(request):
             return JsonResponse({'status': 'error', 'mensaje': 'El nombre y el apellido no pueden superar los 100 caracteres.'}, status=400)
 
         ahora = timezone.now()
-        consentimiento_marketing = bool(data.get('consentimiento_marketing', False))
 
         # Completar los nombres de cuentas creadas antes de que el registro los solicitara.
         suscriptor_existente = Suscriptor.objects.filter(firebase_uid=uid).first()
@@ -222,11 +221,6 @@ def registrar_prospecto(request):
                 if inic:
                     suscriptor_existente.sus_iniciales = inic
                     campos_actualizados.append('sus_iniciales')
-            if hasattr(Suscriptor, 'consentimiento_terminos_fecha') and not getattr(suscriptor_existente, 'consentimiento_terminos_fecha', None):
-                suscriptor_existente.consentimiento_terminos_fecha = ahora
-                suscriptor_existente.consentimiento_terminos_version = 'v1.0'
-                suscriptor_existente.consentimiento_marketing = consentimiento_marketing
-                campos_actualizados.extend(['consentimiento_terminos_fecha', 'consentimiento_terminos_version', 'consentimiento_marketing'])
             if campos_actualizados:
                 suscriptor_existente.fecha_actualizacion = ahora
                 campos_actualizados.append('fecha_actualizacion')
@@ -239,21 +233,15 @@ def registrar_prospecto(request):
         partes = [nombre.strip(), apellido.strip()]
         iniciales_auto = "".join([p[0].upper() for p in partes if p])[:5]
 
-        datos_creacion = {
-            'firebase_uid': uid,
-            'fecha_registro': ahora,
-            'fecha_actualizacion': ahora,
-            'codigo_estado': estado_instancia,
-            'sus_nombre1': nombre.strip(),
-            'sus_apellido1': apellido.strip(),
-            'sus_iniciales': iniciales_auto
-        }
-        if hasattr(Suscriptor, 'consentimiento_terminos_fecha'):
-            datos_creacion['consentimiento_terminos_fecha'] = ahora
-            datos_creacion['consentimiento_terminos_version'] = 'v1.0'
-            datos_creacion['consentimiento_marketing'] = consentimiento_marketing
-
-        Suscriptor.objects.create(**datos_creacion)
+        Suscriptor.objects.create(
+            firebase_uid=uid,
+            fecha_registro=ahora,
+            fecha_actualizacion=ahora,
+            codigo_estado=estado_instancia, # <--- Usar la instancia asignada
+            sus_nombre1=nombre.strip(),
+            sus_apellido1=apellido.strip(),
+            sus_iniciales=iniciales_auto
+        )
 
         return JsonResponse({'status': 'ok', 'mensaje': 'Suscriptor habilitado registrado con éxito.'}, status=201)
 

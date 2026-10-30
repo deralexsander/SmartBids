@@ -26,15 +26,8 @@ function mostrarEstadoSeguimiento(mensaje, error = false) {
     if (feedback) {
         feedback.textContent = mensaje;
         feedback.hidden = false;
-        feedback.classList.toggle('feedback--error', error);
-        feedback.classList.toggle('feedback--success', !error);
-        if (error) {
-            feedback.style.color = '#e53e3e';
-            feedback.style.borderColor = '#e53e3e';
-        } else {
-            feedback.style.color = '';
-            feedback.style.borderColor = '';
-        }
+        feedback.style.color = error ? '#e53e3e' : 'var(--dark-green)';
+        feedback.style.borderColor = error ? '#e53e3e' : 'var(--border-color)';
     }
     mostrarMensaje(mensaje, error ? 'error' : 'exito');
 }

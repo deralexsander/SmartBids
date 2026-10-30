@@ -6,12 +6,12 @@
                 <img src="{% static 'media/isotipo smartbids.webp' %}" alt="SmartBids Icon" class="logo-icon">
                 <div class="logo-text site-footer__brand-text">Smart<span class="site-footer__brand-accent">Bids</span></div>
             </a>
-            <p>Plataforma SaaS de inteligencia predictiva para licitaciones públicas en Chile. Desarrollada para potenciar el crecimiento de proveedores del Estado y MiPyMEs.</p>
+            <p>Plataforma SaaS de inteligencia para licitaciones públicas en Chile. Desarrollada para potenciar el crecimiento de las MiPyMEs.</p>
         </div>
         
-        <!-- Contacto dinámico desde PostgreSQL con fallback institucional -->
+        <!-- Contacto dinámico desde PostgreSQL -->
         <div class="footer-col">
-            <h5>Contacto y Soporte</h5>
+            <h5>Contacto</h5>
             <ul>
                 {% if footer_contacto_lineas %}
                     {% for linea in footer_contacto_lineas %}
@@ -21,9 +21,7 @@
                     <li><a>Agua Santa 1400</a></li>
                     <li><a>2520000 Viña del Mar</a></li>
                     <li><a>Mobile: +56 9 6595 6863</a></li>
-                    <li><a href="mailto:{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}">Email: {{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}</a></li>
-                    <li><a>Razón Social: {{ razon_social|default:'no informada' }}</a></li>
-                    <li><a>RUT: {{ rut|default:'00000000-5' }}</a></li>
+                    <li><a>Email: contacto@chileavanza.cl</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -42,23 +40,22 @@
                     {% endfor %}
                 {% else %}
                     <li><a href="https://chileavanza.cl/" target="_blank" rel="noopener noreferrer">ChileAvanza</a></li>
-                    <li><a href="https://sites.google.com/chileavanza.cl/prisma/inicio" target="_blank" rel="noopener noreferrer">Prisma Team</a></li>
+                    <li><a href="https://sites.google.com/chileavanza.cl/prisma/inicio">Prisma Team</a></li>
                 {% endif %}
             </ul>
         </div>
         
         <div class="footer-col">
-            <h5>Legal y Cumplimiento</h5>
+            <h5>Legal</h5>
             <ul>
-                <li><a href="{% url 'informacion' %}#terminos">Términos del Servicio</a></li>
-                <li><a href="{% url 'informacion' %}#privacidad">Política de Privacidad (Ley 21.719)</a></li>
-                <li><a href="{% url 'informacion' %}#cookies">Política de Cookies</a></li>
-                <li><a href="{% url 'informacion' %}#seguridad">Seguridad y 2FA</a></li>
+                <li><a href="{% url 'informacion' %}#terminos">Términos de Servicio</a></li>
+                <li><a href="{% url 'informacion' %}#privacidad">Política de Privacidad</a></li>
+                <li><a href="{% url 'informacion' %}#seguridad">Seguridad (2FA)</a></li>
             </ul>
         </div>
     </div>
     <div class="footer-bottom">
         <p>&copy; 2026 SmartBids. Todos los derechos reservados. <span class="site-footer__version" title="Versión de la plataforma">{{ app_version|default:"v1.0.0" }}</span></p>
-        <p>{{ razon_social|default:'no informada' }} &bull; RUT: {{ rut|default:'00000000-5' }} &bull; Operado en Chile por ChileAvanza</p>
+        <p>ChileAvanza</p>
     </div>
 </footer>
