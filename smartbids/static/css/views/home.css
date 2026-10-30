@@ -1,82 +1,879 @@
+/* ==========================================================================
+   SMARTBIDS - LANDING PAGE STYLES (HOME.CSS)
+   ========================================================================== */
+
 .home__preview-icon {
     color: var(--accent-green);
 }
 
 /* ===== Encabezado de funcionalidades ===== */
-
 .home__features-heading {
     text-align: center;
-    margin-bottom: 5rem;
+    margin-bottom: 4rem;
 }
 
-/* ===== Alerta de hito ===== */
-
-.home__milestone-alert {
-    background: var(--white);
-    padding: 1.2rem;
-    border-radius: 12px;
-    text-align: center;
+.home__feature-badge {
+    margin-bottom: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(30, 196, 152, 0.15);
+    color: var(--dark-green);
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 4px 12px;
+    border-radius: 20px;
 }
 
-.home__milestone-icon {
-    font-size: 2rem;
+/* ==========================================================================
+   HERO CARD: PREVISUALIZACIÓN REALISTA DE LICITACIÓN
+   ========================================================================== */
+.home__hero-card {
+    padding: 1.8rem;
+    border-left: 5px solid var(--accent-green);
+    box-shadow: 0 20px 45px rgba(17, 99, 78, 0.1);
+}
+
+.home__hero-card-header {
+    margin-bottom: 0.8rem;
+}
+
+.home__card-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.home__card-code {
+    font-weight: 800;
+    color: var(--dark-green);
+    font-size: 0.95rem;
+    letter-spacing: -0.2px;
+}
+
+.home__badge-match {
+    background: rgba(30, 196, 152, 0.15);
+    color: var(--dark-green);
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.home__badge-match i {
     color: var(--accent-green);
-    margin-bottom: 0.5rem;
 }
 
-.home__milestone-title {
+.home__live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    display: inline-block;
+    margin-right: 4px;
+    animation: liveDotPulse 2s infinite;
+}
+
+@keyframes liveDotPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+.home__card-title {
+    font-size: 1.22rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    line-height: 1.35;
+    margin: 0.6rem 0 0.5rem;
+}
+
+.home__card-meta {
+    font-size: 0.85rem;
+    color: var(--muted-teal);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+    font-weight: 600;
+}
+
+.home__meta-sep {
+    color: var(--border-color);
+}
+
+/* Machine Learning Box en Tarjeta */
+.home__pred-box {
+    margin-bottom: 1.2rem;
+    padding: 1.2rem 1.4rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--dark-green), var(--muted-teal));
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.home__pred-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.18);
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-bottom: 6px;
+}
+
+.home__pred-badge i {
+    color: var(--accent-green);
+}
+
+.home__pred-text h5 {
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.home__pred-text p {
+    font-size: 0.82rem;
+    opacity: 0.88;
+    margin-bottom: 0;
+    line-height: 1.35;
+}
+
+.home__pred-score-wrap {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.home__pred-pill {
+    background: var(--accent-green);
+    color: var(--dark-green);
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.home__stat-grid {
+    margin-bottom: 1.2rem;
+}
+
+.home__urgent-text {
+    color: #ef4444 !important;
+    font-weight: 700;
+}
+
+.home__hero-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.home__hero-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.home__simulated-cursor {
+    position: absolute;
+    pointer-events: none;
+    z-index: 25;
+    opacity: 0;
+    width: 24px;
+    height: 24px;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+    transition: left 1.6s cubic-bezier(0.22, 1, 0.36, 1),
+                top 1.6s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.55s ease,
+                transform 0.24s ease;
+    transform-origin: top left;
+}
+
+.home__simulated-cursor svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.home__hero-mockup-btn {
+    pointer-events: none !important;
+    cursor: default !important;
+    user-select: none !important;
+    box-shadow: none !important;
+    opacity: 0.95;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background-color 0.4s ease,
+                color 0.4s ease,
+                box-shadow 0.4s ease;
+}
+
+.home__hero-mockup-btn.is-pressed {
+    transform: scale(0.92);
+}
+
+.home__hero-mockup-btn.is-followed {
+    background-color: var(--accent-green) !important;
+    color: var(--dark-green) !important;
+    border-color: var(--accent-green) !important;
+    box-shadow: 0 4px 14px rgba(30, 196, 152, 0.35) !important;
+    animation: followedPulse 0.55s ease-out;
+}
+
+@keyframes followedPulse {
+    0% { transform: scale(0.92); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+
+/* Cursor de tipeo para el Explorador */
+.home__typing-cursor {
+    display: inline-block;
+    color: var(--accent-green);
+    font-weight: 700;
+    margin-left: 2px;
+    animation: typingBlink 0.85s infinite;
+}
+
+@keyframes typingBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+#explorador-mock-result-card {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 1.25s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#explorador-mock-result-card.is-visible-card {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#explorador-mock-search-btn {
+    transition: transform 0.22s ease;
+}
+
+#explorador-mock-search-btn.is-active {
+    transform: scale(0.92);
+}
+
+/* Revelado sutil de items en Resumen Diario */
+#resumen-mock-list .home__resumen-item {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#resumen-mock-list.is-visible-items .home__resumen-item:nth-child(1) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+}
+
+#resumen-mock-list.is-visible-items .home__resumen-item:nth-child(2) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.7s;
+}
+
+/* Animación del Cronograma del Proceso */
+#ficha-mock-timeline .home__timeline-item {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#ficha-mock-timeline .home__timeline-bullet {
+    transform: scale(0.5);
+    opacity: 0;
+    transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.75s ease;
+}
+
+#ficha-mock-timeline.is-animated-timeline .home__timeline-item:nth-child(1) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.2s;
+}
+#ficha-mock-timeline.is-animated-timeline .home__timeline-item:nth-child(1) .home__timeline-bullet {
+    transform: scale(1);
+    opacity: 1;
+    transition-delay: 0.3s;
+}
+
+#ficha-mock-timeline.is-animated-timeline .home__timeline-item:nth-child(2) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.75s;
+}
+#ficha-mock-timeline.is-animated-timeline .home__timeline-item:nth-child(2) .home__timeline-bullet {
+    transform: scale(1);
+    opacity: 1;
+    transition-delay: 0.85s;
+}
+
+#ficha-mock-timeline.is-animated-timeline .home__timeline-item:nth-child(3) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 1.3s;
+}
+#ficha-mock-timeline.is-animated-timeline .home__timeline-item:nth-child(3) .home__timeline-bullet {
+    transform: scale(1);
+    opacity: 1;
+    transition-delay: 1.4s;
+    animation: timelinePulse 2.2s ease-in-out infinite 2.2s;
+}
+
+#ficha-mock-qa {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#ficha-mock-qa.is-visible-qa {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@keyframes timelinePulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(30, 196, 152, 0.45);
+    }
+    50% {
+        box-shadow: 0 0 0 7px rgba(30, 196, 152, 0);
+    }
+}
+
+/* Animación de barras en Data Warehouse */
+.home__chart-graphic .home__chart-bar {
+    transition: height 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home__chart-graphic.is-animated-chart .home__chart-col:nth-child(1) .home__chart-bar {
+    transition-delay: 0.2s;
+}
+.home__chart-graphic.is-animated-chart .home__chart-col:nth-child(2) .home__chart-bar {
+    transition-delay: 0.5s;
+}
+.home__chart-graphic.is-animated-chart .home__chart-col:nth-child(3) .home__chart-bar {
+    transition-delay: 0.8s;
+}
+.home__chart-graphic.is-animated-chart .home__chart-col:nth-child(4) .home__chart-bar {
+    transition-delay: 1.1s;
+}
+
+.home__official-link {
+    font-size: 0.82rem;
+    color: var(--muted-teal);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ==========================================================================
+   MOCKUPS DE MÓDULOS (SHOWCASE DE PLATAFORMA REAL)
+   ========================================================================== */
+.home__mockup-card {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 1.6rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 15px 35px rgba(17, 99, 78, 0.07);
+}
+
+/* 1. Mockup Resumen Diario */
+.home__resumen-mock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.home__resumen-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.home__resumen-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--dark-green);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+}
+
+.home__resumen-greeting {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    margin: 0;
+}
+
+.home__resumen-date {
+    font-size: 0.76rem;
+    color: var(--gray-text);
+}
+
+.home__resumen-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+}
+
+.home__resumen-kpi-item {
+    background: var(--light-bg);
+    border-radius: 12px;
+    padding: 0.8rem;
+    text-align: center;
+    border-top: 3px solid var(--muted-teal);
+}
+
+.home__resumen-kpi-num {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    display: block;
+}
+
+.home__resumen-kpi-num--match { color: var(--accent-green); }
+.home__resumen-kpi-num--follow { color: var(--dark-green); }
+.home__resumen-kpi-num--urgent { color: #ef4444; }
+
+.home__resumen-kpi-lbl {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted-teal);
+    margin-top: 4px;
+    display: block;
+}
+
+.home__resumen-item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.home__resumen-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 0.9rem;
+    background: var(--light-bg);
+    border-radius: 10px;
+    border-left: 3px solid var(--accent-green);
+}
+
+.home__resumen-item-info strong {
+    font-size: 0.85rem;
+    color: var(--dark-green);
+    display: block;
+}
+
+.home__resumen-item-info small {
+    font-size: 0.75rem;
+    color: var(--gray-text);
+}
+
+/* 2. Mockup Explorador Territorial */
+.home__explorador-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--light-bg);
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.home__explorador-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-teal);
+    font-size: 0.85rem;
+    flex: 1;
+}
+
+.home__explorador-input-text {
+    color: var(--dark-green);
+    font-weight: 600;
+}
+
+.home__explorador-search-btn {
+    padding: 5px 12px !important;
+    font-size: 0.78rem !important;
+}
+
+.home__filter-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+}
+
+.home__filter-tag {
+    background: var(--light-bg);
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--muted-teal);
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.home__explorador-card-preview {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-green);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.home__explorador-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.home__explorador-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    margin: 0 0 8px 0;
+    line-height: 1.35;
+}
+
+.home__explorador-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    color: var(--muted-teal);
+    font-weight: 700;
+}
+
+/* 3. Mockup Ficha Técnica Oficial y Cronograma */
+.home__ficha-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+}
+
+.home__timeline-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.2rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.home__timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.home__timeline-bullet {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.home__timeline-item--done .home__timeline-bullet {
+    background: rgba(30, 196, 152, 0.2);
+    color: var(--dark-green);
+}
+
+.home__timeline-item--current .home__timeline-bullet {
+    background: var(--dark-green);
+    color: var(--accent-green);
+}
+
+.home__timeline-content strong {
+    font-size: 0.85rem;
+    color: var(--dark-green);
+    display: block;
+}
+
+.home__timeline-content small {
+    font-size: 0.74rem;
+    color: var(--gray-text);
+}
+
+.home__qa-card {
+    background: var(--light-bg);
+    border-radius: 10px;
+    padding: 0.9rem;
+    border-left: 3px solid var(--muted-teal);
+}
+
+.home__qa-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--dark-green);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.home__qa-text {
+    font-size: 0.8rem;
+    color: var(--gray-text);
+    font-style: italic;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* 4. Mockup Data Warehouse & Analítica */
+.home__dw-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.2rem;
+}
+
+.home__dw-subtitle {
+    font-size: 0.74rem;
+    color: var(--muted-teal);
+    font-weight: 700;
+    text-transform: uppercase;
+    display: block;
+}
+
+.home__dw-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    margin: 2px 0 0;
+}
+
+.home__chart-graphic {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 110px;
+    padding: 0.8rem 1.2rem 0.4rem;
+    background: var(--light-bg);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.home__chart-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    width: 18%;
+    justify-content: flex-end;
+}
+
+.home__chart-bar {
+    width: 100%;
+    background: var(--muted-teal);
+    border-radius: 6px 6px 0 0;
+    transition: height 0.4s ease;
+}
+
+.home__chart-bar--active {
+    background: var(--accent-green) !important;
+}
+
+.home__chart-col-lbl {
+    font-size: 0.72rem;
+    color: var(--gray-text);
+    font-weight: 700;
+    margin-top: 6px;
+}
+
+.home__ranking-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.home__ranking-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    padding: 5px 8px;
+    background: var(--light-bg);
+    border-radius: 6px;
+}
+
+.home__ranking-pos {
+    font-weight: 800;
+    color: var(--muted-teal);
+    width: 18px;
+}
+
+.home__ranking-name {
+    flex: 1;
+    color: var(--dark-green);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home__ranking-val {
     color: var(--dark-green);
     font-weight: 700;
 }
 
-.home__milestone-description {
-    font-size: 0.85rem;
-    color: var(--gray-text);
-    margin-bottom: 0;
+/* ==========================================================================
+   SECCIÓN DE MACHINE LEARNING & MODELOS PREDICTIVOS
+   ========================================================================== */
+.home__ml-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    margin-bottom: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* ===== Gráfico de analítica ===== */
+.home__ml-explain-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    padding: 1.2rem;
+    margin: 1.5rem 0;
+    backdrop-filter: blur(8px);
+}
 
-.home__analytics-chart {
+.home__ml-explain-title {
+    font-size: 0.92rem;
+    color: #ffffff;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.home__ml-explain-title i {
+    color: var(--accent-green);
+}
+
+.home__ml-factor-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.8rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.home__ml-factor-item {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
-    height: 120px;
-    padding: 1rem;
-    background: var(--white);
-    border-radius: 12px;
+    align-items: center;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.9);
 }
 
-.home__chart-bar--first {
-    width: 20%;
-    background: var(--soft-mint);
-    height: 40%;
+.home__ml-factor-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
     border-radius: 6px;
 }
 
-.home__chart-bar--second {
-    width: 20%;
-    background: var(--muted-teal);
-    height: 75%;
-    border-radius: 6px;
+.home__ml-factor-badge--high {
+    background: rgba(30, 196, 152, 0.25);
+    color: #38efbd;
+    border: 1px solid rgba(56, 239, 189, 0.3);
 }
 
-.home__chart-bar--third {
-    width: 20%;
-    background: var(--accent-green);
-    height: 100%;
-    border-radius: 6px;
+.home__ml-factor-badge--mid {
+    background: rgba(56, 189, 248, 0.25);
+    color: #7dd3fc;
+    border: 1px solid rgba(125, 211, 252, 0.3);
 }
 
-.home__chart-bar--fourth {
-    width: 20%;
-    background: var(--dark-green);
-    height: 60%;
-    border-radius: 6px;
+.home__ml-factor-badge--match {
+    background: rgba(244, 63, 94, 0.25);
+    color: #fda4af;
+    border: 1px solid rgba(253, 164, 175, 0.3);
 }
 
-/* ===== Sección de contacto ===== */
+.home__ml-final-score {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 0.88rem;
+    color: #ffffff;
+}
 
+.home__ml-final-score strong {
+    font-size: 1.05rem;
+    color: #38efbd;
+}
+
+/* ==========================================================================
+   SECCIÓN DE CONTACTO
+   ========================================================================== */
 .home__contact-row {
     margin-bottom: 0;
     align-items: start;
@@ -174,8 +971,8 @@
 .home-slide-section {
     opacity: 0;
     transform: translateY(40px);
-    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity, transform;
 }
 
@@ -188,27 +985,27 @@
 .value-prop .prop-card {
     opacity: 0;
     transform: translateY(30px);
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transition: opacity 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.05s cubic-bezier(0.16, 1, 0.3, 1),
                 box-shadow 0.3s ease;
 }
 
 .value-prop.is-visible .prop-card:nth-child(1) {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: 0.1s;
+    transition-delay: 0.15s;
 }
 
 .value-prop.is-visible .prop-card:nth-child(2) {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: 0.25s;
+    transition-delay: 0.35s;
 }
 
 .value-prop.is-visible .prop-card:nth-child(3) {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: 0.4s;
+    transition-delay: 0.55s;
 }
 
 .prop-card:hover {
@@ -219,8 +1016,8 @@
 .feature-row {
     opacity: 0;
     transform: translateY(35px);
-    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity, transform;
 }
 
@@ -233,8 +1030,8 @@
 .ml-section .ml-text {
     opacity: 0;
     transform: translateX(-35px);
-    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 1.15s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ml-section.is-visible .ml-text {
@@ -245,35 +1042,35 @@
 .ml-card-item {
     opacity: 0;
     transform: translateX(35px);
-    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+    transition: opacity 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.05s cubic-bezier(0.16, 1, 0.3, 1),
                 box-shadow 0.3s ease;
 }
 
 .ml-section.is-visible .ml-card-item:nth-child(1) {
     opacity: 1;
     transform: translateX(0);
-    transition-delay: 0.1s;
+    transition-delay: 0.15s;
 }
 
 .ml-section.is-visible .ml-card-item:nth-child(2) {
     opacity: 1;
     transform: translateX(0);
-    transition-delay: 0.25s;
+    transition-delay: 0.35s;
 }
 
 .ml-section.is-visible .ml-card-item:nth-child(3) {
     opacity: 1;
     transform: translateX(0);
-    transition-delay: 0.4s;
+    transition-delay: 0.55s;
 }
 
 /* 6. Beneficios con entrada escalonada */
 .benefit-box {
     opacity: 0;
     transform: translateY(30px);
-    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    transition: opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.95s cubic-bezier(0.16, 1, 0.3, 1),
                 box-shadow 0.3s ease;
 }
 

@@ -94,6 +94,99 @@ class PreferenciasTests(SimpleTestCase):
         self.assertEqual(normalizar_cadena_simple("¡Cloud & Seguridad!"), "cloud seguridad")
         self.assertEqual(normalizar_cadena_simple(""), "")
 
+    def test_nlp_sanitizar_caracteres_especiales(self):
+        from smartbids.utils.palabras_utils import sanitizar_caracteres_especiales
+        texto_con_control = "Servidor\x00\x08 IBM\x1F Cloud\ue000"
+        self.assertEqual(sanitizar_caracteres_especiales(texto_con_control), "Servidor IBM Cloud")
+
+    def test_nlp_filtrar_stopwords(self):
+        from smartbids.utils.palabras_utils import filtrar_STOPWORDS
+        sw = {"de", "y", "el", "la", "en"}
+        texto = "sistema de gestion y control en la nube"
+        self.assertEqual(filtrar_STOPWORDS(texto, sw), "sistema gestion control nube")
+
+    def test_nlp_obtener_palabras_unicas_ngramas(self):
+        from smartbids.utils.palabras_utils import obtener_palabras_unicas
+        texto = "sistema riesgo"
+        # npal = 1 (unigramas)
+        self.assertEqual(obtener_palabras_unicas(texto, npal=1), {"sistema", "riesgo"})
+        # npal = 2 (unigramas y bigramas)
+        self.assertEqual(obtener_palabras_unicas(texto, npal=2), {"sistema", "riesgo", "sistema riesgo"})
+        # npal = 3 (unigramas, bigramas y trigramas)
+        texto_tri = "mesa ayuda tecnica"
+        tokens_tri = obtener_palabras_unicas(texto_tri, npal=3)
+        self.assertIn("mesa", tokens_tri)
+        self.assertIn("ayuda", tokens_tri)
+        self.assertIn("tecnica", tokens_tri)
+        self.assertIn("mesa ayuda", tokens_tri)
+        self.assertIn("ayuda tecnica", tokens_tri)
+        self.assertIn("mesa ayuda tecnica", tokens_tri)
+
+    def test_nlp_normalizar_texto_completo(self):
+        from smartbids.utils.palabras_utils import normalizar_texto
+        sw = {"de", "para"}
+        # Tildes, números aislados, signos de puntuación y stopwords
+        texto = "Mantención de Computadores +2026 para Diseño Web & Redes!"
+        norm = normalizar_texto(texto, stopwords_set=sw)
+        self.assertEqual(norm, "mantencion computadores diseno web redes")
+
+    def test_nlp_procesar_palabras_usuario_dual(self):
+        from unittest.mock import patch
+        from smartbids.utils.palabras_utils import procesar_palabras_usuario
+        with patch('smartbids.utils.palabras_utils.leer_STOPWORDS', return_value={"de", "y", "el"}):
+            entrada = ["Computadora", "Sistema de Riesgo", "Auditoría ISO 9001"]
+            orig, norm = procesar_palabras_usuario(entrada, npal=3)
+            # Escritura original del usuario intacta
+            self.assertEqual(orig, ["Computadora", "Sistema de Riesgo", "Auditoría ISO 9001"])
+            # Conjunto normalizado con unigramas y n-gramas
+            self.assertIn("computadora", norm)
+            self.assertIn("sistema", norm)
+            self.assertIn("riesgo", norm)
+            self.assertIn("sistema riesgo", norm)
+            self.assertIn("auditoria", norm)
+            self.assertIn("iso", norm)
+            self.assertIn("auditoria iso", norm)
+            # El número aislado 9001 y la stopword 'de' no deben estar
+            self.assertNotIn("9001", norm)
+            self.assertNotIn("de", norm)
+
+    def test_actualizar_preferencias_api_guarda_campos_duales(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from django.test import RequestFactory
+        from smartbids.views.perfil_views import actualizar_preferencias_suscriptor
+
+        rf = RequestFactory()
+        body = json.dumps({
+            'uid': 'test-firebase-uid',
+            'pref_palabras_claves': ['Computadora', 'Sistema de Riesgo']
+        }).encode('utf-8')
+        req = rf.post('/api/actualizar-preferencias/', data=body, content_type='application/json')
+
+        mock_suscriptor = MagicMock()
+        mock_pref = MagicMock()
+        mock_pref.pref_palabras_claves = []
+        mock_pref.pref_palabras_claves_norm = []
+
+        with patch('smartbids.views.perfil_views.Suscriptor.objects.filter') as mock_filter, \
+             patch('smartbids.views.perfil_views.validar_autorizacion_suscriptor', return_value=(True, '')), \
+             patch('smartbids.views.perfil_views.Preferencia.objects.get_or_create', return_value=(mock_pref, False)), \
+             patch('smartbids.utils.palabras_utils.leer_STOPWORDS', return_value={"de"}):
+            
+            mock_filter.return_value.first.return_value = mock_suscriptor
+            resp = actualizar_preferencias_suscriptor(req)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content.decode('utf-8'))
+            self.assertEqual(data['status'], 'ok')
+            # Verifica que la respuesta mantenga las palabras del usuario intactas
+            self.assertEqual(data['palabras_sanitizadas'], ['Computadora', 'Sistema de Riesgo'])
+            # Verifica que pref_palabras_claves contenga la escritura del usuario
+            self.assertEqual(mock_pref.pref_palabras_claves, ['Computadora', 'Sistema de Riesgo'])
+            # Verifica que pref_palabras_claves_norm contenga los tokens normalizados
+            self.assertIn('computadora', mock_pref.pref_palabras_claves_norm)
+            self.assertIn('sistema riesgo', mock_pref.pref_palabras_claves_norm)
+            self.assertNotIn('de', mock_pref.pref_palabras_claves_norm)
+
 
 class VistasExportacionTests(SimpleTestCase):
     def setUp(self):
@@ -2121,6 +2214,164 @@ class Seguridad2FAYCredencialesTests(SimpleTestCase):
             self.assertEqual(nombre_comuna('13101'), 'Santiago')
             self.assertEqual(nombre_comuna(''), '')
             self.assertEqual(nombre_comuna(None), '')
+
+
+class LegalComplianceArcopTests(SimpleTestCase):
+    """Pruebas de cumplimiento de la Ley N° 21.719, Derechos ARCOP y Comercio Electrónico."""
+
+    def test_footer_renderiza_razon_social_y_rut_placeholder(self):
+        from unittest.mock import patch
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get('/')
+        with patch('smartbids.context_processors.obtener_correos_sistema', return_value={}), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            html = render_to_string('smartbids/includes/footer.html', {'app_version': 'v1.0.0'}, request=req)
+
+        self.assertIn('no informada', html)
+        self.assertIn('00000000-5', html)
+        self.assertIn('Política de Cookies', html)
+        self.assertIn('Ley 21.719', html)
+
+    def test_registro_template_incluye_casillas_consentimiento(self):
+        from unittest.mock import patch
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get('/registro/')
+        with patch('smartbids.context_processors.obtener_correos_sistema', return_value={}), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            html = render_to_string('registro/registro.html', request=req)
+
+        self.assertIn('consent-terms', html)
+        self.assertIn('consent-marketing', html)
+        self.assertIn('Términos del Servicio', html)
+        self.assertIn('Política de Privacidad', html)
+        self.assertIn('Ley N° 21.719', html)
+
+    def test_informacion_template_cita_ley_21719_y_apdp(self):
+        from unittest.mock import patch
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get('/informacion/')
+        with patch('smartbids.context_processors.obtener_correos_sistema', return_value={}), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            html = render_to_string('smartbids/informacion.html', request=req)
+
+        self.assertIn('Ley N° 21.719', html)
+        self.assertIn('APDP', html)
+        self.assertIn('Portabilidad', html)
+        self.assertIn('no informada', html)
+        self.assertIn('00000000-5', html)
+
+    def test_cookie_banner_presente_en_base(self):
+        from unittest.mock import patch
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get('/')
+        with patch('smartbids.context_processors.obtener_correos_sistema', return_value={}), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            html = render_to_string('smartbids/base.html', request=req)
+
+        self.assertIn('smartbids-cookie-banner', html)
+        self.assertIn('btn-accept-cookies', html)
+        self.assertIn('cookie-banner.js', html)
+
+    def test_exportar_datos_arcop_exito(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from django.test import RequestFactory
+        from smartbids.views.perfil_views import exportar_datos_arcop
+
+        rf = RequestFactory()
+        req = rf.post(
+            '/api/arcop/exportar-datos/',
+            data=json.dumps({'uid': 'test-uid-123'}),
+            content_type='application/json'
+        )
+
+        mock_suscriptor = MagicMock()
+        mock_suscriptor.id_suscriptor = 99
+        mock_suscriptor.firebase_uid = 'test-uid-123'
+        mock_suscriptor.sus_nombre1 = 'Juan'
+        mock_suscriptor.sus_nombre2 = ''
+        mock_suscriptor.sus_apellido1 = 'Pérez'
+        mock_suscriptor.sus_apellido2 = ''
+        mock_suscriptor.sus_nombre_social = ''
+        mock_suscriptor.sus_iniciales = 'JP'
+        mock_suscriptor.codigo_estado.nombre_estado = 'Habilitado'
+        mock_suscriptor.fecha_registro = None
+        mock_suscriptor.fecha_actualizacion = None
+        mock_suscriptor.sus_rut_empresa = None
+        mock_suscriptor.consentimiento_terminos_fecha = None
+        mock_suscriptor.consentimiento_terminos_version = 'v1.0'
+        mock_suscriptor.consentimiento_marketing = False
+
+        with patch('smartbids.views.perfil_views.Suscriptor.objects.select_related') as mock_sr, \
+             patch('smartbids.views.perfil_views.validar_autorizacion_suscriptor', return_value=(True, '')), \
+             patch('smartbids.views.perfil_views.Preferencia.objects.filter') as mock_pref, \
+             patch('smartbids.models.core.SolicitudArcop.objects.create') as mock_arcop_log:
+
+            mock_sr.return_value.filter.return_value.first.return_value = mock_suscriptor
+            mock_pref.return_value.first.return_value = None
+
+            resp = exportar_datos_arcop(req)
+
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content.decode('utf-8'))
+        self.assertIn('declaracion_legal', data)
+        self.assertIn('titular', data)
+        self.assertEqual(data['titular']['firebase_uid'], 'test-uid-123')
+        self.assertIn('Ley N° 21.719', data['declaracion_legal']['normativa'])
+
+    def test_canal_privacidad_se_lee_dinamicamente_de_info_contacto(self):
+        """Verifica que el canal de privacidad, Razón Social y RUT se lean dinámicamente de Contacto y Soporte."""
+        from unittest.mock import patch, MagicMock
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+        from smartbids.context_processors import footer_info_context
+
+        rf = RequestFactory()
+        req = rf.get('/informacion/')
+
+        mock_info = MagicMock()
+        mock_info.contacto_texto = (
+            "Agua Santa 1400\n"
+            "2520000 Viña del Mar\n"
+            "Mobile: +56 9 6595 6863\n"
+            "Email: smartbids.qa@chileavanza.cl\n"
+            "Razón Social: Mi Empresa SpA\n"
+            "RUT: 76.543.210-K"
+        )
+        mock_info.empresas_enlaces = []
+
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=mock_info):
+            ctx = footer_info_context(req)
+            self.assertEqual(ctx['contacto_email'], 'smartbids.qa@chileavanza.cl')
+            self.assertEqual(ctx['razon_social'], 'Mi Empresa SpA')
+            self.assertEqual(ctx['rut'], '76.543.210-K')
+
+            html_info = render_to_string('smartbids/informacion.html', ctx, request=req)
+            self.assertIn('smartbids.qa@chileavanza.cl', html_info)
+            self.assertIn('Mi Empresa SpA', html_info)
+            self.assertIn('76.543.210-K', html_info)
+
+            html_perfil = render_to_string('smartbids/perfil.html', ctx, request=req)
+            self.assertIn('smartbids.qa@chileavanza.cl', html_perfil)
+
+            html_footer = render_to_string('smartbids/includes/footer.html', ctx, request=req)
+            self.assertIn('Mi Empresa SpA', html_footer)
+            self.assertIn('76.543.210-K', html_footer)
+
+
+
 
 
 

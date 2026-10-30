@@ -101,10 +101,10 @@
                 </div>
 
                 {% if not tiene_palabras_perfil %}
-                <div style="background: rgba(14, 116, 144, 0.08); border-left: 4px solid #0e7490; padding: 0.9rem 1.1rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.88rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div class="resumen__banner-keywords" style="background: rgba(14, 116, 144, 0.08); border-left: 4px solid #0e7490; padding: 0.9rem 1.1rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.88rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <div>
                         <strong style="color: #0e7490;"><i class="fa-solid fa-lightbulb"></i> Optimiza tus resultados:</strong>
-                        <span style="color: var(--dark-green);"> Configura tus palabras clave en tu perfil para filtrar automáticamente compras afines a tu empresa.</span>
+                        <span class="resumen__banner-keywords-text" style="color: var(--dark-green);"> Configura tus palabras clave en tu perfil para filtrar automáticamente compras afines a tu empresa.</span>
                     </div>
                     <a href="{% url 'perfil' %}" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: 8px;">Configurar Perfil</a>
                 </div>

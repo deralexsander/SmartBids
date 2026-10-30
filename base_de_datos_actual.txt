@@ -4,8 +4,8 @@
 Motor: PostgreSQL (Railway Cloud)
 Arquitectura: Multi-Esquema Relacional + Data Warehouse (Modelo Estrella)
 Esquemas activos: core, procurement, catalog, config, dw
-Total de tablas operacionales y analíticas: 42 tablas
-Fecha de actualización: 24 de Octubre de 2026
+Total de tablas operacionales y analíticas: 43 tablas
+Fecha de actualización: 28 de Octubre de 2026
 ================================================================================
 
 
@@ -13,13 +13,15 @@ Fecha de actualización: 24 de Octubre de 2026
 1. ESQUEMA "core" — ENTIDADES PRINCIPALES, USUARIOS Y SEGUIMIENTO
 ################################################################################
 Este esquema gestiona el ciclo de vida del usuario, las organizaciones asociadas,
-las preferencias comerciales y las interacciones privadas con licitaciones.
+las preferencias comerciales, el cumplimiento normativo (Ley N° 21.719 - ARCOP)
+y las interacciones privadas con licitaciones.
 
 --------------------------------------------------------------------------------
 * TABLA: "core"."suscriptor"
   - Modelo Django: Suscriptor
   - Descripción: Almacena la identidad de los usuarios registrados en SmartBids,
-    su token de sesión única activa, vinculación a Firebase y estado de la cuenta.
+    su token de sesión única activa, vinculación a Firebase Auth, consentimiento
+    legal informado y estado operativo de la cuenta.
   - Conexiones:
     * Clave Foránea: codigo_estado -> "config"."estado_suscriptor" (Estado del usuario: Habilitado, Bloqueado, Admin).
     * Clave Foránea: sus_rut_empresa -> "core"."empresa" (Empresa a la que pertenece el suscriptor).
@@ -27,9 +29,13 @@ las preferencias comerciales y las interacciones privadas con licitaciones.
       <- "core"."preferencia" (id_suscriptor)
       <- "core"."smartbids_seguimiento_licitacion" (usuario)
       <- "core"."smartbids_notificacion_licitacion" (usuario)
-  - Campos principales: id_suscriptor (PK), firebase_uid, token_sesion,
-    sus_nombre1, sus_nombre2, sus_apellido1, sus_apellido2, sus_nombre_social,
-    sus_iniciales, fecha_registro, fecha_actualizacion.
+      <- "core"."smartbids_solicitud_arcop" (id_suscriptor)
+  - Campos principales: id_suscriptor (PK, BigAutoField), firebase_uid (VARCHAR(128) UNIQUE),
+    token_sesion (VARCHAR(128)), sus_nombre1, sus_nombre2, sus_apellido1, sus_apellido2,
+    sus_nombre_social, sus_iniciales, fecha_registro, fecha_actualizacion,
+    consentimiento_terminos_fecha (TIMESTAMPTZ - Fecha y hora de aceptación de Términos y Privacidad),
+    consentimiento_terminos_version (VARCHAR(20) - Versión legal aceptada, ej: 'v1.0'),
+    consentimiento_marketing (BOOLEAN - Consentimiento opcional de comunicaciones).
 
 --------------------------------------------------------------------------------
 * TABLA: "core"."empresa"
@@ -42,7 +48,8 @@ las preferencias comerciales y las interacciones privadas con licitaciones.
     * Tablas que apuntan a ella:
       <- "core"."suscriptor" (sus_rut_empresa)
   - Campos principales: emp_rut (PK), emp_razon_social, emp_nombre_fantasia,
-    emp_direccion, emp_contacto_nombre, emp_contacto_telefono, emp_contacto_email.
+    emp_iniciales, emp_contacto_correo, emp_direccion, emp_contacto_nombre,
+    emp_contacto_telefono, emp_codigo_comuna (FK).
 
 --------------------------------------------------------------------------------
 * TABLA: "core"."preferencia"
@@ -53,7 +60,7 @@ las preferencias comerciales y las interacciones privadas con licitaciones.
     * Clave Foránea: id_suscriptor -> "core"."suscriptor" (Suscriptor dueño del filtro).
   - Campos principales: id_preferencia (PK), pref_comunas (array códigos comuna),
     pref_tipo_licitacion (array tipos), pref_ucom (array unidades de compra),
-    pref_palabras_claves (array palabras), pref_palabras_claves_norm (normalizadas),
+    pref_palabras_claves (array palabras clave crudas), pref_palabras_claves_norm (array normalizado NLP),
     pref_productos (array códigos ONU UNSPSC).
 
 --------------------------------------------------------------------------------
@@ -66,8 +73,10 @@ las preferencias comerciales y las interacciones privadas con licitaciones.
     * Clave Foránea: licitacion -> "procurement"."licitacion" (Licitación monitoreada).
     * Tablas que apuntan a ella:
       <- "core"."smartbids_notificacion_licitacion" (seguimiento)
-  - Campos principales: id (PK), estado_seguimiento (activo/archivado),
+  - Campos principales: id (PK, BigAutoField), usuario (FK), licitacion (FK),
+    estado_actual (publicada, preguntas, ofertas, cerrada), seguimiento_activo (BOOLEAN),
     creado_en, actualizado_en, dejado_de_seguir_en, cerrada_en.
+  - Restricciones: UniqueConstraint(usuario, licitacion) para evitar duplicados.
 
 --------------------------------------------------------------------------------
 * TABLA: "core"."smartbids_notificacion_licitacion"
@@ -78,7 +87,8 @@ las preferencias comerciales y las interacciones privadas con licitaciones.
     * Clave Foránea: usuario -> "core"."suscriptor" (Destinatario del aviso).
     * Clave Foránea: licitacion -> "procurement"."licitacion" (Licitación causante).
     * Clave Foránea: seguimiento -> "core"."smartbids_seguimiento_licitacion".
-  - Campos principales: id (PK), estado_anterior, estado_nuevo, mensaje, leida, creado_en.
+  - Campos principales: id (PK, BigAutoField), usuario (FK), licitacion (FK),
+    seguimiento (FK), estado_anterior, estado_nuevo, mensaje, leida (BOOLEAN), creado_en.
 
 --------------------------------------------------------------------------------
 * TABLA: "core"."smartbids_licitacion_documento"
@@ -87,7 +97,7 @@ las preferencias comerciales y las interacciones privadas con licitaciones.
     asociados a cada licitación pública.
   - Conexiones:
     * Clave Foránea: licitacion -> "procurement"."licitacion".
-  - Campos principales: id (PK), titulo, url, fecha_publicacion.
+  - Campos principales: id (PK), licitacion (FK), titulo, url, fecha_publicacion.
 
 --------------------------------------------------------------------------------
 * TABLA: "core"."smartbids_licitacion_pregunta"
@@ -96,7 +106,24 @@ las preferencias comerciales y las interacciones privadas con licitaciones.
     proveedores y el organismo comprador de Mercado Público.
   - Conexiones:
     * Clave Foránea: licitacion -> "procurement"."licitacion".
-  - Campos principales: id (PK), pregunta, respuesta, fecha_pregunta, fecha_respuesta.
+  - Campos principales: id (PK), licitacion (FK), pregunta, respuesta, fecha_pregunta, fecha_respuesta.
+
+--------------------------------------------------------------------------------
+* TABLA: "core"."smartbids_solicitud_arcop" (NUEVA - Ley N° 21.719)
+  - Modelo Django: SolicitudArcop
+  - Descripción: Bitácora formal y auditoría legal de solicitudes de ejercicio de
+    Derechos ARCOP (Acceso, Rectificación, Cancelación / Supresión, Oposición y
+    Portabilidad de datos personales) conforme a los Artículos 8, 9 y 10 de la
+    Ley N° 21.719 de Protección de Datos Personales, con plazo de respuesta de 15 días hábiles.
+  - Conexiones:
+    * Clave Foránea: id_suscriptor -> "core"."suscriptor" (ON DELETE CASCADE).
+  - Campos principales: id (PK, BigAutoField), id_suscriptor (FK),
+    tipo_derecho (VARCHAR(20): ACCESO, RECTIFICACION, CANCELACION, OPOSICION, PORTABILIDAD),
+    detalle (TEXT - Explicación de la solicitud del usuario),
+    estado (VARCHAR(20): PENDIENTE, PROCESADO, RECHAZADO),
+    creado_el (TIMESTAMPTZ - Fecha y hora de solicitud),
+    respondido_el (TIMESTAMPTZ - Fecha y hora de resolución formal),
+    observaciones (TEXT - Dictamen o detalle técnico/legal de respuesta).
 
 
 ################################################################################
@@ -120,9 +147,12 @@ desde la plataforma de Mercado Público (ChileCompra).
       <- "core"."smartbids_licitacion_documento" (licitacion)
       <- "core"."smartbids_licitacion_pregunta" (licitacion)
   - Campos principales: lic_codigo (PK, ej: 1057-2-LP24), lic_nombre,
-    lic_descripcion, lic_monto_estimado, lic_moneda, lic_fecha_publicacion,
-    lic_fecha_cierre, lic_fecha_preguntas, lic_fecha_respuestas, lic_codigo_organismo,
-    lic_codigo_tipo, lic_productos (array), lic_palabras (array).
+    lic_descripcion, lic_fecha_cierre, lic_hora_cierre, lic_toma_razon,
+    lic_codigo_ucom (FK), lic_fecha_public, lic_fecha_preguntas, lic_fecha_respuestas,
+    lic_tipo_licitacion, lic_moneda, lic_presupuesto, lic_items_cantidad,
+    lic_codigos_producto (array), lic_diccionario_palabras (array),
+    lic_palabras_claves_norm (array normalizado NLP de la licitación), lic_texto,
+    lic_url, lic_plazo, lic_estado (FK).
 
 --------------------------------------------------------------------------------
 * TABLA: "procurement"."unidad_compra"
@@ -130,23 +160,24 @@ desde la plataforma de Mercado Público (ChileCompra).
   - Descripción: Unidad operativa, departamento o sucursal pública que gestiona
     la licitación dentro de un organismo estatal.
   - Conexiones:
-    * Clave Foránea implícita / lógica: codigo_organismo -> "catalog"."organismo".
+    * Clave Foránea implícita / lógica: ucom_codigo_organismo -> "catalog"."organismo".
+    * Clave Foránea implícita / lógica: ucom_codigo_comuna -> "catalog"."comuna".
     * Tablas que apuntan a ella:
       <- "procurement"."licitacion" (lic_codigo_ucom)
-  - Campos principales: codigo_unidad_compra (PK), nombre_unidad_compra,
-    codigo_organismo, codigo_comuna.
+  - Campos principales: codigo_unidad_compra (PK, BigIntegerField), ucom_activo,
+    ucom_codigo_ambito, ucom_codigo_organismo, ucom_rut, ucom_direccion,
+    ucom_codigo_comuna, ucom_descripcion.
 
 --------------------------------------------------------------------------------
 * TABLA: "procurement"."licitaciones_productos"
   - Modelo Django: LicitacionesProductos
   - Descripción: Detalle desagregado de los bienes y servicios licitados en cada proceso
-    (líneas de producto con cantidades, especificaciones y categorías).
+    (asociación de códigos de producto UNSPSC a cada licitación).
   - Conexiones:
     * Clave Foránea: lic_codigo -> "procurement"."licitacion".
     * Clave Foránea implícita / lógica: codigo_producto -> "catalog"."producto".
-    * Clave Foránea implícita / lógica: codigo_unidad_medida -> "catalog"."unidad_medida".
-  - Campos principales: pk (PK compuesta/id), lic_codigo, codigo_producto,
-    cantidad, especificacion_comprador, especificacion_proveedor.
+  - Campos principales: pk (PK compuesta: lic_codigo + codigo_producto), lic_codigo (FK),
+    codigo_producto (VARCHAR(20)).
 
 
 ################################################################################
@@ -161,29 +192,30 @@ institucional y taxonómica de compras públicas en Chile.
   - Descripción: División político-administrativa de las 16 regiones de Chile.
   - Conexiones:
     <- "catalog"."provincia" (codigo_region)
-  - Campos principales: codigo_region (PK), nombre_region, region_3l, orden (orden geográfico).
+  - Campos principales: codigo_region (PK, VARCHAR(2)), nombre_region,
+    region_3l (VARCHAR(3)), orden (PositiveSmallIntegerField para ordenación de Norte a Sur).
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."provincia"
   - Modelo Django: Provincia
-  - Descripción: Provincias que conforman cada región de Chile.
+  - Descripción: Provincias que conforman cada región de Chile (56 provincias).
   - Conexiones:
     * Clave Foránea: codigo_region -> "catalog"."region".
     * Tablas que apuntan a ella:
       <- "catalog"."comuna" (codigo_provincia)
-  - Campos principales: codigo_provincia (PK), nombre_provincia, codigo_region.
+  - Campos principales: codigo_provincia (PK, VARCHAR(3)), nombre_provincia, codigo_region (FK).
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."comuna"
   - Modelo Django: Comuna
-  - Descripción: Comunas de Chile (nivel territorial de organismos y empresas).
+  - Descripción: Comunas de Chile (346 comunas, nivel territorial de organismos y empresas).
   - Conexiones:
     * Clave Foránea: codigo_provincia -> "catalog"."provincia".
     * Tablas que apuntan a ella:
       <- "catalog"."organismo" (org_codigo_comuna)
       <- "catalog"."proveedor" (prov_codigo_comuna)
       <- "core"."empresa" (emp_codigo_comuna)
-  - Campos principales: codigo_comuna (PK), nombre_comuna, codigo_provincia.
+  - Campos principales: codigo_comuna (PK, VARCHAR(5)), nombre_comuna, codigo_provincia (FK).
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."pais"
@@ -191,15 +223,15 @@ institucional y taxonómica de compras públicas en Chile.
   - Descripción: Catálogo de países de origen de proveedores y organismos.
   - Conexiones:
     <- "catalog"."proveedor" (prov_codigo_pais)
-  - Campos principales: pais_codigo (PK), pais_nombre, pais_codigo_iso2, pais_activo.
+  - Campos principales: pais_codigo (PK, BigAutoField), pais_nombre, pais_codigo_iso2, pais_activo.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."sector"
   - Modelo Django: Sector
-  - Descripción: Sectorización del Estado (Salud, Educación, Municipalidades, Defensa, etc.).
+  - Descripción: Sectorización del Estado (Salud, Educación, Municipalidades, Obras Públicas, etc.).
   - Conexiones:
     <- "catalog"."organismo" (org_codigo_sector)
-  - Campos principales: codigo_sector (PK), nombre_sector.
+  - Campos principales: codigo_sector (PK, VARCHAR(3)), nombre_sector.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."organismo"
@@ -208,7 +240,8 @@ institucional y taxonómica de compras públicas en Chile.
   - Conexiones:
     * Clave Foránea: org_codigo_comuna -> "catalog"."comuna".
     * Clave Foránea: org_codigo_sector -> "catalog"."sector".
-  - Campos principales: codigo_organismo (PK), org_nombre, org_sigla, org_rut, org_direccion.
+  - Campos principales: codigo_organismo (PK, BigIntegerField), org_nombre,
+    org_sigla, org_rut, org_reclamos, org_codigo_comuna (FK), org_codigo_sector (FK), org_direccion.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."tipo_licitacion"
@@ -217,23 +250,26 @@ institucional y taxonómica de compras públicas en Chile.
   - Conexiones:
     * Clave Foránea: codigo_cat_licitacion -> "catalog"."categoria_licitacion".
     * Clave Foránea: codigo_tramo_licitacion -> "catalog"."tramo_licitacion".
-  - Campos principales: codigo_tipo (PK), nombre_tipo, descripcion_tipo.
+  - Campos principales: codigo_tipo_licitacion (PK, VARCHAR(2)), glosa,
+    codigo_cat_licitacion (FK), codigo_tramo_licitacion (FK), activo (BOOLEAN).
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."estado_licitacion"
   - Modelo Django: EstadoLicitacion
-  - Descripción: Estados oficiales de un proceso de compra pública en Mercado Público.
+  - Descripción: Estados oficiales de un proceso de compra pública en Mercado Público
+    (Publicada, En Preguntas, Cerrada, Adjudicada, Desierta, Revocada).
   - Conexiones:
     <- "procurement"."licitacion" (lic_estado)
-  - Campos principales: codigo_estado_licitacion (PK), nombre_estado_licitacion.
+  - Campos principales: codigo_estado_licitacion (PK, SmallAutoField), nombre_estado_licitacion (VARCHAR(50) UNIQUE).
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."tramo_licitacion"
   - Modelo Django: TramoLicitacion
-  - Descripción: Tramos de montos expresados en Unidades Tributarias Mensuales (UTM).
+  - Descripción: Tramos de montos expresados en Unidades Tributarias Mensuales (UTM)
+    (menor a 100 UTM, 100 a 1.000 UTM, 1.000 a 2.000 UTM, etc.).
   - Conexiones:
     <- "catalog"."tipo_licitacion" (codigo_tramo_licitacion)
-  - Campos principales: codigo_tramo_licitacion (PK), nombre_tramo_licitacion.
+  - Campos principales: codigo_tramo_licitacion (PK, SmallAutoField), nombre_tramo_licitacion.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."categoria_licitacion"
@@ -241,21 +277,21 @@ institucional y taxonómica de compras públicas en Chile.
   - Descripción: Clasificación genérica (Pública, Privada, Trato Directo).
   - Conexiones:
     <- "catalog"."tipo_licitacion" (codigo_cat_licitacion)
-  - Campos principales: codigo_cat_licitacion (PK), nombre_cat_licitacion.
+  - Campos principales: codigo_cat_licitacion (PK, SmallAutoField), nombre_cat_licitacion.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."ambito"
   - Modelo Django: Ambito
   - Descripción: Ámbito geográfico o normativo del proceso.
-  - Campos principales: codigo_ambito (PK), nombre_ambito.
+  - Campos principales: codigo_ambito (PK, VARCHAR(3)), nombre_ambito.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."unidad_medida"
   - Modelo Django: UnidadMedida
-  - Descripción: Unidades de medida estandarizadas (Unidad, Metro, Kilo, Global, etc.).
+  - Descripción: Unidades de medida estandarizadas (Unidad, Metro, Kilo, Global, Mes, etc.).
   - Conexiones:
     <- "catalog"."producto" (codigo_unidad_medida)
-  - Campos principales: codigo_unidad_medida (PK), nombre_unidad_medida.
+  - Campos principales: codigo_unidad_medida (PK, VARCHAR(3)), nombre_unidad_medida.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."rubro_actividad"
@@ -263,7 +299,7 @@ institucional y taxonómica de compras públicas en Chile.
   - Descripción: Macro-sectores y rubros de actividad comercial.
   - Conexiones:
     <- "catalog"."subrubro_actividad" (codigo_rubro)
-  - Campos principales: codigo_rubro (PK), nombre_rubro.
+  - Campos principales: codigo_rubro (PK, VARCHAR(2)), nombre_rubro.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."subrubro_actividad"
@@ -273,7 +309,7 @@ institucional y taxonómica de compras públicas en Chile.
     * Clave Foránea: codigo_rubro -> "catalog"."rubro_actividad".
     * Tablas que apuntan a ella:
       <- "catalog"."actividad_economica" (codigo_subrubro)
-  - Campos principales: codigo_subrubro (PK), nombre_subrubro, codigo_rubro.
+  - Campos principales: codigo_subrubro (PK, VARCHAR(5)), nombre_subrubro, codigo_rubro (FK).
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."actividad_economica"
@@ -284,7 +320,8 @@ institucional y taxonómica de compras públicas en Chile.
     * Tablas que apuntan a ella:
       <- "catalog"."proveedor" (prov_cod_actividad_economica)
       <- "core"."empresa" (emp_actividad_economica)
-  - Campos principales: codigo_actividad (PK), nombre_actividad, afecto_iva, categoria_tributaria.
+  - Campos principales: codigo_actividad (PK, VARCHAR(8)), nombre_actividad, afecto_iva,
+    categoria_tributaria, disponible_internet, activo, codigo_subrubro (FK).
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."grupo_producto"
@@ -292,7 +329,7 @@ institucional y taxonómica de compras públicas en Chile.
   - Descripción: Familias globales estándar de las Naciones Unidas (UNSPSC).
   - Conexiones:
     <- "catalog"."nivel1_producto" (codigo_grupo_producto)
-  - Campos principales: codigo_grupo_producto (PK), nombre_grupo_producto.
+  - Campos principales: codigo_grupo_producto (PK, VARCHAR(3)), nombre_grupo_producto.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."nivel1_producto"
@@ -302,7 +339,7 @@ institucional y taxonómica de compras públicas en Chile.
     * Clave Foránea: codigo_grupo_producto -> "catalog"."grupo_producto".
     * Tablas que apuntan a ella:
       <- "catalog"."producto" (nivel1)
-  - Campos principales: codigo_nivel1 (PK), descripcion, codigo_grupo_producto.
+  - Campos principales: codigo_nivel1 (PK, VARCHAR(10)), descripcion, codigo_grupo_producto (FK), activo.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."producto"
@@ -311,8 +348,8 @@ institucional y taxonómica de compras públicas en Chile.
   - Conexiones:
     * Clave Foránea: nivel1 -> "catalog"."nivel1_producto".
     * Clave Foránea: codigo_unidad_medida -> "catalog"."unidad_medida".
-  - Campos principales: codigo_producto (PK), descripcion, nivel1, nivel2, nivel3, nivel4,
-    glosa_nivel2, glosa_nivel3, glosa_nivel4.
+  - Campos principales: codigo_producto (PK, VARCHAR(20)), descripcion, codigo_unidad_medida (FK),
+    activo, nivel1 (FK), nivel2, nivel3, nivel4, glosa_nivel2, glosa_nivel3, glosa_nivel4.
 
 --------------------------------------------------------------------------------
 * TABLA: "catalog"."proveedor"
@@ -322,13 +359,17 @@ institucional y taxonómica de compras públicas en Chile.
     * Clave Foránea: prov_codigo_comuna -> "catalog"."comuna".
     * Clave Foránea: prov_codigo_pais -> "catalog"."pais".
     * Clave Foránea: prov_cod_actividad_economica -> "catalog"."actividad_economica".
-  - Campos principales: pk (PK), prov_codigo_proveedor, prov_rut, prov_razon_social, prov_tamano.
+  - Campos principales: pk (PK compuesta: prov_codigo_proveedor + prov_codigo_sucursal),
+    prov_codigo_proveedor, prov_codigo_sucursal, prov_rut, prov_nombre, prov_razon_social,
+    prov_direccion, prov_codigo_comuna (FK), prov_tamano, prov_codigo_pais (FK),
+    prov_cod_actividad_economica (FK), prov_activo.
 
 
 ################################################################################
 4. ESQUEMA "config" — PARÁMETROS GLOBALES, CONFIGURACIÓN Y AUDITORÍA
 ################################################################################
-Gobierna la configuración de la aplicación, auditoría interna, mensajería y NLP.
+Gobierna la configuración de la aplicación, auditoría interna, mensajería,
+parámetros institucionales, correos y procesamiento de texto (NLP).
 
 --------------------------------------------------------------------------------
 * TABLA: "config"."estado_suscriptor"
@@ -336,51 +377,63 @@ Gobierna la configuración de la aplicación, auditoría interna, mensajería y 
   - Descripción: Tipos de estado de cuentas de usuarios (1=Pendiente, 2=Habilitado, 5=Administrador, etc.).
   - Conexiones:
     <- "core"."suscriptor" (codigo_estado)
-  - Campos principales: codigo_estado (PK), nombre_estado.
+  - Campos principales: codigo_estado (PK, SmallAutoField), nombre_estado (VARCHAR(30) UNIQUE), descripcion.
 
 --------------------------------------------------------------------------------
 * TABLA: "config"."mensajeria"
   - Modelo Django: Mensajeria
   - Descripción: Anuncios globales y banners animados que se difunden en la cabecera del sistema.
-  - Campos principales: id (PK), titulo, contenido, tipo (exito/alerta), activo, creado_en.
+  - Campos principales: id (PK, AutoField), asunto, cuerpo, estado (activo/inactivo),
+    tipo_alerta (alerta/precaucion/exito), creado_el, actualizado_el.
 
 --------------------------------------------------------------------------------
 * TABLA: "config"."parametros_globales"
   - Modelo Django: ParametroGlobal
   - Descripción: Llaves y valores dinámicos del sistema (ej: umbrales de alerta de perfil).
-  - Campos principales: id (PK), clave, valor, descripcion, creado_en.
+  - Campos principales: codigo_parametro (PK, SmallIntegerField), nombre_parametro (VARCHAR(50) UNIQUE),
+    valor_parametro, descripcion.
 
 --------------------------------------------------------------------------------
 * TABLA: "config"."info_contacto"
   - Modelo Django: InfoContacto
-  - Descripción: Textos de contacto comercial, soporte y enlaces institucionales.
-  - Campos principales: id (PK), contacto_texto, empresas_enlaces, actualizado_en.
+  - Descripción: Textos institucionales, enlaces y datos corporativos (Razón Social, RUT,
+    teléfono, dirección y correo). Alimenta dinámicamente el footer, Centro Legal y formulario.
+  - Campos principales: id (PK, AutoField), contacto_texto (TEXT),
+    empresas_enlaces (JSONField - Arreglo de empresas, RUTs, direcciones y enlaces de contacto).
 
 --------------------------------------------------------------------------------
 * TABLA: "config"."configuracion_correo"
   - Modelo Django: ConfiguracionCorreo
-  - Descripción: Direcciones de remitente, correo de notificaciones y correo de auditoría de seguridad.
-  - Campos principales: id (PK), email_contacto, email_notificaciones, nombre_remitente, email_seguridad_auditoria.
+  - Descripción: Direcciones de remitente, correo emisor de notificaciones y 2FA OTP,
+    soporte y correo de auditoría de seguridad.
+  - Campos principales: id (PK, AutoField),
+    email_contacto (VARCHAR(255) - Soporte y canal comercial, ej: contacto@chileavanza.cl),
+    email_notificaciones (VARCHAR(255) - Emisor de alertas y códigos OTP, ej: smartbids.qa@chileavanza.cl),
+    nombre_remitente (VARCHAR(100), ej: 'SmartBids'),
+    email_seguridad_auditoria (VARCHAR(255) - Auditoría técnica de inicio y bajas),
+    actualizado_el (TIMESTAMPTZ).
 
 --------------------------------------------------------------------------------
 * TABLA: "config"."auditoria_admin"
   - Modelo Django: AuditoriaAdmin
   - Descripción: Bitácora inmutable de seguridad que audita cambios de roles, bloqueos o bajas entre administradores.
-  - Campos principales: id (PK), admin_ejecutor_uid, admin_ejecutor_email, admin_objetivo_uid, accion, creado_el.
+  - Campos principales: id (PK, BigAutoField), ejecutor_uid, ejecutor_email,
+    ejecutor_nombre, afectado_uid, afectado_email, afectado_nombre,
+    accion (VARCHAR(50): ELIMINACION, CAMBIO_ROL), detalle, creado_el, ip_origen.
 
 --------------------------------------------------------------------------------
 * TABLA: "config"."stop_word"
   - Modelo Django: StopWord
-  - Descripción: Diccionario de palabras vacías (artículos, preposiciones) para el procesamiento de texto (NLP)
-    en el motor de búsqueda y concordancia de licitaciones.
-  - Campos principales: codigo_stop_word (PK), nombre_stop_word.
+  - Descripción: Diccionario de palabras vacías (artículos, preposiciones, pronombres)
+    para el procesamiento de lenguaje natural (NLP) en el motor de búsqueda y concordancia de licitaciones.
+  - Campos principales: codigo_stop_word (PK, SmallAutoField), nombre_stop_word (VARCHAR(50) UNIQUE).
 
 
 ################################################################################
 5. ESQUEMA "dw" — DATA WAREHOUSE (MODELO ESTRELLA PARA ANALÍTICA Y ML)
 ################################################################################
 Almacena métricas consolidadas de millones de órdenes de compra históricas para
-alimentar los paneles analíticos, rankings y los modelos de Machine Learning.
+alimentar los paneles analíticos, rankings y los modelos predictivos de Machine Learning.
 
 --------------------------------------------------------------------------------
 * TABLA DE HECHOS: "dw"."fact_orden_compra"
@@ -399,31 +452,39 @@ alimentar los paneles analíticos, rankings y los modelos de Machine Learning.
 * TABLA DE DIMENSIÓN: "dw"."dim_fecha"
   - Modelo Django: DimFecha
   - Descripción: Dimensión temporal completa (día, mes, año, trimestre, semestre, fin de semana).
-  - Campos principales: fecha_key (PK), fecha, anio, mes, dia, nombre_mes, trimestre.
+  - Campos principales: fecha_key (PK, AutoField), fecha (DATE UNIQUE), anio, mes, dia,
+    dia_semana, nombre_dia, nombre_dia_corto, nombre_mes, nombre_mes_corto, trimestre, semestre, anio_mes, es_fin_semana.
 
 --------------------------------------------------------------------------------
 * TABLA DE DIMENSIÓN: "dw"."dim_comprador"
   - Modelo Django: DimComprador
   - Descripción: Dimensión desnormalizada de organismos públicos y sus atributos territoriales y sectoriales.
-  - Campos principales: comprador_key (PK), comprador_organismo_nombre, comprador_sector, comprador_region.
+  - Campos principales: comprador_key (PK, AutoField), comprador_organismo_codigo (BigIntegerField UNIQUE),
+    comprador_organismo_nombre, comprador_sector, comprador_comuna, comprador_region,
+    comprador_org_sigla, comprador_provincia, comprador_pais.
 
 --------------------------------------------------------------------------------
 * TABLA DE DIMENSIÓN: "dw"."dim_proveedor"
   - Modelo Django: DimProveedor
   - Descripción: Dimensión desnormalizada de proveedores adjudicatarios con datos de ubicación y rubro.
-  - Campos principales: proveedor_key (PK), proveedor_nombre, proveedor_region, proveedor_rubro.
+  - Campos principales: proveedor_key (PK, AutoField), proveedor_codigo (BigIntegerField UNIQUE),
+    proveedor_nombre, proveedor_comuna, proveedor_region, proveedor_pais,
+    proveedor_provincia, proveedor_actividad_econ, proveedor_rubro, proveedor_subrubro.
 
 --------------------------------------------------------------------------------
 * TABLA DE DIMENSIÓN: "dw"."dim_producto"
   - Modelo Django: DimProducto
   - Descripción: Dimensión desnormalizada de productos con su jerarquía UNSPSC y unidad de medida.
-  - Campos principales: producto_key (PK), producto_codigo, producto_descripcion, producto_grupo.
+  - Campos principales: producto_key (PK, AutoField), producto_codigo (VARCHAR(12) UNIQUE),
+    producto_descripcion, producto_grupo, producto_nivel1, producto_nivel2, producto_nivel3, producto_nivel4,
+    nombre_unidad_medida.
 
 --------------------------------------------------------------------------------
 * TABLA DE DIMENSIÓN: "dw"."dim_tipo_orden_compra"
   - Modelo Django: DimTipoOrdenCompra
   - Descripción: Dimensión de modalidades de órdenes de compra (OC normal, ágil, gran compra).
-  - Campos principales: tipo_orden_compra_key (PK), codigo_tipo, descripcion_tipo_oc.
+  - Campos principales: tipo_orden_compra_key (PK, AutoField), codigo_tipo (INTEGER UNIQUE),
+    codigo_abreviado_tipo_oc, descripcion_tipo_oc.
 
 ================================================================================
 FIN DEL DICCIONARIO — SMARTBIDS

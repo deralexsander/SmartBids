@@ -112,35 +112,35 @@ export function mostrarMensaje(texto, tipo = 'info', duracion = 14000) {
         if (tipo === 'exito') {
             badge.classList.add('global-message--exito');
             icon.classList.add('fa-circle-check');
-            icon.style.color = 'var(--accent-green)';
-            badgeText.style.color = 'var(--dark-green)';
-            badge.style.borderColor = 'var(--accent-green)';
-            if (closeBtn) closeBtn.style.color = 'var(--accent-green)';
-            if (closeIcon) closeIcon.style.color = 'var(--accent-green)';
+            icon.style.color = '';
+            badgeText.style.color = '';
+            badge.style.borderColor = '';
+            if (closeBtn) closeBtn.style.color = '';
+            if (closeIcon) closeIcon.style.color = '';
         } else if (tipo === 'error') {
             badge.classList.add('global-message--error');
             icon.classList.add('fa-circle-exclamation');
-            icon.style.color = '#e53e3e';
-            badgeText.style.color = '#c53030';
-            badge.style.borderColor = '#feb2b2';
-            if (closeBtn) closeBtn.style.color = '#e53e3e';
-            if (closeIcon) closeIcon.style.color = '#e53e3e';
+            icon.style.color = '';
+            badgeText.style.color = '';
+            badge.style.borderColor = '';
+            if (closeBtn) closeBtn.style.color = '';
+            if (closeIcon) closeIcon.style.color = '';
         } else if (tipo === 'alerta' || tipo === 'warning') {
             badge.classList.add('global-message--alerta');
             icon.classList.add('fa-triangle-exclamation');
-            icon.style.color = '#dd6b20';
-            badgeText.style.color = '#7b341e';
-            badge.style.borderColor = '#fbd38d';
-            if (closeBtn) closeBtn.style.color = '#dd6b20';
-            if (closeIcon) closeIcon.style.color = '#dd6b20';
+            icon.style.color = '';
+            badgeText.style.color = '';
+            badge.style.borderColor = '';
+            if (closeBtn) closeBtn.style.color = '';
+            if (closeIcon) closeIcon.style.color = '';
         } else {
             badge.classList.add('global-message--info');
             icon.classList.add('fa-circle-info');
-            icon.style.color = 'var(--muted-teal)';
-            badgeText.style.color = 'var(--dark-green)';
-            badge.style.borderColor = 'var(--soft-mint)';
-            if (closeBtn) closeBtn.style.color = 'var(--muted-teal)';
-            if (closeIcon) closeIcon.style.color = 'var(--muted-teal)';
+            icon.style.color = '';
+            badgeText.style.color = '';
+            badge.style.borderColor = '';
+            if (closeBtn) closeBtn.style.color = '';
+            if (closeIcon) closeIcon.style.color = '';
         }
     }
 
