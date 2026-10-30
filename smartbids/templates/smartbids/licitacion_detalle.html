@@ -52,6 +52,12 @@
                         <input type="hidden" name="return_to" value="{{ return_to }}">
                         {% if return_solo_seguidas %}<input type="hidden" name="solo_seguidas" value="{{ return_solo_seguidas }}">{% endif %}
                         {% if return_estado %}<input type="hidden" name="estado" value="{{ return_estado }}">{% endif %}
+
+                        <!-- botón de ML -->
+                         <button type="button" id="btn-exportar-licitaciones" class="btn btn-outline mis-lic__toolbar-link" data-export-url="{% url 'exportar_licitaciones' %}{{ export_query }}">
+                                <i class="fa-solid fa-file-export"></i> Probar Licitación en ML
+                        </button>   
+                        
                         {% if seguimiento_activo %}
                             <input type="hidden" name="accion" value="dejar">
                             <button class="btn btn-outline lic-detalle__follow-btn" type="submit" data-seguir-label="Seguir proceso" data-dejar-label="Dejar de seguir" data-siguiendo-class="btn-outline" data-no-siguiendo-class="btn-primary"><i class="fa-solid fa-bookmark" data-seguimiento-icon></i> <span data-seguimiento-label>Dejar de seguir</span></button>
