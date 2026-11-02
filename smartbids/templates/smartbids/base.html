@@ -15,7 +15,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=5">
     <link rel="stylesheet" href="{% static 'css/views/base-layout.css' %}">
     {% if request.resolver_match.url_name == 'home' %}
     <link rel="stylesheet" href="{% static 'css/views/home.css' %}">
@@ -236,6 +236,176 @@
         </div>
     </div>
 
+    <!-- Modal de ML -->
+    <!-- Modal del modelo predictivo -->
+    <div
+    id="modal-simulador-ml"
+    class="modal-2fa-overlay site-modal simulador-modal"
+    aria-hidden="true"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="modal-simulador-titulo"
+    data-reabrir="{% if resultado or simulador_form.errors %}true{% else %}false{% endif %}"
+    hidden>
+
+        <div class="modal-2fa-card site-modal__card simulador-modal__card">
+            <button type="button"
+                    id="btn-cerrar-modal-simulador"
+                    class="site-modal__close"
+                    aria-label="Cerrar simulador">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+
+            <div class="site-modal__icon simulador-modal__icon">
+                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+            </div>
+            <h3 id="modal-simulador-titulo" class="site-modal__title">
+                Simulador de ofertas
+            </h3>
+            <p class="site-modal__description simulador-modal__description">
+                Completa los antecedentes de la licitación y los supuestos de tu oferta
+                para obtener una clasificación del modelo predictivo.
+            </p>
+
+            <div class="simulador-modal__notice" role="note">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                <span>Esta es una estimación basada en datos históricos, no una garantía de adjudicación.
+                    La cantidad de oferentes puede no conocerse antes del cierre de la licitación.</span>
+            </div>
+
+            <div class="simulador-modal__layout">
+                <!-- Formulario: los nombres coinciden con predicciones/forms.py -->
+                {% url 'simulador_ofertas' as simulador_ofertas_url %}
+                <form method="post"
+                    {% if simulador_ofertas_url %}action="{{ simulador_ofertas_url }}"{% endif %}
+                    id="form-simulador-ml"
+                    class="simulador-modal__form">
+                    {% csrf_token %}
+
+                    {% if simulador_form.non_field_errors %}
+                        <div class="simulador-modal__errors" role="alert">
+                            {{ simulador_form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <section class="simulador-modal__section" aria-labelledby="simulador-datos-titulo">
+                        <h4 id="simulador-datos-titulo">
+                            <span class="simulador-modal__step">1</span>
+                            Datos de la licitación
+                        </h4>
+                        <div class="simulador-modal__fields">
+                            <div class="simulador-modal__field">
+                                <label for="{{ simulador_form.dia_semana_publicacion.id_for_label }}">Día de publicación</label>
+                                {{ simulador_form.dia_semana_publicacion }}
+                                <input type="hidden" name="dia_semana_publicacion" value="{{ simulador_form.dia_semana_publicacion.value|default_if_none:'' }}">
+                                {{ simulador_form.dia_semana_publicacion.errors }}
+                            </div>
+                            <div class="simulador-modal__field">
+                                <label for="{{ simulador_form.mes_publicacion.id_for_label }}">Mes de publicación</label>
+                                {{ simulador_form.mes_publicacion }}
+                                <input type="hidden" name="mes_publicacion" value="{{ simulador_form.mes_publicacion.value|default_if_none:'' }}">
+                                {{ simulador_form.mes_publicacion.errors }}
+                            </div>
+                            <div class="simulador-modal__field">
+                                <label for="{{ simulador_form.duracion_proceso.id_for_label }}">Duración del proceso</label>
+                                {{ simulador_form.duracion_proceso }}
+                                {{ simulador_form.duracion_proceso.errors }}
+                                <small>Por defecto, días desde la publicación hasta hoy. Puedes ajustar la duración para otra fecha.</small>
+                            </div>
+                            <div class="simulador-modal__field">
+                                <label for="{{ simulador_form.cantidad_reclamos.id_for_label }}">Cantidad de reclamos</label>
+                                {{ simulador_form.cantidad_reclamos }}
+                                {{ simulador_form.cantidad_reclamos.errors }}
+                            </div>
+                            <div class="simulador-modal__field">
+                                <label for="{{ simulador_form.codigo_producto_onu.id_for_label }}">Código producto ONU</label>
+                                {{ simulador_form.codigo_producto_onu }}
+                                {{ simulador_form.codigo_producto_onu.errors }}
+                                {% if licitacion %}<small>Si hay varios productos, ingresa el código del producto que deseas simular.</small>{% endif %}
+                            </div>
+                            <div class="simulador-modal__field">
+                                <label for="{{ simulador_form.cantidad.id_for_label }}">Cantidad</label>
+                                {{ simulador_form.cantidad }}
+                                {{ simulador_form.cantidad.errors }}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="simulador-modal__section" aria-labelledby="simulador-oferta-titulo">
+                        <h4 id="simulador-oferta-titulo">
+                            <span class="simulador-modal__step">2</span>
+                            Oferta y competencia
+                        </h4>
+                        <div class="simulador-modal__fields">
+                            <div class="simulador-modal__field">
+                                <label for="{{ simulador_form.valor_total_ofertado.id_for_label }}">Valor total ofertado</label>
+                                {{ simulador_form.valor_total_ofertado }}
+                                {{ simulador_form.valor_total_ofertado.errors }}
+                                <small>Se utiliza el presupuesto estimado como valor inicial. Puedes ajustarlo a tu oferta.</small>
+                            </div>
+                            <div class="simulador-modal__field">
+                                <label for="{{ simulador_form.numero_oferentes.id_for_label }}">Número de oferentes</label>
+                                {{ simulador_form.numero_oferentes }}
+                                {{ simulador_form.numero_oferentes.errors }}
+                                <small>Ingresa la cantidad de oferentes que estimas para este proceso.</small>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="site-modal__actions simulador-modal__actions">
+                        <button type="button" id="btn-cancelar-modal-simulador"
+                                class="btn btn-outline site-modal__button">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn simulador-modal__submit"{% if not simulador_ofertas_url %} disabled{% endif %}>
+                            <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                            Evaluar escenario
+                        </button>
+                    </div>
+                    {% if not simulador_ofertas_url %}
+                    <p role="status">La evaluación de ofertas aún no está disponible.</p>
+                    {% endif %}
+                </form>
+
+                <!-- Resultado: usa exclusivamente la respuesta real del backend -->
+                <aside class="simulador-modal__result" aria-labelledby="simulador-resultado-titulo" aria-live="polite">
+                    <h4 id="simulador-resultado-titulo">
+                        <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+                        Resultado del modelo
+                    </h4>
+                    {% if resultado %}
+                        <div class="simulador-modal__score">{{ resultado.puntuacion }}%</div>
+                        <strong class="simulador-modal__status">{{ resultado.etiqueta }}</strong>
+                        <p>Clasificación para los valores ingresados.</p>
+                    {% else %}
+                        <div class="simulador-modal__score simulador-modal__score--empty">—</div>
+                        <strong class="simulador-modal__status">Sin evaluación</strong>
+                        <p>Completa el formulario y evalúa el escenario para ver los resultados.</p>
+                    {% endif %}
+                    <dl class="simulador-modal__metrics">
+                        <div>
+                            <dt>Clasificación</dt>
+                            <dd>{% if resultado %}{{ resultado.etiqueta }}{% else %}Pendiente{% endif %}</dd>
+                        </div>
+                        <div>
+                            <dt>Puntuación del árbol</dt>
+                            <dd>{% if resultado %}{{ resultado.puntuacion }}%{% else %}—{% endif %}</dd>
+                        </div>
+                        <div>
+                            <dt>Umbral de decisión</dt>
+                            <dd>{% if resultado %}{{ resultado.umbral }}%{% else %}—{% endif %}</dd>
+                        </div>
+                    </dl>
+                    <div class="simulador-modal__footnote">
+                        La puntuación del árbol no equivale necesariamente a una probabilidad calibrada.
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+
+
     {% block contenido %}{% endblock %}
     {% block footer %}{% endblock %}
 
@@ -257,6 +427,7 @@
     <script type="module" src="{% static 'js/autenticacion.js' %}?v=4"></script>
     <script type="module" src="{% static 'js/mensajeria-admin.js' %}"></script>
     <script type="module" src="{% static 'js/firebase.js' %}"></script>
+    <script type="module" src="{% static 'js/ml.js' %}"></script>
 
     {% if request.resolver_match.url_name == 'home' %}
     <script type="module" src="{% static 'js/contacto.js' %}"></script>

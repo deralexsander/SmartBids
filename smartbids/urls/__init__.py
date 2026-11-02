@@ -1,7 +1,9 @@
 from django.urls import path
 from smartbids import views
+from smartbids.simulador import simulador_ofertas
 
 urlpatterns = [
+    path('api/simulador-ofertas/', simulador_ofertas, name='simulador_ofertas'),
     path('', views.home, name='home'),
     path('home', views.home, name='home'),
     path('ingreso/', views.login_view, name='ingreso'),

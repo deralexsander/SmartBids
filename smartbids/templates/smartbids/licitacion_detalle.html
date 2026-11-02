@@ -54,9 +54,10 @@
                         {% if return_estado %}<input type="hidden" name="estado" value="{{ return_estado }}">{% endif %}
 
                         <!-- botón de ML -->
-                         <button type="button" id="btn-exportar-licitaciones" class="btn btn-outline mis-lic__toolbar-link" data-export-url="{% url 'exportar_licitaciones' %}{{ export_query }}">
-                                <i class="fa-solid fa-file-export"></i> Probar Licitación en ML
-                        </button>   
+                        <button type="button" id="btn-abrir-modal-simulador" class="btn btn-primary">
+                        <i class="fa-solid fa-brain" aria-hidden="true"></i>
+                             Simular oferta
+                        </button>  
                         
                         {% if seguimiento_activo %}
                             <input type="hidden" name="accion" value="dejar">
