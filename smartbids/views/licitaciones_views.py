@@ -36,19 +36,13 @@ def filtrar_licitaciones(request, suscriptor):
     palabras_norm = [str(value).strip() for value in (preferencias.pref_palabras_claves_norm or []) if str(value).strip()] if preferencias else []
     productos = [str(value).strip() for value in (preferencias.pref_productos or []) if str(value).strip()] if preferencias else []
 
-    tiene_filtros_perfil = bool(comunas or tipos or ucom_ids or palabras or palabras_norm or productos)
+    tiene_filtros_perfil = bool(comunas or tipos or ucom_ids or productos)
     tab = request.GET.get('tab', '').strip().lower()
     solo_seguidas = request.GET.get('solo_seguidas') == '1'
     solo_claves = (tab == 'claves' or request.GET.get('solo_claves') == '1') and not solo_seguidas
 
     q_contenido = Q()
-    if palabras or palabras_norm:
-        q_palabras = Q()
-        for palabra in palabras:
-            q_palabras |= Q(lic_texto__icontains=palabra) | Q(lic_nombre__icontains=palabra) | Q(lic_descripcion__icontains=palabra)
-        if palabras_norm:
-            q_palabras |= Q(lic_palabras_claves_norm__overlap=palabras_norm)
-        q_contenido |= q_palabras
+    # Las palabras clave se procesan y almacenan en el perfil (fórmula NLP), pero aún no se usan para filtrar licitaciones.
 
     if productos:
         codigos_completos = [p for p in productos if len(p) >= 8]

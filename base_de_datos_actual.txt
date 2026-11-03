@@ -4,7 +4,7 @@
 Motor: PostgreSQL (Railway Cloud)
 Arquitectura: Multi-Esquema Relacional + Data Warehouse (Modelo Estrella)
 Esquemas activos: core, procurement, catalog, config, dw
-Total de tablas operacionales y analíticas: 43 tablas
+Total de tablas operacionales y analíticas: 41 tablas
 Fecha de actualización: 28 de Octubre de 2026
 ================================================================================
 
@@ -91,24 +91,6 @@ y las interacciones privadas con licitaciones.
     seguimiento (FK), estado_anterior, estado_nuevo, mensaje, leida (BOOLEAN), creado_en.
 
 --------------------------------------------------------------------------------
-* TABLA: "core"."smartbids_licitacion_documento"
-  - Modelo Django: LicitacionDocumento
-  - Descripción: Registro de bases administrativas, técnicas y anexos descargables
-    asociados a cada licitación pública.
-  - Conexiones:
-    * Clave Foránea: licitacion -> "procurement"."licitacion".
-  - Campos principales: id (PK), licitacion (FK), titulo, url, fecha_publicacion.
-
---------------------------------------------------------------------------------
-* TABLA: "core"."smartbids_licitacion_pregunta"
-  - Modelo Django: LicitacionPregunta
-  - Descripción: Registro del foro oficial de aclaraciones y respuestas entre
-    proveedores y el organismo comprador de Mercado Público.
-  - Conexiones:
-    * Clave Foránea: licitacion -> "procurement"."licitacion".
-  - Campos principales: id (PK), licitacion (FK), pregunta, respuesta, fecha_pregunta, fecha_respuesta.
-
---------------------------------------------------------------------------------
 * TABLA: "core"."smartbids_solicitud_arcop" (NUEVA - Ley N° 21.719)
   - Modelo Django: SolicitudArcop
   - Descripción: Bitácora formal y auditoría legal de solicitudes de ejercicio de
@@ -144,15 +126,12 @@ desde la plataforma de Mercado Público (ChileCompra).
       <- "procurement"."licitaciones_productos" (lic_codigo)
       <- "core"."smartbids_seguimiento_licitacion" (licitacion)
       <- "core"."smartbids_notificacion_licitacion" (licitacion)
-      <- "core"."smartbids_licitacion_documento" (licitacion)
-      <- "core"."smartbids_licitacion_pregunta" (licitacion)
   - Campos principales: lic_codigo (PK, ej: 1057-2-LP24), lic_nombre,
     lic_descripcion, lic_fecha_cierre, lic_hora_cierre, lic_toma_razon,
     lic_codigo_ucom (FK), lic_fecha_public, lic_fecha_preguntas, lic_fecha_respuestas,
     lic_tipo_licitacion, lic_moneda, lic_presupuesto, lic_items_cantidad,
     lic_codigos_producto (array), lic_diccionario_palabras (array),
-    lic_palabras_claves_norm (array normalizado NLP de la licitación), lic_texto,
-    lic_url, lic_plazo, lic_estado (FK).
+    lic_texto, lic_url, lic_plazo, lic_estado (FK).
 
 --------------------------------------------------------------------------------
 * TABLA: "procurement"."unidad_compra"

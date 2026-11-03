@@ -59,17 +59,7 @@ def resumen_dia_view(request):
     tiene_palabras_perfil = bool(palabras or palabras_norm or productos or tipos or comunas or ucom_ids)
 
     q_contenido = Q()
-    if palabras or palabras_norm:
-        q_palabras = Q()
-        for palabra in palabras:
-            q_palabras |= (
-                Q(lic_texto__icontains=palabra)
-                | Q(lic_nombre__icontains=palabra)
-                | Q(lic_descripcion__icontains=palabra)
-            )
-        if palabras_norm:
-            q_palabras |= Q(lic_palabras_claves_norm__overlap=palabras_norm)
-        q_contenido |= q_palabras
+    # Las palabras clave se procesan y almacenan en el perfil (fórmula NLP), pero aún no se usan para filtrar licitaciones.
 
     if productos:
         codigos_completos = [p for p in productos if len(p) >= 8]
