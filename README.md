@@ -2,100 +2,157 @@
 
 # 🚀 SmartBids — Inteligencia para Ofertar
 
-**Plataforma SaaS para el mercado de compras públicas (Mercado Público / ChileCompra)**  
-*Analítica de datos masivos y Machine Learning predictivo para MiPyMEs.*
+**Plataforma SaaS de Inteligencia Comercial y Analítica Predictiva para el Mercado de Compras Públicas (Mercado Público / ChileCompra)**  
+*Transformando millones de datos abiertos en oportunidades estratégicas de negocio para MiPyMEs y proveedores del Estado.*
 
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.x-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Security-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Machine Learning](https://img.shields.io/badge/ML-Scikit--Learn%20%26%20XGBoost-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![Compliance](https://img.shields.io/badge/Ley%20N%C2%B0%2021.719-ARCOP%20Compliant-10b981?style=for-the-badge)](https://www.bcn.cl/)
 
-[📖 Consultar Guía Completa de Instalación y Comandos Git (readme.txt)](./readme.txt)
+[📖 Consultar Guía Rápida de Instalación y Comandos Git (readme.txt)](./readme.txt)
 
 </div>
 
 ---
 
-## 📌 1. Plataforma y Propuesta de Valor
+## 📌 1. Visión General y Propuesta de Valor
 
-SmartBids transforma millones de datos abiertos de Mercado Público en oportunidades estratégicas para proveedores y MiPyMEs, automatizando el monitoreo y estimando la probabilidad de adjudicación mediante modelos de Machine Learning.
+En el ecosistema de compras públicas de Chile se transan miles de millones de dólares anualmente. Sin embargo, las pequeñas y medianas empresas (MiPyMEs) pierden hasta un 80% de su tiempo en búsquedas manuales, revisión de extensas bases administrativas y seguimiento de plazos fatales.
 
-### Portada y Estimación de Éxito
-![Hero Section SmartBids](docs/img/01-hero-landing.png)
-*Vista principal: Propuesta de valor, métricas de transacciones analizadas (+19,3 M USD) y tarjeta interactiva de adjudicación con modelo predictivo XGBoost.*
-
-| Propuesta de Valor MiPyME | Búsqueda Avanzada y Perfilamiento |
-| :---: | :---: |
-| ![Propuesta de Valor](docs/img/02-propuesta-valor.png) | ![Búsqueda y Perfilamiento](docs/img/03-busqueda-perfilamiento.png) |
-| *Inteligencia comercial, automatización de hitos y toma de decisiones basadas en datos.* | *Filtrado inteligente por rubro, catálogo de productos y concordancia porcentual.* |
-
-| Modelos Predictivos (Scikit-Learn / XGBoost) | Beneficios Tangibles de Mercado |
-| :---: | :---: |
-| ![Modelos Predictivos](docs/img/04-modelos-predictivos.png) | ![Beneficios Tangibles](docs/img/05-beneficios-tangibles.png) |
-| *Algoritmos entrenados con histórico de compras públicas para cálculo de factibilidad.* | *Reducción de hasta un 80% en tiempo de búsqueda y seguimiento de hitos críticos.* |
+**SmartBids** automatiza este proceso mediante:
+1. **Perfilamiento Algorítmico:** Concordancia porcentual automática entre las capacidades comerciales de la empresa y los requisitos de cada licitación (catálogo de productos ONU, rubros y zonas geográficas).
+2. **Estimación Predictiva (Machine Learning):** Modelos entrenados con el histórico de compras públicas para anticipar la factibilidad de adjudicación y precios referenciales.
+3. **Resiliencia Operativa:** Integración híbrida con bases de datos relacionales PostgreSQL y un motor de extracción en vivo (*fallback*) hacia las fichas oficiales de Mercado Público para anexos y foros de preguntas.
+4. **Cumplimiento Legal y Transparencia:** Adhesión estricta a la **Ley N° 21.719** de Protección de Datos Personales (derechos ARCOP), autenticación en dos pasos (2FA/OTP) y exportación portátil de registros.
 
 ---
 
-## 📊 2. Analítica de Mercado y Seguimiento de Licitaciones
+## 🏗️ 2. Arquitectura del Sistema y Flujo de Datos
 
-| Dashboard Analítico de Mercado | Seguimiento Dinámico de Oportunidades |
-| :---: | :---: |
-| ![Dashboard Analítico](docs/img/18-dashboard-analitico.png) | ![Mis Licitaciones](docs/img/19-mis-licitaciones-oportunidades.png) |
-| *Métricas del último trimestre: montos transados, volumen mensual por categoría y productos más demandados.* | *Listado de procesos públicos filtrados automáticamente en base al perfil del proveedor.* |
+```mermaid
+flowchart TD
+    classDef client fill:#f0fdf4,stroke:#16a34a,stroke-width:2px;
+    classDef server fill:#eff6ff,stroke:#2563eb,stroke-width:2px;
+    classDef db fill:#fefce8,stroke:#ca8a04,stroke-width:2px;
+    classDef ext fill:#faf5ff,stroke:#9333ea,stroke-width:2px;
 
----
+    User["🖥️ Navegador del Usuario / MiPyME"]:::client
+    Nginx["🛡️ Reverse Proxy / SSL TLS 256-bit"]:::server
+    Django["⚙️ Backend Django (Core & Procurement)"]:::server
+    
+    DB[("🐘 PostgreSQL\nModelos Normalizados & Catálogos")]:::db
+    ML["🤖 Motor ML (Scikit-Learn / XGBoost)\nCálculo de Concordancia"]:::server
+    
+    Firebase["🔥 Firebase Auth\nGestión de Identidad & Sesiones"]:::ext
+    GmailAPI["✉️ Gmail API REST\nOTP Transaccional & Activación"]:::ext
+    MercadoPub["🌐 Mercado Público (ChileCompra)\nFichas Oficiales & Scraping Fallback"]:::ext
 
-## 🔔 3. Mensajería y Alertas Globales en Tiempo Real
-
-El sistema cuenta con un motor de notificaciones en vivo que sincroniza advertencias operativas y confirmaciones de carga directamente en la cabecera de la interfaz.
-
-| Demostración en Tiempo Real | Consola de Administración de Alertas |
-| :---: | :---: |
-| ![Demostración de Alertas](docs/img/demo-mensajeria-alertas.gif) | ![Panel de Mensajería](docs/img/20-redaccion-de-anuncios.png) |
-| *Notificaciones superiores animadas con barra de tiempo regresiva.* | *Gestión de estados, prioridad (éxito/alerta) y redacción de anuncios.* |
-
----
-
-## 🔐 4. Autenticación, Seguridad y Doble Factor (2FA)
-
-La plataforma integra validación de dos pasos para resguardar la identidad corporativa y cumplir con auditorías de seguridad.
-
-| Iniciar Sesión en SmartBids | Registro de Nuevas Cuentas |
-| :---: | :---: |
-| ![Iniciar Sesión](docs/img/09-iniciar-sesion.png) | ![Crear Cuenta](docs/img/10-crear-cuenta.png) |
-| *Acceso seguro con validación de credenciales.* | *Formulario de inscripción corporativa con confirmación de clave.* |
-
-| Verificación de Seguridad OTP (6 dígitos) | Correo Transaccional de Autenticación |
-| :---: | :---: |
-| ![Modal OTP](docs/img/14-modal-verificacion-otp.png) | ![Email con Código OTP](docs/img/15-email-codigo-autenticacion.png) |
-| *Modal flotante de doble factor para validar inicio de sesión.* | *Código de seguridad enviado por email con caducidad de 10 minutos.* |
+    User <-->|HTTPS / Cookies Técnicas| Nginx
+    Nginx <--> Django
+    Django <-->|ORM / Consultas Optimizadas| DB
+    Django <-->|Feature Vectors| ML
+    Django <-->|Validación de Tokens| Firebase
+    Django -->|Envío de Códigos OTP| GmailAPI
+    Django -.->|Fallback de Adjuntos & Preguntas| MercadoPub
+```
 
 ---
 
-## 👤 5. Administración del Suscriptor, Empresa y Filtros
+## 🎬 3. Recorrido Integral de Usuario (Onboarding End-to-End)
 
-| Información del Suscriptor | Datos de la Empresa (Tributaria) |
+El siguiente flujo documenta el ciclo de vida real de un nuevo proveedor registrado en la plataforma (`alexsander.munoz@chileavanza.cl`), demostrando la integración entre frontend, backend, seguridad y notificaciones de correo institucional.
+
+### 🌟 Portada y Transparencia en Privacidad
+La plataforma recibe al usuario con su propuesta de valor, métricas de mercado analizadas y un aviso claro de consentimiento de cookies y almacenamiento técnico conforme a la Ley N° 21.719.
+
+| Portada Principal (Hero Section) | Banner de Cookies y Privacidad (Ley N° 21.719) |
 | :---: | :---: |
-| ![Datos Personales](docs/img/11-perfil-datos-personales.png) | ![Datos Empresa](docs/img/12-perfil-datos-empresa.png) |
-| *Gestión de nombres, apodo, correo y porcentaje de calibración.* | *Razón social, RUT, dirección comercial y canales de notificación.* |
-
-| Filtros de Mercado (Catálogo ONU) | Seguridad y Cambio de Clave |
-| :---: | :---: |
-| ![Filtros de Mercado](docs/img/13-filtros-mercado-licitaciones.png) | ![Cambiar Contraseña](docs/img/17-seguridad-cambiar-clave.png) |
-| *Filtro por territorio, códigos ONU y organismos compradores.* | *Módulo de actualización y robustecimiento de contraseñas.* |
-
-### Calibración Activa del Perfil
-![Modal Completar Perfil](docs/img/16-modal-completar-perfil.png)
-*Asistente inteligente que orienta al usuario para alcanzar el 90% de completitud necesario para calibrar el algoritmo.*
+| ![Hero Section](docs/img/01-hero-landing.png) | ![Aviso de Cookies](docs/img/02-cookies-banner.png) |
+| *Métricas clave (+19,3 M USD analizados) y llamada a la acción.* | *Consentimiento informado previo a la navegación de datos.* |
 
 ---
 
-## 🛡️ 6. Marco Normativo y Privacidad
+### 📝 Registro y Validación de Credenciales
+El formulario valida en tiempo real la integridad del correo electrónico, fortaleza de claves y el consentimiento explícito de los Términos del Servicio y Política de Privacidad.
 
-| Términos del Servicio | Política de Privacidad (Ley N° 19.628) | Seguridad Empresarial y Cifrado |
-| :---: | :---: | :---: |
-| ![Términos del Servicio](docs/img/06-terminos-del-servicio.png) | ![Política de Privacidad](docs/img/07-politica-de-privacidad.png) | ![Seguridad 2FA](docs/img/08-seguridad-2fa.png) |
-| *Alcance informativo y predictivo de los modelos.* | *Cifrado de extremo a extremo SSL/TLS de 256 bits.* | *Hash seguro de claves y monitoreo de anomalías.* |
+| Propuesta de Valor MiPyME | Formulario de Registro Corporativo |
+| :---: | :---: |
+| ![Propuesta de Valor](docs/img/03-propuesta-valor.png) | ![Formulario de Registro](docs/img/04-formulario-registro.png) |
+| *Detalle de beneficios tangibles y reducción de tiempos.* | *Inscripción con verificación de dominios y aceptación legal.* |
+
+---
+
+### ✉️ Verificación de Identidad por Correo Electrónico
+Para garantizar la legitimidad corporativa y evitar cuentas falsas, SmartBids despacha un correo transaccional de bienvenida con enlace seguro de un solo uso (`oobCode`).
+
+| Confirmación de Registro Enviado | Correo de Activación en Gmail Corporativo |
+| :---: | :---: |
+| ![Confirmación Registro](docs/img/05-confirmacion-registro.png) | ![Correo Activación en Gmail](docs/img/06-gmail-correo-activacion.png) |
+| *Notificación en pantalla orientando a revisar la bandeja de entrada.* | *Plantilla responsiva recibida en alexsander.munoz@chileavanza.cl.* |
+
+| Pantalla de Confirmación de Enlace | Cuenta Activada Exitosamente |
+| :---: | :---: |
+| ![Vista de Activación](docs/img/07-vista-activacion-cuenta.png) | ![Activación Exitosa](docs/img/08-cuenta-activada-exito.png) |
+| *Validación criptográfica del token de activación.* | *Habilitación inmediata del usuario en la base de datos.* |
+
+---
+
+### 🔐 Autenticación y Doble Factor de Seguridad (2FA / OTP)
+Cada inicio de sesión requiere la verificación de dos pasos mediante un código numérico dinámico de 6 dígitos con caducidad estricta de 10 minutos.
+
+| Inicio de Sesión (Con Revelador de Clave) | Modal de Verificación 2FA / OTP |
+| :---: | :---: |
+| ![Formulario de Login](docs/img/09-formulario-login.png) | ![Modal 2FA](docs/img/10-modal-verificacion-otp.png) |
+| *Acceso seguro con botón de inspección visual de contraseña.* | *Casilleros segmentados con salto automático de cursor.* |
+
+| Correo Transaccional con Código OTP en Gmail | Validación e Ingreso Autorizado |
+| :---: | :---: |
+| ![Correo OTP en Gmail](docs/img/11-gmail-codigo-otp-2fa.png) | ![Ingreso de OTP](docs/img/12-ingreso-otp-exitoso.png) |
+| *Código de seguridad recibido con aviso de caducidad.* | *Autocompletado y validación inmediata del token de sesión.* |
+
+---
+
+## 👤 4. Perfilamiento Inteligente y Calibración del Algoritmo
+
+Para que los modelos de Machine Learning entreguen recomendaciones de alta precisión, la plataforma guía al usuario a completar su perfil comercial y tributario.
+
+| Asistente de Calibración Activa | Datos Tributarios y de la Empresa |
+| :---: | :---: |
+| ![Modal Calibración](docs/img/13-modal-calibracion-perfil.png) | ![Perfil Empresa](docs/img/14-perfil-empresa-tributario.png) |
+| *Indicador de avance hacia el 90% requerido para calibrar el algoritmo.* | *RUT, Razón Social, dirección comercial y canales de notificación.* |
+
+| Filtros de Mercado y Palabras Clave | Catálogo de Oportunidades Personalizadas |
+| :---: | :---: |
+| ![Filtros de Mercado](docs/img/15-perfil-filtros-mercado.png) | ![Mis Licitaciones](docs/img/16-mis-licitaciones-oportunidades.png) |
+| *Configuración por rubro, productos ONU y regiones de interés.* | *Listado dinámico filtrado con cálculo de días restantes.* |
+
+---
+
+## 📊 5. Analítica de Mercado, Ficha Técnica y Exportación
+
+| Exportación Multi-formato (Excel & CSV) | Ficha Detallada de Licitación con Cronograma |
+| :---: | :---: |
+| ![Modal Exportación](docs/img/17-modal-exportacion-datos.png) | ![Detalle Licitación](docs/img/18-detalle-licitacion-cronograma.png) |
+| *Descargas en `.xlsx` estilizado o `.csv` UTF-8 BOM sanitizado.* | *Hitos del proceso, presupuesto estimado y repositorio de bases.* |
+
+| Dashboard Analítico de Transacciones | Experiencia Visual en Modo Oscuro (Dark Mode) |
+| :---: | :---: |
+| ![Dashboard Analítico](docs/img/19-dashboard-analitico.png) | ![Modo Oscuro](docs/img/20-plataforma-modo-oscuro.png) |
+| *Métricas consolidadas, montos transados y rubros más demandados.* | *Tema oscuro de alto contraste persistido en almacenamiento local.* |
+
+---
+
+## 🛡️ 6. Cumplimiento Normativo y Derechos ARCOP (Ley N° 21.719)
+
+SmartBids implementa desde su arquitectura el marco de protección de datos personales de Chile:
+
+* **Acceso y Portabilidad:** El suscriptor puede exportar la totalidad de sus datos personales, empresa y preferencias en formato `.json` estandarizado con un solo clic desde su perfil.
+* **Rectificación:** Modificación instantánea de datos de contacto y parámetros comerciales.
+* **Cancelación y Supresión:** Módulo de solicitud legal de eliminación definitiva de cuenta y revocación de consentimientos.
+* **Seguridad de la Información:** Cifrado en reposo, firmas HMAC en tokens de sesión y protección activa contra ataques CSRF, XSS e inyecciones SQL.
 
 ---
 
@@ -120,16 +177,44 @@ El proyecto se gestionó bajo el marco de trabajo **Scrum**, estructurado en ite
 
 ## 🛠️ Stack Tecnológico
 
-* **Backend:** Python 3.10+, Django, WhiteNoise, Gunicorn[cite: 7].
-* **Inteligencia Artificial & Datos:** Scikit-Learn, XGBoost, Pandas[cite: 7, 10].
-* **Frontend:** HTML5, CSS3, JavaScript modular (ES6+)[cite: 7, 31].
-* **Autenticación & Real-time:** Firebase Authentication (2FA/OTP), Cloud Firestore[cite: 7, 13, 23].
-* **Base de Datos:** PostgreSQL[cite: 7].
+| Capa | Tecnologías |
+| :--- | :--- |
+| **Backend & Framework** | Python 3.10+, Django 5.x, Gunicorn, WhiteNoise |
+| **Base de Datos & Caché** | PostgreSQL (Relacional normalizada), Django Cache Framework |
+| **Machine Learning** | Scikit-Learn, XGBoost, Pandas, NumPy |
+| **Frontend & UI/UX** | HTML5 Semántico, CSS3 Modular (Variables & Dark Theme), JavaScript ES6+ Vanilla |
+| **Identidad & Seguridad** | Firebase Authentication, Google Identity, HMAC, 2FA/OTP Transaccional |
+| **Integraciones Externas** | Gmail API REST (vía credenciales de servicio), Mercado Público (ChileCompra) Scraping Engine |
+| **Testing & Automatización** | Django TestCase, Playwright (Pruebas End-to-End con CDP) |
 
 ---
 
-## ⚙️ Instalación y Configuración del Proyecto
+## ⚙️ Instalación y Puesta en Marcha Local
 
-Todos los comandos para levantar el entorno virtual en **Ubuntu/Debian**, **macOS** y **Windows**, así como las instrucciones de sincronización de ramas Git, se conservan de forma íntegra en el archivo del repositorio:
+Para clonar el repositorio y levantar el entorno local de desarrollo con dependencias completas:
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/deralexsander/SmartBids.git
+cd SmartBids
+
+# 2. Crear y activar entorno virtual
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. Instalar requerimientos
+pip install -r requirements.txt
+
+# 4. Iniciar servidor de desarrollo
+python manage.py runserver 127.0.0.1:8000
+```
+
+Para ver la guía exhaustiva con instrucciones detalladas para **Ubuntu/Debian**, **macOS** (Apple Silicon M1/M2/M3 / Intel) y **Windows**, consulta el archivo:
 
 👉 **[Ver Guía Paso a Paso de Instalación (readme.txt)](./readme.txt)**
+
+---
+
+<div align="center">
+  <small>© 2026 SmartBids — Desarrollado por el equipo de ChileAvanza. Todos los derechos reservados.</small>
+</div>

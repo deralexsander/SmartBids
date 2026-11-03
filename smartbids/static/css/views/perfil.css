@@ -806,8 +806,83 @@
 }
 
 .tree-item-prod:hover {
-    background-color: #f8fafc !important;
-    border-color: var(--soft-mint) !important;
+    background-color: #f8fafc;
+    border-color: var(--soft-mint);
+}
+
+.tree-node {
+    background: var(--white);
+    border: 1px solid #eef2f6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tree-region, .tree-sector, .tree-grupo {
+    background: var(--white);
+    border: 1.5px solid var(--soft-mint);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    margin-bottom: 12px;
+}
+
+.tree-province, .tree-organismo, .tree-nivel {
+    background: #fafbfc;
+    border: 1px solid #eef2f6;
+    border-radius: 8px;
+    margin-top: 6px;
+}
+
+.tree-region > .tree-header,
+.tree-sector > .tree-header,
+.tree-grupo > .tree-header {
+    background: rgba(30, 196, 152, 0.06);
+    padding: 10px 14px;
+}
+
+.tree-province > .tree-header,
+.tree-organismo > .tree-header,
+.tree-nivel > .tree-header {
+    background: #f8fafc;
+    padding: 8px 12px;
+}
+
+.tree-item-comuna, .tree-item-prod, .tree-item-ucom {
+    background: var(--white);
+    border: 1px solid #f1f5f9;
+    border-radius: 6px;
+    padding: 6px 10px;
+    transition: all 0.15s ease;
+}
+
+.tree-item-comuna:hover, .tree-item-prod:hover, .tree-item-ucom:hover {
+    background-color: #f8fafc;
+    border-color: var(--soft-mint);
+}
+
+.tree-header {
+    background: rgba(30, 196, 152, 0.05);
+}
+
+.tree-children {
+    background: var(--white);
+    border-top: 1px dashed #e2e8f0;
+    padding: 10px 12px;
+}
+
+.tree-badge-count {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.perfil-chip-item {
+    background: var(--white);
+    border: 1.5px solid var(--accent-green);
+    color: var(--dark-green);
+}
+
+.perfil-chip-more {
+    background: #e2e8f0;
+    color: #475569;
 }
 
 .prod-desc {
@@ -1158,3 +1233,106 @@
     letter-spacing: 0.3px;
     text-transform: uppercase;
 }
+
+/* ==========================================================================
+   DERECHOS DE PRIVACIDAD ARCOP (LEY N° 21.719)
+   ========================================================================== */
+.arcop-cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.arcop-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.6rem;
+    background: var(--light-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.arcop-card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+.arcop-card--danger {
+    border-left: 4px solid #dc2626;
+}
+
+.arcop-card__icon {
+    font-size: 2rem;
+    color: var(--accent-green);
+    background: rgba(30, 196, 152, 0.12);
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.arcop-card--danger .arcop-card__icon {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.12);
+}
+
+.arcop-card__body {
+    flex: 1;
+}
+
+.arcop-card__body h4 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark-green);
+}
+
+.arcop-card__body p {
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+    color: var(--gray-text);
+    line-height: 1.5;
+}
+
+.arcop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.arcop-btn--danger {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.arcop-btn--danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.arcop-meta-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    padding: 0.85rem 1rem;
+    background: var(--white);
+    border-radius: 8px;
+    font-size: 0.86rem;
+    color: var(--dark-green);
+    border: 1px solid var(--border-color);
+}
+
+.arcop-meta-box i {
+    color: var(--accent-green);
+    margin-right: 0.35rem;
+}
+

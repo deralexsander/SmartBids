@@ -47,6 +47,22 @@
                 </button>
             </div>
 
+            <!-- Consentimiento informado y específico (Ley N° 21.719) -->
+            <div class="auth__consent-group">
+                <label class="auth__consent-item" for="consent-terms">
+                    <input type="checkbox" id="consent-terms" name="consent_terms" required>
+                    <span class="auth__consent-label">
+                        He leído y acepto los <a href="{% url 'informacion' %}#terminos" target="_blank" rel="noopener noreferrer">Términos del Servicio</a> y la <a href="{% url 'informacion' %}#privacidad" target="_blank" rel="noopener noreferrer">Política de Privacidad</a> (Ley N° 21.719). <span class="auth__required-mark">*</span>
+                    </span>
+                </label>
+                <label class="auth__consent-item" for="consent-marketing">
+                    <input type="checkbox" id="consent-marketing" name="consent_marketing">
+                    <span class="auth__consent-label">
+                        (Opcional) Deseo recibir resúmenes de licitaciones públicas de interés y alertas comerciales por correo electrónico.
+                    </span>
+                </label>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-large auth__submit--registration">Registrarse</button>
 
             <p id="message" class="section-desc auth__feedback"></p>

@@ -562,3 +562,36 @@
     box-shadow: 0 4px 12px rgba(30, 196, 152, 0.15);
 }
 
+@media (max-width: 680px) {
+    .mis-lic__toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .mis-lic__follow-filters,
+    .mis-lic__toolbar-actions {
+        width: 100%;
+        max-width: 100%;
+        flex-wrap: wrap;
+        justify-content: stretch;
+        box-sizing: border-box;
+    }
+    .mis-lic__filter-link,
+    .mis-lic__toolbar-link {
+        flex: 1 1 auto;
+        text-align: center;
+        white-space: normal;
+    }
+    .mis-lic__metrics {
+        min-width: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    .mis-lic__metric--divided {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding-right: 0;
+        padding-bottom: 0.8rem;
+    }
+}
+

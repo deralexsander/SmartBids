@@ -13,6 +13,18 @@ class UnidadCompra(models.Model):
     ucom_codigo_comuna = models.CharField(max_length=5, blank=True, null=True)
     ucom_descripcion = models.CharField(max_length=300, blank=True, null=True)
 
+    @property
+    def nombre_comuna(self):
+        """Retorna el nombre legible de la comuna asociada a la unidad de compra."""
+        if not self.ucom_codigo_comuna:
+            return ''
+        from smartbids.utils.licitacion_utils import obtener_nombre_comuna
+        return obtener_nombre_comuna(self.ucom_codigo_comuna)
+
+    @property
+    def ucom_nombre_comuna(self):
+        return self.nombre_comuna
+
     class Meta:
         managed = True
         db_table = '"procurement"."unidad_compra"'
@@ -59,6 +71,13 @@ class Licitacion(models.Model):
     @es_cierre_proximo.setter
     def es_cierre_proximo(self, valor):
         self._es_cierre_proximo = bool(valor)
+
+    @property
+    def nombre_comuna(self):
+        """Retorna el nombre de la comuna de la unidad de compra emisora."""
+        if self.lic_codigo_ucom:
+            return getattr(self.lic_codigo_ucom, 'nombre_comuna', '')
+        return ''
 
     class Meta:
         managed = True

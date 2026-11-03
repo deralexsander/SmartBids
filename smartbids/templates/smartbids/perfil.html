@@ -86,6 +86,11 @@
                             <i class="fa-solid fa-circle-info"></i> Sesión y Auditoría
                         </button>
                     </li>
+                    <li>
+                        <button type="button" class="profile-menu-btn" data-profile-tab="tab-privacidad">
+                            <i class="fa-solid fa-user-shield"></i> Privacidad (ARCOP)
+                        </button>
+                    </li>
                 </ul>
 
                 <hr class="perfil__sidebar-divider">
@@ -502,25 +507,6 @@
 
             <!-- 4. Palabras Clave -->
             <div id="tab-palabras" class="dashboard-card tab-content-panel">
-                <!-- ========================================================================= -->
-                <!-- [BLOQUEO TEMPORAL DE VISTA - FUNCIÓN PALABRAS CLAVE]                     -->
-                <!-- Para retirar este bloqueo: simplemente elimine o comente el bloque        -->
-                <!-- '<div class="bloqueo-palabras-overlay"> ... </div>'                       -->
-                <!-- ========================================================================= -->
-                <div class="bloqueo-palabras-overlay" aria-live="polite">
-                    <div class="bloqueo-palabras-tarjeta">
-                        <div class="bloqueo-palabras-icono-wrap">
-                            <img src="{% static 'media/isotipo smartbids.webp' %}" alt="SmartBids" class="bloqueo-palabras-isotipo">
-                        </div>
-                        <h3 class="bloqueo-palabras-texto">smartbids está trabajando para usted</h3>
-                        <p class="bloqueo-palabras-subtexto">Esta función se encuentra temporalmente en proceso de calibración y mejora.</p>
-                        <div class="bloqueo-palabras-badge">
-                            <i class="fa-solid fa-clock-rotate-left"></i> En optimización
-                        </div>
-                    </div>
-                </div>
-                <!-- ========================================================================= -->
-
                 <div class="dashboard-header">
                     <div class="dash-title">
                         <i class="fa-solid fa-tags perfil__section-icon"></i>
@@ -660,6 +646,32 @@
                     </div>
                 </div>
 
+                <!-- Preferencias de Interfaz / Modo Oscuro -->
+                <div class="dashboard-header" style="margin-top: 1.8rem;">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-circle-half-stroke perfil__section-icon"></i>
+                        Preferencias Visuales y Apariencia
+                    </div>
+                </div>
+
+                <div class="stat-mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.4rem; border-radius: 14px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <span id="theme-toggle-icon-tab" class="theme-icon-wrap" style="width: 42px; height: 42px; border-radius: 10px; background: rgba(30, 196, 152, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-green); font-size: 1.2rem;">
+                            <i class="fa-solid fa-moon"></i>
+                        </span>
+                        <div>
+                            <strong style="display: block; font-size: 0.98rem; margin-bottom: 4px;" class="perfil__appearance-heading">
+                                Modo Oscuro: <span id="theme-toggle-status-tab" class="theme-status-text" style="color: var(--accent-green);">Desactivado</span>
+                            </strong>
+                            <span style="font-size: 0.85rem; color: var(--muted-teal);" class="perfil__appearance-sub">Alterna entre tema claro y tema oscuro respetando la identidad visual y contraste de SmartBids.</span>
+                        </div>
+                    </div>
+                    <label class="theme-switch" for="theme-dark-toggle-tab" title="Alternar modo oscuro">
+                        <input type="checkbox" id="theme-dark-toggle-tab" aria-label="Alternar modo oscuro">
+                        <span class="theme-switch-slider"></span>
+                    </label>
+                </div>
+
                 <!-- 5.1 Acceso Exclusivo a Administración General (Solo Administradores) -->
                 <div id="perfil-admin-section" class="perfil__admin-section" style="display: none;">
                     <div class="perfil__admin-card">
@@ -686,7 +698,98 @@
                 </div>
             </div>
 
+            <!-- 6. Privacidad y Derechos ARCOP (Ley N° 21.719) -->
+            <div id="tab-privacidad" class="dashboard-card tab-content-panel">
+                <div class="dashboard-header">
+                    <div class="dash-title">
+                        <i class="fa-solid fa-user-shield perfil__section-icon"></i>
+                        Privacidad y Derechos ARCOP
+                    </div>
+                    <span class="dash-badge">Ley N° 21.719 &bull; APDP</span>
+                </div>
+
+                <p class="perfil__desc-text" style="margin-bottom: 2rem; color: var(--gray-text); line-height: 1.5;">
+                    En cumplimiento de la <strong>Ley N° 21.719 sobre Protección de los Datos Personales de Chile</strong>, garantizamos el ejercicio autónomo y transparente de tus derechos de Acceso, Rectificación, Cancelación, Oposición y Portabilidad (ARCOP).
+                </p>
+
+                <div class="arcop-cards-grid">
+                    <!-- Portabilidad de Datos (Art. 9) -->
+                    <div class="arcop-card">
+                        <div class="arcop-card__icon">
+                            <i class="fa-solid fa-file-export"></i>
+                        </div>
+                        <div class="arcop-card__body">
+                            <h4>Derecho a la Portabilidad (Art. 9)</h4>
+                            <p>Descarga una copia estructurada, completa y legible por máquina (JSON) de tus datos personales, información empresarial vinculada, preferencias territoriales y licitaciones guardadas.</p>
+                            <button type="button" id="btn-exportar-datos-arcop" class="btn btn-primary arcop-btn">
+                                <i class="fa-solid fa-download"></i> Descargar mis Datos (JSON)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cancelación / Supresión (Art. 8) -->
+                    <div class="arcop-card arcop-card--danger">
+                        <div class="arcop-card__icon">
+                            <i class="fa-solid fa-user-xmark"></i>
+                        </div>
+                        <div class="arcop-card__body">
+                            <h4>Derecho a la Cancelación y Supresión (Art. 8)</h4>
+                            <p>Puedes solicitar la baja de tu cuenta y la supresión de tus datos de nuestros sistemas de procesamiento activo en cualquier momento.</p>
+                            <button type="button" id="btn-abrir-modal-cancelacion" class="btn btn-outline arcop-btn arcop-btn--danger">
+                                <i class="fa-solid fa-trash-can"></i> Solicitar Eliminación de Cuenta
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Rectificación, Acceso y Oposición -->
+                    <div class="arcop-card">
+                        <div class="arcop-card__icon">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                        <div class="arcop-card__body">
+                            <h4>Rectificación, Acceso y Oposición</h4>
+                            <p>Puedes corregir tus datos en cualquier momento desde las pestañas <em>Datos Personales</em> y <em>Datos Empresa</em>, u oponerte a comunicaciones promocionales.</p>
+                            <div class="arcop-meta-box">
+                                <div><i class="fa-solid fa-clock"></i> Plazo legal de respuesta: <strong>15 días hábiles</strong></div>
+                                <div><i class="fa-solid fa-envelope"></i> Canal formal de privacidad: <strong>{{ contacto_email|default:'contacto@chileavanza.cl' }}</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
+    </div>
+</div>
+
+<!-- Modal Confirmar Cancelación de Cuenta (ARCOP Art. 8) -->
+<div id="modal-cancelacion-cuenta" class="modal-2fa-overlay perfil__exit-dialog-overlay" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-2fa-card perfil__dialog-card">
+        <button type="button" id="btn-cerrar-modal-cancelacion" class="site-modal__close" aria-label="Cerrar ventana">&times;</button>
+        <div class="perfil__dialog-indicator perfil__exit-dialog-icon" style="background: rgba(220, 38, 38, 0.12); color: #dc2626;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+
+        <h3 class="modal-2fa-title perfil__dialog-title">Solicitar Eliminación de Cuenta</h3>
+        <p class="modal-2fa-desc perfil__dialog-desc">
+            Conforme al Artículo 8 de la Ley N° 21.719, al solicitar la eliminación de tu cuenta se cerrará tu sesión, se cancelarán tus alertas activas y se suprimirán tus preferencias de búsqueda.
+        </p>
+
+        <div style="margin: 1.25rem 0; text-align: left;">
+            <label for="motivo-cancelacion-arcop" style="font-size: 0.88rem; font-weight: 600; display: block; margin-bottom: 0.4rem;">
+                Motivo de la solicitud (Opcional):
+            </label>
+            <textarea id="motivo-cancelacion-arcop" class="form-input" rows="3" placeholder="Indica brevemente el motivo de tu baja o sugerencia..." style="width: 100%; resize: vertical; border-radius: 8px; font-size: 0.88rem;"></textarea>
+        </div>
+
+        <div class="site-modal__actions" style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button type="button" id="btn-cancelar-accion-eliminar" class="btn btn-outline">
+                Cancelar
+            </button>
+            <button type="button" id="btn-confirmar-eliminar-cuenta" class="btn btn-primary" style="background: #dc2626; border-color: #dc2626;">
+                <i class="fa-solid fa-trash-can"></i> Confirmar Eliminación
+            </button>
+        </div>
     </div>
 </div>
 

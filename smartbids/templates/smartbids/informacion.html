@@ -2,10 +2,8 @@
 {% load static %}
 
 {% block nombrePag %}
-<title>Información Legal y Seguridad</title>
+<title>Centro Legal, Privacidad y Términos | SmartBids</title>
 {% endblock %}
-
-
 
 {% block nav_buttons %}
     <a id="btn-login" href="{% url 'ingreso' %}" class="btn btn-outline">Ingresar</a>
@@ -16,28 +14,39 @@
     <!-- Encabezado / Hero Informativo -->
     <section class="value-prop info__hero home-slide-section">
         <div class="section-header">
-            <span class="section-subtitle">Transparencia y Confianza</span>
+            <span class="section-subtitle">Marco Jurídico, Transparencia y Confianza</span>
             <h1 class="section-title">Centro Legal, Privacidad y Seguridad</h1>
             <p class="section-desc">
-                En SmartBids estamos comprometidos con la transparencia operativa, la estricta protección de la información de tu empresa y el cumplimiento de las normativas de datos y compras públicas en Chile.
+                En SmartBids estamos comprometidos con la transparencia, la estricta protección de los datos de tu empresa y el cumplimiento riguroso de la legislación chilena: la <strong>Nueva Ley de Protección de Datos Personales (Ley N° 21.719)</strong>, la <strong>Ley del Consumidor (Ley N° 19.496 / Decreto 6/2021)</strong> y las normativas de compras públicas del Estado de Chile.
             </p>
+            <div class="info__hero-legal-meta">
+                <span><strong>Titular responsable:</strong> {{ razon_social|default:'no informada' }}</span> &bull; 
+                <span><strong>RUT:</strong> {{ rut|default:'00000000-5' }}</span> &bull; 
+                <span><strong>Domicilio:</strong> Agua Santa 1400, Viña del Mar, Chile</span> &bull; 
+                <span><strong>Canal de Privacidad:</strong> <a href="mailto:{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}" class="info__arcop-alert-link">{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}</a></span>
+            </div>
         </div>
 
         <div class="prop-grid">
             <div class="prop-card">
                 <div class="prop-icon"><i class="fa-solid fa-file-contract"></i></div>
-                <h3>Términos Claros</h3>
-                <p>Conoce las condiciones del servicio SaaS, responsabilidades y alcances del análisis predictivo de licitaciones públicas.</p>
+                <h3>Términos Claros y SaaS</h3>
+                <p>Reglas claras de uso de la plataforma, licencias de datos de Mercado Público y alcances predictivos del análisis algorítmico.</p>
             </div>
             <div class="prop-card">
                 <div class="prop-icon"><i class="fa-solid fa-user-shield"></i></div>
-                <h3>Privacidad de Datos</h3>
-                <p>Tratamiento confidencial de los datos de tu MiPyME, credenciales y preferencias comerciales de búsqueda.</p>
+                <h3>Privacidad (Ley N° 21.719)</h3>
+                <p>Tratamiento confidencial de tus datos, reconocimiento de la autoridad APDP y ejercicio pleno de los derechos ARCOP con portabilidad.</p>
+            </div>
+            <div class="prop-card">
+                <div class="prop-icon"><i class="fa-solid fa-cookie-bite"></i></div>
+                <h3>Cookies y Transparencia</h3>
+                <p>Uso exclusivo de almacenamiento local y cookies técnicas indispensables para la sesión segura y preferencias de modo oscuro.</p>
             </div>
             <div class="prop-card">
                 <div class="prop-icon"><i class="fa-solid fa-lock"></i></div>
-                <h3>Autenticación 2FA</h3>
-                <p>Protección de grado empresarial con doble factor de autenticación y cifrado de extremo a extremo.</p>
+                <h3>Seguridad y 2FA</h3>
+                <p>Doble factor de autenticación (OTP), cifrado TLS de extremo a extremo y protocolos de detección de accesos anómalos.</p>
             </div>
         </div>
     </section>
@@ -45,36 +54,35 @@
     <!-- 1. Términos de Servicio -->
     <section class="features home-slide-section" id="terminos">
         <div class="section-header info__section-header">
-            <span class="section-subtitle">Condiciones de Uso</span>
+            <span class="section-subtitle">Condiciones Contractuales</span>
             <h2 class="section-title">Términos del Servicio</h2>
-            <p class="section-desc">Regulaciones para el uso de la plataforma SaaS y el consumo de modelos de analítica avanzada.</p>
+            <p class="section-desc">Regulaciones para el acceso y uso de la plataforma SaaS SmartBids y su motor de analítica avanzada.</p>
         </div>
 
         <div class="feature-row">
             <div class="feature-text">
-                <h3>1. Alcance y Naturaleza del Servicio</h3>
-                <p>SmartBids es una plataforma de software como servicio (SaaS) orientada a la recopilación, análisis e inferencia predictiva de procesos de licitación pública en Chile (Mercado Público / ChileCompra).</p>
+                <h3>1. Individualización del Prestador y Objeto del SaaS</h3>
+                <p>El servicio es provisto por <strong>{{ razon_social|default:'no informada' }}</strong>, RUT <strong>{{ rut|default:'00000000-5' }}</strong>, con domicilio en Agua Santa 1400, Viña del Mar, Chile. SmartBids es una plataforma de software como servicio (SaaS) orientada a la recopilación inteligente, análisis histórico y estimación predictiva de procesos de licitación pública en Chile.</p>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-check"></i> <strong>Carácter Infornativo y Predictivo:</strong> Las estimaciones de probabilidad de adjudicación emitidas por los algoritmos (Machine Learning / XGBoost) corresponden a análisis estadísticos basados en datos históricos y no constituyen garantía absoluta de adjudicación comercial.</li>
-                    <li><i class="fa-solid fa-check"></i> <strong>Responsabilidad de la Oferta:</strong> Cada usuario y empresa es exclusivamente responsable de la preparación técnica, económica y envío formal de sus propuestas en las plataformas del Estado.</li>
-                    <li><i class="fa-solid fa-check"></i> <strong>Disponibilidad:</strong> Mantenemos monitoreo continuo para asegurar alta disponibilidad del servicio y sincronización regular con las fuentes oficiales de datos.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Carácter de la herramienta:</strong> SmartBids provee herramientas de inteligencia comercial y productividad para proveedores del Estado y MiPyMEs.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Aceptación vinculante:</strong> El registro y uso de la plataforma supone la aceptación íntegra de estos términos y de la política de privacidad complementaria.</li>
                 </ul>
             </div>
             <div class="feature-graphic">
                 <div class="graphic-mockup">
                     <div class="mockup-item">
                         <div class="mockup-info">
-                            <h6>Modelo Predictivo SmartBids</h6>
-                            <span>Análisis probabilístico sobre datos históricos</span>
+                            <h6>Prestador Responsable</h6>
+                            <span>{{ razon_social|default:'no informada' }} &bull; RUT: {{ rut|default:'00000000-5' }}</span>
                         </div>
-                        <span class="mockup-status">Informativo</span>
+                        <span class="mockup-status">Chile</span>
                     </div>
                     <div class="mockup-item">
                         <div class="mockup-info">
-                            <h6>Envío de Oferta Oficial</h6>
-                            <span>Responsabilidad exclusiva del proveedor</span>
+                            <h6>Modelo SaaS B2B / MiPyME</h6>
+                            <span>Inteligencia de Contratación Pública</span>
                         </div>
-                        <span class="mockup-status">Portal Estatal</span>
+                        <span class="mockup-status">Activo</span>
                     </div>
                 </div>
             </div>
@@ -82,31 +90,64 @@
 
         <div class="feature-row reverse">
             <div class="feature-text">
-                <h3>2. Cuentas de Usuario y Suscripciones</h3>
-                <p>Para acceder a las herramientas avanzadas, el suscriptor debe mantener su información de perfil y de empresa actualizada.</p>
+                <h3>2. Fuente de Datos Públicos y Deslinde Algorítmico (IA / ML)</h3>
+                <p>En conformidad con la <strong>Ley N° 19.886 de Bases sobre Contratos Administrativos de Suministro y Prestación de Servicios</strong> y las políticas de datos abiertos del Estado de Chile, SmartBids consulta y sincroniza información pública disponible en las plataformas del sistema de compras públicas (ChileCompra / Mercado Público).</p>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-check"></i> <strong>Uso Intransferible:</strong> Las credenciales de acceso son personales y no deben ser compartidas con terceros fuera de la organización autorizada.</li>
-                    <li><i class="fa-solid fa-check"></i> <strong>Uso Ético:</strong> Queda prohibido el uso de técnicas de extracción abusiva (scraping no autorizado) o intentos de vulneración a la infraestructura de SmartBids.</li>
-                    <li><i class="fa-solid fa-check"></i> <strong>Cancelación:</strong> El usuario puede dar de baja su suscripción o solicitar la baja de su cuenta según los planes contratados.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Independencia institucional:</strong> SmartBids es un servicio tecnológico independiente y no representa, ni está patrocinado ni forma parte de la Dirección de Compras y Contratación Pública (ChileCompra).</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Estimaciones de Machine Learning:</strong> Las probabilidades de adjudicación, cálculos de afinidad comercial e inferencias generadas por modelos algorítmicos (XGBoost) corresponden a análisis estadísticos predictivos fundamentados en información histórica. <em>No constituyen garantía de adjudicación, recomendación comercial infalible ni dictamen legal vinculante.</em></li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Responsabilidad de la postulación:</strong> Cada usuario y empresa es exclusivamente responsable de la revisión íntegra de las bases administrativas y técnicas de cada licitación, así como de la preparación, suscripción y envío formal de sus ofertas en los portales oficiales del Estado.</li>
                 </ul>
             </div>
             <div class="feature-graphic">
                 <div class="dashboard-card">
                     <div class="dashboard-header">
                         <div class="dash-title">
-                            <i class="fa-solid fa-building-shield info__accent"></i>
-                            Estado de la Cuenta
+                            <i class="fa-solid fa-brain info__accent"></i>
+                            Inferencia Algorítmica
                         </div>
-                        <span class="dash-badge">SaaS MiPyME</span>
+                        <span class="dash-badge">XGBoost ML</span>
                     </div>
                     <div class="stat-grid">
                         <div class="stat-mini-card">
-                            <label>Acceso</label>
-                            <div>Empresarial</div>
+                            <label>Naturaleza</label>
+                            <div>Probabilística</div>
                         </div>
                         <div class="stat-mini-card">
-                            <label>Soporte</label>
-                            <div>24/7 Activo</div>
+                            <label>Presentación</label>
+                            <div>Exclusiva del usuario</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-text">
+                <h3>3. Cuentas de Usuario, Seguridad y Uso Ético</h3>
+                <p>Para acceder a las herramientas avanzadas, el suscriptor debe registrar información verídica y mantener actualizados los datos de contacto y de empresa.</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Credenciales Intransferibles:</strong> Las cuentas son personales de la organización autorizada. El suscriptor es custodio de sus factores de autenticación y contraseñas.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Prohibición de Abuso (Ley N° 21.459):</strong> Queda estrictamente prohibido el uso de técnicas de extracción masiva desproporcionada (scraping abusivo), ingeniería inversa de los modelos predictivos o cualquier acción que vulnere la integridad de la infraestructura de SmartBids.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Derecho a Retracto y Cancelación (Ley N° 19.496 / Dto. 6/2021):</strong> Conforme al Art. 3 bis letra b de la Ley N° 19.496, para servicios SaaS de activación inmediata, el suscriptor consiente la ejecución inmediata de la suscripción al confirmar su plan. Asimismo, el usuario puede cancelar la renovación de su plan o solicitar la baja total de su cuenta en cualquier momento desde su panel de perfil, de manera ágil y sin trabas administrativas indebidas.</li>
+                </ul>
+            </div>
+            <div class="feature-graphic">
+                <div class="dashboard-card">
+                    <div class="dashboard-header">
+                        <div class="dash-title">
+                            <i class="fa-solid fa-shield-halved info__accent"></i>
+                            Protección Integral
+                        </div>
+                        <span class="dash-badge">Ley N° 21.459</span>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-mini-card">
+                            <label>Retracto / Baja</label>
+                            <div>Autoservicio ágil</div>
+                        </div>
+                        <div class="stat-mini-card">
+                            <label>Soporte Legal</label>
+                            <div>{{ contacto_email|default:'contacto@chileavanza.cl' }}</div>
                         </div>
                     </div>
                 </div>
@@ -117,39 +158,157 @@
     <!-- 2. Política de Privacidad -->
     <section class="features info__section--privacy home-slide-section" id="privacidad">
         <div class="section-header info__section-header">
-            <span class="section-subtitle">Protección de Datos</span>
-            <h2 class="section-title">Política de Privacidad</h2>
-            <p class="section-desc">Cómo recopilamos, utilizamos y salvaguardamos la información corporativa y personal.</p>
+            <span class="section-subtitle">Protección de Datos Personales</span>
+            <h2 class="section-title">Política de Privacidad Integral</h2>
+            <p class="section-desc">Adaptada a la <strong>Ley N° 21.719</strong> sobre Protección de Datos Personales y a los estándares de la <strong>Agencia de Protección de Datos Personales (APDP)</strong> de Chile.</p>
         </div>
 
         <div class="feature-row">
             <div class="feature-text">
-                <h3>Recopilación y Uso de la Información</h3>
-                <p>En SmartBids implementamos estrictas políticas de tratamiento de datos en conformidad con la normativa chilena de protección de la vida privada (Ley N° 19.628 y sus actualizaciones).</p>
+                <h3>1. Marco Legal y Principios de Tratamiento</h3>
+                <p>En SmartBids tratamos los datos personales dando cumplimiento riguroso a la <strong>Ley N° 21.719</strong> (que actualiza e innova el régimen legal chileno de protección de la vida privada). Nuestro tratamiento se fundamenta en los siguientes principios legales:</p>
                 <ul class="feature-list">
-                    <li><i class="fa-solid fa-check"></i> <strong>Datos de Registro:</strong> Nombre, correo corporativo, RUT de empresa y rubros comerciales para personalizar el motor de recomendaciones.</li>
-                    <li><i class="fa-solid fa-check"></i> <strong>Datos de Actividad:</strong> Licitaciones guardadas, filtros de búsqueda y consultas de mercado para mejorar la experiencia de usuario.</li>
-                    <li><i class="fa-solid fa-check"></i> <strong>No Comercialización:</strong> SmartBids no comercializa ni arrienda bases de datos ni perfiles de clientes a terceros.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Licitud y Lealtad:</strong> Tratamos datos con base en el consentimiento explícito del titular y en la ejecución del contrato de prestación del servicio SaaS.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Finalidad y Proporcionalidad:</strong> Solo requerimos los datos estrictamente pertinentes para prestar el servicio, emitir recomendaciones y autenticar la cuenta.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Seguridad y Responsabilidad Proactiva:</strong> Adoptamos medidas técnicas y organizativas para salvaguardar la confidencialidad, autenticidad y trazabilidad de los accesos.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>No Comercialización:</strong> SmartBids <strong>no vende, arrienda ni cede</strong> perfiles de usuarios ni bases de datos personales a terceras entidades con fines publicitarios ajenos al servicio.</li>
                 </ul>
             </div>
             <div class="feature-graphic">
                 <div class="graphic-mockup">
                     <div class="info__security-card">
-                        <i class="fa-solid fa-shield-halved info__security-icon"></i>
-                        <h6 class="info__security-title">Cifrado de Extremo a Extremo</h6>
-                        <p class="info__security-description">Todas las conexiones y transferencias de datos sensibles operan bajo protocolos SSL/TLS de 256 bits.</p>
+                        <i class="fa-solid fa-scale-balanced info__security-icon"></i>
+                        <h6 class="info__security-title">Regulado por la APDP</h6>
+                        <p class="info__security-description">Adecuación completa al estándar sancionatorio y garantista de la Agencia de Protección de Datos Personales de Chile.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row reverse">
+            <div class="feature-text">
+                <h3>2. Datos Tratados, Transferencias Internacionales y Conservación</h3>
+                <p>Detalle de la información gestionada y su infraestructura de procesamiento:</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Datos de Registro:</strong> Nombres, apellidos, correo corporativo, RUT de empresa representada y rubros comerciales.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Datos de Preferencias:</strong> Filtros territoriales (regiones, comunas), códigos de compra de Mercado Público y licitaciones agregadas a seguimiento.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Transferencias Internacionales (Art. 26 Ley 21.719):</strong> Para garantizar disponibilidad y alta seguridad criptográfica, utilizamos servicios de autenticación y hosting provistos por Google LLC (Firebase / Cloud) e infraestructura en la nube con centros de datos internacionales. Dichos proveedores operan bajo cláusulas contractuales de resguardo y estándares ISO/IEC 27001 y SOC 2.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Plazos de Conservación:</strong> Los datos se conservan durante la vigencia de la suscripción del usuario y, tras su término, por el plazo necesario para cumplir con obligaciones legales y tributarias chilenas o hasta la solicitud formal de cancelación.</li>
+                </ul>
+            </div>
+            <div class="feature-graphic">
+                <div class="dashboard-card">
+                    <div class="dashboard-header">
+                        <div class="dash-title">
+                            <i class="fa-solid fa-cloud-arrow-up info__accent"></i>
+                            Seguridad Cloud
+                        </div>
+                        <span class="dash-badge">TLS 1.3 / 256-bit</span>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-mini-card">
+                            <label>Auth Backend</label>
+                            <div>Google Firebase</div>
+                        </div>
+                        <div class="stat-mini-card">
+                            <label>Retención</label>
+                            <div>Limitada a finalidad</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-text">
+                <h3>3. Derechos ARCOP y Procedimiento de Atención</h3>
+                <p>Bajo la <strong>Ley N° 21.719</strong>, tú como titular de los datos personales tienes garantizados los siguientes derechos:</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Acceso:</strong> Solicitar confirmación de los datos que conservamos sobre ti y las condiciones de su tratamiento.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Rectificación:</strong> Corregir información inexacta, desactualizada o incompleta en cualquier momento desde tu perfil.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Cancelación / Supresión:</strong> Solicitar la eliminación definitiva de tus datos personales cuando haya cesado la necesidad legal o contractual.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Oposición:</strong> Oponerte al tratamiento de tus datos para finalidades específicas (por ejemplo, recepción de resúmenes comerciales o boletines).</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Portabilidad (Art. 9 Ley 21.719):</strong> Recibir una copia íntegra y estructurada de tus datos y preferencias en formato digital genérico y legible por máquina (JSON), disponible directamente con un clic en tu perfil.</li>
+                </ul>
+                <div class="info__arcop-alert-box">
+                    <p class="info__arcop-alert-text">
+                        <strong>Plazo legal de respuesta:</strong> Conforme al Artículo 10 de la Ley N° 21.719, las solicitudes ARCOP se tramitan en un plazo máximo de <strong>15 días hábiles</strong>. Puedes ejercerlas directamente desde la pestaña <em>Privacidad (ARCOP)</em> de tu perfil o escribiendo a <a href="mailto:{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}" class="info__arcop-alert-link">{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}</a>.
+                    </p>
+                </div>
+            </div>
+            <div class="feature-graphic">
+                <div class="dashboard-card">
+                    <div class="dashboard-header">
+                        <div class="dash-title">
+                            <i class="fa-solid fa-address-card info__accent"></i>
+                            Tus Derechos ARCOP
+                        </div>
+                        <span class="dash-badge">Plazo: 15 días</span>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-mini-card">
+                            <label>Portabilidad</label>
+                            <div>Descarga JSON</div>
+                        </div>
+                        <div class="stat-mini-card">
+                            <label>Supresión</label>
+                            <div>Baja de cuenta</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 3. Seguridad y Doble Factor (2FA) -->
+    <!-- 3. Política de Cookies y Almacenamiento Local -->
+    <section class="features home-slide-section" id="cookies">
+        <div class="section-header info__section-header">
+            <span class="section-subtitle">Almacenamiento Local y Tecnologías de Rastreo</span>
+            <h2 class="section-title">Política de Cookies y Almacenamiento Local</h2>
+            <p class="section-desc">Transparencia sobre cómo y por qué almacenamos identificadores técnicos en tu dispositivo.</p>
+        </div>
+
+        <div class="feature-row">
+            <div class="feature-text">
+                <h3>Uso Exclusivo de Tecnologías Esenciales y Funcionales</h3>
+                <p>En SmartBids no empleamos cookies de rastreo publicitario masivo de terceros ni venta de huellas digitales. El almacenamiento se restringe estrictamente a funciones operativas indispensables:</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-check"></i> <strong>Cookies Técnicas de Autenticación (`sb_firebase_uid`, `sb_session_token`):</strong> Necesarias para validar la sesión del usuario entre el cliente y el servidor sin exponer contraseñas (Duración: 7 días con atributos <em>SameSite=Lax</em>).</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Cookie de Seguridad CSRF (`csrftoken`):</strong> Provista por el framework Django para evitar ataques de falsificación de peticiones en sitios cruzados.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Almacenamiento Local Funcional (`smartbids_theme`):</strong> Registra tu preferencia estética (Modo Oscuro o Modo Claro) en tu propio navegador para garantizar una visualización consistente sin recargar datos al servidor.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Consentimiento de Cookies (`smartbids_cookies_consent`):</strong> Guarda la aceptación del banner informativo de cookies.</li>
+                </ul>
+                <p style="margin-top: 1rem; font-size: 0.88rem; color: var(--gray-text);">
+                    Puedes configurar tu navegador para bloquear o eliminar cookies en cualquier momento. Ten en cuenta que desactivar las cookies técnicas de sesión impedirá el ingreso seguro a tu cuenta de SmartBids.
+                </p>
+            </div>
+            <div class="feature-graphic">
+                <div class="graphic-mockup">
+                    <div class="mockup-item">
+                        <div class="mockup-info">
+                            <h6>sb_firebase_uid / sb_session_token</h6>
+                            <span>Cookies técnicas esenciales de sesión segura</span>
+                        </div>
+                        <span class="mockup-status">Técnica</span>
+                    </div>
+                    <div class="mockup-item">
+                        <div class="mockup-info">
+                            <h6>smartbids_theme</h6>
+                            <span>LocalStorage: persistencia de modo oscuro</span>
+                        </div>
+                        <span class="mockup-status">Funcional</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Seguridad y Doble Factor (2FA) -->
     <section class="ml-section home-slide-section" id="seguridad">
         <div class="ml-grid">
             <div class="ml-text">
                 <h2>Seguridad de Nivel Empresarial y <span>2FA</span></h2>
-                <p>Garantizamos la máxima integridad en las cuentas de nuestros usuarios mediante capas de seguridad avanzadas que mitigan riesgos de suplantación y accesos no autorizados.</p>
+                <p>Garantizamos la máxima integridad en las cuentas de nuestros usuarios mediante capas de seguridad avanzadas que mitigan riesgos de suplantación, fuga de datos y accesos no autorizados, conforme a la <strong>Ley Marco de Ciberseguridad (Ley N° 21.663)</strong>.</p>
                 <a href="{% url 'ingreso' %}" class="btn btn-primary btn-large">Ir al Acceso Seguro</a>
             </div>
             <div class="ml-cards">
@@ -157,21 +316,21 @@
                     <div class="ml-card-icon"><i class="fa-solid fa-key"></i></div>
                     <div class="ml-card-content">
                         <h4>Doble Factor de Autenticación (2FA / OTP)</h4>
-                        <p>Validación de identidad con código temporal de 6 dígitos enviado por correo o generado vía apps de autenticación.</p>
+                        <p>Validación de identidad con código temporal de 6 dígitos con hash salted y expiración automática.</p>
                     </div>
                 </div>
                 <div class="ml-card-item">
                     <div class="ml-card-icon"><i class="fa-solid fa-database"></i></div>
                     <div class="ml-card-content">
-                        <h4>Protección y Hash de Credenciales</h4>
-                        <p>Almacenamiento protegido de contraseñas mediante funciones criptográficas irreversibles de última generación.</p>
+                        <h4>Protección y Hash Criptográfico</h4>
+                        <p>Cero almacenamiento de contraseñas en texto plano. Uso de funciones criptográficas irreversibles de última generación.</p>
                     </div>
                 </div>
                 <div class="ml-card-item">
                     <div class="ml-card-icon"><i class="fa-solid fa-network-wired"></i></div>
                     <div class="ml-card-content">
-                        <h4>Monitoreo y Detección de Anomalías</h4>
-                        <p>Alertas inmediatas y bloqueo preventivo ante sesiones sospechosas o múltiples intentos fallidos de autenticación.</p>
+                        <h4>Notificación de Incidentes en 72 Horas</h4>
+                        <p>Protocolos de alerta ante anomalías y compromiso formal de reporte a la APDP y a los afectados según el Art. 21 de la Ley 21.719.</p>
                     </div>
                 </div>
             </div>
@@ -182,34 +341,32 @@
     <section class="benefits-banner home-slide-section">
         <div class="section-header">
             <span class="section-subtitle">Compromiso SmartBids</span>
-            <h2 class="section-title">Pilares de nuestra infraestructura</h2>
+            <h2 class="section-title">Pilares de nuestra infraestructura legal y técnica</h2>
         </div>
 
         <div class="benefits-grid">
             <div class="benefit-box">
                 <i class="fa-solid fa-scale-balanced"></i>
-                <h4>Cumplimiento Legal</h4>
-                <p>Alineado a los estándares de datos públicos y normativas legales vigentes en Chile.</p>
+                <h4>Ley N° 21.719 y APDP</h4>
+                <p>Alineado a la nueva ley de datos chilena y preparado para la supervisión de la APDP.</p>
             </div>
             <div class="benefit-box">
                 <i class="fa-solid fa-lock"></i>
-                <h4>Sesiones Blindadas</h4>
-                <p>Cierre automático de sesiones inactivas y verificación periódica de seguridad.</p>
+                <h4>Ciberseguridad y 2FA</h4>
+                <p>Doble factor, cifrado TLS 1.3 de grado bancario y control de acceso riguroso.</p>
             </div>
             <div class="benefit-box">
-                <i class="fa-solid fa-server"></i>
-                <h4>Respaldos Continuos</h4>
-                <p>Copias de seguridad redundantes y almacenamiento con alta tolerancia a fallos.</p>
+                <i class="fa-solid fa-file-export"></i>
+                <h4>Portabilidad Digital</h4>
+                <p>Descarga tus datos y preferencias en formato JSON en cualquier momento.</p>
             </div>
             <div class="benefit-box">
                 <i class="fa-solid fa-headset"></i>
                 <h4>Canal de Privacidad</h4>
-                <p>Atención expedita para el ejercicio de derechos ARCO (Acceso, Rectificación y Cancelación).</p>
+                <p>Atención formal de derechos ARCOP en un plazo máximo de 15 días hábiles.</p>
             </div>
         </div>
     </section>
-
-
 
 {% endblock %}
 

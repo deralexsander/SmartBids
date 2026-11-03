@@ -2,6 +2,17 @@
 <html class="loading" lang="es">
 <head>
     {% load static %}
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('smartbids_theme');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch(e) {}
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
@@ -27,6 +38,7 @@
     {% elif request.resolver_match.url_name == 'detalle_licitacion' %}
     <link rel="stylesheet" href="{% static 'css/views/licitacion-detalle.css' %}">
     {% endif %}
+    <link rel="stylesheet" href="{% static 'css/dark-mode.css' %}?v={% now 'U' %}">
     
     {{ FIREBASE_CONFIG|json_script:"firebase-config" }}
 
@@ -227,7 +239,11 @@
     {% block contenido %}{% endblock %}
     {% block footer %}{% endblock %}
 
+    {% include 'smartbids/includes/cookie_banner.html' %}
+
     <script type="module" src="{% static 'js/firebase-config.js' %}"></script>
+    <script type="module" src="{% static 'js/theme.js' %}"></script>
+    <script src="{% static 'js/cookie-banner.js' %}"></script>
     <script type="module" src="{% static 'js/auth-state.js' %}"></script>
     <script type="module" src="{% static 'js/ui.js' %}?v=3"></script>
     <script type="module" src="{% static 'js/session.js' %}"></script>
