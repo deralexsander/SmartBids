@@ -209,7 +209,7 @@ def dashboard_productos_explorador(request):
     """
     modo = request.GET.get("tipo", "ranking")
     if modo == "opciones":
-        return JsonResponse({"grupos": _grupos_producto()})
+        return JsonResponse(_opciones_competencia())
 
     grupo = request.GET.get("grupo", "").strip()
     nivel1 = request.GET.get("nivel1", "").strip()
@@ -221,6 +221,19 @@ def dashboard_productos_explorador(request):
         return JsonResponse({"error": "Seleccione primero un grupo"}, status=400)
     if modo == "ranking":
         por = "producto" if nivel1 else ("nivel1" if grupo else "grupo")
+
+    region = request.GET.get("region", "").strip()
+    organismo = request.GET.get("organismo", "").strip()
+    if organismo and (not organismo.isdecimal() or len(organismo) > 10):
+        return JsonResponse({"error": "Organismo inválido."}, status=400)
+    contexto_where = []
+    contexto_params = []
+    if region:
+        contexto_where.append("f.comprador_key IN (SELECT comprador_key FROM dw.dim_comprador WHERE comprador_region = %s)")
+        contexto_params.append(region)
+    if organismo:
+        contexto_where.append("f.comprador_key = %s")
+        contexto_params.append(int(organismo))
 
     where = []
     params = []
@@ -236,24 +249,28 @@ def dashboard_productos_explorador(request):
     # Evolución mensual (bajo demanda; ignora el período, el cliente lo resalta)
     # ------------------------------------------------------------------
     if modo == "evolucion":
+        condiciones_ev = list(where) + contexto_where
+        where_ev = ("WHERE " + " AND ".join(condiciones_ev)) if condiciones_ev else ""
+        params_ev = params + contexto_params
         if grupo:
             sql = f"""
                 SELECT d.anio, d.mes, SUM(f.monto_neto)
                 FROM dw.dim_producto p
                 JOIN dw.fact_orden_compra f ON f.producto_key = p.producto_key
                 JOIN dw.dim_fecha d ON d.fecha_key = f.fecha_key
-                {where_p}
+                {where_ev}
                 GROUP BY d.anio, d.mes ORDER BY d.anio, d.mes
             """
         else:
-            sql = """
+            sql = f"""
                 SELECT d.anio, d.mes, SUM(f.monto_neto)
                 FROM dw.fact_orden_compra f
                 JOIN dw.dim_fecha d ON d.fecha_key = f.fecha_key
+                {where_ev}
                 GROUP BY d.anio, d.mes ORDER BY d.anio, d.mes
             """
         with connections["dw"].cursor() as cursor:
-            cursor.execute(sql, params)
+            cursor.execute(sql, params_ev)
             evolucion = [{"periodo": f"{a}-{mes:02d}", "monto": float(monto or 0)}
                          for a, mes, monto in cursor.fetchall()]
         return JsonResponse({"evolucion": evolucion})
@@ -272,7 +289,9 @@ def dashboard_productos_explorador(request):
 
     if not grupo:
         # Una sola agregación por grupo sobre los hechos del período.
-        fecha_cond = "WHERE f.fecha_key = ANY(%s)" if filtrar else ""
+        condiciones = (["f.fecha_key = ANY(%s)"] if filtrar else []) + contexto_where
+        fecha_cond = "WHERE " + " AND ".join(condiciones) if condiciones else ""
+        parametros_ranking = ([claves] if filtrar else []) + contexto_params
         sql = f"""
             WITH ranking AS (
                 SELECT p.producto_grupo AS id,
@@ -291,7 +310,7 @@ def dashboard_productos_explorador(request):
             LIMIT 10
         """
         with connections["dw"].cursor() as cursor:
-            cursor.execute(sql, [claves] if filtrar else [])
+            cursor.execute(sql, parametros_ranking)
             result = cursor.fetchall()
         monto_total = Decimal(result[0][4]) if result else Decimal(0)
         total_items = int(result[0][5]) if result else 0
@@ -305,7 +324,8 @@ def dashboard_productos_explorador(request):
 
     # Dentro de un grupo: partir de la dimensión con LATERAL para aprovechar
     # idx_fact_producto, y filtrar los hechos del período por fecha_key.
-    fecha_where = "AND f.fecha_key = ANY(%s)" if filtrar else ""
+    condiciones = (["f.fecha_key = ANY(%s)"] if filtrar else []) + contexto_where
+    fecha_where = ("AND " + " AND ".join(condiciones)) if condiciones else ""
     base = f"""
         SELECT p.producto_key, p.producto_codigo, p.producto_descripcion,
                p.producto_grupo, p.producto_nivel1,
@@ -319,7 +339,7 @@ def dashboard_productos_explorador(request):
         ) x
         {where_p} AND x.cantidad_items IS NOT NULL
     """
-    base_params = ([claves] if filtrar else []) + params
+    base_params = ([claves] if filtrar else []) + contexto_params + params
 
     if por == "producto":
         expr = "producto_codigo, producto_descripcion"
@@ -458,7 +478,7 @@ def dashboard_competencia(request):
     proveedor = request.GET.get("proveedor", "").strip()
     producto = request.GET.get("producto", "").strip()
     for valor in (organismo, proveedor):
-        if valor and not valor.isdecimal():
+        if valor and (not valor.isdecimal() or len(valor) > 10):
             return JsonResponse({"error": "Filtro inválido."}, status=400)
 
     try:
@@ -534,6 +554,9 @@ def dashboard_competencia(request):
         agregados["proveedores"] = Count("proveedor_key_id", distinct=True)
     else:
         agregados["organismos"] = Count("comprador_key_id", distinct=True)
+
+    if por == "producto":
+        agregados["proveedores"] = Count("proveedor_key_id", distinct=True)
 
     agrupado_qs = compras.order_by().values(*campos).annotate(**agregados).order_by()
     sql_agrupado, parametros = agrupado_qs.query.get_compiler(using="dw").as_sql()
