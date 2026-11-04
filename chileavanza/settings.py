@@ -115,7 +115,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'chileavanza.settings.firebase_settings',
                 'smartbids.context_processors.footer_info_context',
-                'smartbids.simulador.simulador_context',
+                'smartbids.views.simulador.simulador_context',
             ],
         },
     },

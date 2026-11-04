@@ -15,7 +15,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=6">
     <link rel="stylesheet" href="{% static 'css/views/base-layout.css' %}">
     {% if request.resolver_match.url_name == 'home' %}
     <link rel="stylesheet" href="{% static 'css/views/home.css' %}">
@@ -281,6 +281,7 @@
                     id="form-simulador-ml"
                     class="simulador-modal__form">
                     {% csrf_token %}
+                    <input type="hidden" name="licitacion_codigo" value="{{ licitacion.lic_codigo }}">
 
                     {% if simulador_form.non_field_errors %}
                         <div class="simulador-modal__errors" role="alert">
@@ -310,12 +311,13 @@
                                 <label for="{{ simulador_form.duracion_proceso.id_for_label }}">Duración del proceso</label>
                                 {{ simulador_form.duracion_proceso }}
                                 {{ simulador_form.duracion_proceso.errors }}
-                                <small>Por defecto, días desde la publicación hasta hoy. Puedes ajustar la duración para otra fecha.</small>
+                                <small>Plazo en días registrado para esta licitación.</small>
                             </div>
                             <div class="simulador-modal__field">
                                 <label for="{{ simulador_form.cantidad_reclamos.id_for_label }}">Cantidad de reclamos</label>
                                 {{ simulador_form.cantidad_reclamos }}
                                 {{ simulador_form.cantidad_reclamos.errors }}
+                                <small>Reclamos registrados para el organismo de esta licitación.</small>
                             </div>
                             <div class="simulador-modal__field">
                                 <label for="{{ simulador_form.codigo_producto_onu.id_for_label }}">Código producto ONU</label>

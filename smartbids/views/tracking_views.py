@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def detalle_licitacion_view(request, codigo):
-    from smartbids.simulador import formulario_para_licitacion
+    from smartbids.views.simulador import formulario_para_licitacion
 
     licitacion = get_object_or_404(
         Licitacion.objects.select_related('lic_codigo_ucom'),

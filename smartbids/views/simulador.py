@@ -4,10 +4,12 @@ import math
 from functools import lru_cache
 from pathlib import Path
 
+
+from smartbids.models import Organismo, Licitacion
 from django import forms
 from django.conf import settings
 from django.http import JsonResponse
-from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
 logger = logging.getLogger(__name__)
@@ -34,9 +36,9 @@ class SimuladorForm(forms.Form):
         coerce=int, widget=forms.Select(attrs={'disabled': True}),
         choices=[('', 'Seleccionar día')] + list(enumerate(
             ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'], 1)))
-    duracion_proceso = forms.FloatField(min_value=0)
+    duracion_proceso = forms.IntegerField(min_value=0, disabled=True)
     cantidad = forms.FloatField(min_value=0)
-    cantidad_reclamos = forms.IntegerField(min_value=0)
+    cantidad_reclamos = forms.IntegerField(min_value=0, disabled=True)
     valor_total_ofertado = forms.FloatField(min_value=0)
     numero_oferentes = forms.IntegerField(min_value=1)
 
@@ -48,6 +50,12 @@ def simulador_context(request):
 def formulario_para_licitacion(licitacion):
     """Prefill tender attributes and use its budget as the editable offer default."""
     initial = {}
+    initial['duracion_proceso'] = licitacion.lic_plazo
+    unidad = licitacion.lic_codigo_ucom
+    if unidad and unidad.ucom_codigo_organismo is not None:
+        initial['cantidad_reclamos'] = Organismo.objects.filter(
+            codigo_organismo=unidad.ucom_codigo_organismo,
+        ).values_list('org_reclamos', flat=True).first()
     budget = getattr(licitacion, 'lic_presupuesto', None)
     if budget is not None and budget >= 0:
         initial['valor_total_ofertado'] = budget
@@ -55,7 +63,6 @@ def formulario_para_licitacion(licitacion):
     if published:
         initial['mes_publicacion'] = published.month
         initial['dia_semana_publicacion'] = published.isoweekday()
-        initial['duracion_proceso'] = max(0, (timezone.localdate() - published).days)
     codes = {str(code).strip() for code in (licitacion.lic_codigos_producto or [])
              if code is not None and str(code).strip()}
     # Multiple product lines require the user to choose the item to simulate.
@@ -106,7 +113,14 @@ def predecir(datos):
 
 @require_POST
 def simulador_ofertas(request):
-    form = SimuladorForm(request.POST)
+    codigo = request.POST.get('licitacion_codigo')
+    if not codigo:
+        return JsonResponse({'error': 'Debes seleccionar una licitación.'}, status=400)
+    licitacion = get_object_or_404(
+        Licitacion.objects.select_related('lic_codigo_ucom'), lic_codigo=codigo,
+    )
+    initial = formulario_para_licitacion(licitacion).initial
+    form = SimuladorForm(request.POST, initial=initial)
     if not form.is_valid():
         return JsonResponse({'errors': form.errors.get_json_data()}, status=400)
     try:

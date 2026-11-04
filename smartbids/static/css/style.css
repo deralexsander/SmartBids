@@ -1987,7 +1987,8 @@
     font: inherit;
     font-size: 13px;
 }
-#modal-simulador-ml .simulador-modal__field select:disabled {
+#modal-simulador-ml .simulador-modal__field select:disabled,
+#modal-simulador-ml .simulador-modal__field input:disabled {
     background: #e9edf2;
     color: #697586;
     border-color: #d1d8e2;
