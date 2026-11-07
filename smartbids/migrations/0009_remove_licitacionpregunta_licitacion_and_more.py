@@ -3,6 +3,20 @@
 from django.db import migrations
 
 
+def eliminar_tablas_idempotente(apps, schema_editor):
+    """
+    Elimina de forma segura e idempotente las tablas de documentos y preguntas
+    si aún existen en PostgreSQL, evitando errores si ya fueron eliminadas previamente.
+    """
+    connection = schema_editor.connection
+    if connection.vendor != 'postgresql':
+        return
+
+    with connection.cursor() as cursor:
+        cursor.execute('DROP TABLE IF EXISTS "core"."smartbids_licitacion_documento" CASCADE;')
+        cursor.execute('DROP TABLE IF EXISTS "core"."smartbids_licitacion_pregunta" CASCADE;')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,14 +24,25 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='licitacionpregunta',
-            name='licitacion',
-        ),
-        migrations.DeleteModel(
-            name='LicitacionDocumento',
-        ),
-        migrations.DeleteModel(
-            name='LicitacionPregunta',
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(
+                    eliminar_tablas_idempotente,
+                    reverse_code=migrations.RunPython.noop,
+                ),
+            ],
+            state_operations=[
+                migrations.RemoveField(
+                    model_name='licitacionpregunta',
+                    name='licitacion',
+                ),
+                migrations.DeleteModel(
+                    name='LicitacionDocumento',
+                ),
+                migrations.DeleteModel(
+                    name='LicitacionPregunta',
+                ),
+            ],
         ),
     ]
+
