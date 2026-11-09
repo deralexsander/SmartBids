@@ -20,8 +20,6 @@ from smartbids.utils.licitacion_utils import (
 from smartbids.services.mercadopublico_service import obtener_datos_externos_licitacion
 from smartbids.models.procurement import Licitacion
 from smartbids.models.core import (
-    LicitacionDocumento,
-    LicitacionPregunta,
     NotificacionLicitacion,
     SeguimientoLicitacion,
 )
@@ -70,27 +68,12 @@ def detalle_licitacion_view(request, codigo):
         if fecha
     ]
 
-    # --- Prioridad Base de Datos vs. Mercado Público ---
-    # 1. Documentos oficiales: se priorizan los registrados en la BD
-    documentos = list(LicitacionDocumento.objects.filter(licitacion=licitacion))
-    tiene_documentos_db = bool(documentos)
-
-    # 2. Preguntas y respuestas oficiales: se priorizan las registradas en la BD
-    preguntas_db = list(LicitacionPregunta.objects.filter(licitacion=licitacion))
-    tiene_preguntas_db = bool(preguntas_db)
-    if tiene_preguntas_db:
-        preguntas = [
-            {
-                'numero': idx + 1,
-                'pregunta': p.pregunta,
-                'fecha_pregunta': p.fecha_pregunta.strftime('%d-%m-%Y %H:%M') if p.fecha_pregunta else '',
-                'respuesta': p.respuesta,
-                'fecha_respuesta': p.fecha_respuesta.strftime('%d-%m-%Y %H:%M') if p.fecha_respuesta else '',
-            }
-            for idx, p in enumerate(preguntas_db)
-        ]
-    else:
-        preguntas = []
+    # --- Consulta de Documentos y Preguntas Oficiales ---
+    # Se obtienen dinámicamente y en tiempo real desde Mercado Público
+    documentos = []
+    tiene_documentos_db = False
+    preguntas = []
+    tiene_preguntas_db = False
 
     # 3. Descripción del proceso: se prioriza la registrada en la BD
     tiene_descripcion_db = bool(

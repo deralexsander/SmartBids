@@ -174,35 +174,7 @@ class NotificacionLicitacion(models.Model):
         ordering = ('-creado_en',)
 
 
-class LicitacionDocumento(models.Model):
-    licitacion = models.ForeignKey(
-        Licitacion,
-        models.CASCADE,
-        related_name='documentos',
-    )
-    titulo = models.CharField(max_length=255)
-    url = models.URLField(max_length=2000)
-    fecha_publicacion = models.DateTimeField(blank=True, null=True)
 
-    class Meta:
-        db_table = '"core"."smartbids_licitacion_documento"'
-        ordering = ('-fecha_publicacion', 'titulo')
-
-
-class LicitacionPregunta(models.Model):
-    licitacion = models.ForeignKey(
-        Licitacion,
-        models.CASCADE,
-        related_name='preguntas_respuestas',
-    )
-    pregunta = models.TextField()
-    respuesta = models.TextField(blank=True)
-    fecha_pregunta = models.DateTimeField(blank=True, null=True)
-    fecha_respuesta = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        db_table = '"core"."smartbids_licitacion_pregunta"'
-        ordering = ('fecha_pregunta', 'id')
 
 
 class SolicitudArcop(models.Model):

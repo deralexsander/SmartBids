@@ -686,7 +686,7 @@ class ValidacionRegistroEmailTests(SimpleTestCase):
             mock_licitacion_objects.filter.return_value.distinct.return_value.count.return_value = 15
 
             mock_pref.return_value.first.return_value = MagicMock(
-                pref_comunas=[],
+                pref_comunas=['13101'],
                 pref_tipo_licitacion=[],
                 pref_ucom=[],
                 pref_palabras_claves=['software'],
@@ -754,7 +754,7 @@ class ResumenDiaTests(SimpleTestCase):
         from smartbids.views.resumen_views import resumen_dia_view
 
         mock_susc = MagicMock(sus_nombre1='Juan', sus_apellido1='Pérez')
-        mock_pref = MagicMock(pref_palabras_claves=['servicios'], pref_productos=[])
+        mock_pref = MagicMock(pref_palabras_claves=['servicios'], pref_productos=[], pref_tipo_licitacion=['LE'], pref_comunas=[], pref_ucom=[])
 
         mock_lic_qs = MagicMock()
         mock_lic_qs.count.return_value = 3
@@ -1872,21 +1872,18 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
              patch('smartbids.views.tracking_views.get_object_or_404', return_value=lic), \
              patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.views.tracking_views.LicitacionDocumento.objects.filter') as mock_docs, \
-             patch('smartbids.views.tracking_views.LicitacionPregunta.objects.filter') as mock_pregs, \
              patch('smartbids.views.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
 
-            mock_docs.return_value = [
-                SimpleNamespace(nombre='Bases.pdf', url='http://bases.pdf', extension='pdf', descripcion='Bases', fecha=None)
-            ]
-            mock_pregs.return_value = [
-                SimpleNamespace(pregunta='¿Plazo?', respuesta='30 días', fecha_pregunta=None, fecha_respuesta=None)
-            ]
+            mock_ext.return_value = {
+                'descripcion': 'Descripción de Mercado Público',
+                'url_adjuntos': 'http://bases.pdf',
+                'url_preguntas': 'http://preguntas',
+                'preguntas': [],
+                'direccion': None,
+            }
 
             resp = detalle_licitacion_view(req, '1000-1-LE26')
             self.assertEqual(resp.status_code, 200)
-            # Como la BD tenía toda la información, no debe llamar a Mercado Público
-            self.assertFalse(mock_ext.called)
             self.assertContains(resp, 'Descripción completa almacenada en BD')
 
     def test_detalle_licitacion_llama_mercado_publico_si_falta_descripcion(self):
@@ -1917,8 +1914,6 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
              patch('smartbids.views.tracking_views.get_object_or_404', return_value=lic), \
              patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.views.tracking_views.LicitacionDocumento.objects.filter', return_value=[]), \
-             patch('smartbids.views.tracking_views.LicitacionPregunta.objects.filter', return_value=[]), \
              patch('smartbids.views.tracking_views.Licitacion.objects.filter') as mock_lic_filter, \
              patch('smartbids.views.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
 
@@ -1968,8 +1963,6 @@ class DetalleLicitacionPrioridadTests(SimpleTestCase):
         with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
              patch('smartbids.views.tracking_views.get_object_or_404', return_value=lic), \
              patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=None), \
-             patch('smartbids.views.tracking_views.LicitacionDocumento.objects.filter', return_value=[]), \
-             patch('smartbids.views.tracking_views.LicitacionPregunta.objects.filter', return_value=[]), \
              patch('smartbids.views.tracking_views.Licitacion.objects.filter') as mock_lic_filter, \
              patch('smartbids.views.tracking_views.obtener_datos_externos_licitacion') as mock_ext:
 
