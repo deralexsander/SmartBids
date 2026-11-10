@@ -1,0 +1,562 @@
+/* ==========================================================================
+   ESTILOS DE LA VISTA DE PLANES Y SUSCRIPCIÓN (SMARTBIDS)
+   ========================================================================== */
+
+.planes-page-wrapper {
+    max-width: 1200px;
+    margin: 100px auto 60px;
+    padding: 0 1.5rem;
+}
+
+/* 1. Alerta de Paywall / Redirección */
+.planes-upgrade-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(245, 158, 11, 0.15) 100%);
+    border: 1px solid rgba(217, 119, 6, 0.35);
+    border-left: 6px solid #d97706;
+    border-radius: 14px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 4px 16px rgba(217, 119, 6, 0.08);
+}
+
+.planes-upgrade-alert__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #d97706;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.planes-upgrade-alert__content h4 {
+    margin: 0 0 0.35rem 0;
+    color: #92400e;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.planes-upgrade-alert__content p {
+    margin: 0;
+    color: #78350f;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* 2. Encabezado de la página */
+.planes-header-section {
+    text-align: center;
+    max-width: 820px;
+    margin: 0 auto 3rem;
+}
+
+.planes-main-title {
+    font-size: 2.3rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    line-height: 1.25;
+    margin: 0.6rem 0 1rem;
+    letter-spacing: -0.5px;
+}
+
+.planes-main-title span {
+    color: #d97706;
+}
+
+.planes-main-desc {
+    font-size: 1.05rem;
+    color: var(--gray-text);
+    line-height: 1.65;
+}
+
+/* 3. Comparativa de Planes (Tabla) */
+.planes-comparison-section {
+    margin-bottom: 4rem;
+}
+
+.planes-comparison-card {
+    background: var(--white);
+    border: 1px solid var(--soft-mint);
+    border-radius: 18px;
+    padding: 2rem 2.2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+.planes-comparison-header {
+    margin-bottom: 1.5rem;
+}
+
+.planes-comparison-header h3 {
+    color: var(--dark-green);
+    font-size: 1.35rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.3rem;
+}
+
+.planes-comparison-header p {
+    color: var(--gray-text);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.planes-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.planes-table th {
+    background: var(--light-bg);
+    color: var(--dark-green);
+    font-weight: 800;
+    padding: 1rem 1.2rem;
+    text-align: left;
+    border-bottom: 2px solid var(--soft-mint);
+}
+
+.planes-th-feature {
+    width: 44%;
+}
+
+.planes-th-prospecto {
+    width: 28%;
+    text-align: center;
+}
+
+.planes-th-suscriptor {
+    width: 28%;
+    text-align: center;
+}
+
+.planes-badge-free {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-text);
+    margin-top: 0.2rem;
+}
+
+.planes-badge-pro {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: var(--dark-green);
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 0.2rem;
+}
+
+.planes-table td {
+    padding: 1.05rem 1.2rem;
+    border-bottom: 1px solid rgba(177, 210, 202, 0.4);
+    vertical-align: middle;
+}
+
+.planes-table td strong {
+    display: block;
+    color: #1a202c;
+    font-size: 0.98rem;
+}
+
+.planes-table td small {
+    display: block;
+    color: var(--gray-text);
+    font-size: 0.83rem;
+    margin-top: 0.15rem;
+}
+
+.planes-table tr:hover td {
+    background: rgba(177, 210, 202, 0.08);
+}
+
+.planes-icon-check {
+    color: var(--accent-green);
+    font-size: 1.1rem;
+    margin-right: 0.35rem;
+}
+
+.planes-pill-locked {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(217, 119, 6, 0.1);
+    color: #b45309;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid rgba(217, 119, 6, 0.25);
+}
+
+/* 4. Tarjetas de Planes (Grid) */
+.planes-cards-section {
+    margin-bottom: 4rem;
+}
+
+.planes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    align-items: stretch;
+    margin-top: 2rem;
+}
+
+.plan-card {
+    position: relative;
+    background: var(--white);
+    border: 2px solid var(--soft-mint);
+    border-radius: 20px;
+    padding: 2.4rem;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(17, 99, 78, 0.12);
+}
+
+.plan-card--featured {
+    border-color: var(--accent-green);
+    background: linear-gradient(180deg, #ffffff 0%, #f6faf9 100%);
+    box-shadow: 0 12px 30px rgba(30, 196, 152, 0.14);
+}
+
+.plan-card__badge {
+    position: absolute;
+    top: -14px;
+    left: 28px;
+    background: var(--dark-green);
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 4px 14px;
+    border-radius: 20px;
+}
+
+.plan-card__badge--popular {
+    background: linear-gradient(135deg, #0b3831 0%, #11634e 100%);
+    border: 1px solid var(--accent-green);
+    color: #ffffff;
+}
+
+.plan-card__name {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    margin: 0.5rem 0 0.4rem;
+}
+
+.plan-card__desc {
+    color: var(--gray-text);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+    min-height: 48px;
+}
+
+.plan-card__price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin-bottom: 0.8rem;
+}
+
+.plan-card__amount {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--dark-green);
+    letter-spacing: -1px;
+}
+
+.plan-card__period {
+    font-size: 1rem;
+    color: var(--gray-text);
+    font-weight: 600;
+}
+
+.plan-card__savings {
+    margin-bottom: 1.4rem;
+}
+
+.plan-card__savings-tag {
+    display: inline-block;
+    background: rgba(30, 196, 152, 0.15);
+    color: #0b3831;
+    font-weight: 800;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid rgba(30, 196, 152, 0.4);
+}
+
+.plan-card__features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem 0;
+    flex-grow: 1;
+}
+
+.plan-card__features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    color: var(--gray-text);
+    font-size: 0.93rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.45;
+}
+
+.plan-card__features li i {
+    color: var(--accent-green);
+    font-size: 0.95rem;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.plan-card__action {
+    margin-top: auto;
+}
+
+.plan-card__btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1.4rem;
+    font-size: 1rem;
+    border-radius: 12px;
+}
+
+.planes-footnote {
+    text-align: center;
+    color: var(--gray-text);
+    font-size: 0.9rem;
+    margin-top: 1.5rem;
+}
+
+/* 5. Formulario de Solicitud de Suscripción */
+.planes-form-section {
+    margin-bottom: 4rem;
+}
+
+.planes-form-card {
+    background: var(--white);
+    border: 1px solid var(--soft-mint);
+    border-radius: 20px;
+    padding: 2.6rem;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.05);
+}
+
+.planes-form-header {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.planes-form-desc {
+    color: var(--gray-text);
+    margin: 0.4rem 0 0;
+    font-size: 0.95rem;
+    max-width: 680px;
+}
+
+.planes-form-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(17, 99, 78, 0.1);
+    color: var(--dark-green);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+}
+
+.planes-flow-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: var(--light-bg);
+    border: 1px solid var(--soft-mint);
+    border-radius: 12px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 2rem;
+}
+
+.planes-flow-icon {
+    color: var(--dark-green);
+    font-size: 1.3rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.planes-flow-text {
+    font-size: 0.92rem;
+    color: var(--gray-text);
+    line-height: 1.5;
+}
+
+.planes-flow-text strong {
+    color: var(--dark-green);
+    display: block;
+    margin-bottom: 0.4rem;
+}
+
+.planes-steps-list {
+    margin: 0;
+    padding-left: 1.3rem;
+}
+
+.planes-steps-list li {
+    margin-bottom: 0.25rem;
+}
+
+.planes-required-tag {
+    color: #dc2626;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.planes-feedback-box {
+    margin: 1.2rem 0;
+    padding: 0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.planes-feedback-box--success {
+    padding: 1.2rem 1.4rem;
+    background: rgba(30, 196, 152, 0.15);
+    border: 1px solid var(--accent-green);
+    color: #0b3831;
+}
+
+.planes-feedback-box--error {
+    padding: 1rem 1.2rem;
+    background: #fef2f2;
+    border: 1px solid #f87171;
+    color: #991b1b;
+}
+
+.planes-form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(177, 210, 202, 0.3);
+}
+
+.planes-privacy-note {
+    font-size: 0.85rem;
+    color: var(--gray-text);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* ==========================================================================
+   MODO OSCURO (DARK MODE)
+   ========================================================================== */
+html.dark-mode .planes-comparison-card,
+html.dark-mode .plan-card,
+html.dark-mode .planes-form-card {
+    background: #111d1a;
+    border-color: rgba(177, 210, 202, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+html.dark-mode .plan-card--featured {
+    background: linear-gradient(180deg, #111d1a 0%, #0d2822 100%);
+    border-color: var(--accent-green);
+}
+
+html.dark-mode .planes-main-title {
+    color: #ffffff;
+}
+
+html.dark-mode .planes-comparison-header h3,
+html.dark-mode .plan-card__name,
+html.dark-mode .plan-card__amount {
+    color: #ffffff;
+}
+
+html.dark-mode .planes-table th {
+    background: #0b1613;
+    color: #ffffff;
+    border-bottom-color: rgba(177, 210, 202, 0.25);
+}
+
+html.dark-mode .planes-table td {
+    border-bottom-color: rgba(177, 210, 202, 0.15);
+}
+
+html.dark-mode .planes-table td strong {
+    color: #ffffff;
+}
+
+html.dark-mode .planes-table tr:hover td {
+    background: rgba(30, 196, 152, 0.06);
+}
+
+html.dark-mode .planes-flow-notice {
+    background: #0b1613;
+    border-color: rgba(177, 210, 202, 0.2);
+}
+
+html.dark-mode .planes-flow-text strong {
+    color: #ffffff;
+}
+
+html.dark-mode .plan-card__savings-tag {
+    background: rgba(30, 196, 152, 0.2);
+    color: var(--accent-green);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+@media (max-width: 900px) {
+    .planes-grid {
+        grid-template-columns: 1fr;
+        gap: 2.2rem;
+    }
+
+    .planes-main-title {
+        font-size: 1.85rem;
+    }
+
+    .planes-form-card {
+        padding: 1.6rem;
+    }
+
+    .planes-comparison-card {
+        padding: 1.4rem;
+    }
+}

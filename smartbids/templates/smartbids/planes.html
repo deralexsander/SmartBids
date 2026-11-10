@@ -1,0 +1,471 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Planes y Suscripción - SmartBids</title>
+{% endblock %}
+
+{% block contenido %}
+<div class="planes-page-wrapper">
+
+    {% if upgrade %}
+    <!-- Alerta de Redirección / Paywall Comercial -->
+    <div class="planes-upgrade-alert" role="alert">
+        <div class="planes-upgrade-alert__icon">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+        </div>
+        <div class="planes-upgrade-alert__content">
+            <h4>Función exclusiva para Suscriptores</h4>
+            <p>
+                {% if modulo == 'licitaciones' %}
+                    El <strong>Explorador de Licitaciones</strong> con filtrado en 346 comunas y fichas técnicas completas está reservado para el plan Suscriptor.
+                {% elif modulo == 'dashboard' %}
+                    Los <strong>Dashboards Analíticos</strong> con Data Warehouse de compras públicas y análisis de competencia son exclusivos para Suscriptores.
+                {% elif modulo == 'ml' %}
+                    El <strong>Simulador predictivo de Machine Learning</strong> con algoritmos XGBoost es una herramienta avanzada para Suscriptores.
+                {% else %}
+                    El módulo al que intentaste acceder forma parte de las propuestas de valor reservadas para el plan Suscriptor.
+                {% endif %}
+                Revisa la comparativa a continuación y solicita tu activación comercial para desbloquear el acceso total.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Encabezado Principal de la Página de Planes -->
+    <section class="planes-header-section">
+        <span class="section-subtitle">Propuesta de Valor & Suscripción</span>
+        <h1 class="planes-main-title">Esto es lo que te estás perdiendo con tu cuenta de <span>Prospecto</span></h1>
+        <p class="planes-main-desc">
+            Tu cuenta actual de Prospecto te permite configurar tu perfil empresarial y consultar el Resumen del día.
+            Al pasar a <strong>Suscriptor</strong>, desbloqueas el potencial analítico y predictivo completo de SmartBids para ganar más compras públicas.
+        </p>
+    </section>
+
+    <!-- Tabla Comparativa: Prospecto vs. Suscriptor -->
+    <section class="planes-comparison-section">
+        <div class="dashboard-card planes-comparison-card">
+            <div class="planes-comparison-header">
+                <h3><i class="fa-solid fa-scale-balanced"></i> Comparativa de Acceso y Funcionalidades</h3>
+                <p>Conoce detalladamente la diferencia de alcance entre ambos estados:</p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="planes-table">
+                    <thead>
+                        <tr>
+                            <th class="planes-th-feature">Funcionalidad / Módulo</th>
+                            <th class="planes-th-prospecto">Prospecto <span class="planes-badge-free">Registrado sin pago</span></th>
+                            <th class="planes-th-suscriptor">Suscriptor <span class="planes-badge-pro"><i class="fa-solid fa-crown"></i> Acceso Total</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <strong>Configuración de Perfil Empresarial</strong>
+                                <small>Datos de empresa, rubros, actividades económicas y palabras clave</small>
+                            </td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Acceso completo</td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Acceso completo</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Resumen del Día Matutino (24 horas)</strong>
+                                <small>Licitaciones publicadas en las últimas 24 horas y contador de coincidencias</small>
+                            </td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Acceso diario</td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Acceso diario</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Explorador de Licitaciones Nacional</strong>
+                                <small>Filtros territoriales en las 346 comunas de Chile y búsqueda por UCOM</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Ilimitado (346 comunas)</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Fichas Técnicas Oficiales, Cronograma y Bases</strong>
+                                <small>Historial de hitos, descarga de bases administrativas y foro Q&A ChileCompra</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Expediente completo</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Dashboards Analíticos & Data Warehouse</strong>
+                                <small>Evolución de montos transados, hábitos de compra y desglose por productos ONU</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Gráficos Chart.js interactivos</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Inteligencia de Competencia</strong>
+                                <small>Ranking de oferentes ganadores y tasas de participación de competidores</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Métricas completas de mercado</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Modelos Predictivos Machine Learning (XGBoost)</strong>
+                                <small>Scoring predictivo de probabilidad de adjudicación y evaluación de escenarios</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Simulación y scoring activo</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Seguimiento de Procesos & Notificaciones Urgentes</strong>
+                                <small>Alertas automáticas de aperturas técnicas y cierres en menos de 72 horas</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Seguimientos ilimitados</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Exportación Masiva de Datos</strong>
+                                <small>Generación de reportes estructurados en formato Microsoft Excel (.xlsx) y CSV</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Descargas sin límite</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Tarifas Definidas: Solo 2 Planes -->
+    <section class="planes-cards-section" id="tarifas">
+        <div class="section-header">
+            <span class="section-subtitle">Tarifas Claras • Acceso Completo</span>
+            <h2 class="section-title">Elige el plan que se adapte a tu empresa</h2>
+            <p class="section-desc">Ambos planes entregan acceso total e idéntico a todas las herramientas. Sin subdivisiones complejas ni letras chicas.</p>
+        </div>
+
+        <div class="planes-grid">
+            <!-- 1. Plan Mensual -->
+            <div class="dashboard-card plan-card" id="card-plan-mensual">
+                <div class="plan-card__badge">Flexibilidad Mensual</div>
+                <h3 class="plan-card__name">Plan Mensual</h3>
+                <p class="plan-card__desc">Acceso total renovable mes a mes. Ideal para probar y medir resultados en tu gestión comercial.</p>
+                <div class="plan-card__price">
+                    <span class="plan-card__amount">$20.000</span>
+                    <span class="plan-card__period">CLP / mes</span>
+                </div>
+                <ul class="plan-card__features">
+                    <li><i class="fa-solid fa-check"></i> Acceso total al Explorador de Licitaciones</li>
+                    <li><i class="fa-solid fa-check"></i> Cobertura nacional en 346 comunas</li>
+                    <li><i class="fa-solid fa-check"></i> Dashboards analíticos y Data Warehouse</li>
+                    <li><i class="fa-solid fa-check"></i> Scoring predictivo Machine Learning (XGBoost)</li>
+                    <li><i class="fa-solid fa-check"></i> Seguimientos y notificaciones en vivo</li>
+                    <li><i class="fa-solid fa-check"></i> Exportación ilimitada (.xlsx / .csv)</li>
+                    <li><i class="fa-solid fa-check"></i> Soporte técnico por correo</li>
+                </ul>
+                <div class="plan-card__action">
+                    <button type="button" class="btn btn-outline plan-card__btn" id="btn-seleccionar-mensual" data-plan="Plan Mensual ($20.000 CLP)">
+                        <i class="fa-solid fa-arrow-down"></i> Solicitar Plan Mensual
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Plan Anual -->
+            <div class="dashboard-card plan-card plan-card--featured" id="card-plan-anual">
+                <div class="plan-card__badge plan-card__badge--popular">
+                    <i class="fa-solid fa-crown"></i> Más Conveniente • 2 Meses Gratis
+                </div>
+                <h3 class="plan-card__name">Plan Anual</h3>
+                <p class="plan-card__desc">El mayor ahorro para empresas activas en Mercado Público: pagas 10 meses y recibes 12 meses de servicio.</p>
+                <div class="plan-card__price">
+                    <span class="plan-card__amount">$200.000</span>
+                    <span class="plan-card__period">CLP / año</span>
+                </div>
+                <div class="plan-card__savings">
+                    <span class="plan-card__savings-tag">
+                        <i class="fa-solid fa-tag"></i> Ahorras $40.000 CLP al año (Equivalente a 10 meses)
+                    </span>
+                </div>
+                <ul class="plan-card__features">
+                    <li><i class="fa-solid fa-check"></i> <strong>Todos los beneficios del Plan Mensual incluidos</strong></li>
+                    <li><i class="fa-solid fa-check"></i> <strong>2 meses de descuento total</strong> (Pagas 10 meses por un año entero)</li>
+                    <li><i class="fa-solid fa-check"></i> Equivalente a ~$16.667 CLP mensuales</li>
+                    <li><i class="fa-solid fa-check"></i> Prioridad en calibración de perfiles y palabras clave</li>
+                    <li><i class="fa-solid fa-check"></i> Soporte comercial preferencial y onboarding guiado</li>
+                    <li><i class="fa-solid fa-check"></i> Congelamiento de tarifa anual garantizada</li>
+                </ul>
+                <div class="plan-card__action">
+                    <button type="button" class="btn btn-primary plan-card__btn" id="btn-seleccionar-anual" data-plan="Plan Anual ($200.000 CLP)">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Solicitar Plan Anual
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulario de Contacto Comercial para Solicitar el Paso a Suscriptor -->
+    <section class="planes-form-section" id="solicitud-suscripcion">
+        <div class="dashboard-card planes-form-card">
+            <div class="dashboard-header planes-form-header">
+                <div>
+                    <span class="section-subtitle">Paso a Suscriptor</span>
+                    <h3 class="dash-title"><i class="fa-solid fa-file-signature"></i> Formulario de Solicitud de Suscripción</h3>
+                    <p class="planes-form-desc">
+                        Ingresa los antecedentes de contacto de tu empresa. El paso de Prospecto a Suscriptor se realiza de forma manual tras verificar el pago con nuestro equipo comercial.
+                    </p>
+                </div>
+                <div class="planes-form-badge">
+                    <i class="fa-solid fa-shield-halved"></i> Activación Verificada
+                </div>
+            </div>
+
+            <!-- Alerta Informativa sobre el flujo -->
+            <div class="planes-flow-notice">
+                <i class="fa-solid fa-circle-info planes-flow-icon"></i>
+                <div class="planes-flow-text">
+                    <strong>¿Cómo funciona la activación?</strong>
+                    <ol class="planes-steps-list">
+                        <li>Envías este formulario indicando tu correo, teléfono y nombre de empresa.</li>
+                        <li>Nuestro equipo comercial se contacta contigo para entregarte los datos de transferencia / pago.</li>
+                        <li>Una vez confirmado el comprobante de pago, un administrador activa tu cuenta en PostgreSQL a estado <strong>Suscriptor</strong> con acceso total inmediato.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <form id="subscription-request-form" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="tipo" value="suscripcion">
+                
+                <div class="profile-form-grid">
+                    <!-- Nombre de Contacto -->
+                    <div class="form-item">
+                        <label for="sub-name">Nombre de quien solicita *</label>
+                        <input class="form-input" type="text" id="sub-name" name="name" maxlength="100" autocomplete="name" placeholder="Tu nombre completo" required>
+                    </div>
+
+                    <!-- Correo (Obligatorio) -->
+                    <div class="form-item">
+                        <label for="sub-email">Correo Corporativo * <span class="planes-required-tag">(Obligatorio)</span></label>
+                        <input class="form-input" type="email" id="sub-email" name="email" maxlength="254" autocomplete="email" placeholder="correo@tuempresa.cl" required>
+                    </div>
+
+                    <!-- Teléfono (Obligatorio) -->
+                    <div class="form-item">
+                        <label for="sub-phone">Teléfono de Contacto * <span class="planes-required-tag">(Obligatorio)</span></label>
+                        <input class="form-input" type="tel" id="sub-phone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="+56 9 1234 5678" required>
+                    </div>
+
+                    <!-- Nombre de Empresa (Obligatorio) -->
+                    <div class="form-item">
+                        <label for="sub-company">Nombre de la Empresa * <span class="planes-required-tag">(Obligatorio)</span></label>
+                        <input class="form-input" type="text" id="sub-company" name="company" maxlength="150" placeholder="Razón Social o Nombre de Fantasía" required>
+                    </div>
+
+                    <!-- Plan de Interés -->
+                    <div class="form-item grid-full">
+                        <label for="sub-plan">Plan Seleccionado *</label>
+                        <select class="form-input" id="sub-plan" name="plan" required>
+                            <option value="Plan Mensual ($20.000 CLP)" {% if plan_seleccionado == 'mensual' %}selected{% endif %}>
+                                Plan Mensual — $20.000 CLP / mes
+                            </option>
+                            <option value="Plan Anual ($200.000 CLP)" {% if plan_seleccionado == 'anual' or not plan_seleccionado %}selected{% endif %}>
+                                Plan Anual — $200.000 CLP / año (2 meses gratis de descuento)
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Mensaje Opcional -->
+                    <div class="form-item grid-full">
+                        <label for="sub-message">Mensaje o comentarios adicionales (opcional)</label>
+                        <textarea class="form-input" id="sub-message" name="message" rows="3" maxlength="3000" placeholder="Indícanos si requieres factura con RUT de empresa o alguna consulta específica."></textarea>
+                    </div>
+                </div>
+
+                <div id="sub-feedback" role="status" aria-live="polite" class="planes-feedback-box"></div>
+
+                <div class="planes-form-footer">
+                    <button type="submit" class="btn btn-primary btn-large" id="sub-submit-btn">
+                        <i class="fa-regular fa-paper-plane"></i> Enviar Solicitud de Suscripción
+                    </button>
+                    <span class="planes-privacy-note">
+                        <i class="fa-solid fa-lock"></i> Tus antecedentes están protegidos bajo la Ley N° 21.719 de datos personales.
+                    </span>
+                </div>
+            </form>
+        </div>
+    </section>
+
+</div>
+
+<script type="module">
+import { AuthState } from "{% static 'js/auth-state.js' %}";
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const form = document.getElementById('subscription-request-form');
+    const nameInput = document.getElementById('sub-name');
+    const emailInput = document.getElementById('sub-email');
+    const phoneInput = document.getElementById('sub-phone');
+    const companyInput = document.getElementById('sub-company');
+    const planSelect = document.getElementById('sub-plan');
+    const feedback = document.getElementById('sub-feedback');
+    const submitBtn = document.getElementById('sub-submit-btn');
+
+    // Botones rápidos para seleccionar plan y hacer scroll
+    const btnMensual = document.getElementById('btn-seleccionar-mensual');
+    const btnAnual = document.getElementById('btn-seleccionar-anual');
+    const formSection = document.getElementById('solicitud-suscripcion');
+
+    function seleccionarYDesplazar(planValor) {
+        if (planSelect) planSelect.value = planValor;
+        if (formSection) {
+            formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (phoneInput && !phoneInput.value) {
+            phoneInput.focus();
+        } else if (companyInput && !companyInput.value) {
+            companyInput.focus();
+        }
+    }
+
+    btnMensual?.addEventListener('click', () => seleccionarYDesplazar('Plan Mensual ($20.000 CLP)'));
+    btnAnual?.addEventListener('click', () => seleccionarYDesplazar('Plan Anual ($200.000 CLP)'));
+
+    // Si el usuario tiene sesión activa, pre-llenar los datos conocidos
+    const user = AuthState.user;
+    if (user) {
+        if (emailInput && !emailInput.value && user.email) {
+            emailInput.value = user.email;
+        }
+        if (nameInput && !nameInput.value && user.displayName) {
+            nameInput.value = user.displayName;
+        }
+        try {
+            const resp = await fetch('/api/obtener-perfil/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: user.uid })
+            });
+            const pData = await resp.json();
+            if (pData?.status === 'ok' && pData.datos) {
+                const d = pData.datos;
+                if (nameInput && (!nameInput.value || nameInput.value === 'Cargando...')) {
+                    const fullName = `${d.sus_nombre1 || ''} ${d.sus_apellido1 || ''}`.trim();
+                    if (fullName) nameInput.value = fullName;
+                }
+                if (companyInput && !companyInput.value) {
+                    const empName = d.empresa?.emp_fantasia || d.empresa?.emp_razon_social || '';
+                    if (empName) companyInput.value = empName;
+                }
+                if (phoneInput && !phoneInput.value) {
+                    const empPhone = d.empresa?.emp_contacto_telefono || '';
+                    if (empPhone) phoneInput.value = empPhone;
+                }
+            }
+        } catch (e) {
+            console.warn('[SmartBids] No se pudo pre-cargar datos del perfil:', e);
+        }
+    }
+
+    // Manejo del envío del formulario
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!feedback || !submitBtn) return;
+
+        feedback.textContent = '';
+        feedback.className = 'planes-feedback-box';
+
+        const name = (nameInput?.value || '').trim();
+        const email = (emailInput?.value || '').trim();
+        const phone = (phoneInput?.value || '').trim();
+        const company = (companyInput?.value || '').trim();
+        const plan = planSelect?.value || 'Plan Mensual ($20.000 CLP)';
+        const message = (document.getElementById('sub-message')?.value || '').trim();
+
+        if (!name) {
+            feedback.textContent = 'Por favor ingresa tu nombre de contacto.';
+            feedback.className = 'planes-feedback-box planes-feedback-box--error';
+            nameInput?.focus();
+            return;
+        }
+
+        if (!email) {
+            feedback.textContent = 'El correo electrónico es obligatorio para contactarte.';
+            feedback.className = 'planes-feedback-box planes-feedback-box--error';
+            emailInput?.focus();
+            return;
+        }
+
+        if (!phone) {
+            feedback.textContent = 'El teléfono de contacto es obligatorio para coordinar la activación.';
+            feedback.className = 'planes-feedback-box planes-feedback-box--error';
+            phoneInput?.focus();
+            return;
+        }
+
+        if (!company) {
+            feedback.textContent = 'El nombre de la empresa es obligatorio.';
+            feedback.className = 'planes-feedback-box planes-feedback-box--error';
+            companyInput?.focus();
+            return;
+        }
+
+        submitBtn.disabled = true;
+        const originalBtnHtml = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando solicitud...';
+
+        try {
+            const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            const resp = await fetch('/api/contacto/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    phone,
+                    company,
+                    plan,
+                    topic: 'Solicitud de suscripción',
+                    tipo: 'suscripcion',
+                    message,
+                })
+            });
+
+            const data = await resp.json();
+            if (resp.ok && data.status === 'ok') {
+                feedback.innerHTML = `
+                    <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 0.3rem;">
+                        <i class="fa-solid fa-circle-check"></i> ¡Solicitud de Suscripción Enviada con Éxito!
+                    </div>
+                    <p style="margin: 0;">
+                        Hemos recibido tus antecedentes para el plan <strong>${plan}</strong>.
+                        Nuestro equipo comercial se contactará al correo <strong>${email}</strong> y teléfono <strong>${phone}</strong> para coordinar la verificación del pago.
+                        Tu cuenta pasará a estado <strong>Suscriptor</strong> inmediatamente tras confirmar el comprobante.
+                    </p>
+                `;
+                feedback.className = 'planes-feedback-box planes-feedback-box--success';
+                form.reset();
+            } else {
+                feedback.textContent = data.mensaje || 'No se pudo enviar la solicitud. Por favor intenta nuevamente.';
+                feedback.className = 'planes-feedback-box planes-feedback-box--error';
+            }
+        } catch (err) {
+            console.error('[SmartBids] Error al enviar solicitud de suscripción:', err);
+            feedback.textContent = 'Ocurrió un error de red al procesar tu solicitud. Intenta nuevamente en unos instantes.';
+            feedback.className = 'planes-feedback-box planes-feedback-box--error';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block footer %}
+    {% include 'smartbids/includes/footer.html' %}
+{% endblock %}

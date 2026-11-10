@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="{% static 'css/views/base-layout.css' %}">
     {% if request.resolver_match.url_name == 'home' %}
     <link rel="stylesheet" href="{% static 'css/views/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/views/planes.css' %}">
     {% elif request.resolver_match.url_name == 'ingreso' or request.resolver_match.url_name == 'registro' or request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
     <link rel="stylesheet" href="{% static 'css/views/registro.css' %}">
     {% elif request.resolver_match.url_name == 'perfil' %}
@@ -29,6 +30,8 @@
     <link rel="stylesheet" href="{% static 'css/views/administracion-general.css' %}">
     {% elif request.resolver_match.url_name == 'informacion' %}
     <link rel="stylesheet" href="{% static 'css/views/informacion.css' %}">
+    {% elif request.resolver_match.url_name == 'planes' %}
+    <link rel="stylesheet" href="{% static 'css/views/planes.css' %}">
     {% elif request.resolver_match.url_name == 'dashboard' %}
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
     {% elif request.resolver_match.url_name == 'resumen_dia' %}
@@ -75,27 +78,49 @@
                 <li><a href="#funcionalidades">Funcionalidades</a></li>
                 <li><a href="#inteligencia">IA Predictiva</a></li>
                 <li><a href="#beneficios">Beneficios</a></li>
+                <li><a href="#planes">Planes</a></li>
                 <li><a href="#contacto">Contacto</a></li>
 
             {# 2. Enlaces exclusivos para la página de INFORMACIÓN LEGAL #}
             {% elif request.resolver_match.url_name == 'informacion' %}
                 <li><a href="{% url 'home' %}">Inicio</a></li>
+                <li><a href="{% url 'planes' %}">Planes</a></li>
                 <li><span class="nav-separator">•</span></li>
                 <li><a href="#terminos">Términos de Servicio</a></li>
                 <li><a href="#privacidad">Política de Privacidad</a></li>
                 <li><a href="#seguridad">Seguridad (2FA)</a></li>
+
+            {# 3. Enlaces para la página de PLANES #}
+            {% elif request.resolver_match.url_name == 'planes' %}
+                <li><a href="{% url 'home' %}">Inicio</a></li>
+                <li><a href="{% url 'resumen_dia' %}">Resumen del día</a></li>
+                <li class="active"><a href="{% url 'planes' %}">Planes</a></li>
+                <li><a href="{% url 'home' %}#contacto">Contacto</a></li>
             {% endif %}
 
 
-            {% if request.resolver_match.url_name not in 'home informacion ingreso registro accion_cuenta firebase_auth_action' %}
+            {% if request.resolver_match.url_name not in 'home informacion planes ingreso registro accion_cuenta firebase_auth_action' %}
                 <li class="{% if request.resolver_match.url_name == 'resumen_dia' %}active{% endif %}">
                     <a href="{% url 'resumen_dia' %}">Resumen del día</a>
                 </li>
-                <li class="{% if request.resolver_match.url_name == 'mis_licitaciones' %}active{% endif %}">
-                    <a href="{% url 'mis_licitaciones' %}">Mis licitaciones</a>
+                <li class="{% if request.resolver_match.url_name == 'mis_licitaciones' %}active{% endif %}" id="nav-item-licitaciones">
+                    <a href="{% url 'mis_licitaciones' %}" id="nav-link-licitaciones">
+                        Mis licitaciones
+                        <span class="nav-plan-badge" id="nav-lock-licitaciones" style="display: none;" title="Exclusivo Suscriptores">
+                            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                        </span>
+                    </a>
                 </li>
-                <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <a href="{% url 'dashboard' %}">Dashboard</a>
+                <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" id="nav-item-dashboard">
+                    <a href="{% url 'dashboard' %}" id="nav-link-dashboard">
+                        Dashboard
+                        <span class="nav-plan-badge" id="nav-lock-dashboard" style="display: none;" title="Exclusivo Suscriptores">
+                            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                        </span>
+                    </a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'planes' %}active{% endif %}">
+                    <a href="{% url 'planes' %}">Planes</a>
                 </li>
             {% endif %}
         </ul>

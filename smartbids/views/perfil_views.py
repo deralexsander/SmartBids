@@ -503,6 +503,18 @@ def obtener_perfil_suscriptor(request):
                 suscriptor.sus_iniciales = inic
                 suscriptor.save(update_fields=['sus_iniciales'])
 
+        cod_estado = suscriptor.codigo_estado_id if suscriptor.codigo_estado else None
+        if cod_estado == 1:
+            nombre_estado_susc = 'Prospecto'
+        elif cod_estado == 2:
+            nombre_estado_susc = 'Suscriptor'
+        elif cod_estado == 5:
+            nombre_estado_susc = 'Administrador'
+        elif suscriptor.codigo_estado and suscriptor.codigo_estado.nombre_estado:
+            nombre_estado_susc = suscriptor.codigo_estado.nombre_estado
+        else:
+            nombre_estado_susc = 'Prospecto'
+
         return JsonResponse({
             'status': 'ok',
             'datos': {
@@ -514,8 +526,8 @@ def obtener_perfil_suscriptor(request):
                 'sus_apellido2': suscriptor.sus_apellido2 or '',
                 'sus_nombre_social': suscriptor.sus_nombre_social or '',
                 'sus_iniciales': suscriptor.sus_iniciales or inic or '',
-                'codigo_estado': suscriptor.codigo_estado_id if suscriptor.codigo_estado else None,
-                'nombre_estado': suscriptor.codigo_estado.nombre_estado if suscriptor.codigo_estado else 'Activo',
+                'codigo_estado': cod_estado,
+                'nombre_estado': nombre_estado_susc,
                 'token_sesion': getattr(suscriptor, 'token_sesion', '') or '',
                 'fecha_registro': suscriptor.fecha_registro.isoformat() if suscriptor.fecha_registro else None,
                 'fecha_actualizacion': suscriptor.fecha_actualizacion.isoformat() if suscriptor.fecha_actualizacion else None,

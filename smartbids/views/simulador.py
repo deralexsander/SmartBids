@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 from smartbids.models import Organismo, Licitacion
+from smartbids.utils.licitacion_utils import resolver_suscriptor
 from django import forms
 from django.conf import settings
 from django.http import JsonResponse
@@ -50,20 +51,20 @@ def simulador_context(request):
 def formulario_para_licitacion(licitacion):
     """Prefill tender attributes and use its budget as the editable offer default."""
     initial = {}
-    initial['duracion_proceso'] = licitacion.lic_plazo
-    unidad = licitacion.lic_codigo_ucom
-    if unidad and unidad.ucom_codigo_organismo is not None:
+    initial['duracion_proceso'] = getattr(licitacion, 'lic_plazo', None)
+    unidad = getattr(licitacion, 'lic_codigo_ucom', None)
+    if unidad and getattr(unidad, 'ucom_codigo_organismo', None) is not None:
         initial['cantidad_reclamos'] = Organismo.objects.filter(
             codigo_organismo=unidad.ucom_codigo_organismo,
         ).values_list('org_reclamos', flat=True).first()
     budget = getattr(licitacion, 'lic_presupuesto', None)
     if budget is not None and budget >= 0:
         initial['valor_total_ofertado'] = budget
-    published = licitacion.lic_fecha_public
+    published = getattr(licitacion, 'lic_fecha_public', None)
     if published:
         initial['mes_publicacion'] = published.month
         initial['dia_semana_publicacion'] = published.isoweekday()
-    codes = {str(code).strip() for code in (licitacion.lic_codigos_producto or [])
+    codes = {str(code).strip() for code in (getattr(licitacion, 'lic_codigos_producto', None) or [])
              if code is not None and str(code).strip()}
     # Multiple product lines require the user to choose the item to simulate.
     if len(codes) == 1:
@@ -113,6 +114,14 @@ def predecir(datos):
 
 @require_POST
 def simulador_ofertas(request):
+    suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return JsonResponse({
+            'error': 'El modelo predictivo de Machine Learning está reservado exclusivamente para suscriptores.',
+            'paywall': True,
+            'redirect': '/planes/?upgrade=1&modulo=ml'
+        }, status=403)
+
     codigo = request.POST.get('licitacion_codigo')
     if not codigo:
         return JsonResponse({'error': 'Debes seleccionar una licitación.'}, status=400)

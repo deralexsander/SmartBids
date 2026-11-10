@@ -235,7 +235,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==============================================================================
 # CONFIGURACIÓN DEL SERVIDOR DE CORREOS (GMAIL API REST)
 # ==============================================================================
-EMAIL_BACKEND = 'smartbids.backends.gmail_backend.GmailApiBackend'
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'smartbids.backends.gmail_backend.GmailApiBackend')
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'smartbids.qa@chileavanza.cl')
 DEFAULT_FROM_EMAIL = f"SmartBids <{EMAIL_HOST_USER}>"
 

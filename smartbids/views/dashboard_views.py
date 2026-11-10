@@ -16,10 +16,23 @@ from django.core.cache import cache
 from django.db import connections
 from django.db.models import Count, Max, Q, Sum
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.decorators.http import require_GET
 
 from smartbids.models import FactOrdenCompra
+from smartbids.utils.licitacion_utils import resolver_suscriptor
+
+
+def _verificar_acceso_dashboard(request):
+    suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return JsonResponse({
+            'status': 'error',
+            'paywall': True,
+            'redirect': '/planes/?upgrade=1&modulo=dashboard',
+            'mensaje': 'El dashboard con analítica de mercado está reservado para suscriptores.'
+        }, status=403)
+    return None
 
 
 # ======================================================================
@@ -127,12 +140,18 @@ def _grupos_producto():
 
 def dashboard_view(request):
     """La página carga vacía y rápida: todo se pide por fetch según el período."""
+    suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return redirect('/planes/?upgrade=1&modulo=dashboard')
     return render(request, "smartbids/dashboard.html")
 
 
 @require_GET
 def dashboard_periodos(request):
     """Meses con datos en la fact (el cliente deriva trimestres, semestres y años)."""
+    bloqueo = _verificar_acceso_dashboard(request)
+    if bloqueo:
+        return bloqueo
     meses = cache.get("dw_periodos_disponibles")
     if meses is None:
         with connections["dw"].cursor() as cursor:
@@ -156,6 +175,9 @@ def dashboard_kpis(request):
     Órdenes de compra solo se informa en histórico: por el grano de la fact
     no se pueden sumar entre productos. En un período se informan ítems.
     """
+    bloqueo = _verificar_acceso_dashboard(request)
+    if bloqueo:
+        return bloqueo
     try:
         claves = periodo_de_request(request)
     except ValueError:
@@ -207,6 +229,9 @@ def dashboard_productos_explorador(request):
 
     Los conteos se refieren a ítems, NO a órdenes de compra únicas.
     """
+    bloqueo = _verificar_acceso_dashboard(request)
+    if bloqueo:
+        return bloqueo
     modo = request.GET.get("tipo", "ranking")
     if modo == "opciones":
         return JsonResponse({"grupos": _grupos_producto()})
@@ -440,6 +465,9 @@ def dashboard_competencia(request):
     Filtros: grupo, region, organismo, proveedor, producto (código).
     La participación corresponde al monto bruto del segmento filtrado.
     """
+    bloqueo = _verificar_acceso_dashboard(request)
+    if bloqueo:
+        return bloqueo
     tipo = request.GET.get("tipo", "ranking")
     if tipo == "opciones":
         return JsonResponse(_opciones_competencia())

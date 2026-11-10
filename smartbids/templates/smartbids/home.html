@@ -473,7 +473,79 @@
     </section>
 
     <!-- ============================================================ -->
-    <!-- 6. SECCIÓN DE CONTACTO (TOTALMENTE OPERATIVA)                  -->
+    <!-- 6. SECCIÓN DE PLANES Y TARIFAS (ACCESO COMPLETO)               -->
+    <!-- ============================================================ -->
+    <section class="features home-slide-section" id="planes" aria-labelledby="planes-title">
+        <div class="section-header">
+            <span class="section-subtitle">Tarifas Simples y Transparentes</span>
+            <h2 class="section-title" id="planes-title">Planes diseñados para impulsar tus ventas públicas</h2>
+            <p class="section-desc">Dos opciones con acceso total a todas las herramientas: Explorador de licitaciones en 346 comunas, Dashboards analíticos y modelos predictivos de Machine Learning con XGBoost.</p>
+        </div>
+
+        <div class="planes-grid">
+            <!-- Plan Mensual -->
+            <div class="dashboard-card plan-card">
+                <div class="plan-card__badge">Flexibilidad Mensual</div>
+                <h3 class="plan-card__name">Plan Mensual</h3>
+                <p class="plan-card__desc">Ideal para empresas que desean probar la potencia de la plataforma mes a mes sin compromisos.</p>
+                <div class="plan-card__price">
+                    <span class="plan-card__amount">$20.000</span>
+                    <span class="plan-card__period">CLP / mes</span>
+                </div>
+                <ul class="plan-card__features">
+                    <li><i class="fa-solid fa-check"></i> Acceso total al Explorador de Licitaciones</li>
+                    <li><i class="fa-solid fa-check"></i> Cobertura territorial completa en 346 comunas</li>
+                    <li><i class="fa-solid fa-check"></i> Dashboards analíticos y Data Warehouse de mercado</li>
+                    <li><i class="fa-solid fa-check"></i> Modelos predictivos de Machine Learning (XGBoost)</li>
+                    <li><i class="fa-solid fa-check"></i> Notificaciones, seguimientos y alertas matutinas</li>
+                    <li><i class="fa-solid fa-check"></i> Exportación ilimitada a Excel (.xlsx) y CSV</li>
+                    <li><i class="fa-solid fa-check"></i> Soporte técnico prioritario por correo</li>
+                </ul>
+                <div class="plan-card__action">
+                    <a href="{% url 'planes' %}?plan=mensual" class="btn btn-outline plan-card__btn">
+                        <i class="fa-solid fa-arrow-right"></i> Solicitar Plan Mensual
+                    </a>
+                </div>
+            </div>
+
+            <!-- Plan Anual -->
+            <div class="dashboard-card plan-card plan-card--featured">
+                <div class="plan-card__badge plan-card__badge--popular">
+                    <i class="fa-solid fa-crown"></i> Más Conveniente • 2 Meses Gratis
+                </div>
+                <h3 class="plan-card__name">Plan Anual</h3>
+                <p class="plan-card__desc">El máximo ahorro para empresas consolidadas: pagas 10 meses y recibes 12 meses de servicio continuo.</p>
+                <div class="plan-card__price">
+                    <span class="plan-card__amount">$200.000</span>
+                    <span class="plan-card__period">CLP / año</span>
+                </div>
+                <div class="plan-card__savings">
+                    <span class="plan-card__savings-tag">
+                        <i class="fa-solid fa-tag"></i> Ahorras $40.000 CLP al año (Equivalente a 10 meses)
+                    </span>
+                </div>
+                <ul class="plan-card__features">
+                    <li><i class="fa-solid fa-check"></i> <strong>Todos los beneficios del Plan Mensual incluidos</strong></li>
+                    <li><i class="fa-solid fa-check"></i> <strong>2 meses de descuento total</strong> (12 meses al precio de 10)</li>
+                    <li><i class="fa-solid fa-check"></i> Prioridad en calibración de perfiles y palabras clave</li>
+                    <li><i class="fa-solid fa-check"></i> Soporte comercial preferencial y onboarding guiado</li>
+                    <li><i class="fa-solid fa-check"></i> Congelamiento de tarifa anual garantizada</li>
+                </ul>
+                <div class="plan-card__action">
+                    <a href="{% url 'planes' %}?plan=anual" class="btn btn-primary plan-card__btn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Solicitar Plan Anual
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="planes-footnote">
+            <p><i class="fa-solid fa-circle-info"></i> El paso de cuenta Prospecto a Suscriptor se activa manualmente tras la confirmación del pago por parte de nuestro equipo comercial.</p>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 7. SECCIÓN DE CONTACTO (TOTALMENTE OPERATIVA)                  -->
     <!-- ============================================================ -->
     <section class="features home-slide-section" id="contacto" aria-labelledby="contacto-title">
         <div class="feature-row home__contact-row">
@@ -520,6 +592,7 @@
                             <label for="contact-topic">Tema *</label>
                             <select class="form-input" id="contact-topic" name="topic" aria-label="Tema" required>
                                 <option value="">Selecciona un tema</option>
+                                <option value="Solicitud de suscripción">Solicitud de suscripción (Paso a Suscriptor)</option>
                                 <option value="Consulta comercial">Consulta comercial</option>
                                 <option value="Soporte SmartBids">Soporte SmartBids</option>
                                 <option value="Integraciones">Integraciones</option>

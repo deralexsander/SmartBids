@@ -1548,6 +1548,53 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             self.assertEqual(context['licitaciones_perfil'][0].lic_codigo, '1075963-374-LE26')
             self.assertEqual(context['match_perfil'], 1)
 
+    def test_mis_licitaciones_match_con_perfil_solo_no_cerradas(self):
+        """Verifica que Match con Perfil filtre y solo consulte licitaciones que no están cerradas."""
+        from unittest.mock import patch, MagicMock
+        from django.db.models import Q
+        from smartbids.views.licitaciones_views import mis_licitaciones_view
+
+        mock_lic_activa = MagicMock(lic_codigo='ACTIVA-1', lic_tipo_licitacion='LE')
+        mock_qs_match = MagicMock()
+        mock_qs_match.__iter__.return_value = [mock_lic_activa]
+        mock_qs_match.__getitem__.return_value = [mock_lic_activa]
+
+        mock_qs_general = MagicMock()
+        mock_qs_general.exclude.return_value = mock_qs_general
+        mock_qs_general.aggregate.return_value = {'cierre_proximo': 0, 'convenio_marco': 0}
+
+        mock_paginator = MagicMock()
+        mock_paginator.get_page.return_value = []
+
+        m_lic_objects = MagicMock()
+        m_lic_objects.count.return_value = 50
+        m_lic_objects.exclude.return_value.exclude.return_value.values_list.return_value.distinct.return_value.order_by.return_value = ['LE']
+        m_lic_objects.select_related.return_value.filter.return_value.distinct.return_value.order_by.return_value = mock_qs_match
+
+        req = self.rf.get('/mis-licitaciones/')
+        req._q_perfil = Q(lic_tipo_licitacion__in=['LE'])
+
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
+             patch('smartbids.views.tracking_views._sincronizar_seguimientos'), \
+             patch('smartbids.models.core.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.views.licitaciones_views.Preferencia.objects') as m_pref, \
+             patch('smartbids.views.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
+             patch('smartbids.views.licitaciones_views.Licitacion.objects', m_lic_objects), \
+             patch('smartbids.views.licitaciones_views.Paginator', return_value=mock_paginator), \
+             patch('smartbids.views.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value={'publicas': [], 'privadas': []}), \
+             patch('smartbids.views.licitaciones_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
+             patch('smartbids.views.licitaciones_views.render') as mock_render:
+            m_seg.filter.return_value.values_list.return_value = []
+            m_pref.filter.return_value.first.return_value = None
+            mis_licitaciones_view(req)
+
+            filter_call_args = m_lic_objects.select_related.return_value.filter.call_args[0]
+            self.assertEqual(len(filter_call_args), 2)
+            self.assertIsInstance(filter_call_args[1], Q)
+            context = mock_render.call_args[0][2]
+            self.assertEqual(len(context['licitaciones_perfil']), 1)
+            self.assertEqual(context['licitaciones_perfil'][0].estado_proceso, 'ofertas')
+
     def test_mis_licitaciones_view_optimizacion_paginador_y_primera_pagina(self):
         """Verifica que el paginador use 10 elementos por página y que en la página 2 no se repitan las tarjetas de perfil."""
         from unittest.mock import patch, MagicMock
@@ -2362,6 +2409,182 @@ class LegalComplianceArcopTests(SimpleTestCase):
             html_footer = render_to_string('smartbids/includes/footer.html', ctx, request=req)
             self.assertIn('Mi Empresa SpA', html_footer)
             self.assertIn('76.543.210-K', html_footer)
+            self.assertNotIn('Agua Santa 1400', html_footer)
+            self.assertNotIn('Agua Santa 1400', html_info)
+
+
+from unittest.mock import patch, MagicMock
+
+
+class FlujoSuscripcionRolesYPlanesTests(SimpleTestCase):
+    def setUp(self):
+        self.rf = RequestFactory()
+
+    def test_planes_view_render(self):
+        """Verifica que la vista de planes renderice correctamente con los 2 planes y comparativa."""
+        from smartbids.views.page_views import planes_view
+        req = self.rf.get('/planes/')
+        with patch('smartbids.views.page_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            resp = planes_view(req)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+        self.assertIn('20.000', content)
+        self.assertIn('200.000', content)
+        self.assertIn('Plan Mensual', content)
+        self.assertIn('Plan Anual', content)
+        self.assertIn('subscription-request-form', content)
+        self.assertIn('Comparativa de Acceso y Funcionalidades', content)
+
+    def test_planes_view_upgrade_alerta(self):
+        """Verifica que al redirigir con upgrade=1 se muestre el aviso de función exclusiva."""
+        from smartbids.views.page_views import planes_view
+        req = self.rf.get('/planes/?upgrade=1&modulo=licitaciones')
+        with patch('smartbids.views.page_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            resp = planes_view(req)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+        self.assertIn('planes-upgrade-alert', content)
+        self.assertIn('Explorador de Licitaciones', content)
+
+    def test_prospecto_bloqueado_en_mis_licitaciones(self):
+        """Un prospecto (código 1) debe ser redirigido a la vista de planes al entrar a licitaciones."""
+        from smartbids.views.licitaciones_views import mis_licitaciones_view
+        req = self.rf.get('/mis-licitaciones/')
+        mock_estado = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_susc = MagicMock(codigo_estado=mock_estado)
+
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=mock_susc):
+            resp = mis_licitaciones_view(req)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/planes/', resp.url)
+        self.assertIn('modulo=licitaciones', resp.url)
+
+    def test_prospecto_bloqueado_en_dashboard(self):
+        """Un prospecto (código 1) debe ser redirigido a la vista de planes al entrar a dashboard."""
+        from smartbids.views.dashboard_views import dashboard_view
+        req = self.rf.get('/dashboard/')
+        mock_estado = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_susc = MagicMock(codigo_estado=mock_estado)
+
+        with patch('smartbids.views.dashboard_views.resolver_suscriptor', return_value=mock_susc):
+            resp = dashboard_view(req)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/planes/', resp.url)
+        self.assertIn('modulo=dashboard', resp.url)
+
+    def test_prospecto_bloqueado_en_simulador_ml(self):
+        """Un prospecto que intente evaluar escenario en simulador_ofertas debe recibir 403 paywall."""
+        import json
+        from smartbids.views.simulador import simulador_ofertas
+        req = self.rf.post('/api/simulador-ofertas/', data={'licitacion_codigo': 'TEST-1'})
+        mock_estado = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_susc = MagicMock(codigo_estado=mock_estado)
+
+        with patch('smartbids.views.simulador.resolver_suscriptor', return_value=mock_susc):
+            resp = simulador_ofertas(req)
+        self.assertEqual(resp.status_code, 403)
+        data = json.loads(resp.content.decode('utf-8'))
+        self.assertTrue(data.get('paywall'))
+        self.assertIn('/planes/', data.get('redirect', ''))
+
+    def test_prospecto_tiene_acceso_a_resumen_dia(self):
+        """Un prospecto debe mantener acceso libre a su resumen diario."""
+        from smartbids.views.resumen_views import resumen_dia_view
+        req = self.rf.get('/resumen/')
+        mock_estado = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_susc = MagicMock(codigo_estado=mock_estado, pk=1, id_suscriptor=1)
+
+        with patch('smartbids.views.resumen_views.resolver_suscriptor', return_value=mock_susc), \
+             patch('smartbids.views.resumen_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.resumen_views.Preferencia.objects') as m_pref, \
+             patch('smartbids.views.resumen_views.Licitacion.objects') as m_lic, \
+             patch('smartbids.views.resumen_views.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.views.resumen_views.NotificacionLicitacion.objects') as m_notif, \
+             patch('smartbids.views.resumen_views.render') as m_render:
+            m_pref.filter.return_value.first.return_value = None
+            m_seg.filter.return_value.values_list.return_value = []
+            m_notif_qs = MagicMock()
+            m_notif_qs.filter.return_value.count.return_value = 0
+            m_notif_qs.__getitem__.return_value = []
+            m_notif.filter.return_value.select_related.return_value.order_by.return_value = m_notif_qs
+            m_lic.filter.return_value.distinct.return_value.count.return_value = 0
+            m_lic.filter.return_value.order_by.return_value.distinct.return_value = []
+            m_render.return_value = 'render_resumen'
+            resp = resumen_dia_view(req)
+            self.assertEqual(resp, 'render_resumen')
+
+    def test_solicitud_suscripcion_validacion_campos(self):
+        """La solicitud de suscripción exige obligatoriamente Correo, Teléfono y Empresa."""
+        import json
+        from smartbids.views.mensajeria_views import enviar_consulta_contacto
+
+        # Caso 1: Falta teléfono
+        body_sin_tel = json.dumps({
+            'name': 'Juan Pérez',
+            'email': 'juan@empresa.cl',
+            'phone': '',
+            'company': 'Mi Empresa SpA',
+            'topic': 'Solicitud de suscripción',
+            'tipo': 'suscripcion',
+        }).encode('utf-8')
+        req1 = self.rf.post('/api/contacto/', data=body_sin_tel, content_type='application/json')
+        resp1 = enviar_consulta_contacto(req1)
+        self.assertEqual(resp1.status_code, 400)
+        self.assertIn('teléfono', json.loads(resp1.content.decode('utf-8'))['mensaje'].lower())
+
+        # Caso 2: Falta empresa
+        body_sin_emp = json.dumps({
+            'name': 'Juan Pérez',
+            'email': 'juan@empresa.cl',
+            'phone': '+56 9 1234 5678',
+            'company': '',
+            'topic': 'Solicitud de suscripción',
+            'tipo': 'suscripcion',
+        }).encode('utf-8')
+        req2 = self.rf.post('/api/contacto/', data=body_sin_emp, content_type='application/json')
+        resp2 = enviar_consulta_contacto(req2)
+        self.assertEqual(resp2.status_code, 400)
+        self.assertIn('empresa', json.loads(resp2.content.decode('utf-8'))['mensaje'].lower())
+
+        # Caso 3: Solicitud completa y válida
+        body_valido = json.dumps({
+            'name': 'Juan Pérez',
+            'email': 'juan@empresa.cl',
+            'phone': '+56 9 1234 5678',
+            'company': 'Mi Empresa SpA',
+            'plan': 'Plan Anual ($200.000 CLP)',
+            'topic': 'Solicitud de suscripción',
+            'tipo': 'suscripcion',
+        }).encode('utf-8')
+        req3 = self.rf.post('/api/contacto/', data=body_valido, content_type='application/json')
+        with patch('smartbids.views.mensajeria_views.EmailMessage') as mock_email, \
+             patch('smartbids.views.mensajeria_views.InfoContacto.objects.first', return_value=None):
+            resp3 = enviar_consulta_contacto(req3)
+            self.assertEqual(resp3.status_code, 200)
+            mock_email.return_value.send.assert_called_once()
+            self.assertTrue(json.loads(resp3.content.decode('utf-8'))['status'] == 'ok')
+
+    def test_registro_prospecto_asigna_codigo_1(self):
+        """Verifica que al registrar un prospecto se le asigne codigo_estado=1."""
+        import json
+        from smartbids.views.auth_views import registrar_prospecto
+        body = json.dumps({
+            'uid': 'nuevo_user_uid_123',
+            'sus_nombre1': 'Carlos',
+            'sus_apellido1': 'González',
+        }).encode('utf-8')
+        req = self.rf.post('/api/registrar-prospecto/', data=body, content_type='application/json')
+        mock_estado1 = MagicMock(codigo_estado=1)
+
+        with patch('smartbids.views.auth_views.Suscriptor.objects.filter', return_value=MagicMock(first=lambda: None)), \
+             patch('smartbids.views.auth_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_estado1)), \
+             patch('smartbids.views.auth_views.Suscriptor.objects.create') as mock_create:
+            resp = registrar_prospecto(req)
+            self.assertEqual(resp.status_code, 201)
+            create_args = mock_create.call_args[1]
+            self.assertEqual(create_args['codigo_estado'].codigo_estado, 1)
 
 
 

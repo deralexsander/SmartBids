@@ -233,8 +233,13 @@ def registrar_prospecto(request):
                 suscriptor_existente.save(update_fields=campos_actualizados)
             return JsonResponse({'status': 'ok', 'mensaje': 'Los datos del suscriptor están guardados.'})
 
-        # Obtener o asignar la instancia de EstadoSuscriptor (ejemplo: ID 2 = Habilitado)
-        estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=2).first()
+        # Obtener o asignar la instancia de EstadoSuscriptor (código 1 = Prospecto: registrado sin pago)
+        estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=1).first()
+        if not estado_instancia:
+            estado_instancia, _ = EstadoSuscriptor.objects.get_or_create(
+                codigo_estado=1,
+                defaults={'nombre_estado': 'Prospecto', 'descripcion': 'Prospecto registrado sin pago'}
+            )
 
         partes = [nombre.strip(), apellido.strip()]
         iniciales_auto = "".join([p[0].upper() for p in partes if p])[:5]
@@ -255,7 +260,7 @@ def registrar_prospecto(request):
 
         Suscriptor.objects.create(**datos_creacion)
 
-        return JsonResponse({'status': 'ok', 'mensaje': 'Suscriptor habilitado registrado con éxito.'}, status=201)
+        return JsonResponse({'status': 'ok', 'mensaje': 'Prospecto registrado con éxito.'}, status=201)
 
     except Exception as e:
         logger.error(f"[SmartBids] Error al registrar prospecto: {str(e)}")
@@ -436,9 +441,14 @@ def validar_codigo_login(request):
         # 5. Código válido: Invalidador inmediato de un solo uso (One-Time-Use / Anti-Replay)
         CODIGOS_OTP_TEMPORALES.pop(email, None)
 
-        # 6. Guardar token en PostgreSQL (crear si no existe por algún fallo previo)
+        # 6. Guardar token en PostgreSQL (crear si no existe por algún fallo previo con estado Prospecto)
         ahora = timezone.now()
-        estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=2).first()
+        estado_instancia = EstadoSuscriptor.objects.filter(codigo_estado=1).first()
+        if not estado_instancia:
+            estado_instancia, _ = EstadoSuscriptor.objects.get_or_create(
+                codigo_estado=1,
+                defaults={'nombre_estado': 'Prospecto', 'descripcion': 'Prospecto registrado sin pago'}
+            )
 
         suscriptor, created = Suscriptor.objects.get_or_create(
             firebase_uid=uid,

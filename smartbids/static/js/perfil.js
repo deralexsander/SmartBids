@@ -2145,7 +2145,63 @@ export async function inicializarVistaPerfil(user) {
             if (socialHeader) socialHeader.textContent = data.sus_nombre_social ? `@${data.sus_nombre_social}` : `@suscriptor_${data.id_suscriptor}`;
 
             const roleBadge = document.getElementById('profile-role-badge');
-            if (roleBadge) roleBadge.textContent = data.nombre_estado || 'Activo';
+            const codEstado = data.codigo_estado;
+            let labelEstado = data.nombre_estado || 'Prospecto';
+            if (codEstado === 1) {
+                labelEstado = 'Prospecto';
+            } else if (codEstado === 2) {
+                labelEstado = 'Suscriptor';
+            } else if (codEstado === 5) {
+                labelEstado = 'Administrador';
+            }
+            if (roleBadge) roleBadge.textContent = labelEstado;
+
+            const sidebarUpgrade = document.getElementById('perfil-sidebar-upgrade');
+            if (sidebarUpgrade) {
+                sidebarUpgrade.style.display = (codEstado === 1) ? 'block' : 'none';
+            }
+
+            const estadoCard = document.getElementById('perfil-estado-card');
+            const estadoNombre = document.getElementById('perfil-estado-nombre');
+            const estadoDesc = document.getElementById('perfil-estado-descripcion');
+            const estadoAccion = document.getElementById('perfil-estado-accion');
+            const estadoIcono = document.getElementById('perfil-estado-icono');
+            const estadoIconoBox = document.getElementById('perfil-estado-icono-box');
+
+            if (estadoCard) {
+                estadoCard.style.display = 'block';
+                if (codEstado === 1) {
+                    if (estadoNombre) estadoNombre.textContent = 'Prospecto (Registrado sin pago)';
+                    if (estadoDesc) estadoDesc.textContent = 'Tu cuenta te permite configurar tus antecedentes y revisar el Resumen del día. Las vistas principales (Licitaciones, Dashboards y Machine Learning) están reservadas para Suscriptores.';
+                    if (estadoAccion) estadoAccion.style.display = 'block';
+                    if (estadoIcono) estadoIcono.className = 'fa-solid fa-user-clock';
+                    if (estadoIconoBox) {
+                        estadoIconoBox.style.background = 'rgba(217, 119, 6, 0.12)';
+                        estadoIconoBox.style.color = '#d97706';
+                    }
+                    estadoCard.style.borderLeftColor = '#d97706';
+                } else if (codEstado === 2) {
+                    if (estadoNombre) estadoNombre.textContent = 'Suscriptor (Acceso Total)';
+                    if (estadoDesc) estadoDesc.textContent = '¡Tienes acceso completo y habilitado a todas las propuestas de valor: Explorador de Licitaciones en 346 comunas, Dashboards analíticos y Machine Learning predictivo!';
+                    if (estadoAccion) estadoAccion.style.display = 'none';
+                    if (estadoIcono) estadoIcono.className = 'fa-solid fa-crown';
+                    if (estadoIconoBox) {
+                        estadoIconoBox.style.background = 'rgba(30, 196, 152, 0.15)';
+                        estadoIconoBox.style.color = 'var(--accent-green)';
+                    }
+                    estadoCard.style.borderLeftColor = 'var(--accent-green)';
+                } else if (codEstado === 5) {
+                    if (estadoNombre) estadoNombre.textContent = 'Administrador (Gestión y Control)';
+                    if (estadoDesc) estadoDesc.textContent = 'Cuenta de administración del sistema con control total y panel de gestión institucional habilitado.';
+                    if (estadoAccion) estadoAccion.style.display = 'none';
+                    if (estadoIcono) estadoIcono.className = 'fa-solid fa-shield-halved';
+                    if (estadoIconoBox) {
+                        estadoIconoBox.style.background = 'rgba(37, 99, 235, 0.12)';
+                        estadoIconoBox.style.color = '#2563eb';
+                    }
+                    estadoCard.style.borderLeftColor = '#2563eb';
+                }
+            }
 
             const nombreEstado = data.nombre_estado || '';
             const rolNormalizado = nombreEstado.trim().toLowerCase();

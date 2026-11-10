@@ -31,6 +31,13 @@ class GmailApiBackend(BaseEmailBackend):
 
         try:
             token_data = json.loads(token_env)
+            if not token_data.get('refresh_token'):
+                raise ImproperlyConfigured(
+                    "GMAIL_TOKEN_JSON no tiene un 'refresh_token' configurado. "
+                    "Para generar el token con tu cuenta de pruebas, ejecuta: python obtener_gmail_token.py "
+                    "O para ver los correos/códigos OTP directamente en la terminal, define "
+                    "EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend' en tu archivo .env."
+                )
             creds = Credentials.from_authorized_user_info(token_data, SCOPES)
         except Exception as e:
             raise ImproperlyConfigured(f"Error al procesar GMAIL_TOKEN_JSON desde el .env: {e}")

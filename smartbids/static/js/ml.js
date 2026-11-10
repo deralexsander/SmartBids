@@ -34,6 +34,10 @@ function initSimuladorModal() {
                 headers: { 'Accept': 'application/json' },
             });
             const data = await response.json();
+            if (response.status === 403 && (data.paywall || data.redirect)) {
+                window.location.href = data.redirect || '/planes/?upgrade=1&modulo=ml';
+                return;
+            }
             if (!response.ok) {
                 feedback.textContent = data.errors
                     ? Object.entries(data.errors).map(([name, errors]) => {
@@ -67,6 +71,10 @@ function initSimuladorModal() {
     let previousOverflow = '';
 
     function abrir() {
+        if (document.body.classList.contains('user-is-prospecto')) {
+            window.location.href = '/planes/?upgrade=1&modulo=ml';
+            return;
+        }
         if (!modal.hidden) return;
         previousFocus = document.activeElement;
         previousOverflow = document.body.style.overflow;

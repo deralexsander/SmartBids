@@ -49,6 +49,33 @@ def extraer_rut_empresa(texto):
     return '00000000-5'
 
 
+def extraer_domicilio_legal(texto):
+    """
+    Extrae dinámicamente el domicilio, ciudad o región desde las líneas del bloque de contacto.
+    Prioriza líneas que no sean Email, Mobile/Teléfono, Razón Social ni RUT.
+    Elimina cualquier dirección particular como 'Agua Santa 1400' y garantiza ciudad/región.
+    """
+    if not texto:
+        return 'Viña del Mar, Región de Valparaíso, Chile'
+    for linea in texto.splitlines():
+        linea_s = linea.strip()
+        if not linea_s:
+            continue
+        # Descartar líneas de email, teléfono/mobile, razón social y rut
+        if re.search(r'(?:email|mail|mobile|teléfono|telefono|celular|razón\s*social|razon\s*social|rut)\s*:', linea_s, re.IGNORECASE):
+            continue
+        if 'agua santa' in linea_s.lower():
+            continue
+        match = re.search(r'^(?:Domicilio|Dirección|Direccion|Ciudad|Sede)\s*:\s*(.+)', linea_s, re.IGNORECASE)
+        if match:
+            val = match.group(1).strip()
+            if 'agua santa' not in val.lower():
+                return val
+            continue
+        return linea_s
+    return 'Viña del Mar, Región de Valparaíso, Chile'
+
+
 def footer_info_context(request):
     """
     Inyecta la información institucional y de contacto del footer en todos los templates.
@@ -59,6 +86,7 @@ def footer_info_context(request):
     contacto_email = correos.get('email_contacto', EMAIL_CONTACTO_RESPALDO)
     razon_social = 'no informada'
     rut = '00000000-5'
+    domicilio_legal = 'Viña del Mar, Región de Valparaíso, Chile'
 
     try:
         info = InfoContacto.objects.first()
@@ -66,11 +94,12 @@ def footer_info_context(request):
             contacto_email = extraer_correo_contacto(info.contacto_texto)
             razon_social = extraer_razon_social(info.contacto_texto)
             rut = extraer_rut_empresa(info.contacto_texto)
+            domicilio_legal = extraer_domicilio_legal(info.contacto_texto)
             if info.contacto_texto:
                 lineas_contacto = [
                     linea.strip() 
                     for linea in info.contacto_texto.splitlines() 
-                    if linea.strip()
+                    if linea.strip() and 'agua santa' not in linea.lower()
                 ]
             if info.empresas_enlaces:
                 empresas_list = info.empresas_enlaces
@@ -83,5 +112,6 @@ def footer_info_context(request):
         'contacto_email': contacto_email,
         'razon_social': razon_social,
         'rut': rut,
+        'domicilio_legal': domicilio_legal,
         'app_version': getattr(settings, 'APP_VERSION', 'v1.0.0'),
     }

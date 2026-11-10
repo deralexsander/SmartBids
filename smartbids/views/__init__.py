@@ -1,7 +1,7 @@
 from .page_views import (
     home, login_view, register_view, accion_cuenta_view, perfil_view, mensajeria_view,
     administracion_general_view, exportar_dashboard_view,
-    handler404_view, informacion_view,
+    handler404_view, informacion_view, planes_view,
 )
 from .dashboard_views import (
     dashboard_view, dashboard_periodos, dashboard_kpis, dashboard_desglose, dashboard_competencia,

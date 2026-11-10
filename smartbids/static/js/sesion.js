@@ -47,12 +47,47 @@ const updateNavButtons = (user) => {
     if (loginButton) loginButton.style.display = user ? 'none' : 'inline-flex';
     if (profileButton) profileButton.style.display = user ? 'inline-flex' : 'none';
     if (!user && adminGeneralNav) adminGeneralNav.style.display = 'none';
+    if (!user) aplicarRestriccionesEstadoUsuario(null);
 
     // Actualiza botones condicionales de la landing page según el estado de autenticación
     document.querySelectorAll('[data-auth-href][data-guest-href]').forEach(btn => {
         btn.setAttribute('href', user ? btn.getAttribute('data-auth-href') : btn.getAttribute('data-guest-href'));
     });
 };
+
+function aplicarRestriccionesEstadoUsuario(codigoEstado) {
+    const esProspecto = (codigoEstado === 1);
+    const lockLicitaciones = document.getElementById('nav-lock-licitaciones');
+    const lockDashboard = document.getElementById('nav-lock-dashboard');
+    const linkLicitaciones = document.getElementById('nav-link-licitaciones');
+    const linkDashboard = document.getElementById('nav-link-dashboard');
+
+    if (esProspecto) {
+        document.body.classList.add('user-is-prospecto');
+        if (lockLicitaciones) lockLicitaciones.style.display = 'inline-flex';
+        if (lockDashboard) lockDashboard.style.display = 'inline-flex';
+        if (linkLicitaciones) {
+            linkLicitaciones.setAttribute('href', '/planes/?upgrade=1&modulo=licitaciones');
+            linkLicitaciones.setAttribute('title', 'Exclusivo Suscriptores - Haz clic para ver planes');
+        }
+        if (linkDashboard) {
+            linkDashboard.setAttribute('href', '/planes/?upgrade=1&modulo=dashboard');
+            linkDashboard.setAttribute('title', 'Exclusivo Suscriptores - Haz clic para ver planes');
+        }
+    } else {
+        document.body.classList.remove('user-is-prospecto');
+        if (lockLicitaciones) lockLicitaciones.style.display = 'none';
+        if (lockDashboard) lockDashboard.style.display = 'none';
+        if (linkLicitaciones) {
+            linkLicitaciones.setAttribute('href', '/mis-licitaciones/');
+            linkLicitaciones.removeAttribute('title');
+        }
+        if (linkDashboard) {
+            linkDashboard.setAttribute('href', '/dashboard/');
+            linkDashboard.removeAttribute('title');
+        }
+    }
+}
 
 async function validarRolAdministrador(user) {
     try {
@@ -62,9 +97,12 @@ async function validarRolAdministrador(user) {
             body: JSON.stringify({ uid: user.uid })
         });
         const data = await response.json();
+        const codEstado = data.datos?.codigo_estado;
+        aplicarRestriccionesEstadoUsuario(codEstado);
+
         const nombreEstado = data.datos?.nombre_estado || '';
         const rolNormalizado = nombreEstado.trim().toLowerCase();
-        const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || data.datos?.codigo_estado === 5;
+        const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || codEstado === 5;
 
         const perfilAdminSection = document.getElementById('perfil-admin-section');
         if (perfilAdminSection) perfilAdminSection.style.display = tieneRol ? 'block' : 'none';

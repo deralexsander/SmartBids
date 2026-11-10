@@ -1,5 +1,21 @@
 /* ===== Header · Navegación y notificaciones ===== */
 
+.nav-plan-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    font-size: 0.75rem;
+    color: #d97706;
+    vertical-align: middle;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+nav a:hover .nav-plan-badge {
+    transform: scale(1.18);
+    color: #b45309;
+}
+
 .site-header__admin-link--hidden {
     display: none;
 }

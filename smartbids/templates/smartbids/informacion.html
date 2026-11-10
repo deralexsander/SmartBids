@@ -22,7 +22,7 @@
             <div class="info__hero-legal-meta">
                 <span><strong>Titular responsable:</strong> {{ razon_social|default:'no informada' }}</span> &bull; 
                 <span><strong>RUT:</strong> {{ rut|default:'00000000-5' }}</span> &bull; 
-                <span><strong>Domicilio:</strong> Agua Santa 1400, Viña del Mar, Chile</span> &bull; 
+                <span><strong>Sede y Domicilio Legal:</strong> {{ domicilio_legal|default:'Viña del Mar, Región de Valparaíso, Chile' }}</span> &bull; 
                 <span><strong>Canal de Privacidad:</strong> <a href="mailto:{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}" class="info__arcop-alert-link">{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}</a></span>
             </div>
         </div>
@@ -62,7 +62,7 @@
         <div class="feature-row">
             <div class="feature-text">
                 <h3>1. Individualización del Prestador y Objeto del SaaS</h3>
-                <p>El servicio es provisto por <strong>{{ razon_social|default:'no informada' }}</strong>, RUT <strong>{{ rut|default:'00000000-5' }}</strong>, con domicilio en Agua Santa 1400, Viña del Mar, Chile. SmartBids es una plataforma de software como servicio (SaaS) orientada a la recopilación inteligente, análisis histórico y estimación predictiva de procesos de licitación pública en Chile.</p>
+                <p>El servicio es provisto por <strong>{{ razon_social|default:'no informada' }}</strong>, RUT <strong>{{ rut|default:'00000000-5' }}</strong>, con sede y domicilio legal en <strong>{{ domicilio_legal|default:'Viña del Mar, Región de Valparaíso, Chile' }}</strong>. SmartBids es una plataforma de software como servicio (SaaS) orientada a la recopilación inteligente, análisis histórico y estimación predictiva de procesos de licitación pública en Chile.</p>
                 <ul class="feature-list">
                     <li><i class="fa-solid fa-check"></i> <strong>Carácter de la herramienta:</strong> SmartBids provee herramientas de inteligencia comercial y productividad para proveedores del Estado y MiPyMEs.</li>
                     <li><i class="fa-solid fa-check"></i> <strong>Aceptación vinculante:</strong> El registro y uso de la plataforma supone la aceptación íntegra de estos términos y de la política de privacidad complementaria.</li>

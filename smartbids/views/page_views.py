@@ -68,7 +68,29 @@ def handler404_view(request, exception=None):
 def informacion_view(request):
     return render(request, 'smartbids/informacion.html')
 
+def planes_view(request):
+    suscriptor = resolver_suscriptor(request)
+    upgrade = request.GET.get('upgrade') == '1'
+    modulo = request.GET.get('modulo', '').strip()
+    plan_param = request.GET.get('plan', '').strip().lower()
+    es_prospecto = False
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None):
+        es_prospecto = (suscriptor.codigo_estado.codigo_estado == 1)
+
+    return render(request, 'smartbids/planes.html', {
+        'suscriptor_activo': suscriptor is not None,
+        'es_prospecto': es_prospecto,
+        'upgrade': upgrade,
+        'modulo': modulo,
+        'plan_seleccionado': plan_param,
+    })
+
+
 def dashboard_view(request):
+    suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and suscriptor.codigo_estado.codigo_estado == 1:
+        return redirect('/planes/?upgrade=1&modulo=dashboard')
+
     dias = _dias_dashboard(request.GET.get('dias'))
     fecha_inicio = timezone.localdate() - timedelta(days=dias)
     licitaciones = (
@@ -92,6 +114,10 @@ def _dias_dashboard(valor):
 
 
 def exportar_dashboard_view(request):
+    suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and suscriptor.codigo_estado.codigo_estado == 1:
+        return redirect('/planes/?upgrade=1&modulo=dashboard')
+
     formato = (request.GET.get('formato') or request.GET.get('format') or 'xlsx').strip().lower()
     periodo_str = request.GET.get('periodo', '').strip() or request.GET.get('gran', 'historico')
 

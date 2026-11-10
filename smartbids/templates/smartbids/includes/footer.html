@@ -18,12 +18,11 @@
                         <li><a>{{ linea }}</a></li>
                     {% endfor %}
                 {% else %}
-                    <li><a>Agua Santa 1400</a></li>
-                    <li><a>2520000 Viña del Mar</a></li>
+                    <li><a>Viña del Mar, Región de Valparaíso</a></li>
                     <li><a>Mobile: +56 9 6595 6863</a></li>
                     <li><a href="mailto:{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}">Email: {{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}</a></li>
                     <li><a>Razón Social: {{ razon_social|default:'no informada' }}</a></li>
-                    <li><a>RUT: {{ rut|default:'00000000-5' }}</a></li>
+                    <li><a>RUT: {{ rut|default:'00.000.000-5' }}</a></li>
                 {% endif %}
             </ul>
         </div>

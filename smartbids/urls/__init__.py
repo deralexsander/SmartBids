@@ -15,6 +15,7 @@ urlpatterns = [
     path('administracion-general/', views.administracion_general_view, name='administracion_general'),
     path('404/', views.handler404_view, name='handler404'),
     path('informacion/', views.informacion_view, name='informacion'),
+    path('planes/', views.planes_view, name='planes'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('dashboard/exportar/', views.exportar_dashboard_view, name='exportar_dashboard'),
     path('dashboard/desglose/', views.dashboard_desglose, name='dashboard_desglose'),

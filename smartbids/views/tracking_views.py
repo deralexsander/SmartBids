@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 def detalle_licitacion_view(request, codigo):
     from smartbids.views.simulador import formulario_para_licitacion
 
+    suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return redirect('/planes/?upgrade=1&modulo=licitaciones')
+
     licitacion = get_object_or_404(
         Licitacion.objects.select_related('lic_codigo_ucom'),
         lic_codigo=codigo,
@@ -188,6 +192,8 @@ def seguimiento_licitacion_view(request, codigo):
     suscriptor = resolver_suscriptor(request)
     if not suscriptor:
         return _error_seguimiento(request, 'Debes iniciar sesión para seguir una licitación.', 403)
+    if getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return _error_seguimiento(request, 'La función de seguimiento es exclusiva para suscriptores.', 403)
 
     licitacion = get_object_or_404(Licitacion, lic_codigo=codigo)
     accion = request.POST.get('accion')

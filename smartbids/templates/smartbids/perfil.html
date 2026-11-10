@@ -51,8 +51,13 @@
                     @suscriptor
                 </p>
 
-                <div class="dash-badge perfil__role-badge">
+                <div class="dash-badge perfil__role-badge" id="perfil-role-badge-wrap">
                     <i class="fa-solid fa-shield-halved"></i> Estado: <span id="profile-role-badge">--</span>
+                </div>
+                <div id="perfil-sidebar-upgrade" style="display: none; margin-top: 0.6rem;">
+                    <a href="{% url 'planes' %}" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+                        <i class="fa-solid fa-crown" style="margin-right: 0.4rem;"></i> Pasar a Suscriptor
+                    </a>
                 </div>
 
                 <ul class="profile-menu">
@@ -121,6 +126,31 @@
 
                 <div class="perfil__progress-track">
                     <div id="profile-progress-fill" class="perfil__progress-fill"></div>
+                </div>
+            </div>
+
+            <!-- Estado de Suscripción / Plan Actual -->
+            <div id="perfil-estado-card" class="dashboard-card" style="margin-bottom: 1.5rem; display: none; padding: 1.2rem 1.6rem; border-left: 5px solid var(--accent-green);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div id="perfil-estado-icono-box" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(30, 196, 152, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-green); font-size: 1.3rem;">
+                            <i id="perfil-estado-icono" class="fa-solid fa-user-check"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-text); font-weight: 700;">Nivel de Cuenta y Acceso</div>
+                            <h4 id="perfil-estado-nombre" style="margin: 0.15rem 0; font-size: 1.15rem; color: var(--dark-green); font-weight: 800;">
+                                Prospecto
+                            </h4>
+                            <p id="perfil-estado-descripcion" style="margin: 0; font-size: 0.9rem; color: var(--text-color);">
+                                Cuenta registrada sin pago. Acceso a Perfil y Resumen del día.
+                            </p>
+                        </div>
+                    </div>
+                    <div id="perfil-estado-accion" style="display: none;">
+                        <a href="{% url 'planes' %}" class="btn btn-primary" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">
+                            <i class="fa-solid fa-crown" style="margin-right: 0.4rem;"></i> Ver Planes y Suscribirme
+                        </a>
+                    </div>
                 </div>
             </div>
 

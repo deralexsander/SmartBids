@@ -34,7 +34,9 @@ def enviar_consulta_contacto(request):
         correo = data.get('email', '').strip() if isinstance(data.get('email'), str) else ''
         telefono = data.get('phone', '').strip() if isinstance(data.get('phone'), str) else ''
         tema = data.get('topic', '').strip() if isinstance(data.get('topic'), str) else ''
-        mensaje = data.get('message', '').strip() if isinstance(data.get('message'), str) else ''
+        empresa = data.get('company', '').strip() if isinstance(data.get('company'), str) else ''
+        plan = data.get('plan', '').strip() if isinstance(data.get('plan'), str) else ''
+        es_suscripcion = data.get('tipo') == 'suscripcion' or tema in {'Solicitud de suscripción', 'Solicitud de Suscripción'}
 
         if not nombre or len(nombre) > 100:
             return JsonResponse({'status': 'error', 'mensaje': 'Ingresa tu nombre (máximo 100 caracteres).'}, status=400)
@@ -44,31 +46,56 @@ def enviar_consulta_contacto(request):
             validate_email(correo)
         except ValidationError:
             return JsonResponse({'status': 'error', 'mensaje': 'Ingresa un correo válido.'}, status=400)
+
+        if es_suscripcion:
+            if not telefono:
+                return JsonResponse({'status': 'error', 'mensaje': 'El teléfono de contacto es obligatorio para solicitar suscripción.'}, status=400)
+            if not empresa:
+                return JsonResponse({'status': 'error', 'mensaje': 'El nombre de la empresa es obligatorio para solicitar suscripción.'}, status=400)
+            if len(empresa) > 150:
+                return JsonResponse({'status': 'error', 'mensaje': 'El nombre de la empresa no puede superar 150 caracteres.'}, status=400)
+            tema = 'Solicitud de suscripción'
+        else:
+            if tema not in {'Consulta comercial', 'Solicitud de suscripción', 'Solicitud de Suscripción', 'Soporte SmartBids', 'Integraciones', 'Otro'}:
+                return JsonResponse({'status': 'error', 'mensaje': 'Selecciona un tema para tu consulta.'}, status=400)
+
         if telefono and (len(telefono) > 20 or not re.fullmatch(r'[+0-9() .-]+', telefono)):
             return JsonResponse({'status': 'error', 'mensaje': 'El teléfono contiene caracteres no permitidos o supera 20 caracteres.'}, status=400)
-        if tema not in {'Consulta comercial', 'Soporte SmartBids', 'Integraciones', 'Otro'}:
-            return JsonResponse({'status': 'error', 'mensaje': 'Selecciona un tema para tu consulta.'}, status=400)
-        if len(mensaje) < 20 or len(mensaje) > 3000:
+
+        mensaje = data.get('message', '').strip() if isinstance(data.get('message'), str) else ''
+        if not mensaje and es_suscripcion:
+            mensaje = f'Solicitud para pasar de cuenta Prospecto a Suscriptor ({plan or "Plan General"}) para la empresa {empresa}.'
+        elif len(mensaje) < 20 or len(mensaje) > 3000:
             return JsonResponse({'status': 'error', 'mensaje': 'La consulta debe tener entre 20 y 3000 caracteres.'}, status=400)
 
         info_contacto = InfoContacto.objects.first()
         correo_destino = extraer_correo_contacto(info_contacto.contacto_texto if info_contacto else '')
-        cuerpo = '\n'.join([
+        lineas_cuerpo = [
             f'Nombre: {nombre}',
             f'Correo: {correo}',
             f'Teléfono: {telefono or "No informado"}',
+        ]
+        if empresa:
+            lineas_cuerpo.append(f'Empresa: {empresa}')
+        if plan:
+            lineas_cuerpo.append(f'Plan de Interés: {plan}')
+        lineas_cuerpo.extend([
             f'Tema: {tema}',
             '',
             mensaje,
         ])
+        cuerpo = '\n'.join(lineas_cuerpo)
+
+        asunto_email = f'Solicitud de Suscripción SmartBids: {empresa or nombre}' if es_suscripcion else f'Nueva consulta SmartBids: {tema}'
         email = EmailMessage(
-            subject=f'Nueva consulta SmartBids: {tema}',
+            subject=asunto_email,
             body=cuerpo,
             to=[correo_destino],
             reply_to=[correo],
         )
         email.send(fail_silently=False)
-        return JsonResponse({'status': 'ok', 'mensaje': 'Tu consulta fue enviada. Gracias por escribirnos.'})
+        msg_exito = 'Tu solicitud de suscripción fue recibida con éxito. Nuestro equipo comercial se comunicará contigo a la brevedad para coordinar la activación tras confirmar el pago.' if es_suscripcion else 'Tu consulta fue enviada. Gracias por escribirnos.'
+        return JsonResponse({'status': 'ok', 'mensaje': msg_exito})
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'mensaje': 'No se pudo leer el formulario enviado.'}, status=400)
     except Exception:
