@@ -1018,15 +1018,19 @@ def exportar_datos_arcop(request):
             logger.warning(f"[ARCOP] No se pudo registrar log de solicitud: {e_arcop}")
 
         # Obtener datos institucionales dinámicos desde Información Institucional y Footer
-        correo_privacidad = 'smartbids.qa@chileavanza.cl'
+        correo_privacidad = 'contacto@chileavanza.cl'
         razon_social = 'no informada'
         rut = '00000000-5'
         try:
             from smartbids.context_processors import extraer_correo_contacto, extraer_razon_social, extraer_rut_empresa
-            from smartbids.models.config import InfoContacto
+            from smartbids.models.config import InfoContacto, obtener_correos_sistema
+            correos_cfg = obtener_correos_sistema()
+            correo_privacidad = correos_cfg.get('email_contacto') or 'contacto@chileavanza.cl'
             info = InfoContacto.objects.first()
             if info and info.contacto_texto:
-                correo_privacidad = extraer_correo_contacto(info.contacto_texto)
+                correo_en_texto = extraer_correo_contacto(info.contacto_texto)
+                if correo_en_texto:
+                    correo_privacidad = correo_en_texto
                 razon_social = extraer_razon_social(info.contacto_texto)
                 rut = extraer_rut_empresa(info.contacto_texto)
         except Exception:

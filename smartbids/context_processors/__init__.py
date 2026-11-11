@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -7,7 +8,7 @@ from django.core.validators import validate_email
 from smartbids.models.config import InfoContacto, obtener_correos_sistema
 
 logger = logging.getLogger(__name__)
-EMAIL_CONTACTO_RESPALDO = 'contacto@chileavanza.cl'
+EMAIL_CONTACTO_RESPALDO = os.getenv('EMAIL_CONTACTO', 'contacto@chileavanza.cl')
 
 
 def extraer_correo_contacto(texto):

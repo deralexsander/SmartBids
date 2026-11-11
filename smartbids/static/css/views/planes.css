@@ -481,15 +481,180 @@
     gap: 0.4rem;
 }
 
+/* 5. Funcionalidades en Detalle (Grid) */
+.planes-features-section {
+    margin-bottom: 3.5rem;
+}
+
+.planes-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.planes-feature-card {
+    background: var(--white);
+    border: 1px solid rgba(177, 210, 202, 0.4);
+    border-radius: 16px;
+    padding: 1.8rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.planes-feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(17, 99, 78, 0.1);
+    border-color: var(--accent-green);
+}
+
+.planes-feature-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(30, 196, 152, 0.12);
+    color: var(--accent-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 1.1rem;
+}
+
+.planes-feature-card h3 {
+    font-size: 1.15rem;
+    color: var(--dark-green);
+    margin: 0 0 0.6rem 0;
+    font-weight: 700;
+}
+
+.planes-feature-card p {
+    font-size: 0.92rem;
+    color: var(--gray-text);
+    line-height: 1.55;
+    margin: 0 0 1.2rem 0;
+    flex-grow: 1;
+}
+
+.planes-feature-badge {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent-green);
+    background: rgba(30, 196, 152, 0.1);
+    border-radius: 6px;
+    padding: 0.3rem 0.65rem;
+    align-self: flex-start;
+}
+
+/* 6. Banner y Botones de Acción (Redirección a Contacto) */
+.planes-cta-section {
+    margin-top: 3.5rem;
+    margin-bottom: 3.5rem;
+}
+
+.planes-cta-card {
+    background: linear-gradient(135deg, rgba(30, 196, 152, 0.07) 0%, rgba(17, 99, 78, 0.12) 100%);
+    border: 1.5px solid var(--accent-green);
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    text-align: center;
+    box-shadow: 0 14px 35px rgba(17, 99, 78, 0.08);
+}
+
+.planes-cta-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.planes-cta-title {
+    font-size: 2rem;
+    color: var(--dark-green);
+    font-weight: 800;
+    margin: 0.6rem 0 1rem 0;
+}
+
+.planes-cta-desc {
+    font-size: 1.05rem;
+    color: var(--gray-text);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.planes-cta-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.planes-btn-action {
+    padding: 0.85rem 1.6rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 12px;
+}
+
+.planes-btn-secondary {
+    padding: 0.85rem 1.4rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 12px;
+}
+
+.planes-cta-footnote {
+    font-size: 0.85rem;
+    color: var(--muted-teal);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
 /* ==========================================================================
    MODO OSCURO (DARK MODE)
    ========================================================================== */
 html.dark-mode .planes-comparison-card,
 html.dark-mode .plan-card,
-html.dark-mode .planes-form-card {
+html.dark-mode .planes-form-card,
+html.dark-mode .planes-feature-card {
     background: #111d1a;
     border-color: rgba(177, 210, 202, 0.2);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+html.dark-mode .planes-feature-card h3 {
+    color: #ffffff;
+}
+
+html.dark-mode .planes-feature-card p {
+    color: var(--text-muted);
+}
+
+html.dark-mode .planes-cta-card {
+    background: linear-gradient(135deg, rgba(30, 196, 152, 0.08) 0%, rgba(11, 20, 18, 0.95) 100%);
+    border-color: var(--accent-green);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+
+html.dark-mode .planes-cta-title {
+    color: #ffffff;
+}
+
+html.dark-mode .planes-cta-desc,
+html.dark-mode .planes-cta-footnote {
+    color: var(--text-muted);
 }
 
 html.dark-mode .plan-card--featured {

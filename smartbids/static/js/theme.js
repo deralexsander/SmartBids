@@ -27,7 +27,9 @@ export function getSavedTheme() {
  * @param {boolean} persist Si debe guardarse en el localStorage del navegador
  */
 export function applyTheme(theme, persist = true) {
-    const isDark = theme === 'dark';
+    const esProspecto = Boolean(document.body?.classList.contains('user-is-prospecto') || window.currentUserCodigoEstado === 1);
+    const effectiveTheme = (esProspecto && theme === 'dark') ? 'light' : theme;
+    const isDark = effectiveTheme === 'dark';
     const root = document.documentElement;
 
     if (isDark) {
@@ -151,6 +153,15 @@ export function setupThemeEvents() {
             sw.dataset.themeBound = 'true';
             sw.checked = currentTheme === 'dark';
             sw.addEventListener('change', (e) => {
+                if (document.body?.classList.contains('user-is-prospecto') || window.currentUserCodigoEstado === 1) {
+                    e.preventDefault();
+                    sw.checked = false;
+                    applyTheme('light', true);
+                    if (typeof window.mostrarMensaje === 'function') {
+                        window.mostrarMensaje('El Modo Oscuro es una función exclusiva para Suscriptores.', 'alerta');
+                    }
+                    return;
+                }
                 applyTheme(e.target.checked ? 'dark' : 'light', true);
             });
         }

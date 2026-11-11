@@ -15,12 +15,16 @@
             <ul>
                 {% if footer_contacto_lineas %}
                     {% for linea in footer_contacto_lineas %}
-                        <li><a>{{ linea }}</a></li>
+                        {% if 'Email:' in linea or 'Correo:' in linea or '@' in linea %}
+                            <li><a href="mailto:{{ contacto_email|default:'contacto@chileavanza.cl' }}">{{ linea }}</a></li>
+                        {% else %}
+                            <li><a>{{ linea }}</a></li>
+                        {% endif %}
                     {% endfor %}
                 {% else %}
                     <li><a>Viña del Mar, Región de Valparaíso</a></li>
                     <li><a>Mobile: +56 9 6595 6863</a></li>
-                    <li><a href="mailto:{{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}">Email: {{ contacto_email|default:'smartbids.qa@chileavanza.cl' }}</a></li>
+                    <li><a href="mailto:{{ contacto_email|default:'contacto@chileavanza.cl' }}">Email: {{ contacto_email|default:'contacto@chileavanza.cl' }}</a></li>
                     <li><a>Razón Social: {{ razon_social|default:'no informada' }}</a></li>
                     <li><a>RUT: {{ rut|default:'00.000.000-5' }}</a></li>
                 {% endif %}

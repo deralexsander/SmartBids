@@ -129,31 +129,6 @@
                 </div>
             </div>
 
-            <!-- Estado de Suscripción / Plan Actual -->
-            <div id="perfil-estado-card" class="dashboard-card" style="margin-bottom: 1.5rem; display: none; padding: 1.2rem 1.6rem; border-left: 5px solid var(--accent-green);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div id="perfil-estado-icono-box" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(30, 196, 152, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-green); font-size: 1.3rem;">
-                            <i id="perfil-estado-icono" class="fa-solid fa-user-check"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-text); font-weight: 700;">Nivel de Cuenta y Acceso</div>
-                            <h4 id="perfil-estado-nombre" style="margin: 0.15rem 0; font-size: 1.15rem; color: var(--dark-green); font-weight: 800;">
-                                Prospecto
-                            </h4>
-                            <p id="perfil-estado-descripcion" style="margin: 0; font-size: 0.9rem; color: var(--text-color);">
-                                Cuenta registrada sin pago. Acceso a Perfil y Resumen del día.
-                            </p>
-                        </div>
-                    </div>
-                    <div id="perfil-estado-accion" style="display: none;">
-                        <a href="{% url 'planes' %}" class="btn btn-primary" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">
-                            <i class="fa-solid fa-crown" style="margin-right: 0.4rem;"></i> Ver Planes y Suscribirme
-                        </a>
-                    </div>
-                </div>
-            </div>
-
             <!-- 1. Datos Personales -->
             <div id="tab-info" class="dashboard-card tab-content-panel active">
                 <div class="dashboard-header">
@@ -684,7 +659,7 @@
                     </div>
                 </div>
 
-                <div class="stat-mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.4rem; border-radius: 14px; margin-bottom: 1.5rem;">
+                <div class="stat-mini-card" id="perfil-theme-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.4rem; border-radius: 14px; margin-bottom: 1.5rem;">
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <span id="theme-toggle-icon-tab" class="theme-icon-wrap" style="width: 42px; height: 42px; border-radius: 10px; background: rgba(30, 196, 152, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-green); font-size: 1.2rem;">
                             <i class="fa-solid fa-moon"></i>

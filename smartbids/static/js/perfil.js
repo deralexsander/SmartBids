@@ -2,6 +2,8 @@ import { auth } from './firebase-config.js';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { setButtonLoading, SessionManager } from './functions.js';
 import { mostrarMensaje } from './mensaje.js';
+import { aplicarRestriccionesEstadoUsuario } from './sesion.js';
+import { applyTheme } from './theme.js';
 
 function formatTimestamp(ts) {
     if (!ts) return 'No registrada';
@@ -1678,9 +1680,21 @@ function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', y
         }
 
         if (btnGuardar) {
-            btnGuardar.style.display = 'inline-flex';
-            btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
-            btnGuardar.className = 'btn btn-primary';
+            if (window.currentUserCodigoEstado === 1) {
+                btnGuardar.disabled = true;
+                btnGuardar.style.opacity = '0.6';
+                btnGuardar.style.cursor = 'not-allowed';
+                btnGuardar.title = 'Función exclusiva para Suscriptores. Solo se permite consultar empresas por RUT.';
+                btnGuardar.innerHTML = '<i class="fa-solid fa-lock"></i> Guardar Empresa (Exclusivo Suscriptores)';
+            } else {
+                btnGuardar.disabled = false;
+                btnGuardar.style.opacity = '1';
+                btnGuardar.style.cursor = 'pointer';
+                btnGuardar.style.display = 'inline-flex';
+                btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                btnGuardar.className = 'btn btn-primary';
+                btnGuardar.title = '';
+            }
         }
 
         const badgeTributaria = document.querySelector('#tab-empresa .dash-badge');
@@ -2146,6 +2160,9 @@ export async function inicializarVistaPerfil(user) {
 
             const roleBadge = document.getElementById('profile-role-badge');
             const codEstado = data.codigo_estado;
+            window.currentUserCodigoEstado = codEstado;
+            aplicarRestriccionesEstadoUsuario(codEstado);
+
             let labelEstado = data.nombre_estado || 'Prospecto';
             if (codEstado === 1) {
                 labelEstado = 'Prospecto';
@@ -2161,45 +2178,31 @@ export async function inicializarVistaPerfil(user) {
                 sidebarUpgrade.style.display = (codEstado === 1) ? 'block' : 'none';
             }
 
-            const estadoCard = document.getElementById('perfil-estado-card');
-            const estadoNombre = document.getElementById('perfil-estado-nombre');
-            const estadoDesc = document.getElementById('perfil-estado-descripcion');
-            const estadoAccion = document.getElementById('perfil-estado-accion');
-            const estadoIcono = document.getElementById('perfil-estado-icono');
-            const estadoIconoBox = document.getElementById('perfil-estado-icono-box');
+            // Restricciones de Prospecto en Perfil: Modo Oscuro y Guardar Empresa
+            const themeToggleTab = document.getElementById('theme-dark-toggle-tab');
+            const themeStatusTab = document.getElementById('theme-toggle-status-tab');
+            const btnGuardarEmpresa = document.getElementById('btn-guardar-empresa');
 
-            if (estadoCard) {
-                estadoCard.style.display = 'block';
-                if (codEstado === 1) {
-                    if (estadoNombre) estadoNombre.textContent = 'Prospecto (Registrado sin pago)';
-                    if (estadoDesc) estadoDesc.textContent = 'Tu cuenta te permite configurar tus antecedentes y revisar el Resumen del día. Las vistas principales (Licitaciones, Dashboards y Machine Learning) están reservadas para Suscriptores.';
-                    if (estadoAccion) estadoAccion.style.display = 'block';
-                    if (estadoIcono) estadoIcono.className = 'fa-solid fa-user-clock';
-                    if (estadoIconoBox) {
-                        estadoIconoBox.style.background = 'rgba(217, 119, 6, 0.12)';
-                        estadoIconoBox.style.color = '#d97706';
-                    }
-                    estadoCard.style.borderLeftColor = '#d97706';
-                } else if (codEstado === 2) {
-                    if (estadoNombre) estadoNombre.textContent = 'Suscriptor (Acceso Total)';
-                    if (estadoDesc) estadoDesc.textContent = '¡Tienes acceso completo y habilitado a todas las propuestas de valor: Explorador de Licitaciones en 346 comunas, Dashboards analíticos y Machine Learning predictivo!';
-                    if (estadoAccion) estadoAccion.style.display = 'none';
-                    if (estadoIcono) estadoIcono.className = 'fa-solid fa-crown';
-                    if (estadoIconoBox) {
-                        estadoIconoBox.style.background = 'rgba(30, 196, 152, 0.15)';
-                        estadoIconoBox.style.color = 'var(--accent-green)';
-                    }
-                    estadoCard.style.borderLeftColor = 'var(--accent-green)';
-                } else if (codEstado === 5) {
-                    if (estadoNombre) estadoNombre.textContent = 'Administrador (Gestión y Control)';
-                    if (estadoDesc) estadoDesc.textContent = 'Cuenta de administración del sistema con control total y panel de gestión institucional habilitado.';
-                    if (estadoAccion) estadoAccion.style.display = 'none';
-                    if (estadoIcono) estadoIcono.className = 'fa-solid fa-shield-halved';
-                    if (estadoIconoBox) {
-                        estadoIconoBox.style.background = 'rgba(37, 99, 235, 0.12)';
-                        estadoIconoBox.style.color = '#2563eb';
-                    }
-                    estadoCard.style.borderLeftColor = '#2563eb';
+            if (codEstado === 1) {
+                // Modo Oscuro bloqueado: por defecto queda en blanco
+                applyTheme('light', true);
+                if (themeToggleTab) {
+                    themeToggleTab.checked = false;
+                    themeToggleTab.disabled = true;
+                    themeToggleTab.title = 'Función exclusiva para Suscriptores';
+                }
+                if (themeStatusTab) {
+                    themeStatusTab.innerHTML = '<i class="fa-solid fa-lock" style="font-size: 0.78rem; margin-right: 4px;"></i> Desactivado (Exclusivo Suscriptores)';
+                    themeStatusTab.style.color = '#d97706';
+                }
+
+                // Guardar empresa bloqueado (solo búsqueda por RUT permitida)
+                if (btnGuardarEmpresa) {
+                    btnGuardarEmpresa.disabled = true;
+                    btnGuardarEmpresa.style.opacity = '0.6';
+                    btnGuardarEmpresa.style.cursor = 'not-allowed';
+                    btnGuardarEmpresa.title = 'Función exclusiva para Suscriptores. Solo se permite consultar empresas por RUT.';
+                    btnGuardarEmpresa.innerHTML = '<i class="fa-solid fa-lock"></i> Guardar Empresa (Exclusivo Suscriptores)';
                 }
             }
 
@@ -2540,8 +2543,16 @@ if (btnBuscarRut && inputRutEmpresa) {
                 } else {
                     const btnGuardar = document.getElementById('btn-guardar-empresa');
                     if (btnGuardar) {
-                        btnGuardar.style.display = 'inline-flex';
-                        btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                        if (window.currentUserCodigoEstado === 1) {
+                            btnGuardar.disabled = true;
+                            btnGuardar.style.opacity = '0.6';
+                            btnGuardar.style.cursor = 'not-allowed';
+                            btnGuardar.title = 'Función exclusiva para Suscriptores. Solo se permite consultar empresas por RUT.';
+                            btnGuardar.innerHTML = '<i class="fa-solid fa-lock"></i> Guardar Empresa (Exclusivo Suscriptores)';
+                        } else {
+                            btnGuardar.style.display = 'inline-flex';
+                            btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                        }
                     }
                     registrarCambio('empresa');
                     mostrarMensaje('Datos de empresa cargados con éxito.', 'exito');
@@ -2550,8 +2561,16 @@ if (btnBuscarRut && inputRutEmpresa) {
                 limpiarCamposEmpresa();
                 const btnGuardar = document.getElementById('btn-guardar-empresa');
                 if (btnGuardar) {
-                    btnGuardar.style.display = 'inline-flex';
-                    btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                    if (window.currentUserCodigoEstado === 1) {
+                        btnGuardar.disabled = true;
+                        btnGuardar.style.opacity = '0.6';
+                        btnGuardar.style.cursor = 'not-allowed';
+                        btnGuardar.title = 'Función exclusiva para Suscriptores. Solo se permite consultar empresas por RUT.';
+                        btnGuardar.innerHTML = '<i class="fa-solid fa-lock"></i> Guardar Empresa (Exclusivo Suscriptores)';
+                    } else {
+                        btnGuardar.style.display = 'inline-flex';
+                        btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                    }
                 }
                 registrarCambio('empresa');
                 mostrarMensaje(
@@ -2727,6 +2746,11 @@ if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
 
     formEmpresa.onsubmit = (e) => {
         e.preventDefault();
+
+        if (window.currentUserCodigoEstado === 1) {
+            mostrarMensaje('La vinculación y guardado de empresa es exclusivo para Suscriptores. Los prospectos pueden consultar por RUT libremente.', 'alerta');
+            return;
+        }
 
         const rut = document.getElementById('empresa-rut')?.value.trim();
         const razonSocial = document.getElementById('empresa-razon-social')?.value.trim();

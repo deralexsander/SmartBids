@@ -972,13 +972,257 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             self.assertTrue(mock_notificar.called)
             self.assertEqual(mock_notificar.call_args[1]['afectado_email'], 'admin2@empresa.cl')
 
+    def test_obtener_correos_sistema_lee_env(self):
+        import os
+        from unittest.mock import patch
+        from smartbids.models.config import obtener_correos_sistema
+
+        with patch.dict(os.environ, {
+            'EMAIL_CONTACTO': 'contacto_custom@chileavanza.cl',
+            'EMAIL_NOTIFICACIONES': 'qa_custom@chileavanza.cl',
+            'EMAIL_NOMBRE_REMITENTE': 'SmartBids Custom',
+            'EMAIL_SEGURIDAD_AUDITORIA': 'seguridad_custom@chileavanza.cl'
+        }), patch('smartbids.models.config.ConfiguracionCorreo.objects.first', return_value=None):
+            cfg = obtener_correos_sistema()
+            self.assertEqual(cfg['email_contacto'], 'contacto_custom@chileavanza.cl')
+            self.assertEqual(cfg['email_notificaciones'], 'qa_custom@chileavanza.cl')
+            self.assertEqual(cfg['nombre_remitente'], 'SmartBids Custom')
+            self.assertEqual(cfg['email_seguridad_auditoria'], 'seguridad_custom@chileavanza.cl')
+
+    def test_notificar_cambio_rol_prospecto_a_suscriptor(self):
+        from unittest.mock import patch, MagicMock
+        from smartbids.models.config import notificar_cambio_rol_suscriptor
+
+        mock_estado_prospecto = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_estado_suscriptor = MagicMock(codigo_estado=2, nombre_estado='Suscriptor')
+
+        with patch('django.core.mail.send_mail') as mock_send_mail:
+            res = notificar_cambio_rol_suscriptor(
+                ejecutor_email='admin@chileavanza.cl',
+                ejecutor_nombre='Admin Sistema',
+                afectado_email='cliente@empresa.cl',
+                afectado_nombre='Cliente Uno',
+                estado_anterior=mock_estado_prospecto,
+                estado_nuevo=mock_estado_suscriptor
+            )
+            self.assertTrue(res['enviado'])
+            self.assertEqual(res['tipo'], 'PROSPECTO_A_SUSCRIPTOR')
+            self.assertTrue(mock_send_mail.called)
+            args, kwargs = mock_send_mail.call_args
+            self.assertIn('¡Bienvenido(a) a SmartBids Suscriptor!', kwargs['subject'])
+            self.assertIn('smartbids.qa@chileavanza.cl', kwargs['from_email'])
+            self.assertEqual(kwargs['recipient_list'], ['cliente@empresa.cl'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['recipient_list'])
+            cuerpo = kwargs['message']
+            self.assertIn('346 comunas', cuerpo)
+            self.assertIn('Machine Learning XGBoost', cuerpo)
+            self.assertIn('Dashboards Analíticos', cuerpo)
+            self.assertNotIn('contacto@chileavanza.cl', cuerpo)
+
+    def test_notificar_cambio_rol_asignacion_administrador(self):
+        from unittest.mock import patch, MagicMock
+        from smartbids.models.config import notificar_cambio_rol_suscriptor
+
+        mock_estado_suscriptor = MagicMock(codigo_estado=2, nombre_estado='Suscriptor')
+        mock_estado_admin = MagicMock(codigo_estado=5, nombre_estado='Administrador')
+
+        with patch('django.core.mail.send_mail') as mock_send_mail:
+            res = notificar_cambio_rol_suscriptor(
+                ejecutor_email='admin.jefe@chileavanza.cl',
+                ejecutor_nombre='Jefe de Administradores',
+                afectado_email='nuevo.admin@chileavanza.cl',
+                afectado_nombre='Nuevo Admin',
+                estado_anterior=mock_estado_suscriptor,
+                estado_nuevo=mock_estado_admin
+            )
+            self.assertTrue(res['enviado'])
+            self.assertEqual(res['tipo'], 'ASIGNACION_ADMIN')
+            self.assertTrue(mock_send_mail.called)
+            args, kwargs = mock_send_mail.call_args
+            self.assertIn('Asignación de Rol Administrador', kwargs['subject'])
+            self.assertIn('smartbids.qa@chileavanza.cl', kwargs['from_email'])
+            self.assertEqual(kwargs['recipient_list'], ['nuevo.admin@chileavanza.cl'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['recipient_list'])
+            cuerpo = kwargs['message']
+            self.assertIn('El administrador con correo admin.jefe@chileavanza.cl te ha otorgado el rol de Administrador en SmartBids.', cuerpo)
+            self.assertIn('Gestión y Control de Usuarios', cuerpo)
+            self.assertNotIn('contacto@chileavanza.cl', cuerpo)
+
+    def test_notificar_cambio_rol_revocacion_administrador(self):
+        from unittest.mock import patch, MagicMock
+        from smartbids.models.config import notificar_cambio_rol_suscriptor
+
+        mock_estado_admin = MagicMock(codigo_estado=5, nombre_estado='Administrador')
+        mock_estado_suscriptor = MagicMock(codigo_estado=2, nombre_estado='Suscriptor')
+
+        with patch('django.core.mail.send_mail') as mock_send_mail:
+            res = notificar_cambio_rol_suscriptor(
+                ejecutor_email='admin.jefe@chileavanza.cl',
+                ejecutor_nombre='Jefe de Administradores',
+                afectado_email='ex.admin@chileavanza.cl',
+                afectado_nombre='Ex Admin',
+                estado_anterior=mock_estado_admin,
+                estado_nuevo=mock_estado_suscriptor
+            )
+            self.assertTrue(res['enviado'])
+            self.assertEqual(res['tipo'], 'REVOCACION_ADMIN')
+            self.assertTrue(mock_send_mail.called)
+            args, kwargs = mock_send_mail.call_args
+            self.assertIn('Revocación de Rol Administrador', kwargs['subject'])
+            self.assertIn('smartbids.qa@chileavanza.cl', kwargs['from_email'])
+            self.assertEqual(kwargs['recipient_list'], ['ex.admin@chileavanza.cl'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['recipient_list'])
+            cuerpo = kwargs['message']
+            self.assertIn('El administrador con correo admin.jefe@chileavanza.cl te ha quitado el rol de Administrador en SmartBids.', cuerpo)
+            self.assertNotIn('contacto@chileavanza.cl', cuerpo)
+
+    def test_notificar_accion_entre_administradores_sin_contacto(self):
+        from unittest.mock import patch
+        from smartbids.models.config import notificar_accion_entre_administradores
+
+        with patch('django.core.mail.send_mail') as mock_send_mail:
+            notificar_accion_entre_administradores(
+                ejecutor_email='admin1@chileavanza.cl',
+                ejecutor_nombre='Admin Uno',
+                afectado_email='admin2@chileavanza.cl',
+                accion='Modificación de Políticas',
+                detalle='Prueba de acción de seguridad'
+            )
+            self.assertTrue(mock_send_mail.called)
+            args, kwargs = mock_send_mail.call_args
+            self.assertEqual(kwargs['recipient_list'], ['admin2@chileavanza.cl'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['recipient_list'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['message'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['html_message'])
+            self.assertIn('smartbids.qa@chileavanza.cl', kwargs['from_email'])
+
+    def test_patch_usuario_cambio_rol_envia_notificacion_y_auditoria(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from smartbids.views.firebase_policy_views import usuarios_firebase
+
+        mock_target_susc = MagicMock(
+            codigo_estado=MagicMock(nombre_estado='Prospecto', codigo_estado=1),
+            sus_nombre1='Juan',
+            sus_apellido1='Perez',
+            sus_nombre_social=''
+        )
+        mock_nuevo_estado = MagicMock(nombre_estado='Suscriptor', codigo_estado=2)
+        mock_session = MagicMock()
+
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.views.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_nuevo_estado)), \
+             patch('smartbids.views.firebase_policy_views.notificar_cambio_rol_suscriptor') as mock_notificar_rol:
+
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
+
+            body = json.dumps({'uid': 'user_456', 'codigo_estado': 2, 'email': 'juan@empresa.cl'})
+            req = self.rf.patch(
+                '/api/firebase/usuarios/',
+                data=body,
+                content_type='application/json',
+                HTTP_X_FIREBASE_UID='admin_123',
+                HTTP_X_FIREBASE_EMAIL='admin@chileavanza.cl'
+            )
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_notificar_rol.called)
+            kwargs = mock_notificar_rol.call_args[1]
+            self.assertEqual(kwargs['ejecutor_email'], 'admin@chileavanza.cl')
+            self.assertEqual(kwargs['afectado_email'], 'juan@empresa.cl')
+            self.assertEqual(kwargs['estado_nuevo'], mock_nuevo_estado)
+
+    def test_patch_usuario_otorgar_admin_envia_notificacion_y_auditoria(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from smartbids.views.firebase_policy_views import usuarios_firebase
+
+        mock_target_susc = MagicMock(
+            codigo_estado=MagicMock(nombre_estado='Suscriptor', codigo_estado=2),
+            sus_nombre1='Pedro',
+            sus_apellido1='Gomez',
+            sus_nombre_social=''
+        )
+        mock_admin_estado = MagicMock(nombre_estado='Administrador', codigo_estado=5)
+        mock_session = MagicMock()
+
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.views.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_admin_estado)), \
+             patch('smartbids.views.firebase_policy_views.registrar_auditoria_admin') as mock_auditoria, \
+             patch('smartbids.views.firebase_policy_views.notificar_cambio_rol_suscriptor') as mock_notificar_rol:
+
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
+
+            body = json.dumps({'uid': 'user_789', 'codigo_estado': 5, 'email': 'pedro@empresa.cl'})
+            req = self.rf.patch(
+                '/api/firebase/usuarios/',
+                data=body,
+                content_type='application/json',
+                HTTP_X_FIREBASE_UID='admin_123',
+                HTTP_X_FIREBASE_EMAIL='admin.principal@chileavanza.cl'
+            )
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_auditoria.called)
+            self.assertEqual(mock_auditoria.call_args[1]['accion'], 'ASIGNACION_ADMIN')
+            self.assertTrue(mock_notificar_rol.called)
+            self.assertEqual(mock_notificar_rol.call_args[1]['ejecutor_email'], 'admin.principal@chileavanza.cl')
+            self.assertEqual(mock_notificar_rol.call_args[1]['afectado_email'], 'pedro@empresa.cl')
+
+    def test_patch_usuario_revocar_admin_envia_notificacion_y_auditoria(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from smartbids.views.firebase_policy_views import usuarios_firebase
+
+        mock_target_susc = MagicMock(
+            codigo_estado=MagicMock(nombre_estado='Administrador', codigo_estado=5),
+            sus_nombre1='Carlos',
+            sus_apellido1='Vial',
+            sus_nombre_social=''
+        )
+        mock_suscriptor_estado = MagicMock(nombre_estado='Suscriptor', codigo_estado=2)
+        mock_session = MagicMock()
+
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.views.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_suscriptor_estado)), \
+             patch('smartbids.views.firebase_policy_views.registrar_auditoria_admin') as mock_auditoria, \
+             patch('smartbids.views.firebase_policy_views.notificar_cambio_rol_suscriptor') as mock_notificar_rol:
+
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
+
+            body = json.dumps({'uid': 'user_999', 'codigo_estado': 2, 'email': 'carlos@empresa.cl'})
+            req = self.rf.patch(
+                '/api/firebase/usuarios/',
+                data=body,
+                content_type='application/json',
+                HTTP_X_FIREBASE_UID='admin_123',
+                HTTP_X_FIREBASE_EMAIL='admin.principal@chileavanza.cl'
+            )
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_auditoria.called)
+            self.assertEqual(mock_auditoria.call_args[1]['accion'], 'CAMBIO_ROL')
+            self.assertTrue(mock_notificar_rol.called)
+            self.assertEqual(mock_notificar_rol.call_args[1]['ejecutor_email'], 'admin.principal@chileavanza.cl')
+            self.assertEqual(mock_notificar_rol.call_args[1]['afectado_email'], 'carlos@empresa.cl')
+
     def test_config_correo_get_y_patch(self):
         import json
         from unittest.mock import patch, MagicMock
         from smartbids.views.mensajeria_views import administrar_config_correo
 
         with patch('smartbids.views.mensajeria_views._usuario_es_administrador', return_value=True), \
-             patch('smartbids.views.mensajeria_views.ConfiguracionCorreo.objects') as mock_cfg_objs:
+             patch('smartbids.views.mensajeria_views.ConfiguracionCorreo.objects') as mock_cfg_objs, \
+             patch('smartbids.views.mensajeria_views.InfoContacto.objects'):
             
             mock_cfg = MagicMock(
                 email_contacto='contacto@chileavanza.cl',
@@ -1007,6 +1251,66 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             self.assertEqual(resp_patch.status_code, 200)
             data_patch = json.loads(resp_patch.content)
             self.assertEqual(data_patch['config']['email_contacto'], 'nuevo_contacto@smartbids.cl')
+
+    def test_correo_contacto_default_es_contacto_chileavanza(self):
+        from unittest.mock import patch
+        from smartbids.context_processors import footer_info_context
+
+        req = self.rf.get('/')
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.models.config.ConfiguracionCorreo.objects.first', return_value=None):
+            ctx = footer_info_context(req)
+            self.assertEqual(ctx['contacto_email'], 'contacto@chileavanza.cl')
+
+    def test_correo_contacto_se_adapta_dinamicamente_desde_configuracion_correo(self):
+        from unittest.mock import patch, MagicMock
+        from smartbids.context_processors import footer_info_context
+
+        req = self.rf.get('/')
+        mock_cfg = MagicMock(
+            email_contacto='nuevo_soporte@chileavanza.cl',
+            email_notificaciones='qa@chileavanza.cl',
+            nombre_remitente='SmartBids',
+            email_seguridad_auditoria='auditoria@chileavanza.cl'
+        )
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.models.config.ConfiguracionCorreo.objects.first', return_value=mock_cfg):
+            ctx = footer_info_context(req)
+            self.assertEqual(ctx['contacto_email'], 'nuevo_soporte@chileavanza.cl')
+
+    def test_enviar_consulta_contacto_usa_correo_de_base_de_datos(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from smartbids.views.mensajeria_views import enviar_consulta_contacto
+
+        mock_cfg = MagicMock(
+            email_contacto='comercial@chileavanza.cl',
+            email_notificaciones='qa@chileavanza.cl',
+            nombre_remitente='SmartBids',
+            email_seguridad_auditoria='seguridad@chileavanza.cl'
+        )
+
+        body = json.dumps({
+            'name': 'Empresa Test',
+            'email': 'prospecto@empresa.cl',
+            'phone': '+56912345678',
+            'topic': 'Consulta comercial',
+            'message': 'Esta es una consulta detallada para cotizar el plan anual de la plataforma.'
+        })
+        req = self.rf.post('/api/contacto/', data=body, content_type='application/json')
+
+        with patch('smartbids.models.config.ConfiguracionCorreo.objects.first', return_value=mock_cfg), \
+             patch('smartbids.views.mensajeria_views.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.views.mensajeria_views.EmailMessage') as mock_email_cls:
+
+            mock_email_instance = MagicMock()
+            mock_email_cls.return_value = mock_email_instance
+
+            resp = enviar_consulta_contacto(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_email_cls.called)
+            kwargs = mock_email_cls.call_args[1]
+            self.assertEqual(kwargs['to'], ['comercial@chileavanza.cl'])
 
     def test_auditoria_admin_view_retorna_registros(self):
         import json
@@ -2433,7 +2737,7 @@ class FlujoSuscripcionRolesYPlanesTests(SimpleTestCase):
         self.assertIn('200.000', content)
         self.assertIn('Plan Mensual', content)
         self.assertIn('Plan Anual', content)
-        self.assertIn('subscription-request-form', content)
+        self.assertIn('planes-cta-section', content)
         self.assertIn('Comparativa de Acceso y Funcionalidades', content)
 
     def test_planes_view_upgrade_alerta(self):

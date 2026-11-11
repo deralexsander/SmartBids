@@ -1233,6 +1233,43 @@ html.dark-mode .auth__resend-desc {
     color: #fef3c7 !important;
 }
 
+/* Botón y Panel de Ayuda en Login */
+html.dark-mode .auth__help-toggle-btn {
+    border-color: var(--border-subtle) !important;
+    color: var(--text-primary) !important;
+    background: transparent !important;
+}
+
+html.dark-mode .auth__help-toggle-btn:hover {
+    background-color: rgba(30, 196, 152, 0.12) !important;
+    border-color: var(--accent-green) !important;
+    color: var(--accent-green) !important;
+}
+
+html.dark-mode .auth__help-toggle-btn[aria-expanded="true"],
+html.dark-mode .auth__help-toggle-btn.active {
+    background-color: rgba(30, 196, 152, 0.18) !important;
+    border-color: var(--accent-green) !important;
+    color: var(--accent-green) !important;
+}
+
+html.dark-mode .auth__help-panel {
+    background: var(--bg-surface-elevated) !important;
+    border: 1.5px solid var(--border-subtle) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+}
+
+html.dark-mode .auth__help-prompt,
+html.dark-mode .cta-container .auth__help-prompt,
+html.dark-mode .auth__help-panel .auth__help-prompt {
+    color: #ffffff !important;
+}
+
+html.dark-mode .auth__help-prompt i,
+html.dark-mode .auth__help-panel .auth__help-prompt i {
+    color: var(--accent-green) !important;
+}
+
 html.dark-mode .auth__help-btn {
     background: var(--bg-surface) !important;
     border-color: var(--border-subtle) !important;
@@ -1242,6 +1279,48 @@ html.dark-mode .auth__help-btn {
 html.dark-mode .auth__help-btn:hover {
     background: rgba(30, 196, 152, 0.15) !important;
     border-color: var(--accent-green) !important;
+    color: #ffffff !important;
+}
+
+html.dark-mode .auth__help-btn i {
+    color: inherit !important;
+}
+
+/* Campos de formulario e inputs en autenticación y gestión de cuenta */
+html.dark-mode .cta-container .form-inline input,
+html.dark-mode .cta-form input,
+html.dark-mode .action-card .form-inline input,
+html.dark-mode .action-form input,
+html.dark-mode .auth__field input {
+    background-color: var(--bg-input) !important;
+    border: 1.5px solid var(--border-subtle) !important;
+    color: #ffffff !important;
+}
+
+html.dark-mode .cta-container .form-inline input:focus,
+html.dark-mode .cta-form input:focus,
+html.dark-mode .action-card .form-inline input:focus,
+html.dark-mode .action-form input:focus,
+html.dark-mode .auth__field input:focus {
+    border-color: var(--accent-green) !important;
+    box-shadow: 0 0 0 3px rgba(30, 196, 152, 0.22) !important;
+    color: #ffffff !important;
+}
+
+html.dark-mode .cta-container .form-inline input::placeholder,
+html.dark-mode .cta-form input::placeholder,
+html.dark-mode .action-card .form-inline input::placeholder,
+html.dark-mode .action-form input::placeholder,
+html.dark-mode .auth__field input::placeholder {
+    color: #64748b !important;
+}
+
+html.dark-mode .auth__password-toggle {
+    color: var(--text-muted) !important;
+}
+
+html.dark-mode .auth__password-toggle:hover {
+    color: var(--accent-green) !important;
 }
 
 html.dark-mode .auth__consent-item {
@@ -1279,8 +1358,7 @@ html.dark-mode .cookie-banner__link:hover {
     color: #4ade80 !important;
 }
 
-
-
+/* Gestión de Cuenta (Activar Cuenta y Cambiar Contraseña - /accion-cuenta/) */
 html.dark-mode .action-card {
     background: var(--bg-surface) !important;
     border: 1px solid var(--border-subtle) !important;
@@ -1288,8 +1366,85 @@ html.dark-mode .action-card {
 }
 
 html.dark-mode .action-instruction-box {
-    background-color: var(--bg-input) !important;
+    background-color: var(--bg-surface-elevated) !important;
+    border-left: 4px solid var(--accent-green) !important;
+    border-top: 1px solid var(--border-subtle) !important;
+    border-right: 1px solid var(--border-subtle) !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
     color: var(--text-body) !important;
+}
+
+html.dark-mode .action-instruction-box i {
+    color: var(--accent-green) !important;
+}
+
+html.dark-mode .action-instruction-box p,
+html.dark-mode .cta-container .action-instruction-box p,
+html.dark-mode .action-card .action-instruction-box p {
+    color: var(--text-body) !important;
+    margin: 0 !important;
+}
+
+html.dark-mode .action-account-email {
+    color: var(--accent-green) !important;
+}
+
+html.dark-mode .action-loading-title {
+    color: #ffffff !important;
+}
+
+html.dark-mode .action-loading-spinner {
+    color: var(--accent-green) !important;
+}
+
+/* Mensajes de feedback / notificación en activación de cuenta y cambio de clave */
+html.dark-mode .action-feedback {
+    background-color: var(--bg-surface-elevated) !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-body) !important;
+}
+
+html.dark-mode .action-feedback--success {
+    background-color: rgba(30, 196, 152, 0.14) !important;
+    border: 1px solid rgba(30, 196, 152, 0.45) !important;
+    color: #a7f3d0 !important;
+}
+
+html.dark-mode .action-feedback--success strong {
+    color: #ffffff !important;
+}
+
+html.dark-mode .action-feedback--success p,
+html.dark-mode .cta-container .action-feedback--success p,
+html.dark-mode .action-card .action-feedback--success p {
+    color: #d1fae5 !important;
+    margin: 0 !important;
+}
+
+html.dark-mode .action-feedback--success i {
+    color: var(--accent-green) !important;
+}
+
+html.dark-mode .action-feedback--error {
+    background-color: rgba(220, 38, 38, 0.16) !important;
+    border: 1px solid rgba(220, 38, 38, 0.45) !important;
+    color: #fecaca !important;
+}
+
+html.dark-mode .action-feedback--error strong {
+    color: #ffffff !important;
+}
+
+html.dark-mode .action-feedback--error span,
+html.dark-mode .action-feedback--error p,
+html.dark-mode .cta-container .action-feedback--error p,
+html.dark-mode .action-card .action-feedback--error p {
+    color: #fee2e2 !important;
+    margin: 0 !important;
+}
+
+html.dark-mode .action-feedback--error i {
+    color: #f87171 !important;
 }
 
 html.dark-mode .action-badge-icon--verify {
@@ -1302,6 +1457,12 @@ html.dark-mode .action-badge-icon--password {
     background-color: #162421 !important;
     color: #ffffff !important;
     border-color: var(--border-subtle) !important;
+}
+
+html.dark-mode .action-badge-icon--error {
+    background-color: rgba(220, 38, 38, 0.16) !important;
+    color: #f87171 !important;
+    border-color: rgba(220, 38, 38, 0.4) !important;
 }
 
 /* ==============================================================================

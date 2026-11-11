@@ -47,9 +47,12 @@ def enviar_consulta_contacto(request):
         except ValidationError:
             return JsonResponse({'status': 'error', 'mensaje': 'Ingresa un correo válido.'}, status=400)
 
+        if not telefono:
+            return JsonResponse({'status': 'error', 'mensaje': 'El teléfono de contacto es obligatorio.'}, status=400)
+        if len(telefono) > 20 or not re.fullmatch(r'[+0-9() .-]+', telefono):
+            return JsonResponse({'status': 'error', 'mensaje': 'El teléfono contiene caracteres no permitidos o supera 20 caracteres.'}, status=400)
+
         if es_suscripcion:
-            if not telefono:
-                return JsonResponse({'status': 'error', 'mensaje': 'El teléfono de contacto es obligatorio para solicitar suscripción.'}, status=400)
             if not empresa:
                 return JsonResponse({'status': 'error', 'mensaje': 'El nombre de la empresa es obligatorio para solicitar suscripción.'}, status=400)
             if len(empresa) > 150:
@@ -59,9 +62,6 @@ def enviar_consulta_contacto(request):
             if tema not in {'Consulta comercial', 'Solicitud de suscripción', 'Solicitud de Suscripción', 'Soporte SmartBids', 'Integraciones', 'Otro'}:
                 return JsonResponse({'status': 'error', 'mensaje': 'Selecciona un tema para tu consulta.'}, status=400)
 
-        if telefono and (len(telefono) > 20 or not re.fullmatch(r'[+0-9() .-]+', telefono)):
-            return JsonResponse({'status': 'error', 'mensaje': 'El teléfono contiene caracteres no permitidos o supera 20 caracteres.'}, status=400)
-
         mensaje = data.get('message', '').strip() if isinstance(data.get('message'), str) else ''
         if not mensaje and es_suscripcion:
             mensaje = f'Solicitud para pasar de cuenta Prospecto a Suscriptor ({plan or "Plan General"}) para la empresa {empresa}.'
@@ -69,7 +69,12 @@ def enviar_consulta_contacto(request):
             return JsonResponse({'status': 'error', 'mensaje': 'La consulta debe tener entre 20 y 3000 caracteres.'}, status=400)
 
         info_contacto = InfoContacto.objects.first()
-        correo_destino = extraer_correo_contacto(info_contacto.contacto_texto if info_contacto else '')
+        correos_cfg = obtener_correos_sistema()
+        correo_destino = (
+            correos_cfg.get('email_contacto')
+            or extraer_correo_contacto(info_contacto.contacto_texto if info_contacto else '')
+            or EMAIL_CONTACTO_RESPALDO
+        )
         lineas_cuerpo = [
             f'Nombre: {nombre}',
             f'Correo: {correo}',
@@ -178,6 +183,20 @@ def administrar_info_contacto(request):
         info.contacto_texto = contacto_texto.strip()
         info.empresas_enlaces = empresas_validas
         info.save()
+
+        # Sincronizar automáticamente con ConfiguracionCorreo si se ingresó un correo en el texto
+        correo_en_texto = extraer_correo_contacto(contacto_texto)
+        if correo_en_texto:
+            try:
+                cfg = ConfiguracionCorreo.objects.first()
+                if not cfg:
+                    cfg = ConfiguracionCorreo()
+                if cfg.email_contacto != correo_en_texto:
+                    cfg.email_contacto = correo_en_texto
+                    cfg.save()
+            except Exception as sync_err:
+                logger.warning(f"[SmartBids] Error al sincronizar ConfiguracionCorreo desde InfoContacto: {sync_err}")
+
         return JsonResponse({'status': 'ok', 'mensaje': 'Información institucional actualizada.'})
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido.'}, status=400)
@@ -415,6 +434,21 @@ def administrar_config_correo(request):
             if email_auditoria:
                 obj.email_seguridad_auditoria = email_auditoria
             obj.save()
+
+            if email_contacto:
+                try:
+                    info = InfoContacto.objects.first()
+                    if info and isinstance(getattr(info, 'contacto_texto', None), str):
+                        nuevo_texto = re.sub(
+                            r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}',
+                            email_contacto,
+                            info.contacto_texto
+                        )
+                        if nuevo_texto != info.contacto_texto:
+                            info.contacto_texto = nuevo_texto
+                            info.save(update_fields=['contacto_texto'])
+                except Exception as info_err:
+                    logger.warning(f"[SmartBids] Error al sincronizar email en InfoContacto: {info_err}")
         except Exception as db_err:
             logger.warning(f"[SmartBids] Error al guardar en tabla ConfiguracionCorreo: {db_err}")
 

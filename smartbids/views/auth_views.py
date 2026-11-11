@@ -465,7 +465,10 @@ def validar_codigo_login(request):
         suscriptor.fecha_actualizacion = ahora
         suscriptor.save(update_fields=['token_sesion', 'fecha_actualizacion'])
 
-        return JsonResponse({'status': 'ok', 'mensaje': 'Token y sesión guardados correctamente en PostgreSQL.'})
+        response = JsonResponse({'status': 'ok', 'mensaje': 'Token y sesión guardados correctamente en PostgreSQL.'})
+        response.set_cookie('sb_firebase_uid', uid, max_age=604800, samesite='Lax')
+        response.set_cookie('sb_session_token', session_token, max_age=604800, samesite='Lax')
+        return response
 
     except Exception as e:
         logger.error(f"[SmartBids] Error al validar código: {str(e)}")

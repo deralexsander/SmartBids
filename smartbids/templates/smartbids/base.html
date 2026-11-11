@@ -89,17 +89,10 @@
                 <li><a href="#terminos">Términos de Servicio</a></li>
                 <li><a href="#privacidad">Política de Privacidad</a></li>
                 <li><a href="#seguridad">Seguridad (2FA)</a></li>
-
-            {# 3. Enlaces para la página de PLANES #}
-            {% elif request.resolver_match.url_name == 'planes' %}
-                <li><a href="{% url 'home' %}">Inicio</a></li>
-                <li><a href="{% url 'resumen_dia' %}">Resumen del día</a></li>
-                <li class="active"><a href="{% url 'planes' %}">Planes</a></li>
-                <li><a href="{% url 'home' %}#contacto">Contacto</a></li>
             {% endif %}
 
-
-            {% if request.resolver_match.url_name not in 'home informacion planes ingreso registro accion_cuenta firebase_auth_action' %}
+            {# 3. Enlaces de aplicación unificados (Resumen, Mis licitaciones, Dashboard, Planes) #}
+            {% if request.resolver_match.url_name not in 'home informacion ingreso registro accion_cuenta firebase_auth_action' %}
                 <li class="{% if request.resolver_match.url_name == 'resumen_dia' %}active{% endif %}">
                     <a href="{% url 'resumen_dia' %}">Resumen del día</a>
                 </li>
@@ -119,8 +112,8 @@
                         </span>
                     </a>
                 </li>
-                <li class="{% if request.resolver_match.url_name == 'planes' %}active{% endif %}">
-                    <a href="{% url 'planes' %}">Planes</a>
+                <li class="{% if request.resolver_match.url_name == 'planes' %}active{% endif %}" id="nav-item-planes" style="display: none;">
+                    <a href="{% url 'planes' %}" id="nav-link-planes">Planes</a>
                 </li>
             {% endif %}
         </ul>

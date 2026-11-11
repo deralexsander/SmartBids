@@ -502,9 +502,9 @@
                     <li><i class="fa-solid fa-check"></i> Soporte técnico prioritario por correo</li>
                 </ul>
                 <div class="plan-card__action">
-                    <a href="{% url 'planes' %}?plan=mensual" class="btn btn-outline plan-card__btn">
-                        <i class="fa-solid fa-arrow-right"></i> Solicitar Plan Mensual
-                    </a>
+                    <button type="button" class="btn btn-outline plan-card__btn" id="btn-home-plan-mensual" data-plan="Plan Mensual ($20.000 CLP)">
+                        <i class="fa-solid fa-arrow-down"></i> Solicitar Plan Mensual
+                    </button>
                 </div>
             </div>
 
@@ -532,9 +532,9 @@
                     <li><i class="fa-solid fa-check"></i> Congelamiento de tarifa anual garantizada</li>
                 </ul>
                 <div class="plan-card__action">
-                    <a href="{% url 'planes' %}?plan=anual" class="btn btn-primary plan-card__btn">
+                    <button type="button" class="btn btn-primary plan-card__btn" id="btn-home-plan-anual" data-plan="Plan Anual ($200.000 CLP)">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Solicitar Plan Anual
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
@@ -560,7 +560,7 @@
                 </ul>
                 <div class="stat-mini-card home__contact-email-card">
                     <label>Canal directo de contacto</label>
-                    <a href="mailto:{{ contacto_email }}" class="home__contact-email">{{ contacto_email }}</a>
+                    <a href="mailto:{{ contacto_email|default:'contacto@chileavanza.cl' }}" class="home__contact-email">{{ contacto_email|default:'contacto@chileavanza.cl' }}</a>
                 </div>
             </div>
 
@@ -585,20 +585,35 @@
                             <input class="form-input" type="email" id="contact-email" name="email" maxlength="254" autocomplete="email" aria-label="Correo" required>
                         </div>
                         <div class="form-item">
-                            <label for="contact-phone">Teléfono</label>
-                            <input class="form-input" type="tel" id="contact-phone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel" aria-label="Teléfono">
+                            <label for="contact-phone">Teléfono *</label>
+                            <input class="form-input" type="tel" id="contact-phone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel" aria-label="Teléfono" placeholder="+56 9 1234 5678" required>
                         </div>
                         <div class="form-item">
                             <label for="contact-topic">Tema *</label>
                             <select class="form-input" id="contact-topic" name="topic" aria-label="Tema" required>
                                 <option value="">Selecciona un tema</option>
-                                <option value="Solicitud de suscripción">Solicitud de suscripción (Paso a Suscriptor)</option>
+                                <option value="Solicitud de suscripción">Paso a suscriptor (Suscripción)</option>
                                 <option value="Consulta comercial">Consulta comercial</option>
                                 <option value="Soporte SmartBids">Soporte SmartBids</option>
                                 <option value="Integraciones">Integraciones</option>
                                 <option value="Otro">Otro</option>
                             </select>
                         </div>
+
+                        <!-- Campos dinámicos para Suscripción (Paso a Suscriptor) -->
+                        <div class="form-item" id="contact-plan-item" style="display: none;">
+                            <label for="contact-plan">Plan Seleccionado *</label>
+                            <select class="form-input" id="contact-plan" name="plan">
+                                <option value="Plan Mensual ($20.000 CLP)">Plan Mensual — $20.000 CLP / mes</option>
+                                <option value="Plan Anual ($200.000 CLP)">Plan Anual — $200.000 CLP / año (2 meses gratis)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item" id="contact-company-item" style="display: none;">
+                            <label for="contact-company">Nombre de la Empresa *</label>
+                            <input class="form-input" type="text" id="contact-company" name="company" maxlength="150" placeholder="Razón Social o Nombre de Fantasía">
+                        </div>
+
                         <div class="form-item grid-full">
                             <label for="contact-message">¿Cómo podemos ayudarte? *</label>
                             <textarea class="form-input home__contact-message" id="contact-message" name="message" rows="5" minlength="20" maxlength="3000" aria-label="¿Cómo podemos ayudarte?" required></textarea>

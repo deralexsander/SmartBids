@@ -55,12 +55,14 @@ const updateNavButtons = (user) => {
     });
 };
 
-function aplicarRestriccionesEstadoUsuario(codigoEstado) {
+export function aplicarRestriccionesEstadoUsuario(codigoEstado) {
+    window.currentUserCodigoEstado = codigoEstado;
     const esProspecto = (codigoEstado === 1);
     const lockLicitaciones = document.getElementById('nav-lock-licitaciones');
     const lockDashboard = document.getElementById('nav-lock-dashboard');
     const linkLicitaciones = document.getElementById('nav-link-licitaciones');
     const linkDashboard = document.getElementById('nav-link-dashboard');
+    const navItemPlanes = document.getElementById('nav-item-planes');
 
     if (esProspecto) {
         document.body.classList.add('user-is-prospecto');
@@ -74,6 +76,7 @@ function aplicarRestriccionesEstadoUsuario(codigoEstado) {
             linkDashboard.setAttribute('href', '/planes/?upgrade=1&modulo=dashboard');
             linkDashboard.setAttribute('title', 'Exclusivo Suscriptores - Haz clic para ver planes');
         }
+        if (navItemPlanes) navItemPlanes.style.display = 'list-item';
     } else {
         document.body.classList.remove('user-is-prospecto');
         if (lockLicitaciones) lockLicitaciones.style.display = 'none';
@@ -86,8 +89,10 @@ function aplicarRestriccionesEstadoUsuario(codigoEstado) {
             linkDashboard.setAttribute('href', '/dashboard/');
             linkDashboard.removeAttribute('title');
         }
+        if (navItemPlanes) navItemPlanes.style.display = 'none';
     }
 }
+window.aplicarRestriccionesEstadoUsuario = aplicarRestriccionesEstadoUsuario;
 
 async function validarRolAdministrador(user) {
     try {
@@ -123,7 +128,8 @@ let intervaloMonitoreoSesion = null;
 
 // Función de validación y deslogueo automático
 async function validarSesionContraPostgres(user) {
-    if (!user || AuthState.isSubmittingAuth) return;
+    const modal2faActivo = Boolean(document.getElementById('modal-2fa')?.classList.contains('active'));
+    if (!user || AuthState.isSubmittingAuth || modal2faActivo) return;
 
     const tokenLocal = SessionManager.getLocalToken();
     if (!tokenLocal) return;
@@ -159,6 +165,7 @@ async function validarSesionContraPostgres(user) {
 
 onAuthStateChanged(auth, async (user) => {
     const pageRule = matchCurrentPageConfig();
+    const modal2faActivo = Boolean(document.getElementById('modal-2fa')?.classList.contains('active'));
 
     // 1. Si no hay sesión iniciada
     if (!user) {
@@ -178,7 +185,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     // 2. Si ya está autenticado e intenta ir a login o registro
-    if (pageRule?.guestOnly && !AuthState.isSubmittingAuth) {
+    if (pageRule?.guestOnly && !AuthState.isSubmittingAuth && !modal2faActivo) {
         const tokenActual = SessionManager.getLocalToken();
         if (!tokenActual) {
             // Usuario con sesión Firebase residual pero sin 2FA completado
@@ -187,11 +194,11 @@ onAuthStateChanged(auth, async (user) => {
             hidePageLoader();
             return;
         }
-        window.location.replace('/');
+        window.location.replace(pageRule.redirectFallback || '/resumen');
         return;
     }
 
-    if (AuthState.isSubmittingAuth) return;
+    if (AuthState.isSubmittingAuth || modal2faActivo) return;
 
     // Guardar UID y fijar cookie de sesión para SSR
     localStorage.setItem('smartbids_uid', user.uid);
@@ -261,6 +268,9 @@ onAuthStateChanged(auth, async (user) => {
         .then(resp => resp.json())
         .then(resData => {
             if (resData.status === 'ok' && resData.datos) {
+                const codEstado = resData.datos.codigo_estado;
+                aplicarRestriccionesEstadoUsuario(codEstado);
+
                 const nombreEstado = resData.datos.nombre_estado || '';
                 const rolNormalizado = nombreEstado.trim().toLowerCase();
                 const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || resData.datos?.codigo_estado === 5;

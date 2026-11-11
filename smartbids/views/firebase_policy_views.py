@@ -13,7 +13,7 @@ from google.oauth2 import service_account
 
 from .mensajeria_views import _respuesta_acceso_denegado, _usuario_es_administrador
 from smartbids.models import EstadoSuscriptor, Preferencia, Suscriptor
-from smartbids.models.config import registrar_auditoria_admin, notificar_accion_entre_administradores
+from smartbids.models.config import registrar_auditoria_admin, notificar_accion_entre_administradores, notificar_cambio_rol_suscriptor
 
 
 GOOGLE_CLOUD_SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
@@ -168,9 +168,24 @@ def usuarios_firebase(request):
         suscriptor_ejecutor = Suscriptor.objects.select_related('codigo_estado').filter(firebase_uid=uid_ejecutor).first() if uid_ejecutor else None
         email_ejecutor = (
             request.headers.get('X-Firebase-Email')
-            or (suscriptor_ejecutor.sus_nombre_social if suscriptor_ejecutor else None)
-            or 'Administrador'
+            or (suscriptor_ejecutor.sus_nombre_social if suscriptor_ejecutor and '@' in (suscriptor_ejecutor.sus_nombre_social or '') else None)
         )
+        if (not email_ejecutor or '@' not in email_ejecutor) and session and url and uid_ejecutor:
+            try:
+                lookup_ejecutor = session.post(
+                    f'{url}:lookup',
+                    json={'localId': [uid_ejecutor]},
+                    timeout=GOOGLE_REQUEST_TIMEOUT_SECONDS
+                )
+                if lookup_ejecutor.ok:
+                    users_fb = lookup_ejecutor.json().get('users', [])
+                    if users_fb and users_fb[0].get('email'):
+                        email_ejecutor = users_fb[0]['email']
+            except Exception:
+                pass
+        if not email_ejecutor:
+            email_ejecutor = 'smartbids.qa@chileavanza.cl'
+
         nombre_ejecutor = (
             f"{suscriptor_ejecutor.sus_nombre1} {suscriptor_ejecutor.sus_apellido1 or ''}".strip()
             if suscriptor_ejecutor and suscriptor_ejecutor.sus_nombre1
@@ -204,13 +219,28 @@ def usuarios_firebase(request):
         email_afectado = (
             data.get('email')
             or request.GET.get('email')
-            or (suscriptor.sus_nombre_social if suscriptor else '')
-            or 'admin@smartbids.cl'
+            or (suscriptor.sus_nombre_social if suscriptor and '@' in (suscriptor.sus_nombre_social or '') else '')
         )
+        if (not email_afectado or '@' not in email_afectado) and session and url and uid:
+            try:
+                lookup_resp = session.post(
+                    f'{url}:lookup',
+                    json={'localId': [uid]},
+                    timeout=GOOGLE_REQUEST_TIMEOUT_SECONDS
+                )
+                if lookup_resp.ok:
+                    users_fb = lookup_resp.json().get('users', [])
+                    if users_fb and users_fb[0].get('email'):
+                        email_afectado = users_fb[0]['email']
+            except Exception as e:
+                logger.warning(f"[SmartBids] Error al consultar email en Firebase para UID {uid}: {e}")
+        if not email_afectado:
+            email_afectado = (suscriptor.sus_nombre_social if suscriptor else '') or 'admin@smartbids.cl'
+
         nombre_afectado = (
             f"{suscriptor.sus_nombre1} {suscriptor.sus_apellido1 or ''}".strip()
             if suscriptor and suscriptor.sus_nombre1
-            else email_afectado
+            else (email_afectado.split('@')[0] if '@' in email_afectado else email_afectado)
         )
 
         if request.method == 'PATCH':
@@ -224,8 +254,15 @@ def usuarios_firebase(request):
                     'mensaje': 'No se puede cambiar el estado: el usuario no existe en PostgreSQL.'
                 }, status=404)
 
-            # Si el usuario afectado era admin y cambia a no-admin: notificar y auditar
-            if es_admin_afectado and estado.nombre_estado.strip().casefold() != 'administrador':
+            estado_anterior = suscriptor.codigo_estado
+            es_anterior_admin = es_admin_afectado
+            es_nuevo_admin = (
+                estado.codigo_estado == 5
+                or estado.nombre_estado.strip().casefold() == 'administrador'
+            )
+
+            # Auditar y notificar si el usuario era admin y cambia a no-admin
+            if es_anterior_admin and not es_nuevo_admin:
                 registrar_auditoria_admin(
                     ejecutor_uid=uid_ejecutor,
                     ejecutor_email=email_ejecutor,
@@ -237,13 +274,28 @@ def usuarios_firebase(request):
                     detalle=f"El administrador {email_ejecutor} modificó el rol de {email_afectado} a '{estado.nombre_estado}'.",
                     ip_origen=request.META.get('REMOTE_ADDR')
                 )
-                notificar_accion_entre_administradores(
+            elif es_nuevo_admin and not es_anterior_admin:
+                registrar_auditoria_admin(
+                    ejecutor_uid=uid_ejecutor,
                     ejecutor_email=email_ejecutor,
                     ejecutor_nombre=nombre_ejecutor,
+                    afectado_uid=uid,
                     afectado_email=email_afectado,
-                    accion=f"Cambio de rol a {estado.nombre_estado}",
-                    detalle=f"Tu rol de administrador fue modificado a '{estado.nombre_estado}' por el administrador {email_ejecutor} ({nombre_ejecutor})."
+                    afectado_nombre=nombre_afectado,
+                    accion='ASIGNACION_ADMIN',
+                    detalle=f"El administrador {email_ejecutor} otorgó el rol de Administrador a {email_afectado}.",
+                    ip_origen=request.META.get('REMOTE_ADDR')
                 )
+
+            # Notificación formal por correo electrónico según la transición de estado
+            notificar_cambio_rol_suscriptor(
+                ejecutor_email=email_ejecutor,
+                ejecutor_nombre=nombre_ejecutor,
+                afectado_email=email_afectado,
+                afectado_nombre=nombre_afectado,
+                estado_anterior=estado_anterior,
+                estado_nuevo=estado
+            )
 
             suscriptor.codigo_estado = estado
             suscriptor.fecha_actualizacion = timezone.now()
