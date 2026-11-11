@@ -11,13 +11,14 @@ Filtro global de período (todas las pestañas):
 import re
 from decimal import Decimal
 from functools import lru_cache
-
+from hashlib import sha256
 from django.core.cache import cache
 from django.db import connections
 from django.db.models import Count, Max, Q, Sum
-from django.http import JsonResponse
+from django.http import JsonResponse, request
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
+
 
 from smartbids.models import FactOrdenCompra
 
@@ -165,6 +166,35 @@ def dashboard_kpis(request):
         return JsonResponse({"monto": formatear_monto(0), "items": 0, "ordenes": None,
                              "proveedores": 0, "compradores": 0})
 
+    
+    
+
+    gran = request.GET.get("gran", "").strip()
+    periodo = "" if claves is None else request.GET.get("periodo", "").strip()
+
+    with connections["dw"].cursor() as cursor:
+        cursor.execute("""
+            SELECT monto, items, proveedores, compradores, ordenes
+            FROM dw.mv_kpi_periodo
+            WHERE gran = %s AND periodo = %s
+        """, [gran, periodo])
+        fila = cursor.fetchone()
+
+    if fila is not None:
+        monto, items, proveedores, compradores, ordenes = fila
+        return JsonResponse({
+            "monto": formatear_monto(monto),
+            "items": int(items),
+            "proveedores": proveedores,
+            "compradores": compradores,
+            "ordenes": ordenes,
+        })
+    
+    cache_key = f"dw:kpis:v1:{gran}:{periodo}"
+    datos = cache.get(cache_key)
+    if datos is not None:
+        return JsonResponse(datos)
+
     compras = FactOrdenCompra.objects.using("dw")
     campos = {
         "monto": Sum("monto_bruto"),
@@ -178,13 +208,15 @@ def dashboard_kpis(request):
         compras = compras.filter(fecha_key__in=claves)
 
     r = compras.aggregate(**campos)
-    return JsonResponse({
+    datos = {
         "monto": formatear_monto(r["monto"]),
         "items": int(r["items"] or 0),
         "ordenes": int(r["ordenes"] or 0) if claves is None else None,
         "proveedores": r["proveedores"],
         "compradores": r["compradores"],
-    })
+    }
+    cache.set(cache_key, datos, timeout=300)
+    return JsonResponse(datos)
 
 
 # ======================================================================
@@ -287,6 +319,86 @@ def dashboard_productos_explorador(request):
                              "monto_segmento": 0, "items_segmento": 0})
     filtrar = claves is not None
 
+    gran = request.GET.get("gran", "").strip()
+    periodo = request.GET.get("periodo", "").strip() if filtrar else ""
+    filtros = (gran, periodo, por, grupo, nivel1, region, organismo)
+    huella = sha256(repr(filtros).encode("utf-8")).hexdigest()
+    cache_key = f"dw:ranking-productos:v3:{huella}"
+
+    datos = cache.get(cache_key)
+    if datos is not None:
+        return JsonResponse(datos)
+
+    def responder_ranking(datos):
+        cache.set(cache_key, datos, timeout=300)
+        return JsonResponse(datos)
+
+        # Ranking global por grupo: usa el resumen mensual.
+    # Con región, organismo o desglose, continúa con la consulta actual.
+    if not grupo and not region and not organismo:
+        condicion = ""
+        parametros = []
+
+        if filtrar:
+            condicion = """
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM dw.dim_fecha d
+                    WHERE d.anio = m.anio
+                      AND d.mes = m.mes
+                      AND d.fecha_key = ANY(%s)
+                )
+            """
+            parametros = [claves]
+
+        sql = f"""
+            WITH ranking AS (
+                SELECT
+                    m.producto_grupo AS id,
+                    COALESCE(m.producto_grupo, 'Sin informar') AS nombre,
+                    SUM(m.monto) AS monto,
+                    SUM(m.items) AS items
+                FROM dw.mv_productos_mes_grupo m
+                {condicion}
+                GROUP BY m.producto_grupo
+            )
+            SELECT
+                id, nombre, monto, items,
+                SUM(monto) OVER () AS monto_total,
+                SUM(items) OVER () AS items_total
+            FROM ranking
+            ORDER BY monto DESC NULLS LAST, id ASC NULLS LAST
+            LIMIT 10
+        """
+
+        with connections["dw"].cursor() as cursor:
+            cursor.execute(sql, parametros)
+            filas = cursor.fetchall()
+
+        monto_total = (filas[0][4] or Decimal(0)) if filas else Decimal(0)
+        items_total = int(filas[0][5] or 0) if filas else 0
+
+        ranking = [
+            {
+                "id": identificador,
+                "nombre": nombre,
+                "monto": float(monto or 0),
+                "items": int(items or 0),
+                "participacion": (
+                    round(float((monto or 0) / monto_total * 100), 2)
+                    if monto_total else 0
+                ),
+            }
+            for identificador, nombre, monto, items, _, _ in filas
+        ]
+
+        return responder_ranking({
+            "por": por,
+            "ranking": ranking,
+            "monto_segmento": float(monto_total),
+            "items_segmento": items_total,
+        })
+
     if not grupo:
         # Una sola agregación por grupo sobre los hechos del período.
         condiciones = (["f.fecha_key = ANY(%s)"] if filtrar else []) + contexto_where
@@ -318,28 +430,48 @@ def dashboard_productos_explorador(request):
                     "items": int(r[3] or 0),
                     "participacion": round(float(r[2] / monto_total * 100), 2)
                     if monto_total else 0} for r in result]
-        return JsonResponse({"por": por, "ranking": ranking,
+        return responder_ranking({"por": por, "ranking": ranking,
                              "monto_segmento": float(monto_total),
                              "items_segmento": total_items})
 
-    # Dentro de un grupo: partir de la dimensión con LATERAL para aprovechar
-    # idx_fact_producto, y filtrar los hechos del período por fecha_key.
-    condiciones = (["f.fecha_key = ANY(%s)"] if filtrar else []) + contexto_where
-    fecha_where = ("AND " + " AND ".join(condiciones)) if condiciones else ""
+        # Dentro de un grupo: una agregación directa por producto.
+    condiciones = list(where)
+    parametros = list(params)
+
+    if filtrar:
+        condiciones.append("f.fecha_key = ANY(%s)")
+        parametros.append(claves)
+
+    condiciones.extend(contexto_where)
+    parametros.extend(contexto_params)
+
+    where_base = (
+        "WHERE " + " AND ".join(condiciones)
+        if condiciones else ""
+    )
+
     base = f"""
-        SELECT p.producto_key, p.producto_codigo, p.producto_descripcion,
-               p.producto_grupo, p.producto_nivel1,
-               x.monto_neto, x.cantidad_items
-        FROM dw.dim_producto p
-        CROSS JOIN LATERAL (
-            SELECT SUM(f.monto_neto) AS monto_neto,
-                   SUM(f.cantidad_items) AS cantidad_items
-            FROM dw.fact_orden_compra f
-            WHERE f.producto_key = p.producto_key {fecha_where}
-        ) x
-        {where_p} AND x.cantidad_items IS NOT NULL
+        SELECT
+            p.producto_key,
+            p.producto_codigo,
+            p.producto_descripcion,
+            p.producto_grupo,
+            p.producto_nivel1,
+            SUM(f.monto_neto) AS monto_neto,
+            SUM(f.cantidad_items) AS cantidad_items
+        FROM dw.fact_orden_compra f
+        JOIN dw.dim_producto p
+            ON p.producto_key = f.producto_key
+        {where_base}
+        GROUP BY
+            p.producto_key,
+            p.producto_codigo,
+            p.producto_descripcion,
+            p.producto_grupo,
+            p.producto_nivel1
+        HAVING SUM(f.cantidad_items) IS NOT NULL
     """
-    base_params = ([claves] if filtrar else []) + contexto_params + params
+    base_params = parametros
 
     if por == "producto":
         expr = "producto_codigo, producto_descripcion"
@@ -375,7 +507,7 @@ def dashboard_productos_explorador(request):
                         "monto": float(monto), "items": int(items or 0),
                         "participacion": round(float(monto / monto_total * 100), 2)
                         if monto_total else 0})
-    return JsonResponse({"por": por, "ranking": ranking,
+    return responder_ranking({"por": por, "ranking": ranking,
                          "monto_segmento": float(monto_total),
                          "items_segmento": items_total})
 
@@ -506,6 +638,97 @@ def dashboard_competencia(request):
     compras = base if claves is None else base.filter(fecha_key__in=claves)
 
     clave, nombre = DIMENSIONES_COMPETENCIA[por]
+
+        # Rankings globales precalculados.
+    # Los filtros y desgloses conservan la consulta actual.
+    if (
+        tipo == "ranking"
+        and por in ("proveedor", "organismo")
+        and not any((grupo, region, organismo, proveedor, producto))
+    ):
+        gran = request.GET.get("gran", "").strip()
+        periodo = (
+            "" if claves is None
+            else request.GET.get("periodo", "").strip()
+        )
+
+        # Identificadores elegidos de una lista fija, no del request.
+        if por == "proveedor":
+            vista = "dw.mv_proveedores_periodo"
+            dimension = "dw.dim_proveedor"
+            campo_key = "proveedor_key"
+            campo_nombre = "proveedor_nombre"
+            campo_conteo = "organismos"
+        else:
+            vista = "dw.mv_compradores_periodo"
+            dimension = "dw.dim_comprador"
+            campo_key = "comprador_key"
+            campo_nombre = "comprador_organismo_nombre"
+            campo_conteo = "proveedores"
+
+        sql = f"""
+            WITH ranking AS (
+                SELECT
+                    {campo_key} AS id,
+                    monto,
+                    items,
+                    {campo_conteo} AS relacionados,
+                    SUM(monto) OVER () AS monto_total,
+                    SUM(items) OVER () AS items_total
+                FROM {vista}
+                WHERE gran = %s AND periodo = %s
+                ORDER BY monto DESC NULLS LAST, {campo_key} ASC
+                LIMIT 10
+            )
+            SELECT
+                r.id,
+                d.{campo_nombre},
+                r.monto,
+                r.items,
+                r.relacionados,
+                r.monto_total,
+                r.items_total
+            FROM ranking r
+            JOIN {dimension} d ON d.{campo_key} = r.id
+            ORDER BY r.monto DESC NULLS LAST, r.id ASC
+        """
+
+        with connections["dw"].cursor() as cursor:
+            cursor.execute(sql, [gran, periodo])
+            filas = cursor.fetchall()
+
+        monto_segmento = (
+            filas[0][5] or Decimal(0)
+        ) if filas else Decimal(0)
+        items_segmento = int(filas[0][6] or 0) if filas else 0
+
+        ranking = []
+        for identificador, etiqueta, monto, items, relacionados, _, _ in filas:
+            monto = monto or Decimal(0)
+            ranking.append({
+                "id": identificador,
+                "codigo": None,
+                "nombre": etiqueta or "Sin informar",
+                "monto": float(monto),
+                "items": int(items or 0),
+                "participacion": (
+                    round(float(monto / monto_segmento * 100), 2)
+                    if monto_segmento else 0
+                ),
+                "organismos": (
+                    int(relacionados) if por == "proveedor" else 0
+                ),
+                "proveedores": (
+                    int(relacionados) if por == "organismo" else 0
+                ),
+            })
+
+        return JsonResponse({
+            "por": por,
+            "monto_segmento": float(monto_segmento),
+            "items_segmento": items_segmento,
+            "ranking": ranking,
+        })
 
     # ------------------------------------------------------------------
     # Evolución: los 5 primeros del período, con su serie mensual completa
