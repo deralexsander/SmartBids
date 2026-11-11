@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.db import DataError, DatabaseError
-from django.db.models import Q, Value
+from django.db.models import CharField, Func, Q, Value
 from django.db.models.functions import Replace, Upper
 
 from django.core.cache import cache
@@ -55,6 +55,22 @@ def _buscar_empresa_por_rut(rut):
     return Empresa.objects.annotate(
         rut_normalizado=rut_db_normalizado
     ).filter(rut_normalizado__iexact=rut_normalizado).first()
+
+
+def _buscar_proveedores_por_rut_normalizado(rut_normalizado):
+    rut_proveedor_normalizado = Func(
+        Upper('prov_rut'),
+        Value('[^0-9K]'),
+        Value(''),
+        Value('g'),
+        function='REGEXP_REPLACE',
+        output_field=CharField(),
+    )
+    return (
+        Proveedor.objects.alias(rut_normalizado=rut_proveedor_normalizado)
+        .filter(rut_normalizado=rut_normalizado)
+        .order_by('prov_codigo_proveedor', 'prov_codigo_sucursal')
+    )
 
 
 def _normalizar_codigo_comuna(valor):
@@ -806,17 +822,7 @@ def buscar_empresa_por_rut(request):
             })
 
         # 2. Búsqueda de respaldo en catálogo de Proveedores
-        filtro = (
-            Q(prov_rut__iexact=rut_raw) |
-            Q(prov_rut__iexact=rut_normalizado) |
-            Q(prov_rut__icontains=rut_normalizado)
-        )
-
-        cuerpo = rut_normalizado[:-1]
-        if len(cuerpo) >= 5:
-            filtro |= Q(prov_rut__icontains=cuerpo)
-
-        proveedor = Proveedor.objects.filter(filtro).first()
+        proveedor = _buscar_proveedores_por_rut_normalizado(rut_normalizado).first()
 
         if not proveedor:
             return JsonResponse({
