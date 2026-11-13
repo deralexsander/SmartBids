@@ -104,6 +104,96 @@ def _listar_usuarios_firebase(session, url):
     return response, usuarios
 
 
+_CACHE_POLITICA_PUBLICA = None
+_CACHE_POLITICA_TIMESTAMP = 0
+_CACHE_POLITICA_TTL_SEGUNDOS = 5
+
+
+def _extraer_politica_limpia(data):
+    if not isinstance(data, dict):
+        data = {}
+
+    policy_config = data.get('passwordPolicyConfig', data)
+    versions = policy_config.get('passwordPolicyVersions', [])
+    options = versions[0].get('customStrengthOptions', {}) if versions else {}
+    enforcement = policy_config.get('passwordPolicyEnforcementState', 'OFF')
+
+    min_len = int(options.get('minPasswordLength') or 6)
+    max_len = int(options.get('maxPasswordLength') or 4096)
+
+    return {
+        'status': 'ok',
+        'enforcementState': enforcement,
+        'forceUpgradeOnSignin': bool(policy_config.get('forceUpgradeOnSignin', False)),
+        'minPasswordLength': min_len,
+        'maxPasswordLength': max_len,
+        'containsUppercaseCharacter': bool(options.get('containsUppercaseCharacter', False)),
+        'containsLowercaseCharacter': bool(options.get('containsLowercaseCharacter', False)),
+        'containsNumericCharacter': bool(options.get('containsNumericCharacter', False)),
+        'containsNonAlphanumericCharacter': bool(options.get('containsNonAlphanumericCharacter', False)),
+    }
+
+
+def obtener_politica_activa(forzar_recarga=False):
+    global _CACHE_POLITICA_PUBLICA, _CACHE_POLITICA_TIMESTAMP
+    ahora = datetime.now().timestamp()
+    if not forzar_recarga and _CACHE_POLITICA_PUBLICA and (ahora - _CACHE_POLITICA_TIMESTAMP < _CACHE_POLITICA_TTL_SEGUNDOS):
+        return _CACHE_POLITICA_PUBLICA
+
+    try:
+        session = _firebase_admin_session()
+        url = _firebase_config_url()
+        response = session.get(url, timeout=GOOGLE_REQUEST_TIMEOUT_SECONDS)
+        if response.ok:
+            data = response.json()
+            limpia = _extraer_politica_limpia(data)
+            _CACHE_POLITICA_PUBLICA = limpia
+            _CACHE_POLITICA_TIMESTAMP = ahora
+            return limpia
+    except Exception as e:
+        print("[SmartBids] Error consultando política de contraseñas de Firebase:", e)
+
+    if _CACHE_POLITICA_PUBLICA:
+        return _CACHE_POLITICA_PUBLICA
+
+    return {
+        'status': 'ok',
+        'enforcementState': 'ENFORCE',
+        'forceUpgradeOnSignin': False,
+        'minPasswordLength': 6,
+        'maxPasswordLength': 4096,
+        'containsUppercaseCharacter': True,
+        'containsLowercaseCharacter': True,
+        'containsNumericCharacter': True,
+        'containsNonAlphanumericCharacter': True,
+    }
+
+
+def actualizar_cache_politica(data_nueva):
+    global _CACHE_POLITICA_PUBLICA, _CACHE_POLITICA_TIMESTAMP
+    try:
+        _CACHE_POLITICA_PUBLICA = _extraer_politica_limpia(data_nueva)
+        _CACHE_POLITICA_TIMESTAMP = datetime.now().timestamp()
+    except Exception as e:
+        print("[SmartBids] Error actualizando caché de política:", e)
+
+
+def politica_contrasenas_publica(request):
+    """
+    Endpoint público (GET) que devuelve los requisitos de contraseña activos
+    para que la interfaz de registro, perfil y reseteo se adapten dinámicamente.
+    """
+    if request.method != 'GET':
+        return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+    politica = obtener_politica_activa()
+    response = JsonResponse(politica)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
+
+
 @csrf_exempt
 def politica_contrasenas_firebase(request):
     # Verificación de permisos: solo administradores pueden consultar o modificar
@@ -117,6 +207,8 @@ def politica_contrasenas_firebase(request):
         # Obtener la política actual configurada en Identity Platform
         if request.method == 'GET':
             response = session.get(url, timeout=GOOGLE_REQUEST_TIMEOUT_SECONDS)
+            if response.ok:
+                actualizar_cache_politica(response.json())
             return JsonResponse(response.json(), status=response.status_code, safe=False)
 
         # Guardar la nueva configuración de contraseñas
@@ -128,6 +220,8 @@ def politica_contrasenas_firebase(request):
                 json={'passwordPolicyConfig': data},
                 timeout=GOOGLE_REQUEST_TIMEOUT_SECONDS
             )
+            if response.ok:
+                actualizar_cache_politica(response.json())
             return JsonResponse(response.json(), status=response.status_code, safe=False)
 
         return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)

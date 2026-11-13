@@ -15,13 +15,13 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=6">
-    <link rel="stylesheet" href="{% static 'css/views/base-layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
+    <link rel="stylesheet" href="{% static 'css/views/base-layout.css' %}?v={% now 'U' %}">
     {% if request.resolver_match.url_name == 'home' %}
     <link rel="stylesheet" href="{% static 'css/views/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/views/planes.css' %}">
     {% elif request.resolver_match.url_name == 'ingreso' or request.resolver_match.url_name == 'registro' or request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
-    <link rel="stylesheet" href="{% static 'css/views/registro.css' %}">
+    <link rel="stylesheet" href="{% static 'css/views/registro.css' %}?v={% now 'U' %}">
     {% elif request.resolver_match.url_name == 'perfil' %}
     <link rel="stylesheet" href="{% static 'css/views/perfil.css' %}?v={% now 'U' %}">
     {% elif request.resolver_match.url_name == 'mensajeria' %}
@@ -441,10 +441,10 @@
     <script type="module" src="{% static 'js/two-factor.js' %}"></script>
     <script type="module" src="{% static 'js/licitaciones-ui.js' %}"></script>
     <script type="module" src="{% static 'js/functions.js' %}"></script>
-    <script type="module" src="{% static 'js/mensaje.js' %}?v=2"></script>
-    <script type="module" src="{% static 'js/perfil.js' %}"></script>
-    <script type="module" src="{% static 'js/sesion.js' %}"></script>
-    <script type="module" src="{% static 'js/autenticacion.js' %}?v=4"></script>
+    <script type="module" src="{% static 'js/mensaje.js' %}?v={% now 'U' %}"></script>
+    <script type="module" src="{% static 'js/perfil.js' %}?v={% now 'U' %}"></script>
+    <script type="module" src="{% static 'js/sesion.js' %}?v={% now 'U' %}"></script>
+    <script type="module" src="{% static 'js/autenticacion.js' %}?v={% now 'U' %}"></script>
     <script type="module" src="{% static 'js/mensajeria-admin.js' %}"></script>
     <script type="module" src="{% static 'js/firebase.js' %}"></script>
     <script type="module" src="{% static 'js/ml.js' %}"></script>
@@ -455,12 +455,12 @@
     {% elif request.resolver_match.url_name == 'informacion' %}
     <script type="module" src="{% static 'js/home-slide.js' %}"></script>
     {% elif request.resolver_match.url_name == 'accion_cuenta' or request.resolver_match.url_name == 'firebase_auth_action' %}
-    <script type="module" src="{% static 'js/accion-cuenta.js' %}"></script>
+    <script type="module" src="{% static 'js/accion-cuenta.js' %}?v={% now 'U' %}"></script>
     {% elif request.resolver_match.url_name == 'dashboard' %}
     <!-- Chart.js y analítica son gestionados directamente por dashboard.html -->
     {% elif request.resolver_match.url_name == 'administracion_general' %}
-    <script type="module" src="{% static 'js/admin-policy.js' %}"></script>
-    <script type="module" src="{% static 'js/admin-users.js' %}"></script>
+    <script type="module" src="{% static 'js/admin-policy.js' %}?v={% now 'U' %}"></script>
+    <script type="module" src="{% static 'js/admin-users.js' %}?v={% now 'U' %}"></script>
     {% endif %}
 
 </body>

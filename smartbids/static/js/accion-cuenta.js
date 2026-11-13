@@ -4,7 +4,8 @@
  */
 
 import { auth } from './firebase-config.js';
-import { mostrarMensaje } from './mensaje.js';
+import { mostrarMensaje, getFriendlyErrorMessage } from './mensaje.js';
+import { conectarMedidorPassword, evaluarFuerzaPassword } from './password-validator.js';
 import {
     applyActionCode,
     verifyPasswordResetCode,
@@ -178,13 +179,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const btnCambiar = document.getElementById('btn-cambiar-password');
 
         if (resetForm) {
+            const newPasswordInput = document.getElementById('new-password');
+            const resetMeter = document.getElementById('reset-password-meter');
+            if (newPasswordInput && resetMeter) {
+                conectarMedidorPassword(newPasswordInput, resetMeter);
+            }
+
             resetForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const newPasswordInput = document.getElementById('new-password');
-                const confirmPasswordInput = document.getElementById('confirm-new-password');
-
                 const newPassword = newPasswordInput ? newPasswordInput.value : '';
+                const confirmPasswordInput = document.getElementById('confirm-new-password');
                 const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
 
                 if (resetFeedback) resetFeedback.style.display = 'none';
@@ -200,8 +205,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
-                if (newPassword.length < 8) {
-                    const msg = 'La contraseña debe tener al menos 8 caracteres.';
+                const evaluacion = evaluarFuerzaPassword(newPassword);
+                if (!evaluacion.esValida) {
+                    let msg = '';
+                    if (evaluacion.excedeMaximo) {
+                        msg = `La contraseña no puede superar el límite máximo de ${evaluacion.maxLen} caracteres.`;
+                    } else {
+                        const faltantes = evaluacion.resultados
+                            .filter(r => !r.cumple)
+                            .map(r => r.label.toLowerCase());
+                        msg = `La contraseña debe contener: ${faltantes.join(', ')}.`;
+                    }
                     if (resetFeedback) {
                         resetFeedback.className = 'action-feedback action-feedback--error';
                         resetFeedback.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i><span>${msg}</span>`;
@@ -274,10 +288,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.error('[SmartBids] Error al cambiar contraseña:', error);
                     setBtnLoading(btnCambiar, false);
 
-                    let errorMsg = 'No pudimos actualizar tu contraseña. Inténtalo de nuevo.';
-                    if (error.code === 'auth/weak-password') {
-                        errorMsg = 'La contraseña elegida es muy débil. Debe combinar al menos 8 letras y números.';
-                    } else if (error.code === 'auth/expired-action-code') {
+                    let errorMsg = error.code ? getFriendlyErrorMessage(error.code, error.message) : (error.message || 'No pudimos actualizar tu contraseña.');
+                    if (error.code === 'auth/expired-action-code') {
                         errorMsg = 'El enlace ha expirado. Por favor solicita uno nuevo desde la pantalla de ingreso.';
                     }
 

@@ -1,7 +1,8 @@
 import { auth } from './firebase-config.js';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { setButtonLoading, SessionManager } from './functions.js';
-import { mostrarMensaje } from './mensaje.js';
+import { mostrarMensaje, getFriendlyErrorMessage } from './mensaje.js';
+import { conectarMedidorPassword, evaluarFuerzaPassword } from './password-validator.js';
 import { aplicarRestriccionesEstadoUsuario } from './sesion.js';
 import { applyTheme } from './theme.js';
 
@@ -1449,6 +1450,12 @@ async function setupUcomTree() {
 // ==========================================================================
 function setupPasswordFunctionality(user) {
     const formPassword = document.getElementById('form-perfil-password');
+    const newPassInput = document.getElementById('profile-new-pass');
+    const meterContainer = document.getElementById('perfil-password-meter');
+    const medidor = (newPassInput && meterContainer)
+        ? conectarMedidorPassword(newPassInput, meterContainer)
+        : null;
+
     if (formPassword && formPassword.dataset.bound !== 'true') {
         formPassword.dataset.bound = 'true';
         formPassword.onsubmit = async (e) => {
@@ -1457,13 +1464,26 @@ function setupPasswordFunctionality(user) {
             const newPass = document.getElementById('profile-new-pass')?.value;
             const confirmPass = document.getElementById('profile-confirm-pass')?.value;
 
+            if (!currentPass || !newPass || !confirmPass) {
+                mostrarMensaje('Por favor, completa todos los campos de contraseña.', 'error');
+                return;
+            }
+
             if (newPass !== confirmPass) {
                 mostrarMensaje('Las nuevas contraseñas no coinciden.', 'error');
                 return;
             }
 
-            if (newPass.length < 6) {
-                mostrarMensaje('La nueva contraseña debe tener al menos 6 caracteres.', 'error');
+            const evaluacion = evaluarFuerzaPassword(newPass);
+            if (!evaluacion.esValida) {
+                if (evaluacion.excedeMaximo) {
+                    mostrarMensaje(`La nueva contraseña no puede superar el límite máximo de ${evaluacion.maxLen} caracteres.`, 'error');
+                    return;
+                }
+                const faltantes = evaluacion.resultados
+                    .filter(r => !r.cumple)
+                    .map(r => r.label.toLowerCase());
+                mostrarMensaje(`La contraseña debe contener: ${faltantes.join(', ')}.`, 'error');
                 return;
             }
 
@@ -1483,12 +1503,15 @@ function setupPasswordFunctionality(user) {
 
                 mostrarMensaje('Contraseña actualizada con éxito.', 'exito');
                 formPassword.reset();
+                if (medidor) medidor.actualizar();
             } catch (err) {
                 console.error('[SmartBids] Error al cambiar clave:', err);
                 if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
                     mostrarMensaje('La contraseña actual es incorrecta.', 'error');
+                } else if (err.code) {
+                    mostrarMensaje(getFriendlyErrorMessage(err.code, err.message), 'error');
                 } else {
-                    mostrarMensaje(`Error al cambiar clave: ${err.message}`, 'error');
+                    mostrarMensaje(`Error al cambiar clave: ${err.message || 'Error inesperado.'}`, 'error');
                 }
             } finally {
                 setButtonLoading(btn, false);

@@ -601,6 +601,39 @@
                             <label for="profile-confirm-pass">Confirmar Nueva Contraseña</label>
                             <input type="password" id="profile-confirm-pass" class="form-input" placeholder="Repite la contraseña" required>
                         </div>
+                        <div class="form-item grid-full" id="perfil-password-meter-wrap">
+                            <div class="password-meter" id="perfil-password-meter" aria-live="polite">
+                                <div class="password-meter__header">
+                                    <span class="password-meter__title">Seguridad de la nueva contraseña</span>
+                                    <span class="password-meter__status" id="perfil-password-status">Seguridad de la contraseña</span>
+                                </div>
+                                <div class="password-meter__track">
+                                    <div class="password-meter__bar" id="perfil-password-bar"></div>
+                                </div>
+                                <ul class="password-meter__list">
+                                    <li class="password-meter__item" data-criterion="length">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Mínimo 6 caracteres</span>
+                                    </li>
+                                    <li class="password-meter__item" data-criterion="uppercase">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Al menos una letra mayúscula</span>
+                                    </li>
+                                    <li class="password-meter__item" data-criterion="lowercase">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Al menos una letra minúscula</span>
+                                    </li>
+                                    <li class="password-meter__item" data-criterion="numeric">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Al menos un número</span>
+                                    </li>
+                                    <li class="password-meter__item" data-criterion="special">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Al menos un carácter especial (ej: !@#$%^&*)</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="perfil__form-actions">

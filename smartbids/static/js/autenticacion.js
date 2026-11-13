@@ -20,6 +20,10 @@ import {
     getFriendlyErrorMessage,
     MENSAJES
 } from './mensaje.js';
+import {
+    conectarMedidorPassword,
+    evaluarFuerzaPassword
+} from './password-validator.js';
 
 const mensajeFlash = sessionStorage.getItem('flash_message');
 if (mensajeFlash) {
@@ -534,6 +538,12 @@ if (forgotPasswordLink) {
 // ==========================================================================
 const registerForm = document.getElementById('register-form');
 if (registerForm) {
+    const passwordInput = document.getElementById('password');
+    const meterContainer = document.getElementById('registro-password-meter');
+    if (passwordInput && meterContainer) {
+        conectarMedidorPassword(passwordInput, meterContainer);
+    }
+
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         limpiarMensaje();
@@ -562,6 +572,19 @@ if (registerForm) {
 
         if (password !== passwordConfirm) {
             mostrarMensaje(MENSAJES.validacion.passwordsNoCoinciden, 'error');
+            return;
+        }
+
+        const evaluacion = evaluarFuerzaPassword(password);
+        if (!evaluacion.esValida) {
+            if (evaluacion.excedeMaximo) {
+                mostrarMensaje(`La contraseña no puede superar el límite máximo de ${evaluacion.maxLen} caracteres.`, 'error');
+                return;
+            }
+            const faltantes = evaluacion.resultados
+                .filter(r => !r.cumple)
+                .map(r => r.label.toLowerCase());
+            mostrarMensaje(`La contraseña debe contener: ${faltantes.join(', ')}.`, 'error');
             return;
         }
 

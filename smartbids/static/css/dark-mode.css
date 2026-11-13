@@ -2279,3 +2279,55 @@ html.dark-mode #modal-cancelacion-cuenta .modal-2fa-card {
     color: var(--text-body) !important;
 }
 
+/* ==============================================================================
+   MEDIDOR DE FUERZA DE CONTRASEÑA EN MODO OSCURO
+   ============================================================================== */
+html.dark-mode .password-meter {
+    background: var(--bg-surface, #13221f) !important;
+    border-color: var(--border-subtle, rgba(177, 210, 202, 0.16)) !important;
+    box-shadow: none !important;
+}
+
+html.dark-mode .password-meter:hover,
+html.dark-mode .password-meter.is-focused {
+    border-color: var(--accent-green, #1ec498) !important;
+}
+
+html.dark-mode .password-meter__title {
+    color: var(--accent-green, #1ec498) !important;
+}
+
+html.dark-mode .password-meter__status {
+    color: var(--text-muted, #94a3b8) !important;
+}
+
+html.dark-mode .password-meter__track {
+    background: var(--bg-input, #0f1c19) !important;
+    border: 1px solid var(--border-subtle, rgba(177, 210, 202, 0.16)) !important;
+}
+
+html.dark-mode .password-meter__item {
+    color: var(--text-muted, #94a3b8) !important;
+}
+
+html.dark-mode .password-meter__icon {
+    color: #64748b !important;
+}
+
+html.dark-mode .password-meter__item.is-valid {
+    color: #a7f3d0 !important;
+}
+
+html.dark-mode .password-meter__item.is-valid .password-meter__icon {
+    color: #34d399 !important;
+}
+
+html.dark-mode .password-meter__item.is-exceeded {
+    color: #f87171 !important;
+}
+
+html.dark-mode .password-meter__item.is-exceeded .password-meter__icon {
+    color: #f87171 !important;
+}
+
+

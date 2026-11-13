@@ -2092,3 +2092,118 @@
     #modal-simulador-ml .simulador-modal__fields { grid-template-columns: 1fr; }
     #modal-simulador-ml .simulador-modal__actions { grid-template-columns: 1fr; }
 }
+
+/* ==============================================================================
+   MEDIDOR DE FUERZA Y REQUISITOS DE CONTRASEÑA (SMARTBIDS)
+   ============================================================================== */
+.password-meter {
+    max-width: 550px;
+    width: 100%;
+    margin: 0.25rem auto 1.25rem auto;
+    padding: 0.95rem 1.15rem;
+    background: #f8faf9;
+    border: 1.5px solid var(--border-color, rgba(177, 210, 202, 0.4));
+    border-radius: 14px;
+    box-sizing: border-box;
+    text-align: left;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.password-meter:hover,
+.password-meter.is-focused {
+    border-color: var(--soft-mint, #b1d2ca);
+    box-shadow: 0 4px 14px rgba(17, 99, 78, 0.05);
+}
+
+.password-meter__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+}
+
+.password-meter__title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--dark-green, #11634e);
+}
+
+.password-meter__status {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    transition: color 0.3s ease;
+}
+
+.password-meter__track {
+    width: 100%;
+    height: 7px;
+    background: #e2e8f0;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 0.65rem;
+}
+
+.password-meter__bar {
+    width: 0%;
+    height: 100%;
+    border-radius: 9999px;
+    background-color: #cbd5e1;
+    transition: width 0.35s ease, background-color 0.35s ease;
+}
+
+.password-meter__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0.35rem 0.85rem;
+}
+
+.password-meter__item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.79rem;
+    color: #64748b;
+    line-height: 1.35;
+    transition: color 0.2s ease;
+}
+
+.password-meter__icon {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    flex-shrink: 0;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.password-meter__item.is-valid {
+    color: #0f5132;
+    font-weight: 600;
+}
+
+.password-meter__item.is-valid .password-meter__icon {
+    color: #10b981;
+    transform: scale(1.1);
+}
+
+.password-meter__item.is-exceeded {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.password-meter__item.is-exceeded .password-meter__icon {
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+/* En el perfil, ocupar el ancho del panel */
+#perfil-password-meter-wrap .password-meter {
+    max-width: 100%;
+    margin: 0;
+}
+

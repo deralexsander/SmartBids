@@ -50,6 +50,7 @@ urlpatterns = [
     path('api/actualizar-preferencias/', views.actualizar_preferencias_suscriptor, name='actualizar_preferencias'),
     path('api/catalogos-preferencias/', views.catalogos_preferencias, name='catalogos_preferencias'),
     path('api/firebase/politica-contrasenas/', views.politica_contrasenas_firebase, name='politica_contrasenas_firebase'),
+    path('api/politica-contrasenas-publica/', views.politica_contrasenas_publica, name='politica_contrasenas_publica'),
     path('api/parametros/alerta-perfil/', views.parametro_alerta_perfil, name='api_parametro_alerta_perfil'),
     path('api/administracion/info-contacto/', views.administrar_info_contacto, name='api_info_contacto'),
     path('api/administracion/config-correo/', views.administrar_config_correo, name='api_config_correo'),

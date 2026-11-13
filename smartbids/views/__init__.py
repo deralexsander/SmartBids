@@ -31,7 +31,7 @@ from .mensajeria_views import (
     parametro_alerta_perfil, administrar_info_contacto, enviar_consulta_contacto,
     administrar_config_correo, auditoria_admin_view,
 )
-from .firebase_policy_views import politica_contrasenas_firebase, usuarios_firebase
+from .firebase_policy_views import politica_contrasenas_firebase, usuarios_firebase, politica_contrasenas_publica
 
 from . import (
     page_views,
