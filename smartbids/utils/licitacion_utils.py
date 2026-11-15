@@ -346,17 +346,21 @@ ESTADOS_LICITACION = {
 
 
 def resolver_suscriptor(request):
+    session = getattr(request, 'session', None)
+    session_uid = session.get('firebase_uid') if session else None
+    user = getattr(request, 'user', None)
+
     uid = (
         request.GET.get('uid')
         or request.COOKIES.get('sb_firebase_uid')
         or request.COOKIES.get('firebase_uid')
-        or request.session.get('firebase_uid')
+        or session_uid
         or request.headers.get('X-Firebase-UID')
     )
     if uid:
         return Suscriptor.objects.filter(firebase_uid=str(uid).strip()).first()
-    if request.user.is_authenticated:
-        return Suscriptor.objects.filter(firebase_uid=request.user.username).first()
+    if user and user.is_authenticated:
+        return Suscriptor.objects.filter(firebase_uid=user.username).first()
     return None
 
 

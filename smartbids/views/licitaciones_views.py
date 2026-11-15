@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.core.paginator import Paginator
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.utils import timezone
 
 from smartbids.models.procurement import Licitacion, LicitacionesProductos
@@ -75,8 +75,11 @@ def filtrar_licitaciones(request, suscriptor):
     else:
         q_perfil = Q()
 
+    hoy = timezone.localdate()
+    q_no_cerrada = Q(lic_fecha_cierre__gte=hoy) | Q(lic_fecha_cierre__isnull=True)
+
     if q_perfil:
-        match_perfil = Licitacion.objects.filter(q_perfil).distinct().count()
+        match_perfil = Licitacion.objects.filter(q_perfil, q_no_cerrada).distinct().count()
     else:
         match_perfil = 0
 
@@ -132,6 +135,9 @@ def _calcular_cierre_proximo(lic, hoy, plazo_tres_dias):
 
 def mis_licitaciones_view(request):
     suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return redirect('/planes/?upgrade=1&modulo=licitaciones')
+
     if suscriptor:
         from .tracking_views import _sincronizar_seguimientos
         _sincronizar_seguimientos(suscriptor)
@@ -185,10 +191,11 @@ def mis_licitaciones_view(request):
     tiene_filtro_manual = bool(request.GET.get('q') or request.GET.get('tipo') or request.GET.get('estado'))
     if q_perfil and match_perfil > 0 and not solo_seguidas and not tiene_filtro_manual:
         try:
+            q_no_cerrada = Q(lic_fecha_cierre__gte=hoy) | Q(lic_fecha_cierre__isnull=True)
             qs_perfil = (
                 Licitacion.objects
                 .select_related('lic_codigo_ucom')
-                .filter(q_perfil)
+                .filter(q_perfil, q_no_cerrada)
                 .distinct()
                 .order_by('-lic_fecha_public')
             )
@@ -257,6 +264,9 @@ def mis_licitaciones_view(request):
 
 def exportar_licitaciones_view(request):
     suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return redirect('/planes/?upgrade=1&modulo=licitaciones')
+
     licitaciones, _ = filtrar_licitaciones(request, suscriptor)
     formato = (request.GET.get('formato') or request.GET.get('format') or 'csv').strip().lower()
 

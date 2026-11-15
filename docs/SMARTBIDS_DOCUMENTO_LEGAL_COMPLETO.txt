@@ -1,0 +1,348 @@
+================================================================================
+SMARTBIDS - DOSSIER LEGAL Y CONTRACTUAL COMPLETO PARA REVISIÓN JURÍDICA
+Plataforma SaaS de Inteligencia Comercial y Machine Learning para Mercado Público
+Versión: 1.0 (Noviembre 2026)
+Ámbito de Aplicación: República de Chile
+Legislación Aplicable: Ley N° 21.719, Ley N° 19.496, Ley N° 21.663, Ley N° 21.459, Ley N° 19.886
+================================================================================
+
+NOTA PARA LA ABOGADA / REVISOR LEGAL:
+El presente documento consolida la totalidad de las cláusulas contractuales, 
+términos de servicio, políticas de privacidad, ejercicio de derechos ARCOP, 
+política de cookies, protocolos de ciberseguridad (2FA), deslinde algorítmico 
+(Machine Learning) y esquema tarifario de la plataforma SaaS "SmartBids", operada 
+en Chile por ChileAvanza. 
+
+Los datos institucionales (Razón Social, RUT, Domicilio y Canales de Contacto) 
+son gobernados dinámicamente desde la base de datos PostgreSQL institucional 
+(módulo "InfoContacto"), asegurando consistencia sin direcciones físicas 
+particulares de personas naturales y acotándose a la sede regional comercial.
+
+--------------------------------------------------------------------------------
+ÍNDICE DE MATERIAS:
+1. Individualización del Prestador, Sede y Objeto del Servicio SaaS
+2. Términos y Condiciones Generales de Uso del Servicio
+3. Política de Privacidad y Tratamiento de Datos Personales (Ley N° 21.719)
+4. Procedimiento de Ejercicio de Derechos ARCOP (Acceso, Rectificación, Cancelación, Oposición y Portabilidad)
+5. Política de Cookies y Almacenamiento Local en Dispositivos
+6. Ciberseguridad, Doble Factor de Autenticación (2FA) y Notificación de Incidentes (Ley N° 21.663)
+7. Deslinde de Responsabilidad Algorítmica y Modelos Predictivos (Machine Learning / XGBoost)
+8. Estructura de Usuarios, Roles, Tarifas y Condiciones Comerciales
+--------------------------------------------------------------------------------
+
+
+================================================================================
+1. INDIVIDUALIZACIÓN DEL PRESTADOR, SEDE Y OBJETO DEL SERVICIO SAAS
+================================================================================
+1.1. Prestador Responsable:
+El servicio de la plataforma tecnológica "SmartBids" es provisto y operado por la 
+entidad titular identificada en el sistema institucional:
+- Razón Social: ChileAvanza / Prisma Team (o la razón social formalmente informada 
+  en el panel institucional de SmartBids).
+- Rol Único Tributario (RUT): Informado en los registros oficiales de la plataforma 
+  (00.000.000-5 o el asignado formalmente por el Servicio de Impuestos Internos).
+- Domicilio Legal y Sede Institucional: Ciudad de Viña del Mar, Región de 
+  Valparaíso, República de Chile. (Se deja constancia expresa de que se omite todo 
+  domicilio físico particular de personas naturales, circunscribiéndose la fijación 
+  territorial a la comuna y región de operación comercial).
+- Correo Electrónico Institucional y de Privacidad: smartbids.qa@chileavanza.cl
+- Teléfono Oficial de Contacto: +56 9 6595 6863
+
+1.2. Objeto del Software como Servicio (SaaS):
+SmartBids es una plataforma tecnológica orientada al segmento empresarial (B2B) 
+y MiPyMEs proveedoras del Estado, cuyo propósito es facilitar la prospección, 
+clasificación inteligente, seguimiento histórico y análisis predictivo de procesos 
+de licitaciones y compras públicas publicados por los organismos del Estado de Chile 
+en el portal Mercado Público / ChileCompra.
+
+
+================================================================================
+2. TÉRMINOS Y CONDICIONES GENERALES DE USO DEL SERVICIO
+================================================================================
+2.1. Naturaleza del Contrato y Aceptación Vinculante:
+El registro de una cuenta de usuario, la navegación en el sistema o la contratación 
+de una suscripción implica la aceptación plena, expresa y sin reservas de los 
+presentes Términos y Condiciones. Si el usuario actúa en representación de una 
+persona jurídica (empresa proveedora), declara y garantiza contar con las 
+facultades suficientes para obligarla contractualmente.
+
+2.2. Capacidad y Veracidad de la Información:
+El usuario se compromete a ingresar información verídica, vigente, exacta y completa 
+respecto de su identidad personal y de los antecedentes de la empresa representada 
+(RUT, Razón Social, nombre de contacto y rubros de interés). SmartBids se reserva el 
+derecho de solicitar acreditación documental o verificar la existencia formal de la 
+entidad ante discrepancias evidentes.
+
+2.3. Carácter Personal e Intransferible de las Credenciales:
+Cada cuenta de usuario es personal e intransferible. El usuario es el único 
+custodio y responsable exclusivo de la confidencialidad de su contraseña, factores 
+de autenticación OTP y tokens de sesión. Cualquier operación ejecutada bajo las 
+credenciales de un usuario autenticado se presumirá realizada válidamente por este, 
+salvo notificación previa y oportuna de extravío o vulneración de seguridad.
+
+2.4. Prohibición de Abuso e Ilícitos Informáticos (Ley N° 21.459):
+En estricta conformidad con la Ley N° 21.459 sobre Delitos Informáticos, queda 
+rotundamente prohibido:
+a) Emplear mecanismos automatizados desproporcionados (scraping masivo, robots de 
+   extracción agresiva o ataques de denegación de servicio) que saturen o pongan 
+   en riesgo la disponibilidad de los servidores de SmartBids.
+b) Intentar vulnerar, eludir o burlar las barreras de control de acceso, los muros 
+   de pago (paywalls), los mecanismos de autenticación o los permisos de roles.
+c) Realizar ingeniería inversa, descompilación o copia no autorizada del código 
+   fuente, de la arquitectura de la base de datos o de los pesos y lógica interna 
+   de los modelos predictivos de Machine Learning entrenados por SmartBids.
+d) Revender, sublicenciar o reempaquetar los datos estructurados o las predicciones 
+   generadas por SmartBids a favor de terceros sin autorización contractual escrita.
+
+2.5. Derecho de Retracto y Cancelación (Ley N° 19.496 / Decreto 6/2021):
+De conformidad con el Artículo 3° bis letra b) de la Ley N° 19.496 sobre Protección 
+de los Derechos de los Consumidores, y tratándose de un servicio digital SaaS de 
+ejecución y habilitación inmediata tras la activación del pago, el usuario consiente 
+que el servicio entra en vigencia de forma inmediata. No obstante lo anterior, 
+el suscriptor mantiene en todo momento el derecho de no renovar su plan o solicitar 
+la baja administrativa de su cuenta desde su panel de perfil de usuario de forma 
+ágil y expedita, sin trabas ni cobros de salida.
+
+
+================================================================================
+3. POLÍTICA DE PRIVACIDAD Y PROTECCIÓN DE DATOS PERSONALES (LEY N° 21.719)
+================================================================================
+3.1. Marco Regulatorio Aplicable:
+SmartBids adecúa su tratamiento de datos a los estándares fijados por la Ley N° 
+21.719 (que moderniza el régimen de protección de la vida privada y datos personales 
+en Chile) y a las directrices emitidas por la Agencia de Protección de Datos 
+Personales (APDP) de Chile.
+
+3.2. Principios Rectores del Tratamiento:
+- Principio de Licitud y Lealtad: Los datos se recopilan en virtud del consentimiento 
+  libre, previo, expreso e informado otorgado por el usuario al registrarse y en 
+  función de la ejecución del contrato de servicio SaaS.
+- Principio de Finalidad: Los datos personales son tratados única y exclusivamente 
+  para:
+  a) Administrar el acceso y la seguridad de la cuenta del usuario.
+  b) Calibrar y personalizar el motor de alertas y recomendaciones de compras 
+     públicas según los rubros y comunas seleccionadas.
+  c) Proveer soporte técnico, facturación y avisos de cierre inminente de licitaciones.
+- Principio de Proporcionalidad y Minimización: Solo se solicitan los datos 
+  estrictamente necesarios (nombres, correo corporativo, teléfono de contacto y 
+  datos de la empresa representada).
+- Principio de No Comercialización: SmartBids NO vende, NO arrienda y NO transfiere 
+  bases de datos personales ni historiales de búsqueda de sus usuarios a terceras 
+  empresas con fines publicitarios o de prospección externa ajenos a la plataforma.
+
+3.3. Categorías de Datos Recopilados:
+a) Datos de Identificación y Contacto: Nombres, apellidos, nombre social (opcional), 
+   correo electrónico y teléfono.
+b) Datos de Identificación Empresarial: RUT de la empresa proveedora, Razón Social, 
+   Nombre de Fantasía, dirección de casa matriz (opcional) y comuna sede.
+c) Datos de Preferencias Operativas: Códigos de Unidades de Compra (UCOM), comunas de 
+   operación en Chile, tramos de licitación (L1, LE, LP, LR), productos ONU (UNSPSC) 
+   y palabras clave comerciales.
+d) Datos Técnicos de Conexión: Dirección IP, registros de fecha y hora de último 
+   ingreso (tokens de sesión) y hashes criptográficos de autenticación.
+
+3.4. Infraestructura Cloud y Transferencias Internacionales de Datos (Art. 26 Ley 21.719):
+Para garantizar disponibilidad ininterrumpida, balanceo de carga y seguridad de grado 
+bancario, SmartBids utiliza servicios de infraestructura y autenticación provistos por:
+- Google LLC (Google Cloud Platform / Firebase Authentication).
+- Infraestructura de hosting y bases de datos relacionales en la nube (PostgreSQL 
+  en centro de datos seguro con cifrado en reposo y en tránsito).
+Dichos prestadores operan bajo estrictas cláusulas contractuales de tratamiento por 
+cuenta de terceros y certificaciones internacionales de seguridad ISO/IEC 27001, 
+ISO/IEC 27017, ISO/IEC 27018 y reportes SOC 2 / SOC 3.
+
+3.5. Plazos de Conservación y Supresión:
+Los datos personales se conservarán mientras la cuenta permanezca activa. Si el 
+usuario solicita la cancelación formal o supresión de sus datos, estos serán 
+eliminados o disociados de forma irreversible, conservándose únicamente aquellos 
+registros fiscales o de facturación estrictamente exigidos por la legislación 
+tributaria chilena durante los plazos legales de prescripción.
+
+
+================================================================================
+4. PROCEDIMIENTO DE EJERCICIO DE DERECHOS ARCOP
+================================================================================
+De acuerdo con el Título II de la Ley N° 21.719, el titular de los datos personales 
+puede ejercer en cualquier momento los siguientes derechos ante SmartBids:
+
+4.1. Catálogo de Derechos Garantizados:
+- Derecho de Acceso: Conocer qué datos personales propios se encuentran en 
+  tratamiento por la plataforma y las condiciones de dicho tratamiento.
+- Derecho de Rectificación: Modificar o corregir antecedentes inexactos, 
+  incompletos o desactualizados directamente desde el panel de perfil.
+- Derecho de Cancelación / Supresión: Solicitar el borrado definitivo de sus datos 
+  cuando haya cesado la relación contractual o la necesidad de su tratamiento.
+- Derecho de Oposición: Oponerse al tratamiento de datos para finalidades específicas 
+  (como notificaciones comerciales o resúmenes matutinos).
+- Derecho a la Portabilidad (Art. 9 Ley N° 21.719): Obtener una copia estructurada, 
+  genérica, de uso común y legible por máquina (formato JSON) de todos los datos 
+  personales y configuraciones comerciales que haya provisto el titular. En 
+  SmartBids, este derecho se encuentra automatizado con un botón de descarga 
+  inmediata dentro de la pestaña "Privacidad (ARCOP)" en la vista de Perfil.
+
+4.2. Canales de Ejercicio y Plazo Perentorio de Respuesta:
+El titular puede ejercer sus derechos mediante:
+1. Mecanismo de autoservicio directo: Desde la pestaña "Privacidad (ARCOP)" en la 
+   vista de Perfil del usuario autenticado.
+2. Correo electrónico formal: Dirigido a smartbids.qa@chileavanza.cl, indicando 
+   nombre completo, RUT del titular y derecho específico que solicita ejercer.
+Conforme al Artículo 10 de la Ley N° 21.719, SmartBids tramitará y responderá toda 
+solicitud formal en un plazo máximo de quince (15) días hábiles contados desde su 
+recepción formal. En caso de disconformidad, el titular tiene derecho a recurrir 
+ante la Agencia de Protección de Datos Personales (APDP).
+
+
+================================================================================
+5. POLÍTICA DE COOKIES Y ALMACENAMIENTO LOCAL EN DISPOSITIVOS
+================================================================================
+5.1. Enfoque de Privacidad por Diseño:
+SmartBids aplica una política de minimización tecnológica: NO utiliza cookies de 
+perfilamiento invasivo de terceros, NO comercializa identificadores publicitarios ni 
+adhiere a redes de subasta de anuncios en tiempo real (AdTech).
+
+5.2. Tecnologías Esenciales Utilizadas:
+a) Cookies Técnicas de Sesión (`sb_firebase_uid`, `sb_session_token`):
+   Identificadores estrictamente necesarios para mantener autenticado al usuario y 
+   vincular sus peticiones HTTP con su cuenta en PostgreSQL de forma segura. 
+   Configuradas con directivas SameSite=Lax y duración acotada.
+b) Cookie de Protección Anti-Falsificación (`csrftoken`):
+   Provista por el framework web de servidor (Django) para impedir ataques de tipo 
+   Cross-Site Request Forgery (CSRF).
+c) Almacenamiento Local del Navegador (LocalStorage `smartbids_theme`):
+   Almacena la preferencia visual de interfaz (Modo Claro o Modo Oscuro) de forma 
+   puramente local en el navegador del usuario, sin transferir datos personales al 
+   servidor.
+d) Consentimiento de Cookies (`smartbids_cookies_consent`):
+   Registra la confirmación del banner de consentimiento para no reiterar el aviso.
+
+
+================================================================================
+6. CIBERSEGURIDAD, DOBLE FACTOR DE AUTENTICACIÓN (2FA) Y NOTIFICACIÓN DE INCIDENTES
+================================================================================
+6.1. Marco Legal: Ley Marco de Ciberseguridad (Ley N° 21.663)
+SmartBids implementa medidas de seguridad técnicas y operativas idóneas para 
+proteger los sistemas de información corporativos frente a accesos no autorizados, 
+destrucción, pérdida o alteración de datos.
+
+6.2. Arquitectura de Seguridad y Doble Factor (2FA):
+- Autenticación Robusta OTP: El ingreso a la plataforma requiere la verificación de 
+  un código numérico temporal de un solo uso (One-Time Password - OTP) de 6 dígitos 
+  enviado al correo electrónico validado del usuario.
+- Hash Criptográfico Irreversible: Los códigos OTP temporales son procesados 
+  utilizando algoritmos de cifrado unidireccionales combinados con sal criptográfica 
+  (salting), evitando cualquier posibilidad de descifrado en texto plano.
+- Expiración e Invalidador Anti-Replay: Cada código tiene una vigencia máxima de diez 
+  (10) minutos y queda automáticamente invalidado tras el primer intento de uso o al 
+  superar tres (3) intentos fallidos consecutivos, previniendo ataques de fuerza bruta.
+- Cifrado en Tránsito: Todo el tráfico entre los navegadores de los usuarios y los 
+  servidores de SmartBids se encuentra protegido mediante túneles seguros cifrados 
+  bajo protocolo TLS 1.3 de última generación.
+
+6.3. Protocolo de Notificación de Incidentes de Seguridad:
+En caso de detectarse una brecha o vulneración de seguridad que afecte de manera 
+significativa los datos personales de los usuarios, SmartBids se compromete a:
+a) Notificar a la Agencia de Protección de Datos Personales (APDP) en un plazo no 
+   superior a 72 horas desde que haya tomado conocimiento formal del hecho.
+b) Notificar a los usuarios afectados mediante comunicación por correo electrónico, 
+   detallando la naturaleza del incidente, los datos presumiblemente comprometidos y 
+   las medidas correctivas adoptadas.
+
+
+================================================================================
+7. DESLINDE DE RESPONSABILIDAD ALGORÍTMICA Y MODELOS PREDICTIVOS (MACHINE LEARNING)
+================================================================================
+7.1. Fuente de Datos Oficiales Abiertos (Ley N° 19.886):
+SmartBids extrae, estructura y analiza información pública transaccional proveniente 
+del sistema de compras públicas del Estado de Chile (ChileCompra / Mercado Público), 
+en conformidad con la Ley N° 19.886 de Contratos Administrativos de Suministro y 
+Prestación de Servicios y con el principio de transparencia de la función pública 
+(Ley N° 20.285).
+
+7.2. Independencia Institucional:
+SmartBids es una solución tecnológica de carácter estrictamente privado e 
+independiente. NO forma parte, NO actúa en representación, NO está patrocinada ni 
+mantiene subordinación alguna respecto a la Dirección de Compras y Contratación 
+Pública (ChileCompra) ni de los organismos estatales compradores.
+
+7.3. Naturaleza de los Modelos de Machine Learning (XGBoost / Scikit-Learn):
+Los índices de afinidad ("Match con Perfil"), puntajes predictivos ("Scoring de 
+Viabilidad") y clasificaciones de probabilidad de adjudicación corresponden a 
+inferencias probabilísticas generadas por modelos estadísticos computacionales 
+entrenados con antecedentes históricos de compras públicas.
+POR TANTO, SE DECLARA Y ACEPTA EXPRESAMENTE QUE:
+a) Las inferencias del modelo NO CONSTITUYEN garantía de adjudicación, promesa de 
+   éxito comercial, asesoría financiera ni dictamen legal vinculante.
+b) Los factores externos del mercado (tales como la solvencia de otros oferentes, 
+   criterios discrecionales de las comisiones evaluadoras de cada organismo público 
+   o modificaciones de última hora en las bases) escapan al control de los modelos.
+c) Cada empresa y usuario es única y exclusivamente responsable de leer íntegramente 
+   las bases administrativas y técnicas de cada licitación, formular sus ofertas 
+   económicas y técnicas conforme a sus propios análisis y presentarlas formalmente 
+   en los portales oficiales del Estado de Chile.
+
+
+================================================================================
+8. ESTRUCTURA DE USUARIOS, ROLES, TARIFAS Y CONDICIONES COMERCIALES
+================================================================================
+8.1. Estados de Usuario y Niveles de Acceso:
+Para asegurar una gestión transparente, SmartBids implementa una estructura de roles 
+basada en códigos simples de estado en PostgreSQL:
+
+- Código 1: PROSPECTO (Registrado sin pago)
+  * Permisos: El usuario puede crear su cuenta e iniciar sesión de forma libre. 
+    Tiene acceso habilitado exclusivamente a configurar su Perfil empresarial 
+    (datos personales, datos de empresa, categorías tributarias y palabras clave) y 
+    a consultar el Resumen del día matutino de 24 horas.
+  * Restricciones (Paywall): Las vistas principales que constituyen las propuestas 
+    de valor avanzadas de la plataforma (Explorador de Licitaciones en 346 comunas, 
+    Fichas oficiales, Dashboards analíticos con Data Warehouse y Simulador predictivo 
+    de Machine Learning) están bloqueadas. En la interfaz se muestran con un ícono 
+    distintivo de candado de seguridad, y al intentar acceder redirigen a la página 
+    comercial de planes (/planes/).
+
+- Código 2: SUSCRIPTOR (Acceso Total Habilitado)
+  * Permisos: Acceso irrestricto y completo a todas las funcionalidades de SmartBids: 
+    Explorador territorial nacional, expedientes completos de licitaciones, bases 
+    oficiales, foro Q&A, módulos de inteligencia de competencia, Data Warehouse 
+    histórico, scoring predictivo de Machine Learning con XGBoost, alertas de 
+    cierres urgentes (<72 hrs), notificaciones y exportación masiva a Excel y CSV.
+
+- Código 5: ADMINISTRADOR (Gestión y Control Interno)
+  * Permisos: Acceso total a la plataforma, panel de políticas de seguridad, 
+    auditoría interna, mensajería global institucional y gestión de estados de 
+    cuentas de usuarios.
+
+8.2. Tarifas Oficiales y Planes Disponibles:
+SmartBids ofrece exclusivamente dos (2) modalidades de suscripción con acceso 
+completo e idéntico:
+
+1. PLAN MENSUAL:
+   - Tarifa: $20.000 CLP (veinte mil pesos chilenos) al mes.
+   - Período de Facturación: Mensual recurrente.
+   - Cobertura: Acceso total a todas las herramientas sin subdivisiones.
+
+2. PLAN ANUAL (Opción Más Conveniente):
+   - Tarifa: $200.000 CLP (doscientos mil pesos chilenos) al año.
+   - Estructura Comercial: Equivalente a pagar diez (10) meses por un año completo 
+     de servicio (incluye dos meses de descuento total, representando un ahorro 
+     efectivo de $40.000 CLP anuales frente a la contratación mensual).
+   - Cobertura: Acceso total a todas las herramientas con congelamiento de tarifa 
+     durante los 12 meses de vigencia y soporte preferencial.
+
+8.3. Procedimiento Manual de Activación Comercial:
+El paso de cuenta de Prospecto (código 1) a Suscriptor (código 2) se efectúa de 
+forma manual y supervisada por el equipo de administración de SmartBids. 
+El procedimiento formal contempla:
+1. El prospecto completa el formulario comercial de solicitud en la plataforma, 
+   siendo campos obligatorios: Correo electrónico corporativo, Teléfono de contacto 
+   y Nombre de la Empresa.
+2. El equipo comercial de SmartBids toma contacto con el representante para validar 
+   los antecedentes y entregar los datos de transferencia bancaria institucional.
+3. Una vez verificado el comprobante de pago bancario, el administrador del sistema 
+   actualiza en el panel de control el estado de la cuenta en PostgreSQL a código 2 
+   (Suscriptor), quedando habilitado el acceso total inmediato para la empresa.
+
+================================================================================
+FIN DEL DOSSIER LEGAL SMARTBIDS
+Documento preparado para revisión y visado por asesoría legal especializada.
+================================================================================

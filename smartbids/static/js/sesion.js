@@ -47,12 +47,52 @@ const updateNavButtons = (user) => {
     if (loginButton) loginButton.style.display = user ? 'none' : 'inline-flex';
     if (profileButton) profileButton.style.display = user ? 'inline-flex' : 'none';
     if (!user && adminGeneralNav) adminGeneralNav.style.display = 'none';
+    if (!user) aplicarRestriccionesEstadoUsuario(null);
 
     // Actualiza botones condicionales de la landing page según el estado de autenticación
     document.querySelectorAll('[data-auth-href][data-guest-href]').forEach(btn => {
         btn.setAttribute('href', user ? btn.getAttribute('data-auth-href') : btn.getAttribute('data-guest-href'));
     });
 };
+
+export function aplicarRestriccionesEstadoUsuario(codigoEstado) {
+    window.currentUserCodigoEstado = codigoEstado;
+    const esProspecto = (codigoEstado === 1);
+    const lockLicitaciones = document.getElementById('nav-lock-licitaciones');
+    const lockDashboard = document.getElementById('nav-lock-dashboard');
+    const linkLicitaciones = document.getElementById('nav-link-licitaciones');
+    const linkDashboard = document.getElementById('nav-link-dashboard');
+    const navItemPlanes = document.getElementById('nav-item-planes');
+
+    if (esProspecto) {
+        document.body.classList.add('user-is-prospecto');
+        if (lockLicitaciones) lockLicitaciones.style.display = 'inline-flex';
+        if (lockDashboard) lockDashboard.style.display = 'inline-flex';
+        if (linkLicitaciones) {
+            linkLicitaciones.setAttribute('href', '/planes/?upgrade=1&modulo=licitaciones');
+            linkLicitaciones.setAttribute('title', 'Exclusivo Suscriptores - Haz clic para ver planes');
+        }
+        if (linkDashboard) {
+            linkDashboard.setAttribute('href', '/planes/?upgrade=1&modulo=dashboard');
+            linkDashboard.setAttribute('title', 'Exclusivo Suscriptores - Haz clic para ver planes');
+        }
+        if (navItemPlanes) navItemPlanes.style.display = 'list-item';
+    } else {
+        document.body.classList.remove('user-is-prospecto');
+        if (lockLicitaciones) lockLicitaciones.style.display = 'none';
+        if (lockDashboard) lockDashboard.style.display = 'none';
+        if (linkLicitaciones) {
+            linkLicitaciones.setAttribute('href', '/mis-licitaciones/');
+            linkLicitaciones.removeAttribute('title');
+        }
+        if (linkDashboard) {
+            linkDashboard.setAttribute('href', '/dashboard/');
+            linkDashboard.removeAttribute('title');
+        }
+        if (navItemPlanes) navItemPlanes.style.display = 'none';
+    }
+}
+window.aplicarRestriccionesEstadoUsuario = aplicarRestriccionesEstadoUsuario;
 
 async function validarRolAdministrador(user) {
     try {
@@ -62,9 +102,12 @@ async function validarRolAdministrador(user) {
             body: JSON.stringify({ uid: user.uid })
         });
         const data = await response.json();
+        const codEstado = data.datos?.codigo_estado;
+        aplicarRestriccionesEstadoUsuario(codEstado);
+
         const nombreEstado = data.datos?.nombre_estado || '';
         const rolNormalizado = nombreEstado.trim().toLowerCase();
-        const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || data.datos?.codigo_estado === 5;
+        const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || codEstado === 5;
 
         const perfilAdminSection = document.getElementById('perfil-admin-section');
         if (perfilAdminSection) perfilAdminSection.style.display = tieneRol ? 'block' : 'none';
@@ -85,7 +128,8 @@ let intervaloMonitoreoSesion = null;
 
 // Función de validación y deslogueo automático
 async function validarSesionContraPostgres(user) {
-    if (!user || AuthState.isSubmittingAuth) return;
+    const modal2faActivo = Boolean(document.getElementById('modal-2fa')?.classList.contains('active'));
+    if (!user || AuthState.isSubmittingAuth || modal2faActivo) return;
 
     const tokenLocal = SessionManager.getLocalToken();
     if (!tokenLocal) return;
@@ -121,6 +165,7 @@ async function validarSesionContraPostgres(user) {
 
 onAuthStateChanged(auth, async (user) => {
     const pageRule = matchCurrentPageConfig();
+    const modal2faActivo = Boolean(document.getElementById('modal-2fa')?.classList.contains('active'));
 
     // 1. Si no hay sesión iniciada
     if (!user) {
@@ -140,7 +185,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     // 2. Si ya está autenticado e intenta ir a login o registro
-    if (pageRule?.guestOnly && !AuthState.isSubmittingAuth) {
+    if (pageRule?.guestOnly && !AuthState.isSubmittingAuth && !modal2faActivo) {
         const tokenActual = SessionManager.getLocalToken();
         if (!tokenActual) {
             // Usuario con sesión Firebase residual pero sin 2FA completado
@@ -149,11 +194,11 @@ onAuthStateChanged(auth, async (user) => {
             hidePageLoader();
             return;
         }
-        window.location.replace('/');
+        window.location.replace(pageRule.redirectFallback || '/resumen');
         return;
     }
 
-    if (AuthState.isSubmittingAuth) return;
+    if (AuthState.isSubmittingAuth || modal2faActivo) return;
 
     // Guardar UID y fijar cookie de sesión para SSR
     localStorage.setItem('smartbids_uid', user.uid);
@@ -223,6 +268,9 @@ onAuthStateChanged(auth, async (user) => {
         .then(resp => resp.json())
         .then(resData => {
             if (resData.status === 'ok' && resData.datos) {
+                const codEstado = resData.datos.codigo_estado;
+                aplicarRestriccionesEstadoUsuario(codEstado);
+
                 const nombreEstado = resData.datos.nombre_estado || '';
                 const rolNormalizado = nombreEstado.trim().toLowerCase();
                 const tieneRol = rolNormalizado === 'admin' || rolNormalizado === 'administrador' || resData.datos?.codigo_estado === 5;

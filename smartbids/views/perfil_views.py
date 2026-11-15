@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.db import DataError, DatabaseError
-from django.db.models import Q, Value
+from django.db.models import CharField, Func, Q, Value
 from django.db.models.functions import Replace, Upper
 
 from django.core.cache import cache
@@ -55,6 +55,22 @@ def _buscar_empresa_por_rut(rut):
     return Empresa.objects.annotate(
         rut_normalizado=rut_db_normalizado
     ).filter(rut_normalizado__iexact=rut_normalizado).first()
+
+
+def _buscar_proveedores_por_rut_normalizado(rut_normalizado):
+    rut_proveedor_normalizado = Func(
+        Upper('prov_rut'),
+        Value('[^0-9K]'),
+        Value(''),
+        Value('g'),
+        function='REGEXP_REPLACE',
+        output_field=CharField(),
+    )
+    return (
+        Proveedor.objects.alias(rut_normalizado=rut_proveedor_normalizado)
+        .filter(rut_normalizado=rut_normalizado)
+        .order_by('prov_codigo_proveedor', 'prov_codigo_sucursal')
+    )
 
 
 def _normalizar_codigo_comuna(valor):
@@ -503,6 +519,18 @@ def obtener_perfil_suscriptor(request):
                 suscriptor.sus_iniciales = inic
                 suscriptor.save(update_fields=['sus_iniciales'])
 
+        cod_estado = suscriptor.codigo_estado_id if suscriptor.codigo_estado else None
+        if cod_estado == 1:
+            nombre_estado_susc = 'Prospecto'
+        elif cod_estado == 2:
+            nombre_estado_susc = 'Suscriptor'
+        elif cod_estado == 5:
+            nombre_estado_susc = 'Administrador'
+        elif suscriptor.codigo_estado and suscriptor.codigo_estado.nombre_estado:
+            nombre_estado_susc = suscriptor.codigo_estado.nombre_estado
+        else:
+            nombre_estado_susc = 'Prospecto'
+
         return JsonResponse({
             'status': 'ok',
             'datos': {
@@ -514,8 +542,8 @@ def obtener_perfil_suscriptor(request):
                 'sus_apellido2': suscriptor.sus_apellido2 or '',
                 'sus_nombre_social': suscriptor.sus_nombre_social or '',
                 'sus_iniciales': suscriptor.sus_iniciales or inic or '',
-                'codigo_estado': suscriptor.codigo_estado_id if suscriptor.codigo_estado else None,
-                'nombre_estado': suscriptor.codigo_estado.nombre_estado if suscriptor.codigo_estado else 'Activo',
+                'codigo_estado': cod_estado,
+                'nombre_estado': nombre_estado_susc,
                 'token_sesion': getattr(suscriptor, 'token_sesion', '') or '',
                 'fecha_registro': suscriptor.fecha_registro.isoformat() if suscriptor.fecha_registro else None,
                 'fecha_actualizacion': suscriptor.fecha_actualizacion.isoformat() if suscriptor.fecha_actualizacion else None,
@@ -806,17 +834,7 @@ def buscar_empresa_por_rut(request):
             })
 
         # 2. Búsqueda de respaldo en catálogo de Proveedores
-        filtro = (
-            Q(prov_rut__iexact=rut_raw) |
-            Q(prov_rut__iexact=rut_normalizado) |
-            Q(prov_rut__icontains=rut_normalizado)
-        )
-
-        cuerpo = rut_normalizado[:-1]
-        if len(cuerpo) >= 5:
-            filtro |= Q(prov_rut__icontains=cuerpo)
-
-        proveedor = Proveedor.objects.filter(filtro).first()
+        proveedor = _buscar_proveedores_por_rut_normalizado(rut_normalizado).first()
 
         if not proveedor:
             return JsonResponse({
@@ -1006,15 +1024,19 @@ def exportar_datos_arcop(request):
             logger.warning(f"[ARCOP] No se pudo registrar log de solicitud: {e_arcop}")
 
         # Obtener datos institucionales dinámicos desde Información Institucional y Footer
-        correo_privacidad = 'smartbids.qa@chileavanza.cl'
+        correo_privacidad = 'contacto@chileavanza.cl'
         razon_social = 'no informada'
         rut = '00000000-5'
         try:
             from smartbids.context_processors import extraer_correo_contacto, extraer_razon_social, extraer_rut_empresa
-            from smartbids.models.config import InfoContacto
+            from smartbids.models.config import InfoContacto, obtener_correos_sistema
+            correos_cfg = obtener_correos_sistema()
+            correo_privacidad = correos_cfg.get('email_contacto') or 'contacto@chileavanza.cl'
             info = InfoContacto.objects.first()
             if info and info.contacto_texto:
-                correo_privacidad = extraer_correo_contacto(info.contacto_texto)
+                correo_en_texto = extraer_correo_contacto(info.contacto_texto)
+                if correo_en_texto:
+                    correo_privacidad = correo_en_texto
                 razon_social = extraer_razon_social(info.contacto_texto)
                 rut = extraer_rut_empresa(info.contacto_texto)
         except Exception:

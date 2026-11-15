@@ -796,6 +796,8 @@ class ResumenDiaTests(SimpleTestCase):
             self.assertEqual(context['nombre_usuario'], 'Juan Pérez')
             self.assertTrue(context['tiene_palabras_perfil'])
             self.assertEqual(context['total_coincidencias'], 8)
+            mock_notif_filter.assert_called_once_with(seguimiento__usuario=mock_susc)
+            mock_notif_filter.return_value.select_related.assert_called_once_with('seguimiento__licitacion')
 
     def test_resumen_dia_view_oportunidades_y_cierran_pronto_solo_match_perfil(self):
         """Verifica que Oportunidades del Día y Cierran Pronto filtren exclusivamente por el perfil configurado."""
@@ -891,6 +893,86 @@ class ResumenDiaTests(SimpleTestCase):
             self.assertEqual(context['total_cierre_proximo'], 3)
 
 
+class NotificacionesSeguimientoTests(SimpleTestCase):
+    def test_sincronizar_crea_notificacion_solo_con_seguimiento_y_evento(self):
+        from unittest.mock import MagicMock, patch
+        from smartbids.models.core import NotificacionLicitacion, SeguimientoLicitacion, Suscriptor
+        from smartbids.models.procurement import Licitacion
+        from smartbids.views.tracking_views import _sincronizar_seguimientos
+
+        usuario = Suscriptor(id_suscriptor=1)
+        licitacion = Licitacion(lic_codigo='LIC-1', lic_nombre='Licitación')
+        seguimiento = SeguimientoLicitacion(
+            id=1,
+            usuario=usuario,
+            licitacion=licitacion,
+            estado_actual='publicada',
+            cerrada_en=None,
+        )
+        seguimiento.save = MagicMock()
+        qs = MagicMock()
+        qs.__iter__.return_value = [seguimiento]
+
+        with patch('smartbids.views.tracking_views.transaction.atomic'), \
+             patch('smartbids.views.tracking_views.SeguimientoLicitacion.objects.select_for_update') as lock, \
+             patch('smartbids.views.tracking_views.estado_licitacion', return_value=('preguntas', 'Preguntas')), \
+             patch('smartbids.views.tracking_views.NotificacionLicitacion.objects.bulk_create') as bulk_create:
+            lock.return_value.filter.return_value.select_related.return_value = qs
+            _sincronizar_seguimientos(usuario)
+
+        self.assertEqual(bulk_create.call_count, 1)
+        notificacion = bulk_create.call_args.args[0][0]
+        self.assertIsInstance(notificacion, NotificacionLicitacion)
+        self.assertIs(notificacion.seguimiento, seguimiento)
+        self.assertEqual(notificacion.estado_anterior, 'publicada')
+        self.assertEqual(notificacion.estado_nuevo, 'preguntas')
+        self.assertFalse(hasattr(notificacion, 'usuario'))
+        self.assertFalse(hasattr(notificacion, 'licitacion'))
+
+    def test_api_lista_cuenta_y_marca_solo_notificaciones_del_usuario(self):
+        from datetime import datetime, timezone
+        from unittest.mock import MagicMock, patch
+        from django.test import RequestFactory
+        from smartbids.views.tracking_views import notificaciones_licitacion_view
+
+        usuario = MagicMock()
+        seguimiento = MagicMock(licitacion_id='LIC-7')
+        item = MagicMock(
+            pk=17,
+            mensaje='Cambio de estado',
+            creado_en=datetime(2026, 1, 2, 3, 4, tzinfo=timezone.utc),
+            seguimiento=seguimiento,
+        )
+        qs = MagicMock()
+        qs.count.return_value = 1
+        qs.__getitem__.return_value = [item]
+        qs.select_related.return_value = qs
+        rf = RequestFactory()
+
+        with patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=usuario), \
+             patch('smartbids.views.tracking_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.tracking_views.NotificacionLicitacion.objects.filter', return_value=qs) as filt:
+            response = notificaciones_licitacion_view(rf.get('/api/licitaciones/notificaciones/'))
+
+        filt.assert_called_once_with(seguimiento__usuario=usuario, leida=False)
+        self.assertEqual(qs.select_related.call_args.args, ('seguimiento__licitacion',))
+        import json
+        payload = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(payload['count'], 1)
+        self.assertEqual(payload['notifications'][0]['id'], 17)
+        self.assertEqual(payload['notifications'][0]['message'], 'Cambio de estado')
+        self.assertEqual(payload['notifications'][0]['url'], '/licitaciones/LIC-7/')
+
+        with patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=usuario), \
+             patch('smartbids.views.tracking_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.tracking_views.NotificacionLicitacion.objects.filter', return_value=qs) as filt:
+            response = notificaciones_licitacion_view(rf.post('/api/licitaciones/notificaciones/'))
+
+        filt.assert_called_once_with(seguimiento__usuario=usuario, leida=False)
+        qs.update.assert_called_once_with(leida=True)
+        self.assertEqual(json.loads(response.content.decode('utf-8')), {'count': 0})
+
+
 class AdminSafetyAndEmailConfigTests(SimpleTestCase):
     def setUp(self):
         import json
@@ -972,13 +1054,257 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             self.assertTrue(mock_notificar.called)
             self.assertEqual(mock_notificar.call_args[1]['afectado_email'], 'admin2@empresa.cl')
 
+    def test_obtener_correos_sistema_lee_env(self):
+        import os
+        from unittest.mock import patch
+        from smartbids.models.config import obtener_correos_sistema
+
+        with patch.dict(os.environ, {
+            'EMAIL_CONTACTO': 'contacto_custom@chileavanza.cl',
+            'EMAIL_NOTIFICACIONES': 'qa_custom@chileavanza.cl',
+            'EMAIL_NOMBRE_REMITENTE': 'SmartBids Custom',
+            'EMAIL_SEGURIDAD_AUDITORIA': 'seguridad_custom@chileavanza.cl'
+        }), patch('smartbids.models.config.ConfiguracionCorreo.objects.first', return_value=None):
+            cfg = obtener_correos_sistema()
+            self.assertEqual(cfg['email_contacto'], 'contacto_custom@chileavanza.cl')
+            self.assertEqual(cfg['email_notificaciones'], 'qa_custom@chileavanza.cl')
+            self.assertEqual(cfg['nombre_remitente'], 'SmartBids Custom')
+            self.assertEqual(cfg['email_seguridad_auditoria'], 'seguridad_custom@chileavanza.cl')
+
+    def test_notificar_cambio_rol_prospecto_a_suscriptor(self):
+        from unittest.mock import patch, MagicMock
+        from smartbids.models.config import notificar_cambio_rol_suscriptor
+
+        mock_estado_prospecto = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_estado_suscriptor = MagicMock(codigo_estado=2, nombre_estado='Suscriptor')
+
+        with patch('django.core.mail.send_mail') as mock_send_mail:
+            res = notificar_cambio_rol_suscriptor(
+                ejecutor_email='admin@chileavanza.cl',
+                ejecutor_nombre='Admin Sistema',
+                afectado_email='cliente@empresa.cl',
+                afectado_nombre='Cliente Uno',
+                estado_anterior=mock_estado_prospecto,
+                estado_nuevo=mock_estado_suscriptor
+            )
+            self.assertTrue(res['enviado'])
+            self.assertEqual(res['tipo'], 'PROSPECTO_A_SUSCRIPTOR')
+            self.assertTrue(mock_send_mail.called)
+            args, kwargs = mock_send_mail.call_args
+            self.assertIn('¡Bienvenido(a) a SmartBids Suscriptor!', kwargs['subject'])
+            self.assertIn('smartbids.qa@chileavanza.cl', kwargs['from_email'])
+            self.assertEqual(kwargs['recipient_list'], ['cliente@empresa.cl'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['recipient_list'])
+            cuerpo = kwargs['message']
+            self.assertIn('346 comunas', cuerpo)
+            self.assertIn('Machine Learning XGBoost', cuerpo)
+            self.assertIn('Dashboards Analíticos', cuerpo)
+            self.assertNotIn('contacto@chileavanza.cl', cuerpo)
+
+    def test_notificar_cambio_rol_asignacion_administrador(self):
+        from unittest.mock import patch, MagicMock
+        from smartbids.models.config import notificar_cambio_rol_suscriptor
+
+        mock_estado_suscriptor = MagicMock(codigo_estado=2, nombre_estado='Suscriptor')
+        mock_estado_admin = MagicMock(codigo_estado=5, nombre_estado='Administrador')
+
+        with patch('django.core.mail.send_mail') as mock_send_mail:
+            res = notificar_cambio_rol_suscriptor(
+                ejecutor_email='admin.jefe@chileavanza.cl',
+                ejecutor_nombre='Jefe de Administradores',
+                afectado_email='nuevo.admin@chileavanza.cl',
+                afectado_nombre='Nuevo Admin',
+                estado_anterior=mock_estado_suscriptor,
+                estado_nuevo=mock_estado_admin
+            )
+            self.assertTrue(res['enviado'])
+            self.assertEqual(res['tipo'], 'ASIGNACION_ADMIN')
+            self.assertTrue(mock_send_mail.called)
+            args, kwargs = mock_send_mail.call_args
+            self.assertIn('Asignación de Rol Administrador', kwargs['subject'])
+            self.assertIn('smartbids.qa@chileavanza.cl', kwargs['from_email'])
+            self.assertEqual(kwargs['recipient_list'], ['nuevo.admin@chileavanza.cl'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['recipient_list'])
+            cuerpo = kwargs['message']
+            self.assertIn('El administrador con correo admin.jefe@chileavanza.cl te ha otorgado el rol de Administrador en SmartBids.', cuerpo)
+            self.assertIn('Gestión y Control de Usuarios', cuerpo)
+            self.assertNotIn('contacto@chileavanza.cl', cuerpo)
+
+    def test_notificar_cambio_rol_revocacion_administrador(self):
+        from unittest.mock import patch, MagicMock
+        from smartbids.models.config import notificar_cambio_rol_suscriptor
+
+        mock_estado_admin = MagicMock(codigo_estado=5, nombre_estado='Administrador')
+        mock_estado_suscriptor = MagicMock(codigo_estado=2, nombre_estado='Suscriptor')
+
+        with patch('django.core.mail.send_mail') as mock_send_mail:
+            res = notificar_cambio_rol_suscriptor(
+                ejecutor_email='admin.jefe@chileavanza.cl',
+                ejecutor_nombre='Jefe de Administradores',
+                afectado_email='ex.admin@chileavanza.cl',
+                afectado_nombre='Ex Admin',
+                estado_anterior=mock_estado_admin,
+                estado_nuevo=mock_estado_suscriptor
+            )
+            self.assertTrue(res['enviado'])
+            self.assertEqual(res['tipo'], 'REVOCACION_ADMIN')
+            self.assertTrue(mock_send_mail.called)
+            args, kwargs = mock_send_mail.call_args
+            self.assertIn('Revocación de Rol Administrador', kwargs['subject'])
+            self.assertIn('smartbids.qa@chileavanza.cl', kwargs['from_email'])
+            self.assertEqual(kwargs['recipient_list'], ['ex.admin@chileavanza.cl'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['recipient_list'])
+            cuerpo = kwargs['message']
+            self.assertIn('El administrador con correo admin.jefe@chileavanza.cl te ha quitado el rol de Administrador en SmartBids.', cuerpo)
+            self.assertNotIn('contacto@chileavanza.cl', cuerpo)
+
+    def test_notificar_accion_entre_administradores_sin_contacto(self):
+        from unittest.mock import patch
+        from smartbids.models.config import notificar_accion_entre_administradores
+
+        with patch('django.core.mail.send_mail') as mock_send_mail:
+            notificar_accion_entre_administradores(
+                ejecutor_email='admin1@chileavanza.cl',
+                ejecutor_nombre='Admin Uno',
+                afectado_email='admin2@chileavanza.cl',
+                accion='Modificación de Políticas',
+                detalle='Prueba de acción de seguridad'
+            )
+            self.assertTrue(mock_send_mail.called)
+            args, kwargs = mock_send_mail.call_args
+            self.assertEqual(kwargs['recipient_list'], ['admin2@chileavanza.cl'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['recipient_list'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['message'])
+            self.assertNotIn('contacto@chileavanza.cl', kwargs['html_message'])
+            self.assertIn('smartbids.qa@chileavanza.cl', kwargs['from_email'])
+
+    def test_patch_usuario_cambio_rol_envia_notificacion_y_auditoria(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from smartbids.views.firebase_policy_views import usuarios_firebase
+
+        mock_target_susc = MagicMock(
+            codigo_estado=MagicMock(nombre_estado='Prospecto', codigo_estado=1),
+            sus_nombre1='Juan',
+            sus_apellido1='Perez',
+            sus_nombre_social=''
+        )
+        mock_nuevo_estado = MagicMock(nombre_estado='Suscriptor', codigo_estado=2)
+        mock_session = MagicMock()
+
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.views.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_nuevo_estado)), \
+             patch('smartbids.views.firebase_policy_views.notificar_cambio_rol_suscriptor') as mock_notificar_rol:
+
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
+
+            body = json.dumps({'uid': 'user_456', 'codigo_estado': 2, 'email': 'juan@empresa.cl'})
+            req = self.rf.patch(
+                '/api/firebase/usuarios/',
+                data=body,
+                content_type='application/json',
+                HTTP_X_FIREBASE_UID='admin_123',
+                HTTP_X_FIREBASE_EMAIL='admin@chileavanza.cl'
+            )
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_notificar_rol.called)
+            kwargs = mock_notificar_rol.call_args[1]
+            self.assertEqual(kwargs['ejecutor_email'], 'admin@chileavanza.cl')
+            self.assertEqual(kwargs['afectado_email'], 'juan@empresa.cl')
+            self.assertEqual(kwargs['estado_nuevo'], mock_nuevo_estado)
+
+    def test_patch_usuario_otorgar_admin_envia_notificacion_y_auditoria(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from smartbids.views.firebase_policy_views import usuarios_firebase
+
+        mock_target_susc = MagicMock(
+            codigo_estado=MagicMock(nombre_estado='Suscriptor', codigo_estado=2),
+            sus_nombre1='Pedro',
+            sus_apellido1='Gomez',
+            sus_nombre_social=''
+        )
+        mock_admin_estado = MagicMock(nombre_estado='Administrador', codigo_estado=5)
+        mock_session = MagicMock()
+
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.views.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_admin_estado)), \
+             patch('smartbids.views.firebase_policy_views.registrar_auditoria_admin') as mock_auditoria, \
+             patch('smartbids.views.firebase_policy_views.notificar_cambio_rol_suscriptor') as mock_notificar_rol:
+
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
+
+            body = json.dumps({'uid': 'user_789', 'codigo_estado': 5, 'email': 'pedro@empresa.cl'})
+            req = self.rf.patch(
+                '/api/firebase/usuarios/',
+                data=body,
+                content_type='application/json',
+                HTTP_X_FIREBASE_UID='admin_123',
+                HTTP_X_FIREBASE_EMAIL='admin.principal@chileavanza.cl'
+            )
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_auditoria.called)
+            self.assertEqual(mock_auditoria.call_args[1]['accion'], 'ASIGNACION_ADMIN')
+            self.assertTrue(mock_notificar_rol.called)
+            self.assertEqual(mock_notificar_rol.call_args[1]['ejecutor_email'], 'admin.principal@chileavanza.cl')
+            self.assertEqual(mock_notificar_rol.call_args[1]['afectado_email'], 'pedro@empresa.cl')
+
+    def test_patch_usuario_revocar_admin_envia_notificacion_y_auditoria(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from smartbids.views.firebase_policy_views import usuarios_firebase
+
+        mock_target_susc = MagicMock(
+            codigo_estado=MagicMock(nombre_estado='Administrador', codigo_estado=5),
+            sus_nombre1='Carlos',
+            sus_apellido1='Vial',
+            sus_nombre_social=''
+        )
+        mock_suscriptor_estado = MagicMock(nombre_estado='Suscriptor', codigo_estado=2)
+        mock_session = MagicMock()
+
+        with patch('smartbids.views.firebase_policy_views._usuario_es_administrador', return_value=True), \
+             patch('smartbids.views.firebase_policy_views._firebase_admin_session', return_value=mock_session), \
+             patch('smartbids.views.firebase_policy_views._firebase_accounts_url', return_value='https://identitytoolkit.googleapis.com'), \
+             patch('smartbids.views.firebase_policy_views.Suscriptor.objects') as mock_susc_objs, \
+             patch('smartbids.views.firebase_policy_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_suscriptor_estado)), \
+             patch('smartbids.views.firebase_policy_views.registrar_auditoria_admin') as mock_auditoria, \
+             patch('smartbids.views.firebase_policy_views.notificar_cambio_rol_suscriptor') as mock_notificar_rol:
+
+            mock_susc_objs.select_related.return_value.filter.return_value.first.return_value = mock_target_susc
+
+            body = json.dumps({'uid': 'user_999', 'codigo_estado': 2, 'email': 'carlos@empresa.cl'})
+            req = self.rf.patch(
+                '/api/firebase/usuarios/',
+                data=body,
+                content_type='application/json',
+                HTTP_X_FIREBASE_UID='admin_123',
+                HTTP_X_FIREBASE_EMAIL='admin.principal@chileavanza.cl'
+            )
+            resp = usuarios_firebase(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_auditoria.called)
+            self.assertEqual(mock_auditoria.call_args[1]['accion'], 'CAMBIO_ROL')
+            self.assertTrue(mock_notificar_rol.called)
+            self.assertEqual(mock_notificar_rol.call_args[1]['ejecutor_email'], 'admin.principal@chileavanza.cl')
+            self.assertEqual(mock_notificar_rol.call_args[1]['afectado_email'], 'carlos@empresa.cl')
+
     def test_config_correo_get_y_patch(self):
         import json
         from unittest.mock import patch, MagicMock
         from smartbids.views.mensajeria_views import administrar_config_correo
 
         with patch('smartbids.views.mensajeria_views._usuario_es_administrador', return_value=True), \
-             patch('smartbids.views.mensajeria_views.ConfiguracionCorreo.objects') as mock_cfg_objs:
+             patch('smartbids.views.mensajeria_views.ConfiguracionCorreo.objects') as mock_cfg_objs, \
+             patch('smartbids.views.mensajeria_views.InfoContacto.objects'):
             
             mock_cfg = MagicMock(
                 email_contacto='contacto@chileavanza.cl',
@@ -1007,6 +1333,66 @@ class AdminSafetyAndEmailConfigTests(SimpleTestCase):
             self.assertEqual(resp_patch.status_code, 200)
             data_patch = json.loads(resp_patch.content)
             self.assertEqual(data_patch['config']['email_contacto'], 'nuevo_contacto@smartbids.cl')
+
+    def test_correo_contacto_default_es_contacto_chileavanza(self):
+        from unittest.mock import patch
+        from smartbids.context_processors import footer_info_context
+
+        req = self.rf.get('/')
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.models.config.ConfiguracionCorreo.objects.first', return_value=None):
+            ctx = footer_info_context(req)
+            self.assertEqual(ctx['contacto_email'], 'contacto@chileavanza.cl')
+
+    def test_correo_contacto_se_adapta_dinamicamente_desde_configuracion_correo(self):
+        from unittest.mock import patch, MagicMock
+        from smartbids.context_processors import footer_info_context
+
+        req = self.rf.get('/')
+        mock_cfg = MagicMock(
+            email_contacto='nuevo_soporte@chileavanza.cl',
+            email_notificaciones='qa@chileavanza.cl',
+            nombre_remitente='SmartBids',
+            email_seguridad_auditoria='auditoria@chileavanza.cl'
+        )
+        with patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.models.config.ConfiguracionCorreo.objects.first', return_value=mock_cfg):
+            ctx = footer_info_context(req)
+            self.assertEqual(ctx['contacto_email'], 'nuevo_soporte@chileavanza.cl')
+
+    def test_enviar_consulta_contacto_usa_correo_de_base_de_datos(self):
+        import json
+        from unittest.mock import patch, MagicMock
+        from smartbids.views.mensajeria_views import enviar_consulta_contacto
+
+        mock_cfg = MagicMock(
+            email_contacto='comercial@chileavanza.cl',
+            email_notificaciones='qa@chileavanza.cl',
+            nombre_remitente='SmartBids',
+            email_seguridad_auditoria='seguridad@chileavanza.cl'
+        )
+
+        body = json.dumps({
+            'name': 'Empresa Test',
+            'email': 'prospecto@empresa.cl',
+            'phone': '+56912345678',
+            'topic': 'Consulta comercial',
+            'message': 'Esta es una consulta detallada para cotizar el plan anual de la plataforma.'
+        })
+        req = self.rf.post('/api/contacto/', data=body, content_type='application/json')
+
+        with patch('smartbids.models.config.ConfiguracionCorreo.objects.first', return_value=mock_cfg), \
+             patch('smartbids.views.mensajeria_views.InfoContacto.objects.first', return_value=None), \
+             patch('smartbids.views.mensajeria_views.EmailMessage') as mock_email_cls:
+
+            mock_email_instance = MagicMock()
+            mock_email_cls.return_value = mock_email_instance
+
+            resp = enviar_consulta_contacto(req)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_email_cls.called)
+            kwargs = mock_email_cls.call_args[1]
+            self.assertEqual(kwargs['to'], ['comercial@chileavanza.cl'])
 
     def test_auditoria_admin_view_retorna_registros(self):
         import json
@@ -1547,6 +1933,53 @@ class TipoProcedimientoLicitacionTests(SimpleTestCase):
             self.assertEqual(len(context['licitaciones_perfil']), 1)
             self.assertEqual(context['licitaciones_perfil'][0].lic_codigo, '1075963-374-LE26')
             self.assertEqual(context['match_perfil'], 1)
+
+    def test_mis_licitaciones_match_con_perfil_solo_no_cerradas(self):
+        """Verifica que Match con Perfil filtre y solo consulte licitaciones que no están cerradas."""
+        from unittest.mock import patch, MagicMock
+        from django.db.models import Q
+        from smartbids.views.licitaciones_views import mis_licitaciones_view
+
+        mock_lic_activa = MagicMock(lic_codigo='ACTIVA-1', lic_tipo_licitacion='LE')
+        mock_qs_match = MagicMock()
+        mock_qs_match.__iter__.return_value = [mock_lic_activa]
+        mock_qs_match.__getitem__.return_value = [mock_lic_activa]
+
+        mock_qs_general = MagicMock()
+        mock_qs_general.exclude.return_value = mock_qs_general
+        mock_qs_general.aggregate.return_value = {'cierre_proximo': 0, 'convenio_marco': 0}
+
+        mock_paginator = MagicMock()
+        mock_paginator.get_page.return_value = []
+
+        m_lic_objects = MagicMock()
+        m_lic_objects.count.return_value = 50
+        m_lic_objects.exclude.return_value.exclude.return_value.values_list.return_value.distinct.return_value.order_by.return_value = ['LE']
+        m_lic_objects.select_related.return_value.filter.return_value.distinct.return_value.order_by.return_value = mock_qs_match
+
+        req = self.rf.get('/mis-licitaciones/')
+        req._q_perfil = Q(lic_tipo_licitacion__in=['LE'])
+
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=MagicMock()), \
+             patch('smartbids.views.tracking_views._sincronizar_seguimientos'), \
+             patch('smartbids.models.core.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.views.licitaciones_views.Preferencia.objects') as m_pref, \
+             patch('smartbids.views.licitaciones_views.filtrar_licitaciones', return_value=(mock_qs_general, 1)), \
+             patch('smartbids.views.licitaciones_views.Licitacion.objects', m_lic_objects), \
+             patch('smartbids.views.licitaciones_views.Paginator', return_value=mock_paginator), \
+             patch('smartbids.views.licitaciones_views.obtener_catalogo_tipos_licitacion', return_value={'publicas': [], 'privadas': []}), \
+             patch('smartbids.views.licitaciones_views.estado_licitacion', return_value=('ofertas', 'Recepción de ofertas')), \
+             patch('smartbids.views.licitaciones_views.render') as mock_render:
+            m_seg.filter.return_value.values_list.return_value = []
+            m_pref.filter.return_value.first.return_value = None
+            mis_licitaciones_view(req)
+
+            filter_call_args = m_lic_objects.select_related.return_value.filter.call_args[0]
+            self.assertEqual(len(filter_call_args), 2)
+            self.assertIsInstance(filter_call_args[1], Q)
+            context = mock_render.call_args[0][2]
+            self.assertEqual(len(context['licitaciones_perfil']), 1)
+            self.assertEqual(context['licitaciones_perfil'][0].estado_proceso, 'ofertas')
 
     def test_mis_licitaciones_view_optimizacion_paginador_y_primera_pagina(self):
         """Verifica que el paginador use 10 elementos por página y que en la página 2 no se repitan las tarjetas de perfil."""
@@ -2362,6 +2795,182 @@ class LegalComplianceArcopTests(SimpleTestCase):
             html_footer = render_to_string('smartbids/includes/footer.html', ctx, request=req)
             self.assertIn('Mi Empresa SpA', html_footer)
             self.assertIn('76.543.210-K', html_footer)
+            self.assertNotIn('Agua Santa 1400', html_footer)
+            self.assertNotIn('Agua Santa 1400', html_info)
+
+
+from unittest.mock import patch, MagicMock
+
+
+class FlujoSuscripcionRolesYPlanesTests(SimpleTestCase):
+    def setUp(self):
+        self.rf = RequestFactory()
+
+    def test_planes_view_render(self):
+        """Verifica que la vista de planes renderice correctamente con los 2 planes y comparativa."""
+        from smartbids.views.page_views import planes_view
+        req = self.rf.get('/planes/')
+        with patch('smartbids.views.page_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            resp = planes_view(req)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+        self.assertIn('20.000', content)
+        self.assertIn('200.000', content)
+        self.assertIn('Plan Mensual', content)
+        self.assertIn('Plan Anual', content)
+        self.assertIn('planes-cta-section', content)
+        self.assertIn('Comparativa de Acceso y Funcionalidades', content)
+
+    def test_planes_view_upgrade_alerta(self):
+        """Verifica que al redirigir con upgrade=1 se muestre el aviso de función exclusiva."""
+        from smartbids.views.page_views import planes_view
+        req = self.rf.get('/planes/?upgrade=1&modulo=licitaciones')
+        with patch('smartbids.views.page_views.resolver_suscriptor', return_value=None), \
+             patch('smartbids.context_processors.InfoContacto.objects.first', return_value=None):
+            resp = planes_view(req)
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode('utf-8')
+        self.assertIn('planes-upgrade-alert', content)
+        self.assertIn('Explorador de Licitaciones', content)
+
+    def test_prospecto_bloqueado_en_mis_licitaciones(self):
+        """Un prospecto (código 1) debe ser redirigido a la vista de planes al entrar a licitaciones."""
+        from smartbids.views.licitaciones_views import mis_licitaciones_view
+        req = self.rf.get('/mis-licitaciones/')
+        mock_estado = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_susc = MagicMock(codigo_estado=mock_estado)
+
+        with patch('smartbids.views.licitaciones_views.resolver_suscriptor', return_value=mock_susc):
+            resp = mis_licitaciones_view(req)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/planes/', resp.url)
+        self.assertIn('modulo=licitaciones', resp.url)
+
+    def test_prospecto_bloqueado_en_dashboard(self):
+        """Un prospecto (código 1) debe ser redirigido a la vista de planes al entrar a dashboard."""
+        from smartbids.views.dashboard_views import dashboard_view
+        req = self.rf.get('/dashboard/')
+        mock_estado = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_susc = MagicMock(codigo_estado=mock_estado)
+
+        with patch('smartbids.views.dashboard_views.resolver_suscriptor', return_value=mock_susc):
+            resp = dashboard_view(req)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/planes/', resp.url)
+        self.assertIn('modulo=dashboard', resp.url)
+
+    def test_prospecto_bloqueado_en_simulador_ml(self):
+        """Un prospecto que intente evaluar escenario en simulador_ofertas debe recibir 403 paywall."""
+        import json
+        from smartbids.views.simulador import simulador_ofertas
+        req = self.rf.post('/api/simulador-ofertas/', data={'licitacion_codigo': 'TEST-1'})
+        mock_estado = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_susc = MagicMock(codigo_estado=mock_estado)
+
+        with patch('smartbids.views.simulador.resolver_suscriptor', return_value=mock_susc):
+            resp = simulador_ofertas(req)
+        self.assertEqual(resp.status_code, 403)
+        data = json.loads(resp.content.decode('utf-8'))
+        self.assertTrue(data.get('paywall'))
+        self.assertIn('/planes/', data.get('redirect', ''))
+
+    def test_prospecto_tiene_acceso_a_resumen_dia(self):
+        """Un prospecto debe mantener acceso libre a su resumen diario."""
+        from smartbids.views.resumen_views import resumen_dia_view
+        req = self.rf.get('/resumen/')
+        mock_estado = MagicMock(codigo_estado=1, nombre_estado='Prospecto')
+        mock_susc = MagicMock(codigo_estado=mock_estado, pk=1, id_suscriptor=1)
+
+        with patch('smartbids.views.resumen_views.resolver_suscriptor', return_value=mock_susc), \
+             patch('smartbids.views.resumen_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.resumen_views.Preferencia.objects') as m_pref, \
+             patch('smartbids.views.resumen_views.Licitacion.objects') as m_lic, \
+             patch('smartbids.views.resumen_views.SeguimientoLicitacion.objects') as m_seg, \
+             patch('smartbids.views.resumen_views.NotificacionLicitacion.objects') as m_notif, \
+             patch('smartbids.views.resumen_views.render') as m_render:
+            m_pref.filter.return_value.first.return_value = None
+            m_seg.filter.return_value.values_list.return_value = []
+            m_notif_qs = MagicMock()
+            m_notif_qs.filter.return_value.count.return_value = 0
+            m_notif_qs.__getitem__.return_value = []
+            m_notif.filter.return_value.select_related.return_value.order_by.return_value = m_notif_qs
+            m_lic.filter.return_value.distinct.return_value.count.return_value = 0
+            m_lic.filter.return_value.order_by.return_value.distinct.return_value = []
+            m_render.return_value = 'render_resumen'
+            resp = resumen_dia_view(req)
+            self.assertEqual(resp, 'render_resumen')
+
+    def test_solicitud_suscripcion_validacion_campos(self):
+        """La solicitud de suscripción exige obligatoriamente Correo, Teléfono y Empresa."""
+        import json
+        from smartbids.views.mensajeria_views import enviar_consulta_contacto
+
+        # Caso 1: Falta teléfono
+        body_sin_tel = json.dumps({
+            'name': 'Juan Pérez',
+            'email': 'juan@empresa.cl',
+            'phone': '',
+            'company': 'Mi Empresa SpA',
+            'topic': 'Solicitud de suscripción',
+            'tipo': 'suscripcion',
+        }).encode('utf-8')
+        req1 = self.rf.post('/api/contacto/', data=body_sin_tel, content_type='application/json')
+        resp1 = enviar_consulta_contacto(req1)
+        self.assertEqual(resp1.status_code, 400)
+        self.assertIn('teléfono', json.loads(resp1.content.decode('utf-8'))['mensaje'].lower())
+
+        # Caso 2: Falta empresa
+        body_sin_emp = json.dumps({
+            'name': 'Juan Pérez',
+            'email': 'juan@empresa.cl',
+            'phone': '+56 9 1234 5678',
+            'company': '',
+            'topic': 'Solicitud de suscripción',
+            'tipo': 'suscripcion',
+        }).encode('utf-8')
+        req2 = self.rf.post('/api/contacto/', data=body_sin_emp, content_type='application/json')
+        resp2 = enviar_consulta_contacto(req2)
+        self.assertEqual(resp2.status_code, 400)
+        self.assertIn('empresa', json.loads(resp2.content.decode('utf-8'))['mensaje'].lower())
+
+        # Caso 3: Solicitud completa y válida
+        body_valido = json.dumps({
+            'name': 'Juan Pérez',
+            'email': 'juan@empresa.cl',
+            'phone': '+56 9 1234 5678',
+            'company': 'Mi Empresa SpA',
+            'plan': 'Plan Anual ($200.000 CLP)',
+            'topic': 'Solicitud de suscripción',
+            'tipo': 'suscripcion',
+        }).encode('utf-8')
+        req3 = self.rf.post('/api/contacto/', data=body_valido, content_type='application/json')
+        with patch('smartbids.views.mensajeria_views.EmailMessage') as mock_email, \
+             patch('smartbids.views.mensajeria_views.InfoContacto.objects.first', return_value=None):
+            resp3 = enviar_consulta_contacto(req3)
+            self.assertEqual(resp3.status_code, 200)
+            mock_email.return_value.send.assert_called_once()
+            self.assertTrue(json.loads(resp3.content.decode('utf-8'))['status'] == 'ok')
+
+    def test_registro_prospecto_asigna_codigo_1(self):
+        """Verifica que al registrar un prospecto se le asigne codigo_estado=1."""
+        import json
+        from smartbids.views.auth_views import registrar_prospecto
+        body = json.dumps({
+            'uid': 'nuevo_user_uid_123',
+            'sus_nombre1': 'Carlos',
+            'sus_apellido1': 'González',
+        }).encode('utf-8')
+        req = self.rf.post('/api/registrar-prospecto/', data=body, content_type='application/json')
+        mock_estado1 = MagicMock(codigo_estado=1)
+
+        with patch('smartbids.views.auth_views.Suscriptor.objects.filter', return_value=MagicMock(first=lambda: None)), \
+             patch('smartbids.views.auth_views.EstadoSuscriptor.objects.filter', return_value=MagicMock(first=lambda: mock_estado1)), \
+             patch('smartbids.views.auth_views.Suscriptor.objects.create') as mock_create:
+            resp = registrar_prospecto(req)
+            self.assertEqual(resp.status_code, 201)
+            create_args = mock_create.call_args[1]
+            self.assertEqual(create_args['codigo_estado'].codigo_estado, 1)
 
 
 

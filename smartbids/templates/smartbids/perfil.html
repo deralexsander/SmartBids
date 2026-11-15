@@ -51,8 +51,13 @@
                     @suscriptor
                 </p>
 
-                <div class="dash-badge perfil__role-badge">
+                <div class="dash-badge perfil__role-badge" id="perfil-role-badge-wrap">
                     <i class="fa-solid fa-shield-halved"></i> Estado: <span id="profile-role-badge">--</span>
+                </div>
+                <div id="perfil-sidebar-upgrade" style="display: none; margin-top: 0.6rem;">
+                    <a href="{% url 'planes' %}" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+                        <i class="fa-solid fa-crown" style="margin-right: 0.4rem;"></i> Pasar a Suscriptor
+                    </a>
                 </div>
 
                 <ul class="profile-menu">
@@ -596,6 +601,39 @@
                             <label for="profile-confirm-pass">Confirmar Nueva Contraseña</label>
                             <input type="password" id="profile-confirm-pass" class="form-input" placeholder="Repite la contraseña" required>
                         </div>
+                        <div class="form-item grid-full" id="perfil-password-meter-wrap">
+                            <div class="password-meter" id="perfil-password-meter" aria-live="polite">
+                                <div class="password-meter__header">
+                                    <span class="password-meter__title">Seguridad de la nueva contraseña</span>
+                                    <span class="password-meter__status" id="perfil-password-status">Seguridad de la contraseña</span>
+                                </div>
+                                <div class="password-meter__track">
+                                    <div class="password-meter__bar" id="perfil-password-bar"></div>
+                                </div>
+                                <ul class="password-meter__list">
+                                    <li class="password-meter__item" data-criterion="length">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Mínimo 6 caracteres</span>
+                                    </li>
+                                    <li class="password-meter__item" data-criterion="uppercase">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Al menos una letra mayúscula</span>
+                                    </li>
+                                    <li class="password-meter__item" data-criterion="lowercase">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Al menos una letra minúscula</span>
+                                    </li>
+                                    <li class="password-meter__item" data-criterion="numeric">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Al menos un número</span>
+                                    </li>
+                                    <li class="password-meter__item" data-criterion="special">
+                                        <i class="fa-regular fa-circle password-meter__icon"></i>
+                                        <span>Al menos un carácter especial (ej: !@#$%^&*)</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="perfil__form-actions">
@@ -654,7 +692,7 @@
                     </div>
                 </div>
 
-                <div class="stat-mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.4rem; border-radius: 14px; margin-bottom: 1.5rem;">
+                <div class="stat-mini-card" id="perfil-theme-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.4rem; border-radius: 14px; margin-bottom: 1.5rem;">
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <span id="theme-toggle-icon-tab" class="theme-icon-wrap" style="width: 42px; height: 42px; border-radius: 10px; background: rgba(30, 196, 152, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-green); font-size: 1.2rem;">
                             <i class="fa-solid fa-moon"></i>

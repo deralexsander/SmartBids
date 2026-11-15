@@ -137,6 +137,18 @@
                         </div>
                     </div>
                 </div>
+                <details class="comp-det">
+                    <summary><i class="fa-solid fa-sliders"></i> Filtros de demanda <span id="prod-filtros-n" class="comp-badge-pill"></span></summary>
+                    <div class="competencia-filtros">
+                        <label>Región compradora<select id="prod-region"><option value="">Todas las regiones</option></select></label>
+                        <label>Organismo comprador<select id="prod-organismo"><option value="">Todos los organismos</option></select></label>
+                    </div>
+                    <div class="comp-filter-actions">
+                        <button type="button" id="prod-aplicar" class="btn btn-primary">Aplicar filtros</button>
+                        <button type="button" id="prod-limpiar" class="btn btn-outline">Limpiar filtros</button>
+                    </div>
+                </details>
+                <div id="prod-chips" class="rk-chips"></div>
                 <nav class="rk-migas" id="prod-migas" aria-label="Ruta de navegación"></nav>
             </div>
             <div id="prod-panel"></div>
@@ -161,14 +173,6 @@
                     </div>
                 </div>
 
-                <div class="rk-por">
-                    <span class="rk-meta" style="font-weight: 700; color: var(--dark-green);">Ranking por:</span>
-                    <div class="seg" id="comp-por-seg" role="group" aria-label="Ranking por">
-                        <button type="button" class="seg-btn active" data-por="proveedor">Proveedores</button>
-                        <button type="button" class="seg-btn" data-por="organismo" disabled title="Selecciona un proveedor para consultar sus organismos compradores">Clientes del proveedor</button>
-                    </div>
-                </div>
-
                 <details class="comp-det">
                     <summary><i class="fa-solid fa-sliders"></i> Filtros de mercado <span id="comp-filtros-n" class="comp-badge-pill"></span></summary>
                     <div class="competencia-filtros">
@@ -187,12 +191,14 @@
                 </details>
                 <div class="rk-chips" id="comp-chips"></div>
             </div>
-            <div id="comp-contexto" class="dashboard-card comp-contexto-card" hidden>
-                <div>
-                    <div class="dash-title" id="comp-contexto-titulo" style="font-size:1.1rem;"></div>
-                    <p class="rk-sub" id="comp-contexto-descripcion"></p>
+            <div id="comp-contexto" class="dashboard-card" hidden style="padding:1.25rem;margin-bottom:1rem;">
+                <div class="dash-title" id="comp-contexto-titulo"></div>
+                <p class="rk-sub" id="comp-contexto-descripcion"></p>
+                <div class="comp-filter-actions">
+                    <button type="button" id="comp-ver-productos" class="btn btn-outline" hidden>Productos que vende</button>
+                    <button type="button" id="comp-ver-clientes" class="btn btn-outline" hidden>Organismos que le compran</button>
+                    <button type="button" class="btn btn-outline" id="comp-contexto-volver">Volver al ranking de proveedores</button>
                 </div>
-                <button type="button" class="btn btn-outline" id="comp-contexto-volver"><i class="fa-solid fa-arrow-left"></i> Volver a proveedores</button>
             </div>
             <div id="comp-panel"></div>
             <div id="comp-evolucion-panel"></div>
@@ -206,7 +212,7 @@
                 <div class="rk-fila-titulo">
                     <div>
                         <div class="dash-title"><i class="fa-solid fa-building-columns text-accent"></i> Organismos compradores</div>
-                        <p class="rk-sub">Qué organismos concentran el mayor volumen de gasto en compras públicas durante el período seleccionado.</p>
+                        <p class="rk-sub">Compara organismos por monto bruto y selecciona uno para explorar qué productos compra y a qué proveedores.</p>
                     </div>
                     <div class="rk-controles">
                         <div class="per-chip-wrap">
@@ -214,6 +220,30 @@
                             <div class="per-pop" hidden></div>
                         </div>
                     </div>
+                </div>
+                <details class="comp-det">
+                    <summary><i class="fa-solid fa-sliders"></i> Filtros de compras <span id="compr-filtros-n" class="comp-badge-pill"></span></summary>
+                    <div class="competencia-filtros">
+                        <label>Grupo de producto<select id="compr-grupo"><option value="">Todos los grupos</option></select></label>
+                        <label>Región compradora<select id="compr-region"><option value="">Todas las regiones</option></select></label>
+                        <label>Organismo comprador<select id="compr-organismo"><option value="">Todos los organismos</option></select></label>
+                        <label>Buscar producto (código o descripción)<input id="compr-busqueda" type="search" autocomplete="off" placeholder="Grupo o al menos 2 caracteres"></label>
+                        <label>Producto específico<select id="compr-producto"><option value="">Todos los productos</option></select></label>
+                    </div>
+                    <div class="comp-filter-actions">
+                        <button type="button" id="compr-aplicar" class="btn btn-primary">Aplicar filtros</button>
+                        <button type="button" id="compr-limpiar" class="btn btn-outline">Limpiar filtros</button>
+                    </div>
+                </details>
+                <div id="compr-chips" class="rk-chips"></div>
+            </div>
+            <div id="compr-contexto" class="dashboard-card" hidden style="padding:1.25rem;margin-bottom:1rem;">
+                <div class="dash-title" id="compr-contexto-titulo"></div>
+                <p class="rk-sub">Datos del organismo seleccionado dentro de los filtros y el período actuales.</p>
+                <div class="comp-filter-actions">
+                    <button type="button" id="compr-ver-productos" class="btn btn-outline">Qué compra</button>
+                    <button type="button" id="compr-ver-proveedores" class="btn btn-outline">A quién compra</button>
+                    <button type="button" id="compr-volver" class="btn btn-outline">Volver al ranking de organismos</button>
                 </div>
             </div>
             <div id="compr-panel"></div>
@@ -227,6 +257,7 @@
 <!-- ============================================================ -->
 <style>
     .dashboard-card { min-width: 0; }
+    .comp-filter-actions .btn.active { background: var(--dark-green); color: white; }
     .dashboard-card td { overflow-wrap: anywhere; }
 </style>
 
@@ -330,6 +361,38 @@
         option.value = String(value);
         option.textContent = label;
         select.appendChild(option);
+    }
+
+    function filtrosChips(prefijo, campos, recargar, extras = []) {
+        const caja = el(prefijo + '-chips');
+        caja.replaceChildren();
+        const activos = [...extras];
+        for (const [id, nombre] of campos) {
+            const select = el(id);
+            if (!select.value) continue;
+            activos.push({texto: nombre + ': ' + select.selectedOptions[0].textContent,
+                quitar: () => { select.value = ''; }});
+        }
+        for (const filtro of activos) {
+            const boton = document.createElement('button');
+            boton.type = 'button'; boton.className = 'rk-chip';
+            boton.textContent = abreviar(filtro.texto, 65) + ' ✕';
+            boton.title = filtro.texto + ' · quitar filtro';
+            boton.addEventListener('click', () => { filtro.quitar(); recargar(); });
+            caja.appendChild(boton);
+        }
+        el(prefijo + '-filtros-n').textContent = activos.length ? ' (' + activos.length + ' activos)' : '';
+    }
+
+    function rankingError(prefijo, mensaje) {
+        for (const id of ['total', 'items', 'lider']) el(prefijo + '-' + id).textContent = '—';
+        el(prefijo + '-lider-pct').textContent = '';
+        el(prefijo + '-lista').replaceChildren();
+        el(prefijo + '-lista-extra').replaceChildren();
+        el(prefijo + '-mas-contenedor').hidden = true;
+        el(prefijo + '-estado').textContent = mensaje;
+        const idGrafico = prefijo + '-participacion';
+        if (graficos[idGrafico]) { graficos[idGrafico].destroy(); delete graficos[idGrafico]; }
     }
 
     function compGrafico(id, tipo, labels, datasets, extra = {}) {
@@ -583,6 +646,9 @@
 
     function prodContextoEvolucion() {
         const alcance = [];
+        for (const [id, nombre] of [['prod-region', 'Región'], ['prod-organismo', 'Organismo']]) {
+            if (el(id).value) alcance.push(nombre + ': ' + el(id).selectedOptions[0].textContent);
+        }
         if (prodEstado.grupo) alcance.push('Grupo: ' + prodEstado.grupo);
         if (prodEstado.nivel1) alcance.push('Nivel 1: ' + prodEstado.nivel1);
         const titulo = prodEstado.nivel1
@@ -872,7 +938,7 @@
     function prodQuery(extra = {}) {
         return new URLSearchParams({
             tipo: 'ranking', grupo: prodEstado.grupo, nivel1: prodEstado.nivel1,
-            por: prodNivel(), ...perParams(), ...extra
+            por: prodNivel(), region: el('prod-region').value, organismo: el('prod-organismo').value, ...perParams(), ...extra
         });
     }
 
@@ -915,6 +981,7 @@
         productosAbort = controller;
         const evVisible = !el('prod-ev-caja').hidden;
         prodMigas();
+        filtrosChips('prod', [['prod-region', 'Región'], ['prod-organismo', 'Organismo']], prodCargar);
         prodContextoEvolucion();
         el('prod-lista').classList.add('cargando');
         el('prod-estado').innerHTML = '<span class="dash-inline-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Consultando el Data Warehouse…</span>';
@@ -940,8 +1007,8 @@
             el('prod-estado').textContent = '';
             if (evVisible) prodEvolucion();
         } catch (err) {
-            if (err.name !== 'AbortError') {
-                el('prod-estado').textContent = 'No fue posible cargar la demanda: ' + err.message;
+            if (err.name !== 'AbortError' && controller === productosAbort) {
+                rankingError('prod', 'No fue posible cargar la demanda: ' + err.message);
                 console.error(err);
             }
         } finally {
@@ -979,11 +1046,18 @@
         productosListos = true;
         tabsListas.add('tab-productos');
         el('prod-salto').addEventListener('change', e => prodIr(e.target.value, ''));
+        el('prod-aplicar').addEventListener('click', prodCargar);
+        el('prod-limpiar').addEventListener('click', () => {
+            el('prod-region').value = ''; el('prod-organismo').value = '';
+            prodIr('', '');
+        });
         try {
             const response = await fetch(urlProductos + '?tipo=opciones');
             if (!response.ok) throw new Error('HTTP ' + response.status);
             const data = await response.json();
             for (const g of data.grupos) compOpcion(el('prod-salto'), g, g);
+            for (const r of data.regiones) compOpcion(el('prod-region'), r, r);
+            for (const o of data.organismos) compOpcion(el('prod-organismo'), o.id, o.nombre);
         } catch (err) {
             el('prod-estado').textContent = 'No se pudo cargar la lista de grupos: ' + err.message;
             console.error(err);
@@ -1010,9 +1084,12 @@
 
     function compSetPor(valor) {
         compPor = valor;
-        document.querySelectorAll('#comp-por-seg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.por === valor));
-        const botonClientes = document.querySelector('#comp-por-seg [data-por="organismo"]');
-        botonClientes.disabled = !compProveedor;
+        el('comp-ver-productos').hidden = !compProveedor;
+        el('comp-ver-clientes').hidden = !compProveedor;
+        el('comp-ver-productos').classList.toggle('active', valor === 'producto');
+        el('comp-ver-productos').setAttribute('aria-pressed', String(valor === 'producto'));
+        el('comp-ver-clientes').classList.toggle('active', valor === 'organismo');
+        el('comp-ver-clientes').setAttribute('aria-pressed', String(valor === 'organismo'));
     }
 
     function compActualizarContexto() {
@@ -1022,16 +1099,11 @@
         const volver = el('comp-contexto-volver');
         const codigoProducto = el('comp-producto').value;
         const opcionProducto = el('comp-producto').selectedOptions[0];
-        if (compPor === 'producto' && compProveedor) {
+        if (compProveedor) {
             contexto.hidden = false;
-            titulo.textContent = 'Cartera de productos · ' + compProveedor.nombre;
-            descripcion.textContent = 'Estos productos corresponden al proveedor seleccionado, dentro de los filtros actuales. Selecciona uno para identificar a sus competidores.';
-            volver.textContent = 'Volver a proveedores';
-        } else if (compPor === 'organismo' && compProveedor) {
-            contexto.hidden = false;
-            titulo.textContent = 'Clientes de ' + compProveedor.nombre;
-            descripcion.textContent = 'Organismos compradores del proveedor seleccionado, dentro del segmento y período actuales.';
-            volver.textContent = 'Volver a proveedores';
+            titulo.textContent = compProveedor.nombre;
+            descripcion.textContent = 'Datos del proveedor seleccionado dentro de los filtros y el período actuales.';
+            volver.textContent = 'Volver al ranking de proveedores';
         } else if (compPor === 'proveedor' && codigoProducto) {
             contexto.hidden = false;
             titulo.textContent = 'Competidores del producto · ' + codigoProducto;
@@ -1073,6 +1145,7 @@
         sel.replaceChildren();
         compOpcion(sel, '', grupo ? 'Todos los productos del grupo' : 'Todos los productos');
         if (!grupo && q.length < 2) {
+            sel.disabled = false;
             compOpcion(sel, '', 'Selecciona un grupo o escribe al menos 2 caracteres');
             return;
         }
@@ -1193,8 +1266,8 @@
             el('comp-estado').textContent = '';
             if (evVisible) compEvolucion();
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                el('comp-estado').textContent = 'No fue posible cargar el ranking: ' + error.message;
+            if (error.name !== 'AbortError' && controller === compAbort) {
+                rankingError('comp', 'No fue posible cargar el ranking: ' + error.message);
                 console.error(error);
             }
         } finally {
@@ -1247,13 +1320,11 @@
             window.__compDebounce = setTimeout(compBuscarProductos, 300);
         });
         el('comp-grupo').addEventListener('change', compAlCambiarGrupo);
-        el('comp-por-seg').addEventListener('click', e => {
-            const b = e.target.closest('.seg-btn');
-            if (!b || b.disabled) return;
-            if (b.dataset.por === 'proveedor') compProveedor = null;
-            if (b.dataset.por === 'organismo' && !compProveedor) return;
-            compSetPor(b.dataset.por);
-            compCargar();
+        el('comp-ver-productos').addEventListener('click', () => {
+            if (compProveedor) { compSetPor('producto'); compCargar(); }
+        });
+        el('comp-ver-clientes').addEventListener('click', () => {
+            if (compProveedor) { compSetPor('organismo'); compCargar(); }
         });
         el('comp-contexto-volver').addEventListener('click', () => {
             // Desde la cartera/clientes: abandonar el proveedor; desde competidores: quitar producto.
@@ -1277,33 +1348,94 @@
     // ============================================================
     let compradoresListos = false;
     let compradoresAbort = null;
+    let comprBusquedaAbort = null;
+    let comprPor = 'organismo';
+    let comprSeleccion = null;
+
+    function comprContexto() {
+        el('compr-contexto').hidden = !comprSeleccion;
+        if (comprSeleccion) el('compr-contexto-titulo').textContent = comprSeleccion.nombre;
+        el('compr-ver-productos').classList.toggle('active', comprPor === 'producto');
+        el('compr-ver-productos').setAttribute('aria-pressed', String(comprPor === 'producto'));
+        el('compr-ver-proveedores').classList.toggle('active', comprPor === 'proveedor');
+        el('compr-ver-proveedores').setAttribute('aria-pressed', String(comprPor === 'proveedor'));
+    }
+
+    function comprQuery() {
+        return new URLSearchParams({tipo: 'ranking', por: comprPor,
+            grupo: el('compr-grupo').value, region: el('compr-region').value,
+            organismo: comprSeleccion ? comprSeleccion.id : el('compr-organismo').value,
+            producto: el('compr-producto').value, ...perParams()});
+    }
+
+    function comprElegirOrganismo(r) {
+        comprSeleccion = {id: r.id, nombre: r.nombre};
+        el('compr-organismo').value = String(r.id);
+        comprPor = 'producto';
+        comprCargar();
+    }
+
+    async function comprBuscarProductos() {
+        if (comprBusquedaAbort) comprBusquedaAbort.abort();
+        const controller = new AbortController(); comprBusquedaAbort = controller;
+        const select = el('compr-producto');
+        const previo = select.value;
+        const grupo = el('compr-grupo').value;
+        const q = el('compr-busqueda').value.trim();
+        select.replaceChildren(); compOpcion(select, '', 'Todos los productos');
+        if (!grupo && q.length < 2) { select.disabled = false; return; }
+        select.disabled = true;
+        try {
+            const response = await fetch(urlCompetencia + '?' + new URLSearchParams({tipo:'productos',grupo,q}), {signal:controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            if (controller !== comprBusquedaAbort) return;
+            for (const p of data.productos) compOpcion(select,p.codigo,p.codigo + ' · ' + p.descripcion);
+            if (data.productos.some(p => String(p.codigo) === previo)) select.value = previo;
+            if (data.hay_mas) el('compr-estado').textContent = 'Se muestran hasta 500 productos. Usa la búsqueda para acotar.';
+        } catch (error) {
+            if (error.name !== 'AbortError' && controller === comprBusquedaAbort)
+                el('compr-estado').textContent = 'Error al buscar productos: ' + error.message;
+        } finally { if (controller === comprBusquedaAbort) select.disabled = false; }
+    }
 
     async function comprCargar() {
         if (compradoresAbort) compradoresAbort.abort();
-        const controller = new AbortController();
-        compradoresAbort = controller;
+        const controller = new AbortController(); compradoresAbort = controller;
+        comprContexto();
+        filtrosChips('compr', [['compr-grupo','Grupo'],['compr-region','Región'],
+            ['compr-organismo','Organismo'],['compr-producto','Producto']], () => {
+                if (comprSeleccion && el('compr-organismo').value !== String(comprSeleccion.id)) {
+                    comprSeleccion = null; comprPor = 'organismo';
+                }
+                comprCargar();
+            });
         el('compr-lista').classList.add('cargando');
-        el('compr-estado').innerHTML = '<span class="dash-inline-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Consultando el Data Warehouse…</span>';
+        el('compr-estado').textContent = 'Consultando el Data Warehouse…';
         cargadorSubtil.iniciar();
         try {
-            const params = new URLSearchParams({tipo: 'ranking', por: 'organismo', ...perParams()});
-            const response = await fetch(urlCompetencia + '?' + params, {signal: controller.signal});
+            const response = await fetch(urlCompetencia + '?' + comprQuery(), {signal:controller.signal});
             if (!response.ok) throw new Error('HTTP ' + response.status);
             const data = await response.json();
             if (controller !== compradoresAbort) return;
-            rkPintar('compr', data, {
-                titulo: 'Top 10 organismos por monto bruto',
-                pista: 'Organismos que más gastan en el período seleccionado.',
-                serieEtiqueta: 'Monto bruto CLP',
-                meta: r => pl(r.proveedores, 'proveedor', 'proveedores') + ' · ' + pl(r.items, 'ítem', 'ítems')
-                    + ' · ' + r.participacion.toLocaleString('es-CL') + '% del segmento'
+            const por = data.por;
+            const titulos = {organismo:'Organismos con mayor monto bruto · Top 10',
+                producto:'Qué compra este organismo · Top 10 productos',
+                proveedor:'A quién compra este organismo · Top 10 proveedores'};
+            rkPintar('compr',data,{
+                titulo: titulos[por],
+                pista: por === 'organismo' ? 'Selecciona un organismo para ver sus productos y proveedores.'
+                    : 'Montos brutos dentro de los filtros y el período seleccionados.',
+                serieEtiqueta:'Monto bruto CLP',
+                meta:r => (por === 'proveedor' ? '' : pl(r.proveedores,'proveedor','proveedores') + ' · ')
+                    + pl(r.items,'ítem','ítems') + ' · ' + r.participacion.toLocaleString('es-CL') + '% del segmento',
+                clicable:r => por === 'organismo' && r.id !== null && r.id !== undefined,
+                onClick:r => comprElegirOrganismo(r)
             });
             el('compr-estado').textContent = '';
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                el('compr-estado').textContent = 'No fue posible cargar los organismos: ' + error.message;
-                console.error(error);
-            }
+        } catch(error) {
+            if (error.name !== 'AbortError' && controller === compradoresAbort)
+                rankingError('compr', 'No fue posible cargar las compras: ' + error.message);
         } finally {
             if (controller === compradoresAbort) el('compr-lista').classList.remove('cargando');
             cargadorSubtil.terminar();
@@ -1312,8 +1444,40 @@
 
     async function iniciarCompradores() {
         if (compradoresListos) return;
-        compradoresListos = true;
-        tabsListas.add('tab-compradores');
+        compradoresListos = true; tabsListas.add('tab-compradores');
+        el('compr-aplicar').addEventListener('click', () => {
+            const id = el('compr-organismo').value;
+            if (id) {
+                comprSeleccion = {id, nombre:el('compr-organismo').selectedOptions[0].textContent};
+                if (comprPor === 'organismo') comprPor = 'producto';
+            } else { comprSeleccion = null; comprPor = 'organismo'; }
+            comprCargar();
+        });
+        el('compr-limpiar').addEventListener('click', () => {
+            for (const id of ['compr-grupo','compr-region','compr-organismo','compr-producto','compr-busqueda']) el(id).value = '';
+            comprSeleccion = null; comprPor = 'organismo';
+            comprBuscarProductos(); comprCargar();
+        });
+        el('compr-grupo').addEventListener('change', () => {
+            el('compr-producto').value = ''; el('compr-busqueda').value = ''; comprBuscarProductos();
+        });
+        let debounce;
+        el('compr-busqueda').addEventListener('input', () => {
+            clearTimeout(debounce); debounce = setTimeout(comprBuscarProductos,300);
+        });
+        el('compr-ver-productos').addEventListener('click', () => { comprPor = 'producto'; comprCargar(); });
+        el('compr-ver-proveedores').addEventListener('click', () => { comprPor = 'proveedor'; comprCargar(); });
+        el('compr-volver').addEventListener('click', () => {
+            comprSeleccion = null; comprPor = 'organismo'; el('compr-organismo').value = ''; comprCargar();
+        });
+        try {
+            const response = await fetch(urlCompetencia + '?tipo=opciones');
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            for (const g of data.grupos) compOpcion(el('compr-grupo'),g,g);
+            for (const r of data.regiones) compOpcion(el('compr-region'),r,r);
+            for (const o of data.organismos) compOpcion(el('compr-organismo'),o.id,o.nombre);
+        } catch(error) { el('compr-estado').textContent = 'No se pudieron cargar los filtros: ' + error.message; }
         await comprCargar();
     }
 

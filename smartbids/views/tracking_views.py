@@ -28,6 +28,12 @@ logger = logging.getLogger(__name__)
 
 
 def detalle_licitacion_view(request, codigo):
+    from smartbids.views.simulador import formulario_para_licitacion
+
+    suscriptor = resolver_suscriptor(request)
+    if suscriptor and getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return redirect('/planes/?upgrade=1&modulo=licitaciones')
+
     licitacion = get_object_or_404(
         Licitacion.objects.select_related('lic_codigo_ucom'),
         lic_codigo=codigo,
@@ -128,6 +134,7 @@ def detalle_licitacion_view(request, codigo):
 
     return render(request, 'smartbids/licitacion_detalle.html', {
         'licitacion': licitacion,
+        'simulador_form': formulario_para_licitacion(licitacion),
         'url_externa': url_externa,
         'url_adjuntos': url_adjuntos,
         'url_preguntas': url_preguntas,
@@ -185,6 +192,8 @@ def seguimiento_licitacion_view(request, codigo):
     suscriptor = resolver_suscriptor(request)
     if not suscriptor:
         return _error_seguimiento(request, 'Debes iniciar sesión para seguir una licitación.', 403)
+    if getattr(suscriptor, 'codigo_estado', None) and getattr(suscriptor.codigo_estado, 'codigo_estado', None) == 1:
+        return _error_seguimiento(request, 'La función de seguimiento es exclusiva para suscriptores.', 403)
 
     licitacion = get_object_or_404(Licitacion, lic_codigo=codigo)
     accion = request.POST.get('accion')
@@ -268,8 +277,6 @@ def _sincronizar_seguimientos(suscriptor):
             if estado_nuevo != seguimiento.estado_actual:
                 estado_anterior = seguimiento.estado_actual
                 notificaciones_a_crear.append(NotificacionLicitacion(
-                    usuario=suscriptor,
-                    licitacion=seguimiento.licitacion,
                     seguimiento=seguimiento,
                     estado_anterior=estado_anterior,
                     estado_nuevo=estado_nuevo,
@@ -315,12 +322,15 @@ def notificaciones_licitacion_view(request):
         return JsonResponse({'notifications': [], 'count': 0})
 
     _sincronizar_seguimientos(suscriptor)
-    no_leidas = NotificacionLicitacion.objects.filter(usuario=suscriptor, leida=False)
+    no_leidas = NotificacionLicitacion.objects.filter(
+        seguimiento__usuario=suscriptor,
+        leida=False,
+    ).select_related('seguimiento__licitacion')
     if request.method == 'POST':
         no_leidas.update(leida=True)
         return JsonResponse({'count': 0})
 
-    items = no_leidas.select_related('licitacion')[:10]
+    items = no_leidas[:10]
     return JsonResponse({
         'count': no_leidas.count(),
         'notifications': [
@@ -328,7 +338,7 @@ def notificaciones_licitacion_view(request):
                 'id': item.pk,
                 'message': item.mensaje,
                 'created_at': timezone.localtime(item.creado_en).strftime('%d-%m-%Y %H:%M'),
-                'url': reverse('detalle_licitacion', args=(item.licitacion_id,)),
+                'url': reverse('detalle_licitacion', args=(item.seguimiento.licitacion_id,)),
             }
             for item in items
         ],

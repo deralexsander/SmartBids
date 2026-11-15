@@ -91,9 +91,10 @@ def resumen_dia_view(request):
     else:
         q_perfil = Q()
 
-    # Coincidencias de perfil
+    # Coincidencias de perfil (solo no cerradas)
+    q_no_cerrada = Q(lic_fecha_cierre__gte=hoy) | Q(lic_fecha_cierre__isnull=True)
     if q_perfil:
-        total_coincidencias = Licitacion.objects.filter(q_perfil).distinct().count()
+        total_coincidencias = Licitacion.objects.filter(q_perfil, q_no_cerrada).distinct().count()
     else:
         total_coincidencias = 0
 
@@ -152,10 +153,10 @@ def resumen_dia_view(request):
         lic.estado_proceso, lic.estado_proceso_label = estado_licitacion(lic, ahora)
         lic.es_cierre_proximo = True
 
-    # Oportunidades del día: solo las que hacen match con el perfil (al igual que en Mis Licitaciones)
+    # Oportunidades del día: solo las que hacen match con el perfil (al igual que en Mis Licitaciones) y no están cerradas
     if q_perfil:
         destacadas_qs = (
-            Licitacion.objects.filter(q_perfil)
+            Licitacion.objects.filter(q_perfil, q_no_cerrada)
             .select_related('lic_codigo_ucom')
             .order_by('-lic_fecha_public')
             .distinct()[:6]
@@ -238,8 +239,8 @@ def resumen_dia_view(request):
     total_no_leidas = 0
     if suscriptor:
         notif_qs = NotificacionLicitacion.objects.filter(
-            usuario=suscriptor
-        ).select_related('licitacion').order_by('-creado_en')
+            seguimiento__usuario=suscriptor
+        ).select_related('seguimiento__licitacion').order_by('-creado_en')
         total_no_leidas = notif_qs.filter(leida=False).count()
         notificaciones_recientes = list(notif_qs[:5])
 

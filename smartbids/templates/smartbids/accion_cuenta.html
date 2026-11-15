@@ -65,10 +65,43 @@
             <div class="action-card">
                 <form id="reset-password-form" class="action-form" novalidate>
                     <div class="form-inline auth__field auth__field--password">
-                        <input type="password" id="new-password" name="new-password" placeholder="Nueva contraseña (mínimo 8 caracteres)" required minlength="8" autocomplete="new-password">
+                        <input type="password" id="new-password" name="new-password" placeholder="Nueva contraseña" required minlength="6" autocomplete="new-password">
                         <button type="button" id="toggle-new-password" class="auth__password-toggle" aria-label="Mostrar u ocultar contraseña">
                             <i class="fa-solid fa-eye" id="toggle-new-password-icon"></i>
                         </button>
+                    </div>
+
+                    <!-- Medidor de fuerza en reseteo de clave -->
+                    <div class="password-meter" id="reset-password-meter" aria-live="polite">
+                        <div class="password-meter__header">
+                            <span class="password-meter__title">Seguridad de la nueva contraseña</span>
+                            <span class="password-meter__status" id="reset-password-status">Seguridad de la contraseña</span>
+                        </div>
+                        <div class="password-meter__track">
+                            <div class="password-meter__bar" id="reset-password-bar"></div>
+                        </div>
+                        <ul class="password-meter__list">
+                            <li class="password-meter__item" data-criterion="length">
+                                <i class="fa-regular fa-circle password-meter__icon"></i>
+                                <span>Mínimo 6 caracteres</span>
+                            </li>
+                            <li class="password-meter__item" data-criterion="uppercase">
+                                <i class="fa-regular fa-circle password-meter__icon"></i>
+                                <span>Al menos una letra mayúscula</span>
+                            </li>
+                            <li class="password-meter__item" data-criterion="lowercase">
+                                <i class="fa-regular fa-circle password-meter__icon"></i>
+                                <span>Al menos una letra minúscula</span>
+                            </li>
+                            <li class="password-meter__item" data-criterion="numeric">
+                                <i class="fa-regular fa-circle password-meter__icon"></i>
+                                <span>Al menos un número</span>
+                            </li>
+                            <li class="password-meter__item" data-criterion="special">
+                                <i class="fa-regular fa-circle password-meter__icon"></i>
+                                <span>Al menos un carácter especial (ej: !@#$%^&*)</span>
+                            </li>
+                        </ul>
                     </div>
 
                     <div class="form-inline auth__field auth__field--password-confirm">

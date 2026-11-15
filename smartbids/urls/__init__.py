@@ -1,7 +1,9 @@
 from django.urls import path
 from smartbids import views
+from smartbids.views.simulador import simulador_ofertas
 
 urlpatterns = [
+    path('api/simulador-ofertas/', simulador_ofertas, name='simulador_ofertas'),
     path('', views.home, name='home'),
     path('home', views.home, name='home'),
     path('ingreso/', views.login_view, name='ingreso'),
@@ -13,6 +15,7 @@ urlpatterns = [
     path('administracion-general/', views.administracion_general_view, name='administracion_general'),
     path('404/', views.handler404_view, name='handler404'),
     path('informacion/', views.informacion_view, name='informacion'),
+    path('planes/', views.planes_view, name='planes'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('dashboard/exportar/', views.exportar_dashboard_view, name='exportar_dashboard'),
     path('dashboard/desglose/', views.dashboard_desglose, name='dashboard_desglose'),
@@ -47,6 +50,7 @@ urlpatterns = [
     path('api/actualizar-preferencias/', views.actualizar_preferencias_suscriptor, name='actualizar_preferencias'),
     path('api/catalogos-preferencias/', views.catalogos_preferencias, name='catalogos_preferencias'),
     path('api/firebase/politica-contrasenas/', views.politica_contrasenas_firebase, name='politica_contrasenas_firebase'),
+    path('api/politica-contrasenas-publica/', views.politica_contrasenas_publica, name='politica_contrasenas_publica'),
     path('api/parametros/alerta-perfil/', views.parametro_alerta_perfil, name='api_parametro_alerta_perfil'),
     path('api/administracion/info-contacto/', views.administrar_info_contacto, name='api_info_contacto'),
     path('api/administracion/config-correo/', views.administrar_config_correo, name='api_config_correo'),

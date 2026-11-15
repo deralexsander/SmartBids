@@ -148,6 +148,25 @@ async function savePolicy(event) {
         policyCache = data;
         setPolicyMessage('Política de contraseñas actualizada correctamente.');
         mostrarMensaje('Política de contraseñas actualizada.', 'exito');
+
+        // Notificar y limpiar caché de política en frontend para actualización instantánea
+        try {
+            sessionStorage.removeItem('sb_active_password_policy');
+            localStorage.setItem('sb_password_policy_updated', Date.now().toString());
+            window.dispatchEvent(new CustomEvent('sb:password-policy-updated', {
+                detail: {
+                    status: 'ok',
+                    enforcementState: modeEnforce.checked ? 'ENFORCE' : 'OFF',
+                    forceUpgradeOnSignin: forceUpgrade.checked,
+                    minPasswordLength: minimum,
+                    maxPasswordLength: maximum,
+                    containsUppercaseCharacter: uppercase.checked,
+                    containsLowercaseCharacter: lowercase.checked,
+                    containsNonAlphanumericCharacter: special.checked,
+                    containsNumericCharacter: numeric.checked
+                }
+            }));
+        } catch (_) {}
     } catch (error) {
         setPolicyMessage(error.message, 'error');
     } finally {

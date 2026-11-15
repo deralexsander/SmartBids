@@ -20,6 +20,10 @@ import {
     getFriendlyErrorMessage,
     MENSAJES
 } from './mensaje.js';
+import {
+    conectarMedidorPassword,
+    evaluarFuerzaPassword
+} from './password-validator.js';
 
 const mensajeFlash = sessionStorage.getItem('flash_message');
 if (mensajeFlash) {
@@ -164,6 +168,10 @@ if (loginForm) {
         setButtonLoading(submitBtn, true, 'Validando credenciales...');
         AuthState.isSubmittingAuth = true;
 
+        // Limpiar cualquier sesión residual previa antes de autenticar
+        SessionManager.clearLocalToken();
+        localStorage.removeItem('smartbids_uid');
+
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
@@ -195,6 +203,7 @@ if (loginForm) {
             const resData = await response.json();
             if (!response.ok || resData.status !== 'ok') {
                 await signOut(auth);
+                AuthState.isSubmittingAuth = false;
                 const error = new Error(resData.mensaje || 'Error al enviar el código de verificación.');
                 error.status = response.status;
                 throw error;
@@ -209,6 +218,7 @@ if (loginForm) {
             iniciarCooldownReenvio();
 
         } catch (error) {
+            AuthState.isSubmittingAuth = false;
             if (passwordInput) {
                 passwordInput.value = '';
             }
@@ -220,7 +230,6 @@ if (loginForm) {
                 mostrarMensaje(getFriendlyErrorMessage(error.code, error.message), 'error');
             }
         } finally {
-            AuthState.isSubmittingAuth = false;
             setButtonLoading(submitBtn, false);
         }
     });
@@ -279,6 +288,7 @@ if (btnVerificarOtp) {
                 localStorage.setItem('smartbids_uid', targetUid);
                 document.cookie = `sb_firebase_uid=${targetUid}; path=/; max-age=604800; SameSite=Lax`;
             }
+            document.cookie = `sb_session_token=${tokenID}; path=/; max-age=604800; SameSite=Lax`;
 
             sessionStorage.setItem('flash_message', JSON.stringify({
                 texto: '¡Bienvenido! Sesión iniciada con éxito.',
@@ -339,6 +349,10 @@ if (btnCancelarOtp) {
         AuthState.isSubmittingAuth = false;
         pendingEmail = null;
         pendingUid = null;
+        SessionManager.clearLocalToken();
+        localStorage.removeItem('smartbids_uid');
+        document.cookie = 'sb_firebase_uid=; path=/; max-age=0; SameSite=Lax';
+        document.cookie = 'sb_session_token=; path=/; max-age=0; SameSite=Lax';
         await signOut(auth);
     });
 }
@@ -524,6 +538,12 @@ if (forgotPasswordLink) {
 // ==========================================================================
 const registerForm = document.getElementById('register-form');
 if (registerForm) {
+    const passwordInput = document.getElementById('password');
+    const meterContainer = document.getElementById('registro-password-meter');
+    if (passwordInput && meterContainer) {
+        conectarMedidorPassword(passwordInput, meterContainer);
+    }
+
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         limpiarMensaje();
@@ -552,6 +572,19 @@ if (registerForm) {
 
         if (password !== passwordConfirm) {
             mostrarMensaje(MENSAJES.validacion.passwordsNoCoinciden, 'error');
+            return;
+        }
+
+        const evaluacion = evaluarFuerzaPassword(password);
+        if (!evaluacion.esValida) {
+            if (evaluacion.excedeMaximo) {
+                mostrarMensaje(`La contraseña no puede superar el límite máximo de ${evaluacion.maxLen} caracteres.`, 'error');
+                return;
+            }
+            const faltantes = evaluacion.resultados
+                .filter(r => !r.cumple)
+                .map(r => r.label.toLowerCase());
+            mostrarMensaje(`La contraseña debe contener: ${faltantes.join(', ')}.`, 'error');
             return;
         }
 

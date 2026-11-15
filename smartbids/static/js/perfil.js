@@ -1,7 +1,10 @@
 import { auth } from './firebase-config.js';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { setButtonLoading, SessionManager } from './functions.js';
-import { mostrarMensaje } from './mensaje.js';
+import { mostrarMensaje, getFriendlyErrorMessage } from './mensaje.js';
+import { conectarMedidorPassword, evaluarFuerzaPassword } from './password-validator.js';
+import { aplicarRestriccionesEstadoUsuario } from './sesion.js';
+import { applyTheme } from './theme.js';
 
 function formatTimestamp(ts) {
     if (!ts) return 'No registrada';
@@ -1447,6 +1450,12 @@ async function setupUcomTree() {
 // ==========================================================================
 function setupPasswordFunctionality(user) {
     const formPassword = document.getElementById('form-perfil-password');
+    const newPassInput = document.getElementById('profile-new-pass');
+    const meterContainer = document.getElementById('perfil-password-meter');
+    const medidor = (newPassInput && meterContainer)
+        ? conectarMedidorPassword(newPassInput, meterContainer)
+        : null;
+
     if (formPassword && formPassword.dataset.bound !== 'true') {
         formPassword.dataset.bound = 'true';
         formPassword.onsubmit = async (e) => {
@@ -1455,13 +1464,26 @@ function setupPasswordFunctionality(user) {
             const newPass = document.getElementById('profile-new-pass')?.value;
             const confirmPass = document.getElementById('profile-confirm-pass')?.value;
 
+            if (!currentPass || !newPass || !confirmPass) {
+                mostrarMensaje('Por favor, completa todos los campos de contraseña.', 'error');
+                return;
+            }
+
             if (newPass !== confirmPass) {
                 mostrarMensaje('Las nuevas contraseñas no coinciden.', 'error');
                 return;
             }
 
-            if (newPass.length < 6) {
-                mostrarMensaje('La nueva contraseña debe tener al menos 6 caracteres.', 'error');
+            const evaluacion = evaluarFuerzaPassword(newPass);
+            if (!evaluacion.esValida) {
+                if (evaluacion.excedeMaximo) {
+                    mostrarMensaje(`La nueva contraseña no puede superar el límite máximo de ${evaluacion.maxLen} caracteres.`, 'error');
+                    return;
+                }
+                const faltantes = evaluacion.resultados
+                    .filter(r => !r.cumple)
+                    .map(r => r.label.toLowerCase());
+                mostrarMensaje(`La contraseña debe contener: ${faltantes.join(', ')}.`, 'error');
                 return;
             }
 
@@ -1481,12 +1503,15 @@ function setupPasswordFunctionality(user) {
 
                 mostrarMensaje('Contraseña actualizada con éxito.', 'exito');
                 formPassword.reset();
+                if (medidor) medidor.actualizar();
             } catch (err) {
                 console.error('[SmartBids] Error al cambiar clave:', err);
                 if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
                     mostrarMensaje('La contraseña actual es incorrecta.', 'error');
+                } else if (err.code) {
+                    mostrarMensaje(getFriendlyErrorMessage(err.code, err.message), 'error');
                 } else {
-                    mostrarMensaje(`Error al cambiar clave: ${err.message}`, 'error');
+                    mostrarMensaje(`Error al cambiar clave: ${err.message || 'Error inesperado.'}`, 'error');
                 }
             } finally {
                 setButtonLoading(btn, false);
@@ -1678,9 +1703,21 @@ function configurarPermisosFormularioEmpresa(esDueno = true, correoDueno = '', y
         }
 
         if (btnGuardar) {
-            btnGuardar.style.display = 'inline-flex';
-            btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
-            btnGuardar.className = 'btn btn-primary';
+            if (window.currentUserCodigoEstado === 1) {
+                btnGuardar.disabled = true;
+                btnGuardar.style.opacity = '0.6';
+                btnGuardar.style.cursor = 'not-allowed';
+                btnGuardar.title = 'Función exclusiva para Suscriptores. Solo se permite consultar empresas por RUT.';
+                btnGuardar.innerHTML = '<i class="fa-solid fa-lock"></i> Guardar Empresa (Exclusivo Suscriptores)';
+            } else {
+                btnGuardar.disabled = false;
+                btnGuardar.style.opacity = '1';
+                btnGuardar.style.cursor = 'pointer';
+                btnGuardar.style.display = 'inline-flex';
+                btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                btnGuardar.className = 'btn btn-primary';
+                btnGuardar.title = '';
+            }
         }
 
         const badgeTributaria = document.querySelector('#tab-empresa .dash-badge');
@@ -2145,7 +2182,52 @@ export async function inicializarVistaPerfil(user) {
             if (socialHeader) socialHeader.textContent = data.sus_nombre_social ? `@${data.sus_nombre_social}` : `@suscriptor_${data.id_suscriptor}`;
 
             const roleBadge = document.getElementById('profile-role-badge');
-            if (roleBadge) roleBadge.textContent = data.nombre_estado || 'Activo';
+            const codEstado = data.codigo_estado;
+            window.currentUserCodigoEstado = codEstado;
+            aplicarRestriccionesEstadoUsuario(codEstado);
+
+            let labelEstado = data.nombre_estado || 'Prospecto';
+            if (codEstado === 1) {
+                labelEstado = 'Prospecto';
+            } else if (codEstado === 2) {
+                labelEstado = 'Suscriptor';
+            } else if (codEstado === 5) {
+                labelEstado = 'Administrador';
+            }
+            if (roleBadge) roleBadge.textContent = labelEstado;
+
+            const sidebarUpgrade = document.getElementById('perfil-sidebar-upgrade');
+            if (sidebarUpgrade) {
+                sidebarUpgrade.style.display = (codEstado === 1) ? 'block' : 'none';
+            }
+
+            // Restricciones de Prospecto en Perfil: Modo Oscuro y Guardar Empresa
+            const themeToggleTab = document.getElementById('theme-dark-toggle-tab');
+            const themeStatusTab = document.getElementById('theme-toggle-status-tab');
+            const btnGuardarEmpresa = document.getElementById('btn-guardar-empresa');
+
+            if (codEstado === 1) {
+                // Modo Oscuro bloqueado: por defecto queda en blanco
+                applyTheme('light', true);
+                if (themeToggleTab) {
+                    themeToggleTab.checked = false;
+                    themeToggleTab.disabled = true;
+                    themeToggleTab.title = 'Función exclusiva para Suscriptores';
+                }
+                if (themeStatusTab) {
+                    themeStatusTab.innerHTML = '<i class="fa-solid fa-lock" style="font-size: 0.78rem; margin-right: 4px;"></i> Desactivado (Exclusivo Suscriptores)';
+                    themeStatusTab.style.color = '#d97706';
+                }
+
+                // Guardar empresa bloqueado (solo búsqueda por RUT permitida)
+                if (btnGuardarEmpresa) {
+                    btnGuardarEmpresa.disabled = true;
+                    btnGuardarEmpresa.style.opacity = '0.6';
+                    btnGuardarEmpresa.style.cursor = 'not-allowed';
+                    btnGuardarEmpresa.title = 'Función exclusiva para Suscriptores. Solo se permite consultar empresas por RUT.';
+                    btnGuardarEmpresa.innerHTML = '<i class="fa-solid fa-lock"></i> Guardar Empresa (Exclusivo Suscriptores)';
+                }
+            }
 
             const nombreEstado = data.nombre_estado || '';
             const rolNormalizado = nombreEstado.trim().toLowerCase();
@@ -2484,8 +2566,16 @@ if (btnBuscarRut && inputRutEmpresa) {
                 } else {
                     const btnGuardar = document.getElementById('btn-guardar-empresa');
                     if (btnGuardar) {
-                        btnGuardar.style.display = 'inline-flex';
-                        btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                        if (window.currentUserCodigoEstado === 1) {
+                            btnGuardar.disabled = true;
+                            btnGuardar.style.opacity = '0.6';
+                            btnGuardar.style.cursor = 'not-allowed';
+                            btnGuardar.title = 'Función exclusiva para Suscriptores. Solo se permite consultar empresas por RUT.';
+                            btnGuardar.innerHTML = '<i class="fa-solid fa-lock"></i> Guardar Empresa (Exclusivo Suscriptores)';
+                        } else {
+                            btnGuardar.style.display = 'inline-flex';
+                            btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                        }
                     }
                     registrarCambio('empresa');
                     mostrarMensaje('Datos de empresa cargados con éxito.', 'exito');
@@ -2494,8 +2584,16 @@ if (btnBuscarRut && inputRutEmpresa) {
                 limpiarCamposEmpresa();
                 const btnGuardar = document.getElementById('btn-guardar-empresa');
                 if (btnGuardar) {
-                    btnGuardar.style.display = 'inline-flex';
-                    btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                    if (window.currentUserCodigoEstado === 1) {
+                        btnGuardar.disabled = true;
+                        btnGuardar.style.opacity = '0.6';
+                        btnGuardar.style.cursor = 'not-allowed';
+                        btnGuardar.title = 'Función exclusiva para Suscriptores. Solo se permite consultar empresas por RUT.';
+                        btnGuardar.innerHTML = '<i class="fa-solid fa-lock"></i> Guardar Empresa (Exclusivo Suscriptores)';
+                    } else {
+                        btnGuardar.style.display = 'inline-flex';
+                        btnGuardar.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Empresa';
+                    }
                 }
                 registrarCambio('empresa');
                 mostrarMensaje(
@@ -2671,6 +2769,11 @@ if (formEmpresa && formEmpresa.dataset.bound !== 'true') {
 
     formEmpresa.onsubmit = (e) => {
         e.preventDefault();
+
+        if (window.currentUserCodigoEstado === 1) {
+            mostrarMensaje('La vinculación y guardado de empresa es exclusivo para Suscriptores. Los prospectos pueden consultar por RUT libremente.', 'alerta');
+            return;
+        }
 
         const rut = document.getElementById('empresa-rut')?.value.trim();
         const razonSocial = document.getElementById('empresa-razon-social')?.value.trim();

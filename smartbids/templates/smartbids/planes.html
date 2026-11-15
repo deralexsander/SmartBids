@@ -1,0 +1,257 @@
+{% extends 'smartbids/base.html' %}
+{% load static %}
+
+{% block nombrePag %}
+<title>Planes y Funcionalidades - SmartBids</title>
+{% endblock %}
+
+{% block contenido %}
+<div class="planes-page-wrapper">
+
+    {% if upgrade %}
+    <!-- Alerta de Redirección / Paywall Comercial -->
+    <div class="planes-upgrade-alert" role="alert">
+        <div class="planes-upgrade-alert__icon">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+        </div>
+        <div class="planes-upgrade-alert__content">
+            <h4>Función exclusiva para Suscriptores</h4>
+            <p>
+                {% if modulo == 'licitaciones' %}
+                    El <strong>Explorador de Licitaciones</strong> con filtrado en 346 comunas y fichas técnicas completas está reservado para el plan Suscriptor.
+                {% elif modulo == 'dashboard' %}
+                    Los <strong>Dashboards Analíticos</strong> con Data Warehouse de compras públicas y análisis de competencia son exclusivos para Suscriptores.
+                {% elif modulo == 'ml' %}
+                    El <strong>Simulador predictivo de Machine Learning</strong> con algoritmos XGBoost es una herramienta avanzada para Suscriptores.
+                {% else %}
+                    El módulo al que intentaste acceder forma parte de las propuestas de valor reservadas para el plan Suscriptor.
+                {% endif %}
+                Revisa las funcionalidades a continuación y solicita tu activación comercial para desbloquear el acceso total.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Encabezado Principal de la Página de Planes -->
+    <section class="planes-header-section">
+        <span class="section-subtitle">Propuesta de Valor & Suscripción</span>
+        <h1 class="planes-main-title">Conoce todas las funciones y ventajas de <span>SmartBids</span></h1>
+        <p class="planes-main-desc">
+            Tu cuenta de <strong>Prospecto</strong> te permite configurar tu perfil empresarial y consultar el Resumen del día.
+            Al pasar a <strong>Suscriptor</strong>, desbloqueas el potencial analítico, predictivo y territorial completo de SmartBids para ganar más compras públicas en Chile.
+        </p>
+    </section>
+
+    <!-- Sección de Funcionalidades en Detalle -->
+    <section class="planes-features-section">
+        <div class="section-header">
+            <span class="section-subtitle">Capacidades de la Plataforma</span>
+            <h2 class="section-title">Herramientas diseñadas para ganar licitaciones</h2>
+            <p class="section-desc">Diseñadas para proveedores del Estado que buscan optimizar su tiempo, detectar oportunidades antes que la competencia y postular con decisiones respaldadas por datos.</p>
+        </div>
+
+        <div class="planes-features-grid">
+            <div class="dashboard-card planes-feature-card">
+                <div class="planes-feature-icon">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <h3>Explorador Territorial Nacional</h3>
+                <p>Búsqueda y filtrado territorial en las <strong>346 comunas de Chile</strong>. Monitorea licitaciones por región, provincia o municipio específico, y filtra por códigos UCOM estándar de Naciones Unidas.</p>
+                <div class="planes-feature-badge">Cobertura Nacional 100%</div>
+            </div>
+
+            <div class="dashboard-card planes-feature-card">
+                <div class="planes-feature-icon">
+                    <i class="fa-solid fa-file-contract"></i>
+                </div>
+                <h3>Fichas Técnicas Oficiales & Bases</h3>
+                <p>Expediente completo con cronograma oficial de hitos, descarga directa de bases administrativas y técnicas, garantías requeridas y registro del foro de preguntas y respuestas de ChileCompra.</p>
+                <div class="planes-feature-badge">Expediente Completo</div>
+            </div>
+
+            <div class="dashboard-card planes-feature-card">
+                <div class="planes-feature-icon">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <h3>Dashboards Analíticos & Data Warehouse</h3>
+                <p>Visualización interactiva con Chart.js de montos transados, estacionalidad de compra y comportamiento histórico de los organismos públicos que más demandan tus productos o servicios.</p>
+                <div class="planes-feature-badge">Analítica de Mercado</div>
+            </div>
+
+            <div class="dashboard-card planes-feature-card">
+                <div class="planes-feature-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3>Inteligencia de Competencia</h3>
+                <p>Identifica a los principales oferentes adjudicatarios en tus rubros, conoce sus cuotas de mercado, tasas de adjudicación y precios históricos ofertados para mejorar tus márgenes.</p>
+                <div class="planes-feature-badge">Ventaja Competitiva</div>
+            </div>
+
+            <div class="dashboard-card planes-feature-card">
+                <div class="planes-feature-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <h3>Modelos Predictivos XGBoost (IA)</h3>
+                <p>Algoritmos de Machine Learning entrenados sobre miles de procesos para predecir la probabilidad de adjudicación según el presupuesto, plazos y volumen de oferentes esperados.</p>
+                <div class="planes-feature-badge">Inteligencia Artificial</div>
+            </div>
+
+            <div class="dashboard-card planes-feature-card">
+                <div class="planes-feature-icon">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <h3>Seguimientos & Alertas en Vivo</h3>
+                <p>Guarda licitaciones en tu panel personal con notificaciones automáticas ante aperturas técnicas, modificaciones de fechas y cierres urgentes en menos de 72 horas para no perder plazos.</p>
+                <div class="planes-feature-badge">Monitoreo 24/7</div>
+            </div>
+
+            <div class="dashboard-card planes-feature-card">
+                <div class="planes-feature-icon">
+                    <i class="fa-solid fa-file-excel"></i>
+                </div>
+                <h3>Exportación Masiva de Datos</h3>
+                <p>Descarga reportes estructurados en formato Microsoft Excel (.xlsx) y CSV con todos los campos clave de los procesos filtrados para integrarlos con tu ERP o CRM de ventas.</p>
+                <div class="planes-feature-badge">Exportación Ilimitada</div>
+            </div>
+
+            <div class="dashboard-card planes-feature-card">
+                <div class="planes-feature-icon">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <h3>Soporte Comercial & Onboarding</h3>
+                <p>Acompañamiento prioritario por correo para calibrar tus palabras clave, rubros y configuraciones de búsqueda con el equipo de especialistas de SmartBids.</p>
+                <div class="planes-feature-badge">Atención Especializada</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tabla Comparativa: Prospecto vs. Suscriptor -->
+    <section class="planes-comparison-section">
+        <div class="dashboard-card planes-comparison-card">
+            <div class="planes-comparison-header">
+                <h3><i class="fa-solid fa-scale-balanced"></i> Comparativa de Acceso y Funcionalidades</h3>
+                <p>Conoce detalladamente la diferencia de alcance entre el estado Prospecto y el estado Suscriptor:</p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="planes-table">
+                    <thead>
+                        <tr>
+                            <th class="planes-th-feature">Funcionalidad / Módulo</th>
+                            <th class="planes-th-prospecto">Prospecto <span class="planes-badge-free">Registrado sin pago</span></th>
+                            <th class="planes-th-suscriptor">Suscriptor <span class="planes-badge-pro"><i class="fa-solid fa-crown"></i> Acceso Total</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <strong>Configuración de Perfil Empresarial</strong>
+                                <small>Datos de empresa, rubros, actividades económicas y palabras clave</small>
+                            </td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Acceso completo</td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Acceso completo</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Resumen del Día Matutino (24 horas)</strong>
+                                <small>Licitaciones publicadas en las últimas 24 horas y contador de coincidencias</small>
+                            </td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Acceso diario</td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Acceso diario</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Explorador de Licitaciones Nacional</strong>
+                                <small>Filtros territoriales en las 346 comunas de Chile y búsqueda por UCOM</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Ilimitado (346 comunas)</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Fichas Técnicas Oficiales, Cronograma y Bases</strong>
+                                <small>Historial de hitos, descarga de bases administrativas y foro Q&A ChileCompra</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Expediente completo</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Dashboards Analíticos & Data Warehouse</strong>
+                                <small>Evolución de montos transados, hábitos de compra y desglose por productos ONU</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Gráficos Chart.js interactivos</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Inteligencia de Competencia</strong>
+                                <small>Ranking de oferentes ganadores y tasas de participación de competidores</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Métricas completas de mercado</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Modelos Predictivos Machine Learning (XGBoost)</strong>
+                                <small>Scoring predictivo de probabilidad de adjudicación y evaluación de escenarios</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Simulación y scoring activo</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Seguimiento de Procesos & Notificaciones Urgentes</strong>
+                                <small>Alertas automáticas de aperturas técnicas y cierres en menos de 72 horas</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Seguimientos ilimitados</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Exportación Masiva de Datos</strong>
+                                <small>Generación de reportes estructurados en formato Microsoft Excel (.xlsx) y CSV</small>
+                            </td>
+                            <td class="text-center"><span class="planes-pill-locked"><i class="fa-solid fa-lock"></i> Restringido</span></td>
+                            <td class="text-center"><i class="fa-solid fa-circle-check planes-icon-check"></i> Descargas sin límite</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Botones de Acción y Redirección a Contacto -->
+    <section class="planes-cta-section">
+        <div class="dashboard-card planes-cta-card">
+            <div class="planes-cta-content">
+                <span class="section-subtitle">Paso a Suscriptor</span>
+                <h2 class="planes-cta-title">¿Listo para desbloquear el acceso total a SmartBids?</h2>
+                <p class="planes-cta-desc">
+                    Elige la modalidad que mejor se adapte a tu empresa y solicita tu activación comercial con nuestro equipo.
+                    Ambos planes entregan acceso completo a todas las funcionalidades sin limitaciones.
+                </p>
+                <div class="planes-cta-buttons">
+                    <a href="{% url 'home' %}#contacto?plan=mensual" class="btn btn-outline btn-large planes-btn-action">
+                        <i class="fa-solid fa-calendar-days"></i> Solicitar Plan Mensual ($20.000 CLP / mes)
+                    </a>
+                    <a href="{% url 'home' %}#contacto?plan=anual" class="btn btn-primary btn-large planes-btn-action">
+                        <i class="fa-solid fa-crown"></i> Solicitar Plan Anual ($200.000 CLP / año • 2 Meses Gratis)
+                    </a>
+                    <a href="{% url 'home' %}#contacto" class="btn btn-outline planes-btn-secondary">
+                        <i class="fa-regular fa-envelope"></i> Consulta Comercial o Demostración
+                    </a>
+                </div>
+                <div class="planes-cta-footnote">
+                    <i class="fa-solid fa-circle-info"></i> El paso de Prospecto a Suscriptor se realiza de forma manual tras confirmar el pago con nuestro equipo comercial.
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block footer %}
+    {% include 'smartbids/includes/footer.html' %}
+{% endblock %}
