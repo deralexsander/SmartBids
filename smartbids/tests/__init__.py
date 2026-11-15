@@ -796,6 +796,8 @@ class ResumenDiaTests(SimpleTestCase):
             self.assertEqual(context['nombre_usuario'], 'Juan Pérez')
             self.assertTrue(context['tiene_palabras_perfil'])
             self.assertEqual(context['total_coincidencias'], 8)
+            mock_notif_filter.assert_called_once_with(seguimiento__usuario=mock_susc)
+            mock_notif_filter.return_value.select_related.assert_called_once_with('seguimiento__licitacion')
 
     def test_resumen_dia_view_oportunidades_y_cierran_pronto_solo_match_perfil(self):
         """Verifica que Oportunidades del Día y Cierran Pronto filtren exclusivamente por el perfil configurado."""
@@ -889,6 +891,86 @@ class ResumenDiaTests(SimpleTestCase):
             context = mock_render.call_args[0][2]
             self.assertTrue(context['cierre_es_general'])
             self.assertEqual(context['total_cierre_proximo'], 3)
+
+
+class NotificacionesSeguimientoTests(SimpleTestCase):
+    def test_sincronizar_crea_notificacion_solo_con_seguimiento_y_evento(self):
+        from unittest.mock import MagicMock, patch
+        from smartbids.models.core import NotificacionLicitacion, SeguimientoLicitacion, Suscriptor
+        from smartbids.models.procurement import Licitacion
+        from smartbids.views.tracking_views import _sincronizar_seguimientos
+
+        usuario = Suscriptor(id_suscriptor=1)
+        licitacion = Licitacion(lic_codigo='LIC-1', lic_nombre='Licitación')
+        seguimiento = SeguimientoLicitacion(
+            id=1,
+            usuario=usuario,
+            licitacion=licitacion,
+            estado_actual='publicada',
+            cerrada_en=None,
+        )
+        seguimiento.save = MagicMock()
+        qs = MagicMock()
+        qs.__iter__.return_value = [seguimiento]
+
+        with patch('smartbids.views.tracking_views.transaction.atomic'), \
+             patch('smartbids.views.tracking_views.SeguimientoLicitacion.objects.select_for_update') as lock, \
+             patch('smartbids.views.tracking_views.estado_licitacion', return_value=('preguntas', 'Preguntas')), \
+             patch('smartbids.views.tracking_views.NotificacionLicitacion.objects.bulk_create') as bulk_create:
+            lock.return_value.filter.return_value.select_related.return_value = qs
+            _sincronizar_seguimientos(usuario)
+
+        self.assertEqual(bulk_create.call_count, 1)
+        notificacion = bulk_create.call_args.args[0][0]
+        self.assertIsInstance(notificacion, NotificacionLicitacion)
+        self.assertIs(notificacion.seguimiento, seguimiento)
+        self.assertEqual(notificacion.estado_anterior, 'publicada')
+        self.assertEqual(notificacion.estado_nuevo, 'preguntas')
+        self.assertFalse(hasattr(notificacion, 'usuario'))
+        self.assertFalse(hasattr(notificacion, 'licitacion'))
+
+    def test_api_lista_cuenta_y_marca_solo_notificaciones_del_usuario(self):
+        from datetime import datetime, timezone
+        from unittest.mock import MagicMock, patch
+        from django.test import RequestFactory
+        from smartbids.views.tracking_views import notificaciones_licitacion_view
+
+        usuario = MagicMock()
+        seguimiento = MagicMock(licitacion_id='LIC-7')
+        item = MagicMock(
+            pk=17,
+            mensaje='Cambio de estado',
+            creado_en=datetime(2026, 1, 2, 3, 4, tzinfo=timezone.utc),
+            seguimiento=seguimiento,
+        )
+        qs = MagicMock()
+        qs.count.return_value = 1
+        qs.__getitem__.return_value = [item]
+        qs.select_related.return_value = qs
+        rf = RequestFactory()
+
+        with patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=usuario), \
+             patch('smartbids.views.tracking_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.tracking_views.NotificacionLicitacion.objects.filter', return_value=qs) as filt:
+            response = notificaciones_licitacion_view(rf.get('/api/licitaciones/notificaciones/'))
+
+        filt.assert_called_once_with(seguimiento__usuario=usuario, leida=False)
+        self.assertEqual(qs.select_related.call_args.args, ('seguimiento__licitacion',))
+        import json
+        payload = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(payload['count'], 1)
+        self.assertEqual(payload['notifications'][0]['id'], 17)
+        self.assertEqual(payload['notifications'][0]['message'], 'Cambio de estado')
+        self.assertEqual(payload['notifications'][0]['url'], '/licitaciones/LIC-7/')
+
+        with patch('smartbids.views.tracking_views.resolver_suscriptor', return_value=usuario), \
+             patch('smartbids.views.tracking_views._sincronizar_seguimientos'), \
+             patch('smartbids.views.tracking_views.NotificacionLicitacion.objects.filter', return_value=qs) as filt:
+            response = notificaciones_licitacion_view(rf.post('/api/licitaciones/notificaciones/'))
+
+        filt.assert_called_once_with(seguimiento__usuario=usuario, leida=False)
+        qs.update.assert_called_once_with(leida=True)
+        self.assertEqual(json.loads(response.content.decode('utf-8')), {'count': 0})
 
 
 class AdminSafetyAndEmailConfigTests(SimpleTestCase):

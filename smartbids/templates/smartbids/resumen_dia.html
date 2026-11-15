@@ -319,8 +319,8 @@
                             <i class="fa-regular fa-clock"></i> {{ notif.creado_en|date:"d/m/Y H:i" }}
                         </span>
                     </div>
-                    {% if notif.licitacion %}
-                    <a href="{% url 'detalle_licitacion' notif.licitacion.lic_codigo %}" class="btn btn-outline" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">
+                    {% if notif.seguimiento.licitacion %}
+                    <a href="{% url 'detalle_licitacion' notif.seguimiento.licitacion.lic_codigo %}" class="btn btn-outline" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; border-radius: 6px;">
                         Ver Licitación
                     </a>
                     {% endif %}

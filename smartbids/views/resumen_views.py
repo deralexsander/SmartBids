@@ -239,8 +239,8 @@ def resumen_dia_view(request):
     total_no_leidas = 0
     if suscriptor:
         notif_qs = NotificacionLicitacion.objects.filter(
-            usuario=suscriptor
-        ).select_related('licitacion').order_by('-creado_en')
+            seguimiento__usuario=suscriptor
+        ).select_related('seguimiento__licitacion').order_by('-creado_en')
         total_no_leidas = notif_qs.filter(leida=False).count()
         notificaciones_recientes = list(notif_qs[:5])
 

@@ -146,18 +146,6 @@ class SeguimientoLicitacion(models.Model):
 
 
 class NotificacionLicitacion(models.Model):
-    usuario = models.ForeignKey(
-        Suscriptor,
-        models.CASCADE,
-        db_column='id_usuario',
-        related_name='notificaciones_licitaciones',
-    )
-    licitacion = models.ForeignKey(
-        Licitacion,
-        models.CASCADE,
-        db_column='id_licitacion',
-        related_name='notificaciones',
-    )
     seguimiento = models.ForeignKey(
         SeguimientoLicitacion,
         models.CASCADE,
