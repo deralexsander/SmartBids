@@ -79,7 +79,8 @@ def filtrar_licitaciones(request, suscriptor):
     q_no_cerrada = Q(lic_fecha_cierre__gte=hoy) | Q(lic_fecha_cierre__isnull=True)
 
     if q_perfil:
-        match_perfil = Licitacion.objects.filter(q_perfil, q_no_cerrada).distinct().count()
+        # Optimización: Licitacion no genera duplicados en q_perfil (evita el costoso DISTINCT sobre campos de texto/array)
+        match_perfil = Licitacion.objects.filter(q_perfil, q_no_cerrada).count()
     else:
         match_perfil = 0
 
@@ -98,7 +99,7 @@ def filtrar_licitaciones(request, suscriptor):
     elif solo_claves:
         # Pestaña "Con palabras clave": filtrar solo por el perfil configurado
         if q_perfil:
-            qs = qs.filter(q_perfil).distinct()
+            qs = qs.filter(q_perfil)
         else:
             qs = qs.none()
     else:
@@ -196,7 +197,6 @@ def mis_licitaciones_view(request):
                 Licitacion.objects
                 .select_related('lic_codigo_ucom')
                 .filter(q_perfil, q_no_cerrada)
-                .distinct()
                 .order_by('-lic_fecha_public')
             )
             # Optimización de rendimiento: cargar en la primera página un bloque de hasta 10 oportunidades
@@ -268,6 +268,8 @@ def exportar_licitaciones_view(request):
         return redirect('/planes/?upgrade=1&modulo=licitaciones')
 
     licitaciones, _ = filtrar_licitaciones(request, suscriptor)
+    # Optimización: diferir campos gigantes de texto y arrays que no se usan en la exportación
+    licitaciones = licitaciones.defer('lic_texto', 'lic_diccionario_palabras', 'lic_codigos_producto')
     formato = (request.GET.get('formato') or request.GET.get('format') or 'csv').strip().lower()
 
     encabezados = (
@@ -276,7 +278,7 @@ def exportar_licitaciones_view(request):
     )
 
     def obtener_filas():
-        for licitacion in licitaciones:
+        for licitacion in licitaciones.iterator(chunk_size=2000):
             yield (
                 licitacion.lic_codigo,
                 licitacion.lic_nombre,

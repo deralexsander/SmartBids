@@ -7,7 +7,7 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 CACHE_KEY_DB_SIZE = 'smartbids:storage_safety:db_size'
-CACHE_TTL_SECONDS = 60
+CACHE_TTL_SECONDS = 1800  # 30 minutos (evita miles de consultas a pg_database_size innecesariamente)
 
 def obtener_limite_bytes():
     """

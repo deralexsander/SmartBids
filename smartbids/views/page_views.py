@@ -127,6 +127,7 @@ def exportar_dashboard_view(request):
         fecha_inicio = timezone.localdate() - timedelta(days=dias)
         licitaciones = (
             Licitacion.objects.select_related('lic_codigo_ucom')
+            .defer('lic_texto', 'lic_diccionario_palabras', 'lic_codigos_producto')
             .filter(lic_fecha_public__gte=fecha_inicio, lic_fecha_public__lte=timezone.localdate())
             .order_by('-lic_fecha_public')
         )
@@ -135,7 +136,7 @@ def exportar_dashboard_view(request):
             'Fecha cierre', 'Presupuesto', 'Moneda', 'Enlace externo'
         )
         def obtener_filas_legacy():
-            for licitacion in licitaciones:
+            for licitacion in licitaciones.iterator(chunk_size=2000):
                 yield (
                     licitacion.lic_codigo,
                     licitacion.lic_nombre,
