@@ -28,6 +28,10 @@ class UnidadCompra(models.Model):
     class Meta:
         managed = True
         db_table = '"procurement"."unidad_compra"'
+        indexes = [
+            models.Index(fields=['ucom_codigo_comuna'], name='idx_ucom_comuna'),
+            models.Index(fields=['ucom_codigo_organismo'], name='idx_ucom_organismo'),
+        ]
         
 class Licitacion(models.Model):
     lic_codigo = models.CharField(primary_key=True, max_length=20)
@@ -82,6 +86,11 @@ class Licitacion(models.Model):
     class Meta:
         managed = True
         db_table = '"procurement"."licitacion"'
+        indexes = [
+            models.Index(fields=['-lic_fecha_public'], name='idx_lic_fecha_public'),
+            models.Index(fields=['lic_fecha_cierre'], name='idx_lic_fecha_cierre'),
+            models.Index(fields=['lic_tipo_licitacion'], name='idx_lic_tipo'),
+        ]
         
 class LicitacionesProductos(models.Model):
     pk = models.CompositePrimaryKey('lic_codigo', 'codigo_producto')
@@ -91,3 +100,6 @@ class LicitacionesProductos(models.Model):
     class Meta:
         managed = True
         db_table = '"procurement"."licitaciones_productos"'
+        indexes = [
+            models.Index(fields=['codigo_producto'], name='idx_lic_prod_codigo'),
+        ]

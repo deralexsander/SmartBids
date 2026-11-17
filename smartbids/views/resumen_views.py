@@ -94,7 +94,7 @@ def resumen_dia_view(request):
     # Coincidencias de perfil (solo no cerradas)
     q_no_cerrada = Q(lic_fecha_cierre__gte=hoy) | Q(lic_fecha_cierre__isnull=True)
     if q_perfil:
-        total_coincidencias = Licitacion.objects.filter(q_perfil, q_no_cerrada).distinct().count()
+        total_coincidencias = Licitacion.objects.filter(q_perfil, q_no_cerrada).count()
     else:
         total_coincidencias = 0
 
@@ -129,7 +129,6 @@ def resumen_dia_view(request):
             .filter(lic_fecha_cierre__gte=hoy, lic_fecha_cierre__lte=plazo_tres_dias)
             .select_related('lic_codigo_ucom')
             .order_by('lic_fecha_cierre')
-            .distinct()
         )
         total_cierre_proximo = cierre_proximo_qs.count()
     else:
@@ -143,7 +142,6 @@ def resumen_dia_view(request):
             .filter(lic_fecha_cierre__gte=hoy, lic_fecha_cierre__lte=plazo_tres_dias)
             .select_related('lic_codigo_ucom')
             .order_by('lic_fecha_cierre')
-            .distinct()
         )
         total_cierre_proximo = cierre_proximo_qs.count()
         cierre_es_general = True
@@ -158,8 +156,7 @@ def resumen_dia_view(request):
         destacadas_qs = (
             Licitacion.objects.filter(q_perfil, q_no_cerrada)
             .select_related('lic_codigo_ucom')
-            .order_by('-lic_fecha_public')
-            .distinct()[:6]
+            .order_by('-lic_fecha_public')[:6]
         )
     else:
         destacadas_qs = Licitacion.objects.none()
@@ -170,6 +167,27 @@ def resumen_dia_view(request):
 
     # 3. Métricas y Destacados del Dashboard DW
     def _obtener_dashboard_kpis_resumen():
+        try:
+            # Primero intentar leer desde la vista materializada si existe
+            with connections["dw"].cursor() as cursor:
+                cursor.execute("""
+                    SELECT monto, items, proveedores, compradores, ordenes
+                    FROM dw.mv_kpi_periodo
+                    WHERE gran = 'historico' AND periodo = ''
+                """)
+                fila = cursor.fetchone()
+                if fila:
+                    monto, items, proveedores, compradores, ordenes = fila
+                    return {
+                        'monto_fmt': formatear_monto(monto),
+                        'items_count': int(items or 0),
+                        'proveedores_count': int(proveedores or 0),
+                        'compradores_count': int(compradores or 0),
+                        'ordenes_count': int(ordenes or 0),
+                    }
+        except Exception:
+            pass
+
         try:
             compras = FactOrdenCompra.objects.using("dw")
             r = compras.aggregate(
@@ -195,7 +213,7 @@ def resumen_dia_view(request):
                 'ordenes_count': 0,
             }
 
-    dashboard_metricas = cache.get_or_set('resumen_dia_dw_kpis', _obtener_dashboard_kpis_resumen, 1800)
+    dashboard_metricas = cache.get_or_set('resumen_dia_dw_kpis', _obtener_dashboard_kpis_resumen, 86400)
 
     # Top producto y comprador para destacar
     def _obtener_dashboard_top_destacados():

@@ -234,7 +234,7 @@ def dashboard_kpis(request):
         "proveedores": r["proveedores"],
         "compradores": r["compradores"],
     }
-    cache.set(cache_key, datos, timeout=300)
+    cache.set(cache_key, datos, timeout=14400)  # 4 horas (reduce consultas masivas a fact_orden_compra)
     return JsonResponse(datos)
 
 
@@ -503,7 +503,7 @@ def dashboard_productos_explorador(request):
         select = "producto_nivel1 AS id, COALESCE(producto_nivel1, 'Sin informar') AS nombre"
 
     query = f"""
-        WITH base AS MATERIALIZED ({base}),
+        WITH base AS ({base}),
         agrupado AS (
             SELECT {select}, SUM(monto_neto) AS monto,
                    SUM(cantidad_items) AS items
