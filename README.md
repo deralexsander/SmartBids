@@ -9,7 +9,8 @@
 [![Django](https://img.shields.io/badge/Django-5.x-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Security-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![Machine Learning](https://img.shields.io/badge/ML-Scikit--Learn%20%26%20XGBoost-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![Machine Learning](https://img.shields.io/badge/ML-Scikit--Learn%20%26%20XGBoost-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://github.com/Der-Jsonth/ML-SmartBids/)
+[![ML Repository](https://img.shields.io/badge/ML--SmartBids-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Der-Jsonth/ML-SmartBids/)
 [![Compliance](https://img.shields.io/badge/Ley%20N%C2%B0%2021.719-ARCOP%20Compliant-10b981?style=for-the-badge)](https://www.bcn.cl/)
 
 [📖 Consultar Guía Rápida de Instalación y Comandos Git (readme.txt)](./readme.txt)
@@ -24,7 +25,7 @@ En el ecosistema de compras públicas de Chile se transan miles de millones de d
 
 **SmartBids** automatiza este proceso mediante:
 1. **Perfilamiento Algorítmico:** Concordancia porcentual automática entre las capacidades comerciales de la empresa y los requisitos de cada licitación (catálogo de productos ONU, rubros y zonas geográficas).
-2. **Estimación Predictiva (Machine Learning):** Modelos entrenados con el histórico de compras públicas para anticipar la factibilidad de adjudicación y precios referenciales.
+2. **Estimación Predictiva (Machine Learning):** Modelos entrenados con el histórico de compras públicas para anticipar la factibilidad de adjudicación y precios referenciales. El desarrollo, modelado y entrenamiento del motor de Machine Learning fue realizado por Matías González y se encuentra disponible en el repositorio [ML-SmartBids](https://github.com/Der-Jsonth/ML-SmartBids/).
 3. **Resiliencia Operativa:** Integración híbrida con bases de datos relacionales PostgreSQL y un motor de extracción en vivo (*fallback*) hacia las fichas oficiales de Mercado Público para anexos y foros de preguntas.
 4. **Cumplimiento Legal y Transparencia:** Adhesión estricta a la **Ley N° 21.719** de Protección de Datos Personales (derechos ARCOP), autenticación en dos pasos (2FA/OTP) y exportación portátil de registros.
 
@@ -169,7 +170,7 @@ El proyecto se gestionó bajo el marco de trabajo **Scrum**, estructurado en ite
 | Integrante | Rol en el Proyecto | Responsabilidades Clave |
 | :--- | :--- | :--- |
 | **Andrés Santoro** | **Product Owner & CEO** | Visión del producto, ideación y definición de la propuesta de valor para el ecosistema de compras públicas y priorización del backlog de negocio. |
-| **Matías González** | **Scrum Master** | Facilitación del marco Scrum, gestión de ceremonias y bitácoras de avance, asegurando el cumplimiento de hitos y la documentación integral. |
+| **Matías González** | **Scrum Master & ML Engineer** | Facilitación del marco Scrum, gestión de ceremonias y bitácoras de avance; diseño, entrenamiento e integración del modelo predictivo de Machine Learning ([Repositorio ML-SmartBids](https://github.com/Der-Jsonth/ML-SmartBids/)). |
 | **Flavia Oneto** | **Team Developer (Data & DB Engineer)** | Modelado y optimización de base de datos relacional (PostgreSQL), pipelines de transformación (ETL) y conciliación de modelos para el consumo eficiente en Django. |
 | **Nicolás Muñoz** | **Team Developer (Frontend, Cloud & Security)** | Arquitectura y desarrollo de la interfaz de usuario (UI/UX), infraestructura cloud (hosting, dominio/URL personalizada y SSL) y seguridad de la plataforma (autenticación 2FA/OTP y control de sesiones). |
 
@@ -181,7 +182,7 @@ El proyecto se gestionó bajo el marco de trabajo **Scrum**, estructurado en ite
 | :--- | :--- |
 | **Backend & Framework** | Python 3.10+, Django 5.x, Gunicorn, WhiteNoise |
 | **Base de Datos & Caché** | PostgreSQL (Relacional normalizada), Django Cache Framework |
-| **Machine Learning** | Scikit-Learn, XGBoost, Pandas, NumPy |
+| **Machine Learning** | Scikit-Learn, XGBoost, Pandas, NumPy ([Repositorio ML-SmartBids](https://github.com/Der-Jsonth/ML-SmartBids/)) |
 | **Frontend & UI/UX** | HTML5 Semántico, CSS3 Modular (Variables & Dark Theme), JavaScript ES6+ Vanilla |
 | **Identidad & Seguridad** | Firebase Authentication, Google Identity, HMAC, 2FA/OTP Transaccional |
 | **Integraciones Externas** | Gmail API REST (vía credenciales de servicio), Mercado Público (ChileCompra) Scraping Engine |
